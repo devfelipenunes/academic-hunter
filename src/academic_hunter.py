@@ -193,9 +193,15 @@ class AcademicHunter:
         }
         
         try:
-            resp = requests.get(url, params=params, timeout=20).json()
+            resp = requests.get(url, params=params, timeout=20)
+            resp.raise_for_status()
+            data = resp.json()
             articles = []
-            for i in resp.get('results', []):
+            for i in data.get('results', []):
+                raw_doi = i.get('doi') or ""
+                # More robust DOI normalization
+                doi_clean = raw_doi.replace('https://doi.org/', '').replace('http://doi.org/', '').lower()
+                
                 articles.append({
                     "Title": i.get('display_name'),
                     "Abstract": "", # Skip complex inverted index for now
@@ -203,70 +209,58 @@ class AcademicHunter:
                     "URL": i.get('doi') or i.get('id'),
                     "Source": "OpenAlex",
                     "Citations": i.get('cited_by_count', 0),
-                    "DOI": i.get('doi', '').replace('https://doi.org/', '').lower()
+                    "DOI": doi_clean
                 })
             return articles
         except Exception as e:
             print(f"   [OpenAlex Error] {e}")
             return []
 
-    def run(self, limit_per_source: int = None):
-        """Executes the data mining pipeline across all configured endpoints."""
-        if limit_per_source is None:
-            limit_per_source = self.settings.get('limit_per_query', 100)
+    def run(self, limit_per_source: int = 100):
+        print(f"🚀 Initializing Academic Hunter V2 Pipeline...")
+        consolidated_results = {} # Key: DOI or Title-Slug
         
-        min_score = self.settings.get('min_relevance_score', 0.0)
-
-        print(f"🚀 Initializing Academic Hunter Pipeline...")
-        consolidated_results = []
-        seen_links = set()
-
         for anchor_cat, anchor_list in self.anchors.items():
             for tech_cat, tech_list in self.tech_strings.items():
-                
                 print(f"\n📂 Mining: [{anchor_cat}] x [{tech_cat}]")
                 
                 raw_results = (
                     self.fetch_arxiv(anchor_list, tech_list, limit=limit_per_source) +
                     self.fetch_crossref(anchor_list, tech_list, limit=limit_per_source) +
                     self.fetch_semantic_scholar(anchor_list, tech_list, limit=limit_per_source) +
-                    self.fetch_core_ac(anchor_list, tech_list, limit=limit_per_source) +
                     self.fetch_openalex(anchor_list, tech_list, limit=limit_per_source)
                 )
-                
-                valid_count = 0
+
                 for paper in raw_results:
-                    link = paper.get('URL')
-                    if not link or link in seen_links: 
+                    doi = paper.get('DOI', '').lower() if paper.get('DOI') else ''
+                    title = paper.get('Title', '').strip()
+                    if not title: continue
+                    
+                    # Deduplication ID
+                    dedup_id = doi if doi else re.sub(r'\W+', '', title.lower())
+                    
+                    if dedup_id in consolidated_results:
+                        # Update existing with more citations if found
+                        if paper.get('Citations', 0) > consolidated_results[dedup_id].get('Citations', 0):
+                            consolidated_results[dedup_id]['Citations'] = paper['Citations']
                         continue
-                    
-                    full_text = f"{paper.get('Title', '')} {paper.get('Abstract', '')}".lower()
-                    
-                    # Core Validation: The anchor MUST be present in the text
+
+                    full_text = f"{title} {paper.get('Abstract', '')}".lower()
                     matched_anchors = self.find_matching_terms(full_text, anchor_list)
-                    if not matched_anchors: 
-                        continue
-                    
-                    score = self.calculate_score(paper.get('Title', ''), paper.get('Abstract', ''))
-                    if score < min_score:
-                        continue
+                    if not matched_anchors: continue
 
                     paper.update({
                         "Anchor_Category": anchor_cat,
                         "Matched_Anchors": matched_anchors,
                         "Tech_Category": tech_cat,
                         "Matched_Tech_Terms": self.find_matching_terms(full_text, tech_list),
-                        "Relevance_Score": score
+                        "Relevance_Score": self.calculate_score(title, paper.get('Abstract', ''))
                     })
                     
-                    consolidated_results.append(paper)
-                    seen_links.add(link)
-                    valid_count += 1
-                
-                print(f"   ✨ {valid_count} scientific papers validated.")
-                time.sleep(5) # Polite delay for APIs
+                    if paper["Relevance_Score"] >= self.settings.get('min_relevance_score', 0):
+                        consolidated_results[dedup_id] = paper
 
-        self.export_results(consolidated_results)
+        self.export_results(list(consolidated_results.values()))
 
     def export_results(self, results: List[Dict[str, Any]]):
         """Exports the consolidated results to CSV and Markdown in the results/ folder."""
