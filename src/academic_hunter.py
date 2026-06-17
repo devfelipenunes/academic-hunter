@@ -33,6 +33,11 @@ class AcademicHunter:
             self.anchors = full_config.get('ancoras', {})
             self.tech_strings = full_config.get('strings_tecnicas', {})
             self.tech_weights = full_config.get('pesos_tecnicos', {})
+            
+        self.compiled_patterns = {
+            term: (re.compile(rf'\b{re.escape(term.lower())}\b'), weight)
+            for term, weight in self.tech_weights.items()
+        }
 
     def setup_endpoints(self):
         """Initializes API endpoints."""
@@ -50,9 +55,7 @@ class AcademicHunter:
         multiplier = self.settings.get('title_multiplier', 1.5)
         precision = self.settings.get('score_precision', 1)
         
-        for term, weight in self.tech_weights.items():
-            pattern = re.compile(rf'\b{re.escape(term.lower())}\b')
-            
+        for term, (pattern, weight) in self.compiled_patterns.items():
             # Check Title (bonus multiplier)
             if pattern.search(title_lower):
                 score += (weight * multiplier)
@@ -128,7 +131,8 @@ class AcademicHunter:
 
     def fetch_semantic_scholar(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
         """Fetches papers and citation counts from Semantic Scholar."""
-        query = f"{anchors[0]} {tech_strings[0]}"
+        # Using a broader search logic combining terms
+        query = f'{" ".join(anchors[:2])} {" ".join(tech_strings[:2])}' 
         start_year = self.settings.get('start_year', 2021)
         
         params = {
@@ -144,7 +148,7 @@ class AcademicHunter:
                 if pub_types and not any(t in ['Editorial', 'News', 'Review'] for t in pub_types):
                     articles.append({
                         "Title": i.get('title'),
-                        "Abstract": i.get('abstract'),
+                        "Abstract": i.get('abstract') or "",
                         "Year": i.get('year'), 
                         "URL": i.get('url'),
                         "Source": "SemanticScholar",
@@ -178,6 +182,17 @@ class AcademicHunter:
             print(f"   [CORE.ac.uk Error] {e}")
             return []
 
+    def _decode_openalex_abstract(self, inverted_index):
+        if not inverted_index: return ""
+        try:
+            max_pos = max(max(pos) for pos in inverted_index.values())
+            words = [""] * (max_pos + 1)
+            for word, positions in inverted_index.items():
+                for pos in positions: words[pos] = word
+            return " ".join(words).strip()
+        except Exception:
+            return ""
+
     def fetch_openalex(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
         email = self.settings.get('user_email', 'academic_hunter@example.com')
         anchor_q = ' OR '.join([f'"{a}"' for a in anchors])
@@ -202,9 +217,11 @@ class AcademicHunter:
                 # More robust DOI normalization
                 doi_clean = raw_doi.replace('https://doi.org/', '').replace('http://doi.org/', '').lower()
                 
+                abstract_text = self._decode_openalex_abstract(i.get('abstract_inverted_index', {}))
+                
                 articles.append({
                     "Title": i.get('display_name'),
-                    "Abstract": "", # Skip complex inverted index for now
+                    "Abstract": abstract_text,
                     "Year": i.get('publication_year'),
                     "URL": i.get('doi') or i.get('id'),
                     "Source": "OpenAlex",
@@ -228,7 +245,8 @@ class AcademicHunter:
                     self.fetch_arxiv(anchor_list, tech_list, limit=limit_per_source) +
                     self.fetch_crossref(anchor_list, tech_list, limit=limit_per_source) +
                     self.fetch_semantic_scholar(anchor_list, tech_list, limit=limit_per_source) +
-                    self.fetch_openalex(anchor_list, tech_list, limit=limit_per_source)
+                    self.fetch_openalex(anchor_list, tech_list, limit=limit_per_source) +
+                    self.fetch_core_ac(anchor_list, tech_list, limit=limit_per_source)
                 )
 
                 for paper in raw_results:
@@ -259,6 +277,9 @@ class AcademicHunter:
                     
                     if paper["Relevance_Score"] >= self.settings.get('min_relevance_score', 0):
                         consolidated_results[dedup_id] = paper
+                
+                # Polite rate limiting to avoid API bans
+                time.sleep(2)
 
         self.export_results(list(consolidated_results.values()))
 
