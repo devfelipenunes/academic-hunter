@@ -263,22 +263,33 @@ class AcademicHunter:
         self.export_results(list(consolidated_results.values()))
 
     def export_results(self, results: List[Dict[str, Any]]):
-        """Exports the consolidated results to CSV and Markdown in the results/ folder."""
         if not results:
-            print("\n❌ No academic papers found matching the criteria.")
+            print("\n❌ No papers found.")
             return
 
         df = pd.DataFrame(results)
-        df = df.dropna(subset=['Title'])
         df = df.sort_values(by=["Relevance_Score", "Citations"], ascending=[False, False])
         
         timestamp = time.strftime("%Y%m%d_%H%M%S")
+        
+        # CSV
         csv_file = self.output_dir / f"academic_dataset_{timestamp}.csv"
         df.to_csv(csv_file, index=False, encoding='utf-8-sig')
         
+        # Markdown Report
+        md_file = self.output_dir / f"RELATORIO_ELITE_{timestamp}.md"
+        with open(md_file, 'w', encoding='utf-8') as f:
+            f.write(f"# Academic Hunter Elite Report - {timestamp}\n\n")
+            for _, row in df.head(50).iterrows():
+                f.write(f"### {row['Title']} (Score: {row['Relevance_Score']})\n")
+                f.write(f"- **Year:** {row['Year']} | **Citations:** {row['Citations']}\n")
+                f.write(f"- **Source:** {row['Source']} | **DOI:** {row['DOI']}\n")
+                f.write(f"- **Anchors:** {row['Matched_Anchors']}\n")
+                f.write(f"- [Link]({row['URL']})\n\n")
+
         print(f"\n💎 PIPELINE FINISHED!")
-        print(f"📊 Dataset saved: {csv_file}")
-        print(f"📚 Total validated papers: {len(df)}")
+        print(f"📊 Dataset: {csv_file}")
+        print(f"📝 Master Report: {md_file}")
 
 if __name__ == "__main__":
     hunter = AcademicHunter()
