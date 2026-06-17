@@ -45,15 +45,18 @@ class AcademicHunter:
         title_lower = str(title).lower() if title else ""
         abstract_lower = str(abstract).lower() if abstract else ""
         
+        multiplier = self.settings.get('title_multiplier', 1.5)
+        precision = self.settings.get('score_precision', 1)
+        
         for term, weight in self.tech_weights.items():
-            # Check Title (1.5x multiplier)
+            # Check Title (bonus multiplier)
             if term in title_lower:
-                score += (weight * 1.5)
-            # Check Abstract (base weight)
-            elif term in abstract_lower:
+                score += (weight * multiplier)
+            # Check Abstract (base weight) - using separate IF for additive scoring
+            if term in abstract_lower:
                 score += weight
                 
-        return round(score, 1)
+        return round(score, precision)
 
     def find_matching_terms(self, text: str, terms_list: List[str]) -> str:
         """Returns a comma-separated string of terms from the list that appear in the text."""
@@ -187,7 +190,7 @@ class AcademicHunter:
                     self.fetch_arxiv(anchor_list, tech_list, limit=limit_per_source) +
                     self.fetch_crossref(anchor_list, tech_list, limit=limit_per_source) +
                     self.fetch_semantic_scholar(anchor_list, tech_list, limit=limit_per_source) +
-                    self.fetch_core_ac(anchor_list, tech_list, limit=30)
+                    self.fetch_core_ac(anchor_list, tech_list, limit=limit_per_source)
                 )
                 
                 valid_count = 0
