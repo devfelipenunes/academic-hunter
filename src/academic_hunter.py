@@ -40,6 +40,7 @@ class AcademicHunter:
         self.crossref_url = "https://api.crossref.org/works"
         self.s2_url = "https://api.semanticscholar.org/graph/v1/paper/search"
         self.core_url = "https://api.core.ac.uk/v3/search/works"
+        self.openalex_url = "https://api.openalex.org/works"
 
     def calculate_score(self, title: str, abstract: str) -> float:
         score = 0.0
@@ -177,6 +178,38 @@ class AcademicHunter:
             print(f"   [CORE.ac.uk Error] {e}")
             return []
 
+    def fetch_openalex(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
+        email = self.settings.get('user_email', 'academic_hunter@example.com')
+        anchor_q = ' OR '.join([f'"{a}"' for a in anchors])
+        tech_q = ' OR '.join([f'"{t}"' for t in tech_strings])
+        query = f"({anchor_q}) AND ({tech_q})"
+        
+        url = self.openalex_url
+        params = {
+            "search": query,
+            "mailto": email,
+            "per_page": min(limit, 200),
+            "filter": f"from_publication_date:{self.settings.get('start_year', 2021)}-01-01,type:article|proceedings-article"
+        }
+        
+        try:
+            resp = requests.get(url, params=params, timeout=20).json()
+            articles = []
+            for i in resp.get('results', []):
+                articles.append({
+                    "Title": i.get('display_name'),
+                    "Abstract": "", # Skip complex inverted index for now
+                    "Year": i.get('publication_year'),
+                    "URL": i.get('doi') or i.get('id'),
+                    "Source": "OpenAlex",
+                    "Citations": i.get('cited_by_count', 0),
+                    "DOI": i.get('doi', '').replace('https://doi.org/', '').lower()
+                })
+            return articles
+        except Exception as e:
+            print(f"   [OpenAlex Error] {e}")
+            return []
+
     def run(self, limit_per_source: int = None):
         """Executes the data mining pipeline across all configured endpoints."""
         if limit_per_source is None:
@@ -197,7 +230,8 @@ class AcademicHunter:
                     self.fetch_arxiv(anchor_list, tech_list, limit=limit_per_source) +
                     self.fetch_crossref(anchor_list, tech_list, limit=limit_per_source) +
                     self.fetch_semantic_scholar(anchor_list, tech_list, limit=limit_per_source) +
-                    self.fetch_core_ac(anchor_list, tech_list, limit=limit_per_source)
+                    self.fetch_core_ac(anchor_list, tech_list, limit=limit_per_source) +
+                    self.fetch_openalex(anchor_list, tech_list, limit=limit_per_source)
                 )
                 
                 valid_count = 0
