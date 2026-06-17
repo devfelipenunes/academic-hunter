@@ -20,16 +20,18 @@ class AcademicHunter:
         self.output_dir.mkdir(exist_ok=True)
         
         self.load_config()
-        self.setup_weights()
         self.setup_endpoints()
 
     def load_config(self):
-        """Loads the search anchors and technical strings from the JSON config."""
         if not self.config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
         
         with open(self.config_path, 'r', encoding='utf-8') as f:
-            self.config = json.load(f)
+            full_config = json.load(f)
+            self.settings = full_config.get('settings', {})
+            self.anchors = full_config.get('ancoras', {})
+            self.tech_strings = full_config.get('strings_tecnicas', {})
+            self.tech_weights = full_config.get('pesos_tecnicos', {})
 
     def setup_endpoints(self):
         """Initializes API endpoints."""
@@ -37,15 +39,6 @@ class AcademicHunter:
         self.crossref_url = "https://api.crossref.org/works"
         self.s2_url = "https://api.semanticscholar.org/graph/v1/paper/search"
         self.core_url = "https://api.core.ac.uk/v3/search/works"
-
-    def setup_weights(self):
-        """Defines the scoring weights for technical density."""
-        self.tech_weights = {
-            "atomic settlement": 3.0, "iso 20022": 3.0, "rtgs": 3.0, "clearing": 2.5,
-            "distributed ledger": 3.0, "consensus algorithm": 3.0, "idempotency": 3.0,
-            "transaction processing": 2.5, "microservices": 2.0, "scalability": 1.5,
-            "latency": 1.5, "throughput": 1.5, "interoperability": 1.5, "cbdc": 2.5
-        }
 
     def calculate_score(self, text: str) -> float:
         """Calculates a technical relevance score based on keyword density."""
@@ -89,10 +82,14 @@ class AcademicHunter:
         anchor_group = ' '.join([f'"{t}"' for t in anchors])
         tech_group = ' '.join([f'"{t}"' for t in tech_strings])
         query = f"({anchor_group}) AND ({tech_group})"
+        
+        start_year = self.settings.get('start_year', 2021)
+        user_email = self.settings.get('user_email', 'academic_hunter@example.com')
+        
         params = {
             "query": query, "rows": limit, 
-            "filter": "type:journal-article,from-pub-date:2021-01-01", 
-            "mailto": "academic_hunter@example.com"
+            "filter": f"type:journal-article,from-pub-date:{start_year}-01-01", 
+            "mailto": user_email
         }
         
         try:
@@ -113,8 +110,10 @@ class AcademicHunter:
     def fetch_semantic_scholar(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
         """Fetches papers and citation counts from Semantic Scholar."""
         query = f"{anchors[0]} {tech_strings[0]}"
+        start_year = self.settings.get('start_year', 2021)
+        
         params = {
-            "query": query, "limit": limit, "year": "2021-", 
+            "query": query, "limit": limit, "year": f"{start_year}-", 
             "fields": "title,abstract,url,year,citationCount,publicationTypes,externalIds"
         }
         
@@ -160,14 +159,19 @@ class AcademicHunter:
             print(f"   [CORE.ac.uk Error] {e}")
             return []
 
-    def run(self, limit_per_source: int = 100):
+    def run(self, limit_per_source: int = None):
         """Executes the data mining pipeline across all configured endpoints."""
+        if limit_per_source is None:
+            limit_per_source = self.settings.get('limit_per_query', 100)
+        
+        min_score = self.settings.get('min_relevance_score', 0.0)
+
         print(f"🚀 Initializing Academic Hunter Pipeline...")
         consolidated_results = []
         seen_links = set()
 
-        for anchor_cat, anchor_list in self.config.get('ancoras', {}).items():
-            for tech_cat, tech_list in self.config.get('strings_tecnicas', {}).items():
+        for anchor_cat, anchor_list in self.anchors.items():
+            for tech_cat, tech_list in self.tech_strings.items():
                 
                 print(f"\n📂 Mining: [{anchor_cat}] x [{tech_cat}]")
                 
@@ -191,12 +195,16 @@ class AcademicHunter:
                     if not matched_anchors: 
                         continue
                     
+                    score = self.calculate_score(full_text)
+                    if score < min_score:
+                        continue
+
                     paper.update({
                         "Anchor_Category": anchor_cat,
                         "Matched_Anchors": matched_anchors,
                         "Tech_Category": tech_cat,
                         "Matched_Tech_Terms": self.find_matching_terms(full_text, tech_list),
-                        "Relevance_Score": self.calculate_score(full_text)
+                        "Relevance_Score": score
                     })
                     
                     consolidated_results.append(paper)
