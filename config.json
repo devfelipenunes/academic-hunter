@@ -1,4 +1,10 @@
 {
+  "settings": {
+    "min_relevance_score": 5.0,
+    "start_year": 2021,
+    "limit_per_query": 100,
+    "user_email": "academic_hunter@example.com"
+  },
   "ancoras": {
     "Pagamentos_Instantaneos_Varejo": ["Pix payment", "Zelle payment", "FedNow", "UPI payment", "Faster Payments"],
     "Liquidacao_Interbancaria": ["SWIFT banking", "CHIPS payment", "Fedwire", "Target2", "SEPA payment", "ISO 20022"],
@@ -13,5 +19,12 @@
     "Mensageria_Validacao_Ordenacao": ["financial messaging", "ISO 20022", "payment API", "cross-border payments", "consensus protocol", "zero-knowledge proof"],
     "Desempenho_Operacional": ["transaction throughput", "TPS", "settlement latency", "scalability", "processing time"],
     "Governanca_e_Ciclo_de_Vida": ["institutional trust", "trust model", "operational resilience", "system upgradeability"]
+  },
+  "pesos_tecnicos": {
+    "atomic settlement": 5.0, "iso 20022": 5.0, "zero-knowledge proof": 5.0, "shared ledger": 5.0, "cbdc": 5.0,
+    "cross-border payments": 3.0, "consensus protocol": 3.0, "rtgs": 3.0, "interoperability": 3.0, "trust model": 3.0,
+    "modular architecture": 2.0, "event log": 2.0, "virtual machine": 2.0, "payment api": 2.0, "operational resilience": 2.0,
+    "comparative analysis": 1.5, "survey": 1.5, "taxonomy": 1.5, "scalability": 1.5, "transaction throughput": 1.5, "tps": 1.5,
+    "processing time": 1.5, "settlement latency": 1.5, "framework": 1.5, "architecture": 1.5
   }
 }
