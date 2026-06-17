@@ -4,6 +4,7 @@ import pandas as pd
 import time
 import json
 import xml.etree.ElementTree as ET
+import re
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -49,11 +50,13 @@ class AcademicHunter:
         precision = self.settings.get('score_precision', 1)
         
         for term, weight in self.tech_weights.items():
+            pattern = re.compile(rf'\b{re.escape(term.lower())}\b')
+            
             # Check Title (bonus multiplier)
-            if term in title_lower:
+            if pattern.search(title_lower):
                 score += (weight * multiplier)
-            # Check Abstract (base weight) - using separate IF for additive scoring
-            if term in abstract_lower:
+            # Check Abstract (base weight) - using ELIF to avoid double counting same term
+            elif pattern.search(abstract_lower):
                 score += weight
                 
         return round(score, precision)
@@ -62,7 +65,11 @@ class AcademicHunter:
         """Returns a comma-separated string of terms from the list that appear in the text."""
         if not text: return ""
         text_lower = str(text).lower()
-        matches = set(term for term in terms_list if term.lower() in text_lower)
+        matches = set()
+        for term in terms_list:
+            pattern = re.compile(rf'\b{re.escape(term.lower())}\b')
+            if pattern.search(text_lower):
+                matches.add(term)
         return ", ".join(matches)
 
     def fetch_arxiv(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
