@@ -1,0 +1,17 @@
+{
+  "ancoras": {
+    "Pagamentos_Instantaneos_Varejo": ["Pix payment", "Zelle payment", "FedNow", "UPI payment", "Faster Payments"],
+    "Liquidacao_Interbancaria": ["SWIFT banking", "CHIPS payment", "Fedwire", "Target2", "SEPA payment", "ISO 20022"],
+    "Redes_de_Cartoes": ["VISA card", "Mastercard", "American Express", "JCB card", "Discover Financial Services"],
+    "Adquirentes_e_Processadoras_Globais": ["Stripe payment", "Adyen", "Cielo payment", "Rede payment", "Stone payment", "Fiserv", "Worldpay"],
+    "Carteiras_Digitais": ["Alipay", "Paypal", "Venmo", "Apple Pay", "Google Pay", "Samsung Pay"],
+    "Open_Banking_e_Conectividade": ["Open Banking", "Plaid API", "Belvo API"]
+  },
+  "strings_tecnicas": {
+    "Coringa_Comparativo": ["comparative analysis", "taxonomy", "survey", "framework", "architecture", "interoperability"],
+    "Arquitetura_Core_e_Ledger": ["shared ledger", "event log", "modular architecture", "virtual machine", "atomic settlement"],
+    "Mensageria_Validacao_Ordenacao": ["financial messaging", "ISO 20022", "payment API", "cross-border payments", "consensus protocol", "zero-knowledge proof"],
+    "Desempenho_Operacional": ["transaction throughput", "TPS", "settlement latency", "scalability", "processing time"],
+    "Governanca_e_Ciclo_de_Vida": ["institutional trust", "trust model", "operational resilience", "system upgradeability"]
+  }
+}
