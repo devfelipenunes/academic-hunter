@@ -40,11 +40,19 @@ class AcademicHunter:
         self.s2_url = "https://api.semanticscholar.org/graph/v1/paper/search"
         self.core_url = "https://api.core.ac.uk/v3/search/works"
 
-    def calculate_score(self, text: str) -> float:
-        """Calculates a technical relevance score based on keyword density."""
-        if not text: return 0.0
-        text_lower = str(text).lower()
-        score = sum(weight for term, weight in self.tech_weights.items() if term in text_lower)
+    def calculate_score(self, title: str, abstract: str) -> float:
+        score = 0.0
+        title_lower = str(title).lower() if title else ""
+        abstract_lower = str(abstract).lower() if abstract else ""
+        
+        for term, weight in self.tech_weights.items():
+            # Check Title (1.5x multiplier)
+            if term in title_lower:
+                score += (weight * 1.5)
+            # Check Abstract (base weight)
+            elif term in abstract_lower:
+                score += weight
+                
         return round(score, 1)
 
     def find_matching_terms(self, text: str, terms_list: List[str]) -> str:
@@ -195,7 +203,7 @@ class AcademicHunter:
                     if not matched_anchors: 
                         continue
                     
-                    score = self.calculate_score(full_text)
+                    score = self.calculate_score(paper.get('Title', ''), paper.get('Abstract', ''))
                     if score < min_score:
                         continue
 
