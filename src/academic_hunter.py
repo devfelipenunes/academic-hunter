@@ -5,6 +5,7 @@ import time
 import json
 import xml.etree.ElementTree as ET
 import re
+import threading
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -19,6 +20,10 @@ class AcademicHunter:
         self.config_path = Path(config_path)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
+        
+        self.lock = threading.Lock()
+        self.consolidated_results = {} # Key: Title-Slug or DOI
+        self.seen_ids = set() # Track ALL unique papers seen in this run
         
         self.load_config()
         self.setup_endpoints()
@@ -113,16 +118,25 @@ class AcademicHunter:
             with urllib.request.urlopen(url) as response:
                 root = ET.fromstring(response.read().decode('utf-8'))
                 ns = {'atom': 'http://www.w3.org/2005/Atom'}
-                return [{
-                    "Title": e.find('atom:title', ns).text.strip().replace('\n', ' '),
-                    "Abstract": e.find('atom:summary', ns).text.strip().replace('\n', ' '), 
-                    "Year": e.find('atom:published', ns).text[:4],
-                    "URL": e.find('atom:id', ns).text, 
-                    "Source": "ArXiv",
-                    "Citations": 0,
-                    "Type": "preprint",
-                    "Venue": "ArXiv"
-                } for e in root.findall('atom:entry', ns)]
+                
+                articles = []
+                for e in root.findall('atom:entry', ns):
+                    title_elem = e.find('atom:title', ns)
+                    summary_elem = e.find('atom:summary', ns)
+                    published_elem = e.find('atom:published', ns)
+                    id_elem = e.find('atom:id', ns)
+                    
+                    articles.append({
+                        "Title": title_elem.text.strip().replace('\n', ' ') if title_elem is not None and title_elem.text else "N/A",
+                        "Abstract": summary_elem.text.strip().replace('\n', ' ') if summary_elem is not None and summary_elem.text else "", 
+                        "Year": published_elem.text[:4] if published_elem is not None and published_elem.text else "N/A",
+                        "URL": id_elem.text if id_elem is not None and id_elem.text else "", 
+                        "Source": "ArXiv",
+                        "Citations": 0,
+                        "Type": "preprint",
+                        "Venue": "ArXiv"
+                    })
+                return articles
         except Exception as e:
             print(f"   [ArXiv Error] {e}")
             return []
@@ -142,19 +156,36 @@ class AcademicHunter:
             "mailto": user_email
         }
         
+        data = self._make_request(self.crossref_url, params=params, timeout=15)
+        if not data:
+            return []
+            
         try:
-            resp = requests.get(self.crossref_url, params=params, timeout=15).json()
-            return [{
-                "Title": i.get('title', [""])[0],
-                "Abstract": i.get('abstract', ""), 
-                "Year": i.get('published-print', {}).get('date-parts', [[0]])[0][0] if 'published-print' in i else "N/A", 
-                "URL": i.get('URL', ""),
-                "Source": "Crossref",
-                "Citations": i.get('is-referenced-by-count', 0),
-                "DOI": i.get('DOI'),
-                "Type": i.get('type'),
-                "Venue": i.get('container-title', ["Unknown Venue"])[0]
-            } for i in resp.get('message', {}).get('items', [])]
+            articles = []
+            for i in data.get('message', {}).get('items', []):
+                titles = i.get('title', [])
+                title = titles[0] if titles else "Unknown Title"
+                
+                venues = i.get('container-title', [])
+                venue = venues[0] if venues else "Unknown Venue"
+                
+                # Safe year extraction
+                published_print = i.get('published-print', {})
+                date_parts = published_print.get('date-parts', [])
+                year = date_parts[0][0] if date_parts and date_parts[0] else "N/A"
+                
+                articles.append({
+                    "Title": title,
+                    "Abstract": i.get('abstract', ""), 
+                    "Year": year, 
+                    "URL": i.get('URL', ""),
+                    "Source": "Crossref",
+                    "Citations": i.get('is-referenced-by-count', 0),
+                    "DOI": i.get('DOI'),
+                    "Type": i.get('type', "journal-article"),
+                    "Venue": venue
+                })
+            return articles
         except Exception as e:
             print(f"   [Crossref Error] {e}")
             return []
@@ -169,27 +200,54 @@ class AcademicHunter:
             "fields": "title,abstract,url,year,citationCount,publicationTypes,externalIds,journal,venue"
         }
         
+        data = self._make_request(self.s2_url, params=params, timeout=15)
+        if not data:
+            return []
+            
         try:
-            resp = requests.get(self.s2_url, params=params, timeout=15).json()
             articles = []
-            for i in resp.get('data', []):
+            for i in data.get('data', []):
                 pub_types = i.get('publicationTypes', [])
                 if not pub_types or not any(t in ['Editorial', 'News', 'Review'] for t in pub_types):
+                    # Safe navigation for Semantic Scholar metadata
+                    journal_info = i.get('journal') or {}
+                    venue_name = journal_info.get('name') or i.get('venue') or "Unknown Venue"
+
                     articles.append({
-                        "Title": i.get('title'),
+                        "Title": i.get('title', "Unknown Title"),
                         "Abstract": i.get('abstract') or "",
-                        "Year": i.get('year'), 
-                        "URL": i.get('url'),
+                        "Year": i.get('year', "N/A"), 
+                        "URL": i.get('url', ""),
                         "Source": "SemanticScholar",
                         "Citations": i.get('citationCount', 0), 
                         "DOI": i.get('externalIds', {}).get('DOI'),
                         "Type": ", ".join(pub_types) if pub_types else "N/A",
-                        "Venue": i.get('journal', {}).get('name') or i.get('venue') or "Unknown Venue"
+                        "Venue": venue_name
                     })
             return articles
         except Exception as e:
             print(f"   [SemanticScholar Error] {e}")
             return []
+
+    def _make_request(self, url: str, params: Dict[str, Any] = None, timeout: int = 20, max_retries: int = 5) -> Any:
+        """Helper to make HTTP requests with aggressive exponential backoff for 429 errors."""
+        for attempt in range(max_retries):
+            try:
+                resp = requests.get(url, params=params, timeout=timeout)
+                if resp.status_code == 429:
+                    # More aggressive backoff: 10s, 20s, 40s, 80s, 160s
+                    wait_time = (2 ** attempt) * 10
+                    print(f"   [Rate Limit] HTTP 429 from {url}. Waiting {wait_time}s (Attempt {attempt+1}/{max_retries})...")
+                    time.sleep(wait_time)
+                    continue
+                
+                if resp.status_code != 200:
+                    return None
+                
+                return resp.json()
+            except Exception:
+                return None
+        return None
 
     def fetch_core_ac(self, anchors: List[str], tech_strings: List[str], limit: int = 30) -> List[Dict[str, Any]]:
         """Fetches open access articles from CORE.ac.uk."""
@@ -198,19 +256,30 @@ class AcademicHunter:
         query = f"title:({anchor_group}) AND abstract:({tech_group})"
         params = {"q": query, "limit": limit}
         
+        data = self._make_request(self.core_url, params=params, timeout=20)
+        if not data:
+            return []
+            
         try:
-            resp = requests.get(self.core_url, params=params, timeout=20).json()
-            return [{
-                "Title": i.get('title'),
-                "Abstract": i.get('abstract'),
-                "Year": i.get('yearPublished'), 
-                "URL": f"https://core.ac.uk/works/{i.get('id')}",
-                "Source": "CORE",
-                "Citations": 0,
-                "DOI": i.get('doi'),
-                "Type": i.get('type'),
-                "Venue": i.get('publisher') or (i.get('journals', [{}])[0].get('title') if i.get('journals') else "Unknown Venue")
-            } for i in resp.get('results', [])]
+            articles = []
+            for i in data.get('results', []):
+                # Safe navigation for CORE metadata
+                journals = i.get('journals') or []
+                first_journal = journals[0] if journals and journals[0] else {}
+                venue_name = i.get('publisher') or first_journal.get('title') or "Unknown Venue"
+
+                articles.append({
+                    "Title": i.get('title', "Unknown Title"),
+                    "Abstract": i.get('abstract', ""),
+                    "Year": i.get('yearPublished', "N/A"), 
+                    "URL": f"https://core.ac.uk/works/{i.get('id')}" if i.get('id') else "",
+                    "Source": "CORE",
+                    "Citations": 0,
+                    "DOI": i.get('doi'),
+                    "Type": i.get('type', "journal-article"),
+                    "Venue": venue_name
+                })
+            return articles
         except Exception as e:
             print(f"   [CORE.ac.uk Error] {e}")
             return []
@@ -240,26 +309,32 @@ class AcademicHunter:
             "filter": f"from_publication_date:{self.settings.get('start_year', 2021)}-01-01,type:article|proceedings-article"
         }
         
+        data = self._make_request(url, params=params, timeout=20)
+        if not data:
+            return []
+            
         try:
-            resp = requests.get(url, params=params, timeout=20)
-            resp.raise_for_status()
-            data = resp.json()
             articles = []
             for i in data.get('results', []):
                 raw_doi = i.get('doi') or ""
                 doi_clean = raw_doi.replace('https://doi.org/', '').replace('http://doi.org/', '').lower()
                 abstract_text = self._decode_openalex_abstract(i.get('abstract_inverted_index', {}))
                 
+                # Safe navigation for OpenAlex metadata
+                primary_loc = i.get('primary_location') or {}
+                source_info = primary_loc.get('source') or {}
+                venue_name = source_info.get('display_name') or "Unknown Venue"
+                
                 articles.append({
-                    "Title": i.get('display_name'),
+                    "Title": i.get('display_name', "Unknown Title"),
                     "Abstract": abstract_text,
-                    "Year": i.get('publication_year'),
-                    "URL": i.get('doi') or i.get('id'),
+                    "Year": i.get('publication_year', "N/A"),
+                    "URL": i.get('doi') or i.get('id') or "",
                     "Source": "OpenAlex",
                     "Citations": i.get('cited_by_count', 0),
                     "DOI": doi_clean,
-                    "Type": i.get('type'),
-                    "Venue": i.get('primary_location', {}).get('source', {}).get('display_name') or "Unknown Venue"
+                    "Type": i.get('type', "article"),
+                    "Venue": venue_name
                 })
             return articles
         except Exception as e:
@@ -275,14 +350,15 @@ class AcademicHunter:
             return "Yes"
         if source == "ArXiv":
             return "No (Preprint)"
-        if source in ["OpenAlex", "CORE"]:
+        
+        # Specific check for Semantic Scholar "Likely" status
+        if source == "SemanticScholar" and "journalarticle" in doc_type.replace(" ", ""):
+            return "Likely"
+            
+        if source in ["OpenAlex", "CORE", "SemanticScholar"]:
             # Check for journal articles or conference proceedings
             if any(t in doc_type for t in ["article", "proceedings", "journal"]):
                 return "Yes"
-        if source == "SemanticScholar":
-            # Semantic Scholar uses list of strings for publicationTypes
-            if "journalarticle" in doc_type.replace(" ", ""):
-                return "Likely"
         
         return "N/A"
 
@@ -307,7 +383,7 @@ class AcademicHunter:
         t_cats.add(tech_cat)
         existing['Tech_Category'] = ', '.join(sorted(filter(None, t_cats)))
 
-        # New: Merge Venue and Peer_Reviewed
+        # Merge Venue and Peer_Reviewed
         if (existing.get('Venue') in [None, "", "Unknown Venue", "ArXiv"] or 
             (existing.get('Source') == "ArXiv" and new.get('Source') != "ArXiv")) and new.get('Venue'):
             existing['Venue'] = new['Venue']
@@ -320,18 +396,83 @@ class AcademicHunter:
         if priority.get(new_status, 0) > priority.get(existing_status, 0):
             existing['Peer_Reviewed'] = new_status
 
+    def _process_paper(self, paper: Dict, anchor_cat: str, tech_cat: str, anchor_list: List[str], tech_list: List[str]):
+        """Deduplicates, scores, and merges a paper into the consolidated results (thread-safe)."""
+        # 1. Track Identification
+        source = paper.get('Source', 'Unknown')
+        
+        with self.lock:
+            self.stats["identified"][source] = self.stats["identified"].get(source, 0) + 1
+            
+        title = paper.get('Title', '').strip()
+        if not title: return
+        
+        # 2. Deduplication by Title-Slug (or DOI if available in future task)
+        dedup_id = self.generate_slug(title)
+        
+        with self.lock:
+            if dedup_id in self.seen_ids:
+                self.stats["duplicates_removed"] += 1
+                if dedup_id in self.consolidated_results:
+                    self._merge_paper_metadata(self.consolidated_results[dedup_id], paper, anchor_cat, tech_cat)
+                else:
+                    # This means the first version was excluded. Check if THIS version qualifies.
+                    full_text = f"{title} {paper.get('Abstract', '')}".lower()
+                    matched_anchors = self.find_matching_terms(full_text, anchor_list)
+                    
+                    if matched_anchors:
+                        new_score = self.calculate_score(title, paper.get('Abstract', ''))
+                        if new_score >= self.settings.get('min_relevance_score', 0):
+                            paper.update({
+                                "Anchor_Category": anchor_cat,
+                                "Matched_Anchors": matched_anchors,
+                                "Tech_Category": tech_cat,
+                                "Matched_Tech_Terms": self.find_matching_terms(full_text, tech_list),
+                                "Relevance_Score": new_score,
+                                "Peer_Reviewed": self.detect_peer_review(paper)
+                            })
+                            self.consolidated_results[dedup_id] = paper
+                            self.stats["included_final"] += 1
+                            self.stats["excluded_score"] -= 1 # Correct the stats
+                return
+
+            self.seen_ids.add(dedup_id)
+
+            # 3. Anchor Filtering
+            full_text = f"{title} {paper.get('Abstract', '')}".lower()
+            matched_anchors = self.find_matching_terms(full_text, anchor_list)
+            if not matched_anchors:
+                self.stats["excluded_score"] += 1
+                return
+
+            # 4. Scoring and Exclusion
+            paper.update({
+                "Anchor_Category": anchor_cat,
+                "Matched_Anchors": matched_anchors,
+                "Tech_Category": tech_cat,
+                "Matched_Tech_Terms": self.find_matching_terms(full_text, tech_list),
+                "Relevance_Score": self.calculate_score(title, paper.get('Abstract', '')),
+                "Peer_Reviewed": self.detect_peer_review(paper)
+            })
+            
+            if paper["Relevance_Score"] >= self.settings.get('min_relevance_score', 0):
+                self.consolidated_results[dedup_id] = paper
+                self.stats["included_final"] += 1
+            else:
+                self.stats["excluded_score"] += 1
+
     def run(self, limit_per_source: int = 100):
         print(f"🚀 Initializing Academic Hunter V2 Pipeline...")
-        consolidated_results = {} # Key: Title-Slug
-        seen_ids = set() # Track ALL unique papers seen in this run
         
-        # Reset stats for fresh run
-        self.stats = {
-            "identified": {},
-            "duplicates_removed": 0,
-            "excluded_score": 0,
-            "included_final": 0
-        }
+        with self.lock:
+            self.consolidated_results = {} 
+            self.seen_ids = set() 
+            self.stats = {
+                "identified": {},
+                "duplicates_removed": 0,
+                "excluded_score": 0,
+                "included_final": 0
+            }
 
         for anchor_cat, anchor_list in self.anchors.items():
             for tech_cat, tech_list in self.tech_strings.items():
@@ -346,69 +487,13 @@ class AcademicHunter:
                 )
 
                 for paper in raw_results:
-                    # 1. Track Identification
-                    source = paper.get('Source', 'Unknown')
-                    self.stats["identified"][source] = self.stats["identified"].get(source, 0) + 1
-                    
-                    title = paper.get('Title', '').strip()
-                    if not title: continue
-                    
-                    # 2. Deduplication by Title-Slug
-                    dedup_id = self.generate_slug(title)
-                    
-                    if dedup_id in seen_ids:
-                        self.stats["duplicates_removed"] += 1
-                        if dedup_id in consolidated_results:
-                            self._merge_paper_metadata(consolidated_results[dedup_id], paper, anchor_cat, tech_cat)
-                        else:
-                            # This means the first version was excluded (low score or anchor mismatch).
-                            # Check if THIS version qualifies for inclusion.
-                            full_text = f"{title} {paper.get('Abstract', '')}".lower()
-                            matched_anchors = self.find_matching_terms(full_text, anchor_list)
-                            
-                            if matched_anchors:
-                                new_score = self.calculate_score(title, paper.get('Abstract', ''))
-                                if new_score >= self.settings.get('min_relevance_score', 0):
-                                    # Promotion!
-                                    paper.update({
-                                        "Anchor_Category": anchor_cat,
-                                        "Matched_Anchors": matched_anchors,
-                                        "Tech_Category": tech_cat,
-                                        "Matched_Tech_Terms": self.find_matching_terms(full_text, tech_list),
-                                        "Relevance_Score": new_score,
-                                        "Peer_Reviewed": self.detect_peer_review(paper)
-                                    })
-                                    consolidated_results[dedup_id] = paper
-                                    self.stats["included_final"] += 1
-                                    self.stats["excluded_score"] -= 1 # Correct the stats
-                        continue
-
-                    seen_ids.add(dedup_id)
-
-                    # 3. Anchor Filtering
-                    full_text = f"{title} {paper.get('Abstract', '')}".lower()
-                    matched_anchors = self.find_matching_terms(full_text, anchor_list)
-                    if not matched_anchors: continue
-
-                    # 4. Scoring and Exclusion
-                    paper.update({
-                        "Anchor_Category": anchor_cat,
-                        "Matched_Anchors": matched_anchors,
-                        "Tech_Category": tech_cat,
-                        "Matched_Tech_Terms": self.find_matching_terms(full_text, tech_list),
-                        "Relevance_Score": self.calculate_score(title, paper.get('Abstract', '')),
-                        "Peer_Reviewed": self.detect_peer_review(paper)
-                    })
-                    
-                    if paper["Relevance_Score"] >= self.settings.get('min_relevance_score', 0):
-                        consolidated_results[dedup_id] = paper
-                        self.stats["included_final"] += 1
-                    else:
-                        self.stats["excluded_score"] += 1
+                    self._process_paper(paper, anchor_cat, tech_cat, anchor_list, tech_list)
                 
                 time.sleep(2)
 
-        self.export_results(list(consolidated_results.values()))
+        with self.lock:
+            results_list = list(self.consolidated_results.values())
+        self.export_results(results_list)
 
     def export_results(self, results: List[Dict[str, Any]]):
         if not results:
