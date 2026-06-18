@@ -257,7 +257,9 @@ class AcademicHunter:
                     "URL": i.get('doi') or i.get('id'),
                     "Source": "OpenAlex",
                     "Citations": i.get('cited_by_count', 0),
-                    "DOI": doi_clean
+                    "DOI": doi_clean,
+                    "Type": i.get('type'),
+                    "Venue": i.get('primary_location', {}).get('source', {}).get('display_name') or "Unknown Venue"
                 })
             return articles
         except Exception as e:
