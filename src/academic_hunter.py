@@ -11,7 +11,7 @@ from typing import List, Dict, Any
 class AcademicHunter:
     """
     AcademicHunter is an automated research tool that aggregates scholarly articles
-    from multiple APIs (ArXiv, Crossref, Semantic Scholar, CORE.ac.uk).
+    from multiple APIs (ArXiv, Crossref, Semantic Scholar, CORE.ac.uk, OpenAlex).
     It filters results based on exact anchor matches and ranks them using a technical elite score.
     """
     
@@ -22,6 +22,13 @@ class AcademicHunter:
         
         self.load_config()
         self.setup_endpoints()
+        
+        self.stats = {
+            "identified": {}, # Source: Count
+            "duplicates_removed": 0,
+            "excluded_score": 0,
+            "included_final": 0
+        }
 
     def load_config(self):
         if not self.config_path.exists():
@@ -46,6 +53,11 @@ class AcademicHunter:
         self.s2_url = "https://api.semanticscholar.org/graph/v1/paper/search"
         self.core_url = "https://api.core.ac.uk/v3/search/works"
         self.openalex_url = "https://api.openalex.org/works"
+
+    def generate_slug(self, title: str) -> str:
+        """Normalizes a title into a alphanumeric slug for duplicate detection."""
+        if not title: return ""
+        return re.sub(r'\W+', '', title.lower())
 
     def calculate_score(self, title: str, abstract: str) -> float:
         score = 0.0
@@ -77,9 +89,9 @@ class AcademicHunter:
         return ", ".join(matches)
 
     def fetch_arxiv(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
-        """Fetches scholarly papers from ArXiv."""
+        """Fetches scholarly papers from ArXiv with flexible query logic."""
         anchor_group = ' OR '.join([f'all:"{t}"' for t in anchors])
-        tech_group = ' OR '.join([f'all:"{t}"' for t in tech_strings])
+        tech_group = ' OR '.join([f'all:{t}' for t in tech_strings])
         query = f"({anchor_group}) AND ({tech_group})"
         url = f"{self.arxiv_url}search_query={urllib.parse.quote(query)}&max_results={limit}"
         
@@ -88,8 +100,8 @@ class AcademicHunter:
                 root = ET.fromstring(response.read().decode('utf-8'))
                 ns = {'atom': 'http://www.w3.org/2005/Atom'}
                 return [{
-                    "Title": e.find('atom:title', ns).text.strip(),
-                    "Abstract": e.find('atom:summary', ns).text.strip(), 
+                    "Title": e.find('atom:title', ns).text.strip().replace('\n', ' '),
+                    "Abstract": e.find('atom:summary', ns).text.strip().replace('\n', ' '), 
                     "Year": e.find('atom:published', ns).text[:4],
                     "URL": e.find('atom:id', ns).text, 
                     "Source": "ArXiv",
@@ -130,9 +142,8 @@ class AcademicHunter:
             return []
 
     def fetch_semantic_scholar(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
-        """Fetches papers and citation counts from Semantic Scholar."""
-        # Using a broader search logic combining terms
-        query = f'{" ".join(anchors[:2])} {" ".join(tech_strings[:2])}' 
+        """Fetches papers from Semantic Scholar with keyword-based broad search."""
+        query = f'{" ".join(anchors[:3])} {" ".join(tech_strings[:2])}' 
         start_year = self.settings.get('start_year', 2021)
         
         params = {
@@ -145,7 +156,7 @@ class AcademicHunter:
             articles = []
             for i in resp.get('data', []):
                 pub_types = i.get('publicationTypes', [])
-                if pub_types and not any(t in ['Editorial', 'News', 'Review'] for t in pub_types):
+                if not pub_types or not any(t in ['Editorial', 'News', 'Review'] for t in pub_types):
                     articles.append({
                         "Title": i.get('title'),
                         "Abstract": i.get('abstract') or "",
@@ -214,9 +225,7 @@ class AcademicHunter:
             articles = []
             for i in data.get('results', []):
                 raw_doi = i.get('doi') or ""
-                # More robust DOI normalization
                 doi_clean = raw_doi.replace('https://doi.org/', '').replace('http://doi.org/', '').lower()
-                
                 abstract_text = self._decode_openalex_abstract(i.get('abstract_inverted_index', {}))
                 
                 articles.append({
@@ -254,11 +263,9 @@ class AcademicHunter:
                     title = paper.get('Title', '').strip()
                     if not title: continue
                     
-                    # Deduplication ID
-                    dedup_id = doi if doi else re.sub(r'\W+', '', title.lower())
+                    dedup_id = doi if doi else self.generate_slug(title)
                     
                     if dedup_id in consolidated_results:
-                        # Update existing with more citations if found
                         if paper.get('Citations', 0) > consolidated_results[dedup_id].get('Citations', 0):
                             consolidated_results[dedup_id]['Citations'] = paper['Citations']
                         continue
@@ -278,7 +285,6 @@ class AcademicHunter:
                     if paper["Relevance_Score"] >= self.settings.get('min_relevance_score', 0):
                         consolidated_results[dedup_id] = paper
                 
-                # Polite rate limiting to avoid API bans
                 time.sleep(2)
 
         self.export_results(list(consolidated_results.values()))
@@ -292,12 +298,9 @@ class AcademicHunter:
         df = df.sort_values(by=["Relevance_Score", "Citations"], ascending=[False, False])
         
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        
-        # CSV
         csv_file = self.output_dir / f"academic_dataset_{timestamp}.csv"
         df.to_csv(csv_file, index=False, encoding='utf-8-sig')
         
-        # Markdown Report
         md_file = self.output_dir / f"RELATORIO_ELITE_{timestamp}.md"
         with open(md_file, 'w', encoding='utf-8') as f:
             f.write(f"# Academic Hunter Elite Report - {timestamp}\n\n")
