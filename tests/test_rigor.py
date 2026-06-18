@@ -1,24 +1,34 @@
 import unittest
+import json
+import tempfile
+import shutil
+from pathlib import Path
 from src.academic_hunter import AcademicHunter
 
 class TestAcademicRigor(unittest.TestCase):
     def setUp(self):
-        # Create instance with default config (or mock if needed)
-        # For generate_slug, we don't necessarily need a valid config file if we don't call run()
-        try:
-            self.hunter = AcademicHunter()
-        except FileNotFoundError:
-            # Fallback if config.json is missing in current env
-            import json
-            from pathlib import Path
-            config = {
-                "settings": {"title_multiplier": 1.5, "score_precision": 1},
-                "ancoras": {},
-                "strings_tecnicas": {},
-                "pesos_tecnicos": {}
-            }
-            Path('config.json').write_text(json.dumps(config))
-            self.hunter = AcademicHunter()
+        # Create a temporary directory
+        self.test_dir = tempfile.mkdtemp()
+        self.config_path = Path(self.test_dir) / 'config.json'
+        
+        # Default test configuration
+        config = {
+            "settings": {"title_multiplier": 1.5, "score_precision": 1},
+            "ancoras": {},
+            "strings_tecnicas": {},
+            "pesos_tecnicos": {}
+        }
+        
+        # Write the config to the temporary file
+        self.config_path.write_text(json.dumps(config))
+        
+        # Initialize AcademicHunter with the temporary config
+        # Also redirect output_dir to temp to avoid cluttering workspace
+        self.hunter = AcademicHunter(config_path=str(self.config_path), output_dir=self.test_dir)
+
+    def tearDown(self):
+        # Remove the temporary directory after the test
+        shutil.rmtree(self.test_dir)
 
     def test_generate_slug(self):
         """Verify title normalization into a slug."""
