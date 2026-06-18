@@ -56,8 +56,8 @@ class AcademicHunter:
 
     def generate_slug(self, title: str) -> str:
         """Normalizes a title into a alphanumeric slug for duplicate detection."""
-        if not title: return ""
-        return re.sub(r'\W+', '', title.lower())
+        if title is None: return ""
+        return re.sub(r'\W+', '', str(title).lower())
 
     def calculate_score(self, title: str, abstract: str) -> float:
         score = 0.0

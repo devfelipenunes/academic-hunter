@@ -29,6 +29,11 @@ class TestAcademicRigor(unittest.TestCase):
         self.assertEqual(self.hunter.generate_slug(title1), expected)
         self.assertEqual(self.hunter.generate_slug(title2), expected)
 
+    def test_generate_slug_non_string(self):
+        """Verify generate_slug handles non-string inputs safely."""
+        self.assertEqual(self.hunter.generate_slug(None), "")
+        self.assertEqual(self.hunter.generate_slug(123), "123")
+
     def test_stats_initialization(self):
         """Verify PRISMA stats are initialized correctly."""
         expected_stats = {
