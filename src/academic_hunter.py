@@ -477,7 +477,8 @@ class AcademicHunter:
                     time.sleep(10) # Respect CORE's strict rate limit
 
     def run(self, limit_per_source: int = 100):
-        print(f"🚀 Initializing Academic Hunter V2 Pipeline...")
+        print(f"🚀 Initializing Multi-Threaded Academic Hunter V2 Pipeline...")
+        start_time = time.time()
         
         with self.lock:
             self.consolidated_results = {} 
@@ -489,23 +490,26 @@ class AcademicHunter:
                 "included_final": 0
             }
 
-        for anchor_cat, anchor_list in self.anchors.items():
-            for tech_cat, tech_list in self.tech_strings.items():
-                print(f"\n📂 Mining: [{anchor_cat}] x [{tech_cat}]")
-                
-                raw_results = (
-                    self.fetch_arxiv(anchor_list, tech_list, limit=limit_per_source) +
-                    self.fetch_crossref(anchor_list, tech_list, limit=limit_per_source) +
-                    self.fetch_semantic_scholar(anchor_list, tech_list, limit=limit_per_source) +
-                    self.fetch_openalex(anchor_list, tech_list, limit=limit_per_source) +
-                    self.fetch_core_ac(anchor_list, tech_list, limit=limit_per_source)
-                )
+        workers = [
+            ("ArXiv", self.fetch_arxiv),
+            ("Crossref", self.fetch_crossref),
+            ("Semantic Scholar", self.fetch_semantic_scholar),
+            ("OpenAlex", self.fetch_openalex),
+            ("CORE", self.fetch_core_ac)
+        ]
 
-                for paper in raw_results:
-                    self._process_paper(paper, anchor_cat, tech_cat, anchor_list, tech_list)
-                
-                time.sleep(2)
+        threads = []
+        for name, func in workers:
+            t = threading.Thread(target=self._api_worker, args=(name, func, limit_per_source))
+            t.start()
+            threads.append(t)
 
+        for t in threads:
+            t.join()
+
+        elapsed = time.time() - start_time
+        print(f"\n⏱️  Mining completed in {elapsed:.2f} seconds.")
+        
         with self.lock:
             results_list = list(self.consolidated_results.values())
         self.export_results(results_list)
