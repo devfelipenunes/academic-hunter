@@ -461,6 +461,21 @@ class AcademicHunter:
             else:
                 self.stats["excluded_score"] += 1
 
+    def _api_worker(self, source_name: str, fetch_func, limit_per_source: int):
+        """Worker thread function for a specific API source."""
+        for anchor_cat, anchor_list in self.anchors.items():
+            for tech_cat, tech_list in self.tech_strings.items():
+                # print(f"   [{source_name}] Mining: {anchor_cat} x {tech_cat}")
+                try:
+                    results = fetch_func(anchor_list, tech_list, limit=limit_per_source)
+                    for paper in results:
+                        self._process_paper(paper, anchor_cat, tech_cat, anchor_list, tech_list)
+                except Exception as e:
+                    print(f"   [{source_name} Worker Error] {e}")
+                
+                if source_name == "CORE":
+                    time.sleep(10) # Respect CORE's strict rate limit
+
     def run(self, limit_per_source: int = 100):
         print(f"🚀 Initializing Academic Hunter V2 Pipeline...")
         
