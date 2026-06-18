@@ -151,7 +151,9 @@ class AcademicHunter:
                 "URL": i.get('URL', ""),
                 "Source": "Crossref",
                 "Citations": i.get('is-referenced-by-count', 0),
-                "DOI": i.get('DOI')
+                "DOI": i.get('DOI'),
+                "Type": i.get('type'),
+                "Venue": i.get('container-title', ["Unknown Venue"])[0]
             } for i in resp.get('message', {}).get('items', [])]
         except Exception as e:
             print(f"   [Crossref Error] {e}")
