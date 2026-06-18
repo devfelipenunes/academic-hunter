@@ -207,7 +207,9 @@ class AcademicHunter:
                 "URL": f"https://core.ac.uk/works/{i.get('id')}",
                 "Source": "CORE",
                 "Citations": 0,
-                "DOI": i.get('doi')
+                "DOI": i.get('doi'),
+                "Type": i.get('type'),
+                "Venue": i.get('publisher') or (i.get('journals', [{}])[0].get('title') if i.get('journals') else "Unknown Venue")
             } for i in resp.get('results', [])]
         except Exception as e:
             print(f"   [CORE.ac.uk Error] {e}")
