@@ -166,7 +166,7 @@ class AcademicHunter:
         
         params = {
             "query": query, "limit": limit, "year": f"{start_year}-", 
-            "fields": "title,abstract,url,year,citationCount,publicationTypes,externalIds"
+            "fields": "title,abstract,url,year,citationCount,publicationTypes,externalIds,journal,venue"
         }
         
         try:
@@ -182,7 +182,9 @@ class AcademicHunter:
                         "URL": i.get('url'),
                         "Source": "SemanticScholar",
                         "Citations": i.get('citationCount', 0), 
-                        "DOI": i.get('externalIds', {}).get('DOI')
+                        "DOI": i.get('externalIds', {}).get('DOI'),
+                        "Type": ", ".join(pub_types) if pub_types else "N/A",
+                        "Venue": i.get('journal', {}).get('name') or i.get('venue') or "Unknown Venue"
                     })
             return articles
         except Exception as e:
