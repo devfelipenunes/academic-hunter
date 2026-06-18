@@ -266,6 +266,26 @@ class AcademicHunter:
             print(f"   [OpenAlex Error] {e}")
             return []
 
+    def detect_peer_review(self, paper: Dict[str, Any]) -> str:
+        """Heuristic to classify peer-review status based on source and type."""
+        source = paper.get('Source')
+        doc_type = str(paper.get('Type', '')).lower()
+        
+        if source == "Crossref":
+            return "Yes"
+        if source == "ArXiv":
+            return "No (Preprint)"
+        if source in ["OpenAlex", "CORE"]:
+            # Check for journal articles or conference proceedings
+            if any(t in doc_type for t in ["article", "proceedings", "journal"]):
+                return "Yes"
+        if source == "SemanticScholar":
+            # Semantic Scholar uses list of strings for publicationTypes
+            if "journalarticle" in doc_type.replace(" ", ""):
+                return "Likely"
+        
+        return "N/A"
+
     def _merge_paper_metadata(self, existing: Dict, new: Dict, anchor_cat: str, tech_cat: str):
         """Enhances existing paper metadata with data from a duplicate."""
         if new.get('Citations', 0) > existing.get('Citations', 0):
