@@ -45,6 +45,16 @@ class AcademicHunter:
             term: (re.compile(rf'\b{re.escape(term.lower())}\b'), weight)
             for term, weight in self.tech_weights.items()
         }
+        
+        # Pre-compile patterns for anchors and technical strings
+        self.anchor_patterns = {
+            term: re.compile(rf'\b{re.escape(term.lower())}\b')
+            for cat_list in self.anchors.values() for term in cat_list
+        }
+        self.tech_term_patterns = {
+            term: re.compile(rf'\b{re.escape(term.lower())}\b')
+            for cat_list in self.tech_strings.values() for term in cat_list
+        }
 
     def setup_endpoints(self):
         """Initializes API endpoints."""
@@ -83,7 +93,11 @@ class AcademicHunter:
         text_lower = str(text).lower()
         matches = set()
         for term in terms_list:
-            pattern = re.compile(rf'\b{re.escape(term.lower())}\b')
+            # Use pre-compiled pattern if available, otherwise compile on the fly
+            pattern = self.anchor_patterns.get(term) or self.tech_term_patterns.get(term)
+            if not pattern:
+                pattern = re.compile(rf'\b{re.escape(term.lower())}\b')
+                
             if pattern.search(text_lower):
                 matches.add(term)
         return ", ".join(matches)
