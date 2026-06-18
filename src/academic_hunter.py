@@ -307,6 +307,19 @@ class AcademicHunter:
         t_cats.add(tech_cat)
         existing['Tech_Category'] = ', '.join(sorted(filter(None, t_cats)))
 
+        # New: Merge Venue and Peer_Reviewed
+        if (existing.get('Venue') in [None, "", "Unknown Venue", "ArXiv"] or 
+            (existing.get('Source') == "ArXiv" and new.get('Source') != "ArXiv")) and new.get('Venue'):
+            existing['Venue'] = new['Venue']
+        
+        # Priority for Peer_Reviewed: Yes > Likely > No (Preprint) > N/A
+        priority = {"Yes": 3, "Likely": 2, "No (Preprint)": 1, "N/A": 0}
+        new_status = self.detect_peer_review(new)
+        existing_status = existing.get('Peer_Reviewed', "N/A")
+        
+        if priority.get(new_status, 0) > priority.get(existing_status, 0):
+            existing['Peer_Reviewed'] = new_status
+
     def run(self, limit_per_source: int = 100):
         print(f"🚀 Initializing Academic Hunter V2 Pipeline...")
         consolidated_results = {} # Key: Title-Slug
@@ -347,6 +360,27 @@ class AcademicHunter:
                         self.stats["duplicates_removed"] += 1
                         if dedup_id in consolidated_results:
                             self._merge_paper_metadata(consolidated_results[dedup_id], paper, anchor_cat, tech_cat)
+                        else:
+                            # This means the first version was excluded (low score or anchor mismatch).
+                            # Check if THIS version qualifies for inclusion.
+                            full_text = f"{title} {paper.get('Abstract', '')}".lower()
+                            matched_anchors = self.find_matching_terms(full_text, anchor_list)
+                            
+                            if matched_anchors:
+                                new_score = self.calculate_score(title, paper.get('Abstract', ''))
+                                if new_score >= self.settings.get('min_relevance_score', 0):
+                                    # Promotion!
+                                    paper.update({
+                                        "Anchor_Category": anchor_cat,
+                                        "Matched_Anchors": matched_anchors,
+                                        "Tech_Category": tech_cat,
+                                        "Matched_Tech_Terms": self.find_matching_terms(full_text, tech_list),
+                                        "Relevance_Score": new_score,
+                                        "Peer_Reviewed": self.detect_peer_review(paper)
+                                    })
+                                    consolidated_results[dedup_id] = paper
+                                    self.stats["included_final"] += 1
+                                    self.stats["excluded_score"] -= 1 # Correct the stats
                         continue
 
                     seen_ids.add(dedup_id)
@@ -362,7 +396,8 @@ class AcademicHunter:
                         "Matched_Anchors": matched_anchors,
                         "Tech_Category": tech_cat,
                         "Matched_Tech_Terms": self.find_matching_terms(full_text, tech_list),
-                        "Relevance_Score": self.calculate_score(title, paper.get('Abstract', ''))
+                        "Relevance_Score": self.calculate_score(title, paper.get('Abstract', '')),
+                        "Peer_Reviewed": self.detect_peer_review(paper)
                     })
                     
                     if paper["Relevance_Score"] >= self.settings.get('min_relevance_score', 0):
@@ -393,9 +428,13 @@ class AcademicHunter:
             for _, row in df.head(50).iterrows():
                 f.write(f"### {row['Title']} (Score: {row['Relevance_Score']})\n")
                 f.write(f"- **Year:** {row['Year']} | **Citations:** {row['Citations']}\n")
-                f.write(f"- **Source:** {row['Source']} | **DOI:** {row['DOI']}\n")
+                f.write(f"- **Venue:** {row.get('Venue', 'N/A')} | **Peer-Reviewed:** {row.get('Peer_Reviewed', 'N/A')}\n")
+                f.write(f"- **Source:** {row['Source']} | **DOI:** {row.get('DOI', 'N/A')}\n")
                 f.write(f"- **Anchors:** {row['Matched_Anchors']}\n")
                 f.write(f"- [Link]({row['URL']})\n\n")
+        
+        # Generate PRISMA Flow Report
+        self.generate_prisma_report(timestamp)
 
         print(f"\n💎 PIPELINE FINISHED!")
         print(f"📊 Dataset: {csv_file}")
@@ -414,6 +453,48 @@ class AcademicHunter:
             f.write(f"- **Duplicates Removed:** {self.stats['duplicates_removed']}\n")
             f.write(f"- **Excluded (Score):** {self.stats['excluded_score']}\n")
             f.write(f"- **Final Included:** {self.stats['included_final']}\n")
+
+    def generate_prisma_report(self, timestamp: str):
+        """Generates a PRISMA flow report in Markdown with a Mermaid diagram."""
+        total_identified = sum(self.stats["identified"].values())
+        duplicates = self.stats["duplicates_removed"]
+        excluded = self.stats["excluded_score"]
+        final = self.stats["included_final"]
+        
+        prisma_file = self.output_dir / f"FLUXO_PRISMA_{timestamp}.md"
+        
+        sources_mermaid = "\n".join([f"        S{i}[{source}: {count}]" for i, (source, count) in enumerate(self.stats["identified"].items())])
+        sources_links = "\n".join([f"        S{i} --> A" for i in range(len(self.stats["identified"]))])
+
+        mermaid_content = f"""```mermaid
+graph TD
+    subgraph Sources
+{sources_mermaid}
+    end
+{sources_links}
+
+    A[Records identified through database searching] --> B(Total Records Identified: {total_identified})
+    B --> C{{Deduplication}}
+    C -->|Duplicates Removed: {duplicates}| D[Records removed after deduplication]
+    C --> E[Records for Screening: {total_identified - duplicates}]
+    E --> F{{Relevance Scoring}}
+    F -->|Excluded by Score/Anchors: {excluded}| G[Records excluded]
+    F --> H[Final Records Included: {final}]
+```"""
+
+        with open(prisma_file, 'w', encoding='utf-8') as f:
+            f.write(f"# PRISMA Flow Report - {timestamp}\n\n")
+            f.write("## 1. Breakdown by Source\n")
+            for source, count in self.stats["identified"].items():
+                f.write(f"- **{source}:** {count}\n")
+            f.write(f"\n- **Total Identified:** {total_identified}\n")
+            f.write(f"- **Duplicates Removed:** {duplicates}\n")
+            f.write(f"- **Excluded by Score/Anchors:** {excluded}\n")
+            f.write(f"- **Final Included:** {final}\n\n")
+            f.write("## 2. Visual Flow (Mermaid)\n\n")
+            f.write(mermaid_content)
+
+        print(f"📊 PRISMA Report: {prisma_file}")
 
 if __name__ == "__main__":
     hunter = AcademicHunter()
