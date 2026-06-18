@@ -119,7 +119,9 @@ class AcademicHunter:
                     "Year": e.find('atom:published', ns).text[:4],
                     "URL": e.find('atom:id', ns).text, 
                     "Source": "ArXiv",
-                    "Citations": 0
+                    "Citations": 0,
+                    "Type": "preprint",
+                    "Venue": "ArXiv"
                 } for e in root.findall('atom:entry', ns)]
         except Exception as e:
             print(f"   [ArXiv Error] {e}")
@@ -256,10 +258,40 @@ class AcademicHunter:
             print(f"   [OpenAlex Error] {e}")
             return []
 
+    def _merge_paper_metadata(self, existing: Dict, new: Dict, anchor_cat: str, tech_cat: str):
+        """Enhances existing paper metadata with data from a duplicate."""
+        if new.get('Citations', 0) > existing.get('Citations', 0):
+            existing['Citations'] = new['Citations']
+        
+        if not existing.get('DOI') and new.get('DOI'):
+            existing['DOI'] = new['DOI']
+        
+        if len(new.get('Abstract', '')) > len(existing.get('Abstract', '')):
+            existing['Abstract'] = new['Abstract']
+        
+        # Merge Anchor Categories
+        a_cats = set(existing.get('Anchor_Category', '').split(', '))
+        a_cats.add(anchor_cat)
+        existing['Anchor_Category'] = ', '.join(sorted(filter(None, a_cats)))
+
+        # Merge Tech Categories
+        t_cats = set(existing.get('Tech_Category', '').split(', '))
+        t_cats.add(tech_cat)
+        existing['Tech_Category'] = ', '.join(sorted(filter(None, t_cats)))
+
     def run(self, limit_per_source: int = 100):
         print(f"🚀 Initializing Academic Hunter V2 Pipeline...")
-        consolidated_results = {} # Key: DOI or Title-Slug
+        consolidated_results = {} # Key: Title-Slug
+        seen_ids = set() # Track ALL unique papers seen in this run
         
+        # Reset stats for fresh run
+        self.stats = {
+            "identified": {},
+            "duplicates_removed": 0,
+            "excluded_score": 0,
+            "included_final": 0
+        }
+
         for anchor_cat, anchor_list in self.anchors.items():
             for tech_cat, tech_list in self.tech_strings.items():
                 print(f"\n📂 Mining: [{anchor_cat}] x [{tech_cat}]")
@@ -273,21 +305,30 @@ class AcademicHunter:
                 )
 
                 for paper in raw_results:
-                    doi = paper.get('DOI', '').lower() if paper.get('DOI') else ''
+                    # 1. Track Identification
+                    source = paper.get('Source', 'Unknown')
+                    self.stats["identified"][source] = self.stats["identified"].get(source, 0) + 1
+                    
                     title = paper.get('Title', '').strip()
                     if not title: continue
                     
-                    dedup_id = doi if doi else self.generate_slug(title)
+                    # 2. Deduplication by Title-Slug
+                    dedup_id = self.generate_slug(title)
                     
-                    if dedup_id in consolidated_results:
-                        if paper.get('Citations', 0) > consolidated_results[dedup_id].get('Citations', 0):
-                            consolidated_results[dedup_id]['Citations'] = paper['Citations']
+                    if dedup_id in seen_ids:
+                        self.stats["duplicates_removed"] += 1
+                        if dedup_id in consolidated_results:
+                            self._merge_paper_metadata(consolidated_results[dedup_id], paper, anchor_cat, tech_cat)
                         continue
 
+                    seen_ids.add(dedup_id)
+
+                    # 3. Anchor Filtering
                     full_text = f"{title} {paper.get('Abstract', '')}".lower()
                     matched_anchors = self.find_matching_terms(full_text, anchor_list)
                     if not matched_anchors: continue
 
+                    # 4. Scoring and Exclusion
                     paper.update({
                         "Anchor_Category": anchor_cat,
                         "Matched_Anchors": matched_anchors,
@@ -298,6 +339,9 @@ class AcademicHunter:
                     
                     if paper["Relevance_Score"] >= self.settings.get('min_relevance_score', 0):
                         consolidated_results[dedup_id] = paper
+                        self.stats["included_final"] += 1
+                    else:
+                        self.stats["excluded_score"] += 1
                 
                 time.sleep(2)
 
@@ -328,6 +372,20 @@ class AcademicHunter:
         print(f"\n💎 PIPELINE FINISHED!")
         print(f"📊 Dataset: {csv_file}")
         print(f"📝 Master Report: {md_file}")
+        
+        print(f"\n📊 PRISMA STATS:")
+        print(f"   - Identified: {self.stats['identified']}")
+        print(f"   - Duplicates Removed: {self.stats['duplicates_removed']}")
+        print(f"   - Excluded (Score): {self.stats['excluded_score']}")
+        print(f"   - Final Included: {self.stats['included_final']}")
+        
+        # Also write stats to the MD report
+        with open(md_file, 'a', encoding='utf-8') as f:
+            f.write("\n## PRISMA Flow Stats\n")
+            f.write(f"- **Identified:** {json.dumps(self.stats['identified'])}\n")
+            f.write(f"- **Duplicates Removed:** {self.stats['duplicates_removed']}\n")
+            f.write(f"- **Excluded (Score):** {self.stats['excluded_score']}\n")
+            f.write(f"- **Final Included:** {self.stats['included_final']}\n")
 
 if __name__ == "__main__":
     hunter = AcademicHunter()
