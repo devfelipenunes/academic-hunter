@@ -1,6 +1,5 @@
-import pytest
 from unittest.mock import patch, MagicMock
-from academic_hunter.interfaces.mcp.discovery_tools import explore_citation_graph, fetch_paper_by_doi
+from academic_hunter.interfaces.mcp.discovery_tools import explore_citation_graph, fetch_paper_by_doi, fetch_multiple_abstracts
 
 @patch("academic_hunter.interfaces.mcp.discovery_tools.requests.get")
 def test_explore_citation_graph(mock_get):
@@ -27,3 +26,17 @@ def test_fetch_paper_by_doi(mock_hunter_class):
     
     result = fetch_paper_by_doi("10.1234/test")
     assert "This is a test abstract." in result
+
+@patch("academic_hunter.interfaces.mcp.discovery_tools.AcademicHunter")
+def test_fetch_multiple_abstracts(mock_hunter_class):
+    mock_instance = MagicMock()
+    # Retorna abstracts diferentes baseados no DOI
+    mock_instance.fetch_abstract_by_doi.side_effect = lambda doi: f"Abstract for {doi}"
+    mock_hunter_class.return_value = mock_instance
+    
+    dois = ["10.1/A", "10.2/B"]
+    result = fetch_multiple_abstracts(dois)
+    
+    assert "Abstract for 10.1/A" in result
+    assert "Abstract for 10.2/B" in result
+    assert mock_instance.fetch_abstract_by_doi.call_count == 2
