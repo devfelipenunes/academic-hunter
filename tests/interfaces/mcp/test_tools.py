@@ -2,7 +2,7 @@ import os
 import json
 import pytest
 from unittest.mock import patch, MagicMock
-from academic_hunter.interfaces.mcp.tools import read_config, update_config, run_search
+from academic_hunter.interfaces.mcp.tools import read_config, update_config, run_search, SearchConfigUpdate
 
 @pytest.fixture
 def temp_config_file(tmp_path):
@@ -34,25 +34,21 @@ def test_read_config(temp_config_file):
     assert data["settings"].get("start_year", 2020) == 2020
 
 def test_update_config(temp_config_file):
-    """Testa se update_config salva novos parâmetros corretamente."""
-    new_data = {
-        "settings": {"start_year": 2024},
-        "technical_weights": {"new": 2.0}
-    }
+    """Testa se update_config salva novos parâmetros corretamente (usando Pydantic)."""
+    # Em FastMCP, o payload do cliente MCP será validado e transformado nesta classe
+    config_update = SearchConfigUpdate(
+        settings={"start_year": 2024},
+        technical_weights={"new": 2.0}
+    )
     
-    result = update_config(json.dumps(new_data))
-    assert result == "config.json updated successfully!"
+    result = update_config(config_update)
+    assert "atualizadas com sucesso" in result.lower() or "updated successfully" in result.lower()
     
     with open(temp_config_file, "r") as f:
         saved_data = json.load(f)
         
     assert saved_data["settings"]["start_year"] == 2024
     assert saved_data["technical_weights"]["new"] == 2.0
-
-def test_update_config_invalid_json():
-    """Testa o tratamento de erro se o JSON for inválido."""
-    result = update_config("{invalid_json: true")
-    assert result == "Error: The provided string is not a valid JSON."
 
 @patch("academic_hunter.interfaces.mcp.tools.AcademicHunter")
 def test_run_search(mock_hunter_class, temp_config_file):
