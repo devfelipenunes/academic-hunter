@@ -65,3 +65,24 @@ def test_run_search(mock_hunter_class, temp_config_file):
     mock_instance.run.assert_called_once_with(limit_per_source=2)
     assert "Search completed successfully. Report generated at:" in result
     assert "RELATORIO_ELITE_123.md" in result
+
+@patch("academic_hunter.interfaces.mcp.tools.requests.get")
+def test_explore_citation_graph(mock_get):
+    """Testa a ferramenta de snowballing (busca de citações via API externa direta)."""
+    from academic_hunter.interfaces.mcp.tools import explore_citation_graph
+    
+    # Configura o mock do requests para simular a API do Semantic Scholar
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "data": [
+            {"citingPaper": {"paperId": "123", "title": "Citing Paper A", "year": 2024}}
+        ]
+    }
+    mock_get.return_value = mock_response
+    
+    result = explore_citation_graph(doi="10.1000/182", direction="citations")
+    
+    assert "Citing Paper A" in result
+    assert "2024" in result
+    mock_get.assert_called_once()
