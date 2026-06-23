@@ -68,3 +68,30 @@ def fetch_multiple_abstracts(dois: list[str]) -> str:
         return "\n".join(results)
     except Exception as e:
         return f"Error fetching multiple abstracts: {str(e)}"
+
+def quick_topic_discovery(topic: str) -> str:
+    """
+    Realiza uma busca rápida por um tópico na API do Semantic Scholar.
+    Retorna os títulos dos artigos mais relevantes para ajudar o agente a identificar jargões
+    antes de configurar o `config.json` para a busca completa.
+    """
+    try:
+        url = f"https://api.semanticscholar.org/graph/v1/paper/search?query={topic}&limit=10&fields=title,year"
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code != 200:
+            return f"Error fetching from Semantic Scholar: {response.status_code} - {response.text}"
+            
+        data = response.json().get("data", [])
+        if not data:
+            return f"No results found for topic: {topic}"
+            
+        results = [f"--- Quick Discovery for '{topic}' ---"]
+        for paper in data:
+            title = paper.get("title", "Unknown Title")
+            year = paper.get("year", "Unknown Year")
+            results.append(f"- {title} ({year})")
+            
+        return "\n".join(results)
+    except Exception as e:
+        return f"Error exploring topic: {str(e)}"
