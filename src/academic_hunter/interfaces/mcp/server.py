@@ -1,0 +1,26 @@
+from mcp.server.fastmcp import FastMCP
+from .tools import run_search, read_config, update_config, fetch_paper_by_doi
+
+def create_mcp_server() -> FastMCP:
+    """
+    Instancia o servidor FastMCP e registra as ferramentas disponíveis para os LLMs.
+    """
+    mcp = FastMCP("Academic Hunter MCP")
+    
+    # Registrando as ferramentas
+    mcp.tool()(run_search)
+    mcp.tool()(read_config)
+    mcp.tool()(update_config)
+    mcp.tool()(fetch_paper_by_doi)
+    
+    return mcp
+
+def run_mcp_server():
+    """
+    Executa o servidor MCP (geralmente via Stdio).
+    """
+    server = create_mcp_server()
+    server.run()
+
+if __name__ == "__main__":
+    run_mcp_server()

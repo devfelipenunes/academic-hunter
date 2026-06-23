@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "academic-hunter"
+dynamic = ["version"]
+description = "An automated research tool that aggregates, dedups, and ranks scholarly articles from multiple academic APIs."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Filipe Nunes", email = "fnunes@example.com"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "pandas>=1.0.0",
+    "requests>=2.25.0",
+    "mcp>=1.0.0",
+    "fastmcp>=0.4.1"
+]
+
+[project.scripts]
+academic-hunter = "academic_hunter.cli:run_scraper"
+academic-mcp = "academic_hunter.interfaces.mcp.server:run_mcp_server"
+
+[project.urls]
+"Homepage" = "https://github.com/fnunes/pesquisa_academica"
+"Bug Tracker" = "https://github.com/fnunes/pesquisa_academica/issues"
+
+[tool.hatch.version]
+path = "src/academic_hunter/__init__.py"
+
+[tool.pyright]
+include = ["src"]
+extraPaths = ["src"]

@@ -4,7 +4,7 @@ import tempfile
 import shutil
 import re
 from pathlib import Path
-from src.academic_hunter import AcademicHunter
+from academic_hunter import AcademicHunter
 
 class TestAcademicRigor(unittest.TestCase):
     def setUp(self):
@@ -15,9 +15,9 @@ class TestAcademicRigor(unittest.TestCase):
         # Default test configuration
         config = {
             "settings": {"title_multiplier": 1.5, "score_precision": 1},
-            "ancoras": {},
-            "strings_tecnicas": {},
-            "pesos_tecnicos": {}
+            "anchors": {},
+            "technical_strings": {},
+            "technical_weights": {}
         }
         
         # Write the config to the temporary file
@@ -51,7 +51,11 @@ class TestAcademicRigor(unittest.TestCase):
             "identified": {},
             "duplicates_removed": 0,
             "excluded_score": 0,
-            "included_final": 0
+            "excluded_year": 0,
+            "excluded_anchors": 0,
+            "excluded_technical_score": 0,
+            "included_final": 0,
+            "exclusions_by_source": {}
         }
         self.assertEqual(self.hunter.stats, expected_stats)
 
@@ -178,8 +182,10 @@ class TestAcademicRigor(unittest.TestCase):
         existing = {"Title": "T", "Abstract": "Short", "Citations": 10, "DOI": "", "Anchor_Category": "A1", "Tech_Category": "T1"}
         new = {"Title": "T", "Abstract": "Much Longer Abstract", "Citations": 20, "DOI": "10.1234", "Source": "S2"}
         
-        # This will fail initially because the method doesn't exist
-        self.hunter._merge_paper_metadata(existing, new, "A2", "T2")
+        from academic_hunter.core.screening.resolvers import PaperResolver
+        import threading
+        resolver = PaperResolver(self.hunter.state, self.hunter.scorer, self.hunter.config, self.hunter.connectors, threading.RLock())
+        resolver.resolve_existing_duplicate(existing, new, "A2", "T2", "S2")
         
         self.assertEqual(existing["Citations"], 20)
         self.assertEqual(existing["DOI"], "10.1234")
@@ -191,6 +197,9 @@ class TestAcademicRigor(unittest.TestCase):
 
     def test_peer_review_detection(self):
         """Verify peer-review status detection heuristic."""
+        from academic_hunter.core.screening.resolvers import PaperResolver
+        import threading
+        resolver = PaperResolver(self.hunter.state, self.hunter.scorer, self.hunter.config, self.hunter.connectors, threading.RLock())
         papers = [
             {"Source": "Crossref", "Type": "journal-article", "expected": "Yes"},
             {"Source": "ArXiv", "Type": "preprint", "expected": "No (Preprint)"},
@@ -202,7 +211,7 @@ class TestAcademicRigor(unittest.TestCase):
         ]
         
         for p in papers:
-            status = self.hunter.detect_peer_review(p)
+            status = resolver.detect_peer_review(p)
             self.assertEqual(status, p["expected"], f"Failed for {p['Source']} ({p['Type']})")
 
     def test_venue_and_peer_review_merging(self):
@@ -216,8 +225,10 @@ class TestAcademicRigor(unittest.TestCase):
             "Type": "journal-article"
         }
         
-        # detect_peer_review(new) should be "Yes"
-        self.hunter._merge_paper_metadata(existing, new, "A", "T")
+        from academic_hunter.core.screening.resolvers import PaperResolver
+        import threading
+        resolver = PaperResolver(self.hunter.state, self.hunter.scorer, self.hunter.config, self.hunter.connectors, threading.RLock())
+        resolver.resolve_existing_duplicate(existing, new, "A", "T", "Crossref")
         
         self.assertEqual(existing["Venue"], "Nature")
         self.assertEqual(existing["Peer_Reviewed"], "Yes")
@@ -228,6 +239,9 @@ class TestAcademicRigor(unittest.TestCase):
             "identified": {"ArXiv": 10, "Crossref": 20},
             "duplicates_removed": 5,
             "excluded_score": 10,
+            "excluded_year": 0,
+            "excluded_anchors": 6,
+            "excluded_technical_score": 4,
             "included_final": 15
         }
         
@@ -241,9 +255,12 @@ class TestAcademicRigor(unittest.TestCase):
         self.assertIn("## 1. Breakdown by Source", content)
         self.assertIn("- **ArXiv:** 10", content)
         self.assertIn("- **Crossref:** 20", content)
-        self.assertIn("Total Records Identified: 30", content)
-        self.assertIn("Duplicates Removed: 5", content)
-        self.assertIn("Final Records Included: 15", content)
+        self.assertIn("Total Identified:** 30", content)
+        self.assertIn("Duplicates Removed:** 5", content)
+        self.assertIn("Excluded (Publication Year < 2021):** 0", content)
+        self.assertIn("Excluded (No Industry Anchors):** 6", content)
+        self.assertIn("Excluded (Low Relevance Score):** 4", content)
+        self.assertIn("Final Included:** 15", content)
         self.assertIn("```mermaid", content)
         self.assertIn("graph TD", content)
 
