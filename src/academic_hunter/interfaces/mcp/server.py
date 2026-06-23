@@ -1,5 +1,5 @@
 from mcp.server.fastmcp import FastMCP
-from .tools import run_search, read_config, update_config, fetch_paper_by_doi
+from .tools import run_search, read_config, update_config, fetch_paper_by_doi, explore_citation_graph
 
 def create_mcp_server() -> FastMCP:
     """
@@ -12,6 +12,7 @@ def create_mcp_server() -> FastMCP:
     mcp.tool()(read_config)
     mcp.tool()(update_config)
     mcp.tool()(fetch_paper_by_doi)
+    mcp.tool()(explore_citation_graph)
     
     return mcp
 
