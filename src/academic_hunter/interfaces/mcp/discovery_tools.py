@@ -50,3 +50,21 @@ def fetch_paper_by_doi(doi: str) -> str:
         return f"No abstract could be retrieved for DOI {doi}."
     except Exception as e:
         return f"Error fetching paper: {str(e)}"
+
+def fetch_multiple_abstracts(dois: list[str]) -> str:
+    """
+    Fetches the abstracts for a list of DOIs.
+    Useful for reading multiple papers at once to generate a literature review matrix or summary.
+    """
+    try:
+        hunter = AcademicHunter()
+        results = []
+        for doi in dois:
+            abstract = hunter.fetch_abstract_by_doi(doi)
+            if abstract:
+                results.append(f"--- Abstract for {doi} ---\n{abstract}\n")
+            else:
+                results.append(f"--- Abstract for {doi} ---\n[Not found]\n")
+        return "\n".join(results)
+    except Exception as e:
+        return f"Error fetching multiple abstracts: {str(e)}"
