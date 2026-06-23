@@ -1,7 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 from .config_tools import read_config, update_config
-from .search_tools import run_search
-from .discovery_tools import fetch_paper_by_doi, explore_citation_graph, fetch_multiple_abstracts
+from .search_tools import run_search, read_latest_report
+from .discovery_tools import fetch_paper_by_doi, explore_citation_graph, fetch_multiple_abstracts, quick_topic_discovery
 
 def create_mcp_server() -> FastMCP:
     """
@@ -11,11 +11,13 @@ def create_mcp_server() -> FastMCP:
     
     # Registrando as ferramentas
     mcp.tool()(run_search)
+    mcp.tool()(read_latest_report)
     mcp.tool()(read_config)
     mcp.tool()(update_config)
     mcp.tool()(fetch_paper_by_doi)
     mcp.tool()(explore_citation_graph)
     mcp.tool()(fetch_multiple_abstracts)
+    mcp.tool()(quick_topic_discovery)
     
     return mcp
 
