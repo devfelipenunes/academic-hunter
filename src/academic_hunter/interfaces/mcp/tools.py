@@ -1,6 +1,26 @@
 import json
+from typing import Dict, List, Optional
+from pydantic import BaseModel, Field
 from academic_hunter import AcademicHunter
 from academic_hunter.core.infra.config import HunterConfig
+
+class SearchConfigUpdate(BaseModel):
+    settings: Optional[Dict] = Field(
+        None, 
+        description="Configurações gerais. Ex: {'min_relevance_score': 3.5, 'start_year': 2023}"
+    )
+    anchors: Optional[Dict[str, List[str]]] = Field(
+        None, 
+        description="Categorias principais de busca. Ex: {'Blockchain_Gov': ['CBDC', 'E-government', 'Smart Contracts']}"
+    )
+    technical_strings: Optional[Dict[str, List[str]]] = Field(
+        None, 
+        description="Termos técnicos secundários para filtrar. Ex: {'Consensus': ['Proof of Authority', 'Hyperledger']}"
+    )
+    technical_weights: Optional[Dict[str, float]] = Field(
+        None, 
+        description="Pesos para palavras específicas. Ex: {'cbdc': 5.0, 'hyperledger': 4.0}"
+    )
 
 def run_search(limit_per_source: int = 5) -> str:
     """
@@ -31,25 +51,22 @@ def read_config() -> str:
     except Exception as e:
         return f"Error reading config: {str(e)}"
 
-def update_config(config_data_json: str) -> str:
+def update_config(config_update: SearchConfigUpdate) -> str:
     """
-    Updates the search configurations.
-    Receives a JSON string containing the new configurations. The format must respect the original structure.
-    This should be used to inject optimized keywords based on the user's search intent before running run_search.
+    Atualiza as configurações de busca do Hunter.
+    Use esta ferramenta SEMPRE que o usuário pedir para pesquisar um novo tema.
+    Traduza o pedido do usuário em 'anchors' e 'technical_strings' relevantes e atualize o config.json.
     """
     try:
-        new_config = json.loads(config_data_json)
         config = HunterConfig()
         
-        if "settings" in new_config: config.settings = new_config["settings"]
-        if "anchors" in new_config: config.anchors = new_config["anchors"]
-        if "technical_strings" in new_config: config.tech_strings = new_config["technical_strings"]
-        if "technical_weights" in new_config: config.tech_weights = new_config["technical_weights"]
+        if config_update.settings: config.settings.update(config_update.settings)
+        if config_update.anchors: config.anchors = config_update.anchors
+        if config_update.technical_strings: config.tech_strings = config_update.technical_strings
+        if config_update.technical_weights: config.tech_weights = config_update.technical_weights
         
         config.save()
-        return "config.json updated successfully!"
-    except json.JSONDecodeError:
-        return "Error: The provided string is not a valid JSON."
+        return "Configurações atualizadas com sucesso! Você já pode usar a ferramenta run_search."
     except Exception as e:
         return f"Error saving config.json: {str(e)}"
 
