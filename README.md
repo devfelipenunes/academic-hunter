@@ -42,8 +42,8 @@ npx -y @smithery/cli install academic-hunter --client claude
 
 1. **Clone & Install:**
    ```bash
-   git clone https://github.com/fnunes/pesquisa_academica.git
-   cd pesquisa_academica
+   git clone https://github.com/devfelipenunes/academic-hunter.git
+   cd academic-hunter
    pip install -e .
    ```
 

@@ -31,8 +31,8 @@ academic-hunter = "academic_hunter.cli:run_scraper"
 academic-mcp = "academic_hunter.interfaces.mcp.server:run_mcp_server"
 
 [project.urls]
-"Homepage" = "https://github.com/fnunes/pesquisa_academica"
-"Bug Tracker" = "https://github.com/fnunes/pesquisa_academica/issues"
+"Homepage" = "https://github.com/devfelipenunes/academic-hunter"
+"Bug Tracker" = "https://github.com/devfelipenunes/academic-hunter/issues"
 
 [tool.hatch.version]
 path = "src/academic_hunter/__init__.py"
