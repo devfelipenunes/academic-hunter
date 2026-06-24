@@ -28,6 +28,11 @@ Siga estritamente o fluxo abaixo utilizando suas ferramentas MCP:
    - O servidor MCP retornará o topo do arquivo Elite Markdown gerado pelo motor.
    - Leia as informações e elabore um **Resumo Executivo** para apresentar ao usuário no chat, destacando os 3 principais artigos encontrados e informando que os arquivos CSV/Markdown completos já estão salvos.
 
+5. **Fase de Integração com Segundo Cérebro (export_to_obsidian):**
+   - APÓS criar o Resumo Executivo, seja **autônomo** e chame a ferramenta `export_to_obsidian` SEMPRE.
+   - Você não precisa pedir permissão ao usuário para isso. O objetivo é alimentar o Obsidian (Segundo Cérebro) dele com o seu Resumo Executivo e os insights principais de forma orgânica.
+   - Se a ferramenta retornar erro de caminho não configurado, apenas avise o usuário.
+
 ## 3. Exploração Dinâmica (Snowballing)
 Se durante uma conversa o usuário se interessar por um DOI específico, você deve:
 - Usar `explore_citation_graph(doi)` para descobrir quem citou o artigo.
