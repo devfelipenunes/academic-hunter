@@ -34,3 +34,6 @@ archive/
 # Agent Planning Documents
 docs/superpowers/plans/
 docs/superpowers/specs/
+
+# Academic Hunter DB Storage
+.academic_hunter/
