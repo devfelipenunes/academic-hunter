@@ -8,6 +8,14 @@ class HunterConfig:
 
     def __init__(self, config_path: str = 'config.json'):
         self.config_path = Path(config_path)
+        if not self.config_path.exists():
+            # Fallback for MCP servers running from different CWDs
+            # Resolve relative to the location of this file (src/academic_hunter/core/infra/config.py -> project_root)
+            project_root = Path(__file__).parent.parent.parent.parent.parent
+            fallback_path = project_root / 'config.json'
+            if fallback_path.exists():
+                self.config_path = fallback_path
+
         self.settings: Dict[str, Any] = {}
         self.anchors: Dict[str, list] = {}
         self.tech_strings: Dict[str, list] = {}
