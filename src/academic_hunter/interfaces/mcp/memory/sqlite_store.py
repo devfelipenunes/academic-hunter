@@ -7,7 +7,8 @@ from typing import Optional, Dict, List, Any
 class MCPDatabaseManager:
     def __init__(self, db_path: Optional[str] = None):
         if not db_path:
-            db_dir = os.path.join(os.getcwd(), ".gemini")
+            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
+            db_dir = os.path.join(project_root, ".gemini")
             if not os.path.exists(db_dir):
                 os.makedirs(db_dir, exist_ok=True)
             self.db_path = os.path.join(db_dir, "mcp_history.db")
@@ -28,7 +29,7 @@ class MCPDatabaseManager:
             ''')
             conn.commit()
 
-    def save_config(self, topic: str, config_data: Dict[str, Any]) -> int:
+    def save_config(self, topic: str, config_data: Dict[str, Any]) -> Optional[int]:
         timestamp = datetime.now().isoformat()
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
