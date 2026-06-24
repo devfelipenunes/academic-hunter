@@ -57,7 +57,7 @@ By turning the Core Engine into an MCP Server, AI Agents can now:
 
 1. Copy the configuration template and fill in your search parameters:
    ```bash
-   cp examples/config.json config.json
+   cp config.example.json config.json
    ```
 
 2. Run the main script:
