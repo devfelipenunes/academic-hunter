@@ -99,6 +99,7 @@ Restart your client. Your LLM now has full control over the DeSci OSINT engine!
 - **[Core Engine](docs/core_engine.md)**: Detailed breakdown of the Python internals (`pipeline`, `nlp`, `engine`).
 - **[Plugin: Screeners](docs/plugins/screeners.md)**: NLP and Relevance engines.
 - **[Plugin: Vector Stores](docs/plugins/vector_stores.md)**: Native RAG and Embeddings.
+- **[Plugin Standards](docs/plugins/standard.md)**: Official architecture guidelines for plugins.
 - **[Contributing](CONTRIBUTING.md)**: Guidelines for PRs and issues.
 
 ---

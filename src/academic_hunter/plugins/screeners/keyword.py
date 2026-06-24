@@ -1,4 +1,4 @@
-from .base_screener import BaseScreener
+from .base import BaseScreener
 from typing import Dict, Any
 
 class KeywordScreener(BaseScreener):

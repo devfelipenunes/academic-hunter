@@ -1,4 +1,4 @@
-from .base_store import BaseVectorStore
+from .base import BaseVectorStore
 from typing import List, Dict, Any
 
 class ChromaVectorStore(BaseVectorStore):
