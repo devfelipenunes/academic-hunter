@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "academic-hunter": {
+      "command": "/l/disk0/fnunes/Documentos/me/pesquisa_academica/venv/bin/python",
+      "args": [
+        "-m",
+        "academic_hunter.interfaces.mcp.server"
+      ],
+      "env": {
+        "PYTHONPATH": "/l/disk0/fnunes/Documentos/me/pesquisa_academica/src"
+      }
+    }
+  }
+}

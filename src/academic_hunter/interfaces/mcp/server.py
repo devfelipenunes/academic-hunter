@@ -1,5 +1,5 @@
 from mcp.server.fastmcp import FastMCP
-from .config_tools import read_config, update_config
+from .config_tools import read_config, update_config, list_config_history, restore_config_by_id
 from .search_tools import run_search, read_latest_report
 from .discovery_tools import fetch_paper_by_doi, explore_citation_graph, fetch_multiple_abstracts, quick_topic_discovery
 
@@ -14,6 +14,8 @@ def create_mcp_server() -> FastMCP:
     mcp.tool()(read_latest_report)
     mcp.tool()(read_config)
     mcp.tool()(update_config)
+    mcp.tool()(list_config_history)
+    mcp.tool()(restore_config_by_id)
     mcp.tool()(fetch_paper_by_doi)
     mcp.tool()(explore_citation_graph)
     mcp.tool()(fetch_multiple_abstracts)
