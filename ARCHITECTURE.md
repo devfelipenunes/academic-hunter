@@ -34,6 +34,8 @@ graph TD
     subgraph Plugins["Plugins (Infrastructure Layer)"]
         Connectors["API Connectors"]:::plugin
         Exporters["CSV & Markdown Exporters"]:::plugin
+        Screeners["Screeners (NLP/Keyword)"]:::plugin
+        VectorStores["Vector Stores (ChromaDB)"]:::plugin
     end
 
     %% Relationships
@@ -57,7 +59,11 @@ graph TD
 ## Directory Structure Explained
 
 1. **`src/academic_hunter/core/`**: The brain of the project. Contains the business logic for deduplication, relevance scoring, and the search pipeline. It has zero knowledge of MCP or CLI.
-2. **`src/academic_hunter/plugins/`**: Adapters for external services (Connectors for APIs and Exporters for Markdown/CSV).
+2. **`src/academic_hunter/plugins/`**: Adapters for external services.
+    - `connectors/` (APIs like Semantic Scholar)
+    - `exporters/` (Markdown/CSV)
+    - `screeners/` (NLP Semantic Evaluators)
+    - `vector_stores/` (RAG / ChromaDB Storage)
 3. **`src/academic_hunter/interfaces/`**: The entry points. 
     - `interfaces/mcp/` exposes the Core as an MCP Server using FastMCP. 
     - (Future) `interfaces/cli/` or `interfaces/api/` can be added here.
