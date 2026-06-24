@@ -2,7 +2,8 @@ import os
 import json
 import pytest
 from unittest.mock import patch
-from academic_hunter.interfaces.mcp.config_tools import read_config, update_config, SearchConfigUpdate, list_config_history, restore_config_by_id
+from academic_hunter.interfaces.mcp.tools.configuration import read_config, update_config, list_config_history, restore_config_by_id
+from academic_hunter.interfaces.mcp.schemas.config_schema import SearchConfigUpdate
 
 @pytest.fixture
 def temp_config_file(tmp_path):
@@ -27,7 +28,7 @@ def test_read_config(temp_config_file):
 
 def test_update_config_and_history(temp_config_file):
     # Mocking the database to avoid writing to the real `.gemini` folder during tests
-    with patch('academic_hunter.interfaces.mcp.config_tools.MCPDatabaseManager') as MockDB:
+    with patch('academic_hunter.interfaces.mcp.tools.configuration.MCPDatabaseManager') as MockDB:
         mock_db_instance = MockDB.return_value
         
         config_update = SearchConfigUpdate(
@@ -45,7 +46,7 @@ def test_update_config_and_history(temp_config_file):
         assert mock_db_instance.save_config.call_count == 2
 
 def test_list_config_history():
-    with patch('academic_hunter.interfaces.mcp.config_tools.MCPDatabaseManager') as MockDB:
+    with patch('academic_hunter.interfaces.mcp.tools.configuration.MCPDatabaseManager') as MockDB:
         mock_db_instance = MockDB.return_value
         mock_db_instance.list_configs.return_value = [{"id": 1, "topic": "Test"}]
         
@@ -53,7 +54,7 @@ def test_list_config_history():
         assert "Test" in result
 
 def test_restore_config_by_id(temp_config_file):
-    with patch('academic_hunter.interfaces.mcp.config_tools.MCPDatabaseManager') as MockDB:
+    with patch('academic_hunter.interfaces.mcp.tools.configuration.MCPDatabaseManager') as MockDB:
         mock_db_instance = MockDB.return_value
         mock_db_instance.get_config.return_value = {"settings": {"start_year": 1999}}
         

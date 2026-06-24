@@ -2,7 +2,7 @@ import os
 import json
 import pytest
 from unittest.mock import patch
-from academic_hunter.interfaces.mcp.obsidian_tools import export_to_obsidian
+from academic_hunter.interfaces.mcp.tools.obsidian import export_to_obsidian
 
 def test_export_to_obsidian_no_path():
     # Sem configurar obsidian_vault_path
@@ -18,7 +18,7 @@ def test_export_to_obsidian_success(tmp_path):
     with open(config_path, "w") as f:
         json.dump({"settings": {"obsidian_vault_path": vault_path}}, f)
         
-    with patch('academic_hunter.interfaces.mcp.obsidian_tools.HunterConfig') as MockConfig:
+    with patch('academic_hunter.interfaces.mcp.tools.obsidian.HunterConfig') as MockConfig:
         mock_instance = MockConfig.return_value
         mock_instance.settings = {"obsidian_vault_path": vault_path}
         

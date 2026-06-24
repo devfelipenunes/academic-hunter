@@ -1,7 +1,7 @@
 from unittest.mock import patch, MagicMock
-from academic_hunter.interfaces.mcp.discovery_tools import explore_citation_graph, fetch_paper_by_doi, fetch_multiple_abstracts, quick_topic_discovery
+from academic_hunter.interfaces.mcp.tools.discovery import explore_citation_graph, fetch_paper_by_doi, fetch_multiple_abstracts, quick_topic_discovery
 
-@patch("academic_hunter.interfaces.mcp.discovery_tools.requests.get")
+@patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
 def test_explore_citation_graph(mock_get):
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -18,7 +18,7 @@ def test_explore_citation_graph(mock_get):
     assert "2024" in result
     mock_get.assert_called_once()
 
-@patch("academic_hunter.interfaces.mcp.discovery_tools.AcademicHunter")
+@patch("academic_hunter.interfaces.mcp.tools.discovery.AcademicHunter")
 def test_fetch_paper_by_doi(mock_hunter_class):
     mock_instance = MagicMock()
     mock_instance.fetch_abstract_by_doi.return_value = "This is a test abstract."
@@ -27,7 +27,7 @@ def test_fetch_paper_by_doi(mock_hunter_class):
     result = fetch_paper_by_doi("10.1234/test")
     assert "This is a test abstract." in result
 
-@patch("academic_hunter.interfaces.mcp.discovery_tools.AcademicHunter")
+@patch("academic_hunter.interfaces.mcp.tools.discovery.AcademicHunter")
 def test_fetch_multiple_abstracts(mock_hunter_class):
     mock_instance = MagicMock()
     # Retorna abstracts diferentes baseados no DOI
@@ -40,7 +40,7 @@ def test_fetch_multiple_abstracts(mock_hunter_class):
     assert "Abstract for 10.1/A" in result
     assert mock_instance.fetch_abstract_by_doi.call_count == 2
 
-@patch("academic_hunter.interfaces.mcp.discovery_tools.requests.get")
+@patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
 def test_quick_topic_discovery(mock_get):
     mock_response = MagicMock()
     mock_response.status_code = 200

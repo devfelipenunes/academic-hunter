@@ -1,9 +1,9 @@
 import os
 import pytest
 from unittest.mock import patch, MagicMock
-from academic_hunter.interfaces.mcp.search_tools import run_search, read_latest_report
+from academic_hunter.interfaces.mcp.tools.search import run_search, read_latest_report
 
-@patch("academic_hunter.interfaces.mcp.search_tools.AcademicHunter")
+@patch("academic_hunter.interfaces.mcp.tools.search.AcademicHunter")
 def test_run_search(mock_hunter_class):
     mock_instance = MagicMock()
     fake_report_path = os.path.join(os.getcwd(), "results", "RELATORIO_ELITE_123.md")
