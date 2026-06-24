@@ -57,7 +57,7 @@ By turning the Core Engine into an MCP Server, AI Agents can now:
 
 1. Copy the configuration template and fill in your search parameters:
    ```bash
-   cp config.example.json config.json
+   cp examples/config.json config.json
    ```
 
 2. Run the main script:
@@ -95,7 +95,7 @@ Restart your client. Your LLM now has full control over the DeSci OSINT engine!
 ---
 
 ## 📚 Documentation
-- **[Architecture](ARCHITECTURE.md)**: Deep dive into the Hexagonal design.
+- **[Architecture](docs/architecture.md)**: Deep dive into the Hexagonal design.
 - **[Core Engine](docs/core_engine.md)**: Detailed breakdown of the Python internals (`pipeline`, `nlp`, `engine`).
 - **[Plugin: Screeners](docs/plugins/screeners.md)**: NLP and Relevance engines.
 - **[Plugin: Vector Stores](docs/plugins/vector_stores.md)**: Native RAG and Embeddings.
