@@ -4,7 +4,10 @@ The Model Context Protocol (MCP) allows Large Language Models to interact direct
 
 ## Connecting to Claude Desktop
 
-If you use Claude Desktop, you can add Academic Hunter as a custom tool server.
+> [!TIP]
+> **Auto-Install Magic:** You can simply run `python install.py` from the root of this project and it will automatically find your `claude_desktop_config.json` and inject the MCP server with the correct absolute paths for you!
+
+If you prefer to do it manually:
 
 1. Open your Claude Desktop configuration file:
    - **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
