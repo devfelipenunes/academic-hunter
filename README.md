@@ -5,7 +5,6 @@
   [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![MCP Ready](https://img.shields.io/badge/Protocol-MCP_Ready-orange.svg)](https://modelcontextprotocol.io/)
-  <a href="https://smithery.ai/server/academic-hunter"><img alt="Smithery Badge" src="https://smithery.ai/badge/academic-hunter"></a>
 </div>
 
 <br/>
@@ -27,18 +26,6 @@ Built with a **Hexagonal Architecture**, it serves two masters: it can be run as
 ---
 
 ## 🚀 Quickstart
-
-### Track A: Use via Claude Desktop (Zero-Code)
-
-The easiest way to use Academic Hunter is to install it as a tool for your AI assistant via Smithery:
-
-```bash
-npx -y @smithery/cli install academic-hunter --client claude
-```
-
-*(You can now ask Claude: "Run a full systematic review on Zero-Knowledge Proofs in CBDCs" and watch the magic happen).*
-
-### Track B: Use as a Python CLI (Data Engineers)
 
 1. **Clone & Install:**
    ```bash
