@@ -40,3 +40,8 @@ path = "src/academic_hunter/__init__.py"
 [tool.pyright]
 include = ["src"]
 extraPaths = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests that hit real external APIs (deselect with '-m \"not integration\"')"
+]
