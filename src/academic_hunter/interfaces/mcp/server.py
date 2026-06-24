@@ -2,6 +2,7 @@ from mcp.server.fastmcp import FastMCP
 from .config_tools import read_config, update_config, list_config_history, restore_config_by_id
 from .search_tools import run_search, read_latest_report
 from .discovery_tools import fetch_paper_by_doi, explore_citation_graph, fetch_multiple_abstracts, quick_topic_discovery
+from .obsidian_tools import export_to_obsidian
 
 def create_mcp_server() -> FastMCP:
     """
@@ -20,6 +21,7 @@ def create_mcp_server() -> FastMCP:
     mcp.tool()(explore_citation_graph)
     mcp.tool()(fetch_multiple_abstracts)
     mcp.tool()(quick_topic_discovery)
+    mcp.tool()(export_to_obsidian)
     
     return mcp
 
