@@ -8,7 +8,7 @@ class MCPDatabaseManager:
     def __init__(self, db_path: Optional[str] = None):
         if not db_path:
             project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
-            db_dir = os.path.join(project_root, ".gemini")
+            db_dir = os.path.join(project_root, ".academic_hunter")
             if not os.path.exists(db_dir):
                 os.makedirs(db_dir, exist_ok=True)
             self.db_path = os.path.join(db_dir, "mcp_history.db")
