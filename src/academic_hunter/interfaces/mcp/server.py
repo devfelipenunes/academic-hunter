@@ -6,11 +6,11 @@ from .tools.obsidian import export_to_obsidian
 
 def create_mcp_server() -> FastMCP:
     """
-    Instancia o servidor FastMCP e registra as ferramentas disponíveis para os LLMs.
+    Instantiate the FastMCP server and register the tools available to the LLMs.
     """
-    mcp = FastMCP("Academic Hunter MCP")
+    mcp = FastMCP("academic-hunter", dependencies=["requests", "pandas", "bibtexparser"])
     
-    # Registrando as ferramentas
+    # Register tools
     mcp.tool()(run_search)
     mcp.tool()(read_latest_report)
     mcp.tool()(read_config)

@@ -10,7 +10,6 @@ class HunterConfig:
         self.config_path = Path(config_path)
         if not self.config_path.exists():
             # Fallback for MCP servers running from different CWDs
-            # Resolve relative to the location of this file (src/academic_hunter/core/infra/config.py -> project_root)
             project_root = Path(__file__).parent.parent.parent.parent.parent
             fallback_path = project_root / 'config.json'
             if fallback_path.exists():
@@ -20,6 +19,9 @@ class HunterConfig:
         self.anchors: Dict[str, list] = {}
         self.tech_strings: Dict[str, list] = {}
         self.tech_weights: Dict[str, float] = {}
+        self.context_rules: Dict[str, list] = {}
+        self.keyword_only_terms: list[str] = []
+        self.keyword_only_category: str = ""
         self.blocked_sources: Set[str] = set()
         self.pacing_delays: Dict[str, float] = {}
         
@@ -42,21 +44,27 @@ class HunterConfig:
             self.anchors = config.get('anchors', {})
             self.tech_strings = config.get('technical_strings', {})
             self.tech_weights = config.get('technical_weights', {})
+            self.context_rules = config.get('context_rules', {})
+            self.keyword_only_terms = config.get('keyword_only_terms', [])
+            self.keyword_only_category = config.get('keyword_only_category', '')
             
             # Default fallbacks for keyword-only search configurations
-            if "keyword_only_terms" not in self.settings:
-                self.settings["keyword_only_terms"] = [
+            if not self.keyword_only_terms:
+                self.keyword_only_terms = [
                     "ledger", "payment", "interoperability", "settlement", "blockchain"
                 ]
-            if "keyword_only_category" not in self.settings:
-                self.settings["keyword_only_category"] = "Consolidated_Fintech"
+            if not self.keyword_only_category:
+                self.keyword_only_category = "Consolidated_Fintech"
 
     def save(self):
         config = {
             "settings": self.settings,
             "anchors": self.anchors,
             "technical_strings": self.tech_strings,
-            "technical_weights": self.tech_weights
+            "technical_weights": self.tech_weights,
+            "context_rules": self.context_rules,
+            "keyword_only_terms": self.keyword_only_terms,
+            "keyword_only_category": self.keyword_only_category
         }
         with open(self.config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=4, ensure_ascii=False)

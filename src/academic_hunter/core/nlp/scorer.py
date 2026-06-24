@@ -4,10 +4,11 @@ from typing import List, Dict, Any
 
 class AcademicScorer:
     """Calculates relevance scores, detects anchors and normalizes terms for academic search."""
-    def __init__(self, anchors: Dict[str, List[str]], tech_strings: Dict[str, List[str]], tech_weights: Dict[str, float], settings: Dict[str, Any]):
+    def __init__(self, anchors: Dict[str, List[str]], tech_strings: Dict[str, List[str]], tech_weights: Dict[str, float], context_rules: Dict[str, List[str]], settings: Dict[str, Any]):
         self.anchors = anchors
         self.tech_strings = tech_strings
         self.tech_weights = tech_weights
+        self.context_rules = context_rules
         self.settings = settings
         
         # Pre-compile patterns
@@ -72,11 +73,10 @@ class AcademicScorer:
             return False
         found_list = [t.strip().lower() for t in matched_terms_str.split(',') if t.strip()]
         
-        context_rules = self.settings.get("context_rules", {})
         text_lower = str(text).lower()
         
         for term in found_list:
-            required_keywords = context_rules.get(term)
+            required_keywords = self.context_rules.get(term)
             if required_keywords:
                 if not any(cw in text_lower for cw in required_keywords):
                     return False

@@ -16,7 +16,6 @@ class MarkdownEliteExporter(BaseExporter):
         run_dir = self._get_run_dir(timestamp, output_dir)
         report_file = run_dir / f"RELATORIO_ELITE_{timestamp}.md"
         
-        # Sort papers by relevance score desc before exporting
         sorted_papers = sorted(papers, key=lambda x: x.get("Relevance_Score", 0.0), reverse=True)
         
         with open(report_file, 'w', encoding='utf-8') as f:

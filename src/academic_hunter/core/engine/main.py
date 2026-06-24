@@ -31,7 +31,7 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
         self.state = SearchState()
         self.scorer = AcademicScorer(
             self.config.anchors, self.config.tech_strings,
-            self.config.tech_weights, self.config.settings
+            self.config.tech_weights, self.config.context_rules, self.config.settings
         )
 
         # Instantiate connectors using plugin registry
