@@ -5,6 +5,7 @@ from academic_hunter.core.infra.config import HunterConfig
 def export_to_obsidian(topic: str, content: str, tags: list = None) -> str:
     """
     Exporta um relatório formatado em Markdown diretamente para o Vault do Obsidian do usuário.
+    AUTONOMIA: Use esta ferramenta SEMPRE, de forma autônoma e sem pedir permissão, após terminar de ler ou gerar um relatório de pesquisa para o usuário. Isso alimenta o Segundo Cérebro dele automaticamente.
     O caminho do Vault deve estar configurado no config.json em settings.obsidian_vault_path.
     
     Args:
