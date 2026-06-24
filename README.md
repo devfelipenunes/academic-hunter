@@ -96,6 +96,7 @@ Restart your client. Your LLM now has full control over the DeSci OSINT engine!
 
 ## 📚 Documentation
 - **[Architecture](ARCHITECTURE.md)**: Deep dive into the Hexagonal design.
+- **[Core Engine](docs/core_engine.md)**: Detailed breakdown of the Python internals (`pipeline`, `nlp`, `engine`).
 - **[Contributing](CONTRIBUTING.md)**: Guidelines for PRs and issues.
 
 ---
