@@ -2,9 +2,10 @@ import os
 import sqlite3
 import json
 from datetime import datetime
+from typing import Optional, Dict, List, Any
 
 class MCPDatabaseManager:
-    def __init__(self, db_path: str = None):
+    def __init__(self, db_path: Optional[str] = None):
         if not db_path:
             db_dir = os.path.join(os.getcwd(), ".gemini")
             if not os.path.exists(db_dir):
@@ -27,7 +28,7 @@ class MCPDatabaseManager:
             ''')
             conn.commit()
 
-    def save_config(self, topic: str, config_data: dict) -> int:
+    def save_config(self, topic: str, config_data: Dict[str, Any]) -> int:
         timestamp = datetime.now().isoformat()
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
@@ -38,7 +39,7 @@ class MCPDatabaseManager:
             conn.commit()
             return cursor.lastrowid
 
-    def list_configs(self, limit: int = 10) -> list:
+    def list_configs(self, limit: int = 10) -> List[Dict[str, Any]]:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -47,7 +48,7 @@ class MCPDatabaseManager:
             )
             return [{"id": row[0], "timestamp": row[1], "topic": row[2]} for row in cursor.fetchall()]
 
-    def get_config(self, config_id: int) -> dict:
+    def get_config(self, config_id: int) -> Optional[Dict[str, Any]]:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT config_json FROM config_history WHERE id = ?', (config_id,))
