@@ -1,35 +1,13 @@
 import json
 from typing import Dict, List, Optional
-from pydantic import BaseModel, Field
 from academic_hunter.core.infra.config import HunterConfig
-from .memory.db_manager import MCPDatabaseManager
-
-class SearchConfigUpdate(BaseModel):
-    topic: Optional[str] = Field(
-        None,
-        description="Um nome curto para descrever esta configuração (ex: 'Blockchain Gov 2023'). Usado para o registro no banco de dados."
-    )
-    settings: Optional[Dict] = Field(
-        None, 
-        description="Configurações gerais. Ex: {'min_relevance_score': 3.5, 'start_year': 2023}"
-    )
-    anchors: Optional[Dict[str, List[str]]] = Field(
-        None, 
-        description="Categorias principais de busca. Ex: {'Blockchain_Gov': ['CBDC', 'E-government', 'Smart Contracts']}"
-    )
-    technical_strings: Optional[Dict[str, List[str]]] = Field(
-        None, 
-        description="Termos técnicos secundários para filtrar. Ex: {'Consensus': ['Proof of Authority', 'Hyperledger']}"
-    )
-    technical_weights: Optional[Dict[str, float]] = Field(
-        None, 
-        description="Pesos para palavras específicas. Ex: {'cbdc': 5.0, 'hyperledger': 4.0}"
-    )
+from ..schemas.config_schema import SearchConfigUpdate
+from ..memory.sqlite_store import MCPDatabaseManager
 
 def read_config() -> str:
     """
-    Reads the current search configurations.
-    Useful for inspecting the current search parameters (keywords, limit_per_source, year_start, etc) before updating them.
+    Retorna a configuração de pesquisa atual inteira do arquivo config.json em formato string JSON.
+    Use esta ferramenta para verificar quais âncoras (anchors) ou technical_strings estão configuradas atualmente.
     """
     try:
         config = HunterConfig()
