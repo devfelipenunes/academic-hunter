@@ -3,4 +3,7 @@ build:
 startCommand:
   type: stdio
   config:
-    command: academic-mcp
+    command: python
+    args:
+      - -m
+      - academic_hunter.interfaces.mcp.server
