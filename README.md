@@ -38,14 +38,34 @@ Built with a **Hexagonal Architecture**, it serves two masters: it can be run as
 2. **Configure your Research Anchors:**
    *(Edit the generated `config.json` with your specific market keywords and technical weights).*
 
-3. **Hunt:**
+3. **Hunt (Command-Line Interface):**
+   To run the main engine and sweep all academic databases simultaneously, activate the virtual environment created during installation and execute the command:
+   
    ```bash
+   source venv/bin/activate  # (No Windows: venv\Scripts\activate)
    academic-hunter
    ```
-   *Results will be generated in the `results/` directory as rich CSV datasets and Markdown reports.*
+   
+   *Note: By default, running `academic-hunter` will use the global limit defined in your `config.json` (`limit_per_query` field). If you want to limit or expand the results for a quick test, you can force a value with the flag:*
+   ```bash
+   academic-hunter --limit 5
+   ```
+   *Results will be generated in the `results/` directory as rich CSV datasets, Prisma flows, and Markdown reports.*
 
 ---
 
+## ⚙️ The Brain: `config.json`
+
+The `config.json` file is the heart of Academic Hunter. Unlike common scrapers that just pull everything they find, Hunter uses this file to act as an experienced researcher, filtering noise and mathematically scoring the relevance of each article. 
+
+It improves results by focusing on four main pillars:
+
+1. **`settings`**: Defines research limits, minimum cut-off score (`min_relevance_score`), start year (`start_year`), and your **API keys**. Placing API keys here (like Semantic Scholar) prevents *Rate Limit* errors, speeds up extraction, and opens doors to deeper metadata.
+2. **`anchors`**: Your primary research categories (e.g., "Digital Wallets", "Interbank Settlement"). The engine will only analyze papers that intersect with these core industry themes, immediately eliminating academic research with no market application.
+3. **`technical_strings`**: Deep technical terms (e.g., "zero-knowledge proof", "ISO 20022"). The algorithm reads the Title and Abstract of each article looking for these terms to verify the degree of technological sophistication of that paper.
+4. **`technical_weights`**: The secret of the NLP algorithm. You assign numerical "weights" (e.g., 5.0, 3.0) to each technical term. If the engine finds the terms in the paper, it adds the points (giving extra multipliers if it is in the title). Only papers that pass the `min_relevance_score` survive and enter your Master Report!
+
+---
 ## 🏛️ Architecture & Documentation
 
 Academic Hunter is designed for massive scalability without Spaghetti Code. Dive into our internal documentation to build your own plugins:
