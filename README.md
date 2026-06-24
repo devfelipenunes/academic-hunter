@@ -31,14 +31,12 @@ Built with a **Hexagonal Architecture**, it serves two masters: it can be run as
    ```bash
    git clone https://github.com/devfelipenunes/academic-hunter.git
    cd academic-hunter
-   pip install -e .
+   python install.py
    ```
+   *(The automated installer will set up your environment and optionally inject the MCP server into Claude Desktop for you).*
 
 2. **Configure your Research Anchors:**
-   ```bash
-   cp config.example.json config.json
-   ```
-   *(Edit `config.json` with your specific market keywords and technical weights).*
+   *(Edit the generated `config.json` with your specific market keywords and technical weights).*
 
 3. **Hunt:**
    ```bash
