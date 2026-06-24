@@ -18,7 +18,6 @@ class SearchPipeline:
 
         is_keyword_only = getattr(connector, "is_keyword_only", False)
 
-        # Determine the fetch function to use
         if fetch_func is not None:
             fetch_fn = fetch_func
         else:
@@ -30,14 +29,12 @@ class SearchPipeline:
 
         for anchor_cat, anchor_list in self.hunter.anchors.items():
             if is_keyword_only:
-                # Query using dynamic config terms with fallback list
-                # Query using dynamic config terms
-                tech_list = self.hunter.settings["keyword_only_terms"]
+                tech_list = self.hunter.config.keyword_only_terms
                 try:
                     results = fetch_fn(anchor_list, tech_list, limit=limit_per_source)
                     if results:
                         for paper in results:
-                            consolidated_cat = self.hunter.settings["keyword_only_category"]
+                            consolidated_cat = self.hunter.config.keyword_only_category
                             self.hunter._process_paper(paper, anchor_cat, consolidated_cat, anchor_list, tech_list)
                 except Exception as e:
                     logger.error(f"[{source_name} Worker] {e}")
@@ -59,11 +56,9 @@ class SearchPipeline:
         logger.info("🚀 Initializing Multi-Threaded Academic Hunter V2 Pipeline...")
         timestamp = time.strftime("%Y%m%d_%H%M%S")
 
-        # Reset runtime stats
         self.hunter.state.reset(list(self.hunter.connectors.keys()))
         self.hunter.last_request_time = time.time()
 
-        # Spawn concurrent workers only for active connectors
         threads = []
         for src, conn in self.hunter.connectors.items():
             domain = getattr(conn, "domain", "")
@@ -80,23 +75,18 @@ class SearchPipeline:
         elapsed = round(time.time() - self.hunter.last_request_time, 2)
         logger.info(f"⏱️ Mining completed in {elapsed} seconds.")
 
-        # Process qualifiers enrichment
         self.hunter.enrich_missing_abstracts()
 
-        # First export pass: write all raw consolidated results
         self.hunter.export_results(timestamp)
         self.hunter.generate_prisma_report(timestamp)
 
-        # Post-process final collection to filter items lower than the score threshold
         final_qualifiers = {
             slug: paper for slug, paper in self.hunter.consolidated_results.items()
             if paper.get("Relevance_Score", 0.0) >= self.hunter.settings.get('min_relevance_score', 5.0)
         }
 
-        # Update exporter results list to enriched final qualifiers only
         self.hunter.consolidated_results = final_qualifiers
 
-        # Second export pass: overwrite standard reports with final qualifiers
         self.hunter.export_results(timestamp)
 
         logger.info("💎 PIPELINE FINISHED!")

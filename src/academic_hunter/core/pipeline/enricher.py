@@ -29,7 +29,6 @@ class AbstractEnricher:
             if priority > 0:
                 resolving_connectors.append((priority, connector))
 
-        # Sort by priority in descending order
         resolving_connectors.sort(key=lambda x: x[0], reverse=True)
 
         # 2. Try resolving using sorted connectors

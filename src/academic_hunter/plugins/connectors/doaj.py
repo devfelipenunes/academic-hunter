@@ -57,14 +57,12 @@ class DoajConnector(BaseConnector):
                 journal = bibjson.get('journal', {})
                 venue = journal.get('title') or "Unknown Venue"
 
-                # Extract DOI
                 doi = None
                 for ident in bibjson.get('identifier', []):
                     if ident.get('type') == 'doi':
                         doi = ident.get('id')
                         break
 
-                # Extract URL
                 article_url = ""
                 for link in bibjson.get('link', []):
                     if link.get('url'):

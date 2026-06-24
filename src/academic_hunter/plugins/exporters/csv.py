@@ -22,7 +22,6 @@ class CsvExporter(BaseExporter):
         df = pd.DataFrame(papers)
         df['Database_Count'] = df['Source'].apply(get_db_count)
         
-        # Sort by Relevance Score desc
         df = df.sort_values(by='Relevance_Score', ascending=False)
         
         run_dir = self._get_run_dir(timestamp, output_dir)

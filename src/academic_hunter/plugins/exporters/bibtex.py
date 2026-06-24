@@ -31,7 +31,6 @@ class BibtexExporter(BaseExporter):
                 f.write(f"  year = {{{year}}},\n")
                 f.write(f"  url = {{{row.get('URL', '')}}},\n")
                 f.write(f"  doi = {{{row.get('DOI', '')}}},\n")
-                # Clean up abstract text for bibtex
                 abstract = str(row.get('Abstract', '')).replace('{', '\\{').replace('}', '\\}')
                 f.write(f"  abstract = {{{abstract}}}\n")
                 f.write("}\n\n")

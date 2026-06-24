@@ -6,6 +6,7 @@ import time
 import requests
 import json
 from typing import List, Dict, Any, Optional
+from datetime import datetime, timezone
 
 logger = logging.getLogger("academic_hunter.connectors")
 
@@ -86,13 +87,41 @@ class BaseConnector:
                 try:
                     resp = requests.get(url, params=params, headers=headers, timeout=timeout)
                     if resp.status_code == 429:
+                        retry_after_sec = 30  # default backoff if no header is present
+                        
+                        # 1. Standard Retry-After header (ex: OpenAlex)
+                        if 'Retry-After' in resp.headers:
+                            try:
+                                retry_after_sec = int(resp.headers['Retry-After'])
+                            except ValueError:
+                                pass
+                        
+                        # 2. Custom header like X-Ratelimit-Retry-After (ex: CORE)
+                        elif 'X-Ratelimit-Retry-After' in resp.headers:
+                            try:
+                                ts_str = resp.headers['X-Ratelimit-Retry-After']
+                                dt_target = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+                                dt_now = datetime.now(timezone.utc)
+                                diff = (dt_target - dt_now).total_seconds()
+                                if diff > 0:
+                                    retry_after_sec = int(diff) + 1
+                            except Exception:
+                                pass
+                                
+                        # Safety lock: if wait is >60s, block source to avoid halting the engine
+                        if retry_after_sec > 60:
+                            logger.error(f"HTTP 429 from {domain}. API requested wait of {retry_after_sec}s. Too long! Blocking source immediately.")
+                            with self.lock:
+                                self.blocked_sources.add(domain)
+                            return None
+                        
                         if attempt < max_retries - 1:
                             with self.lock:
                                 old_delay = self.pacing_delays.get(domain, self.default_delay)
                                 new_delay = old_delay * 2.0
                                 self.pacing_delays[domain] = new_delay
-                                logger.warning(f"HTTP 429 from {domain}. Escalating pacing: {old_delay}s -> {new_delay}s.")
-                            time.sleep(30)
+                                logger.warning(f"HTTP 429 from {domain}. Waiting {retry_after_sec}s. Escalating pacing: {old_delay}s -> {new_delay}s.")
+                            time.sleep(retry_after_sec)
                             continue
                         else:
                             logger.error(f"HTTP 429 from {domain}. Max retries exceeded. Blocking source.")

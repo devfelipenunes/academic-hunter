@@ -28,7 +28,6 @@ class RisExporter(BaseExporter):
                     f.write(f"PY  - {year}\n")
                 f.write(f"UR  - {row.get('URL', '')}\n")
                 f.write(f"DO  - {row.get('DOI', '')}\n")
-                # Abstract is N2
                 abstract = str(row.get('Abstract', '')).replace('\n', ' ')
                 f.write(f"N2  - {abstract}\n")
                 f.write("ER  - \n\n")

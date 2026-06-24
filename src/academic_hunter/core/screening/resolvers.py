@@ -52,7 +52,6 @@ class PaperResolver:
             if "Peer_Reviewed" not in paper:
                 paper["Peer_Reviewed"] = self.detect_peer_review(paper)
 
-            # Merge metadata
             if not isinstance(existing, Paper):
                 p = Paper(existing)
                 p.merge(paper, anchor_cat, tech_cat)
