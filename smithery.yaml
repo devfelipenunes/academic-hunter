@@ -1,9 +1,0 @@
-build:
-  command: pip install .
-startCommand:
-  type: stdio
-  config:
-    command: python
-    args:
-      - -m
-      - academic_hunter.interfaces.mcp.server
