@@ -1,0 +1,6 @@
+build:
+  command: pip install .
+startCommand:
+  type: stdio
+  config:
+    command: academic-mcp

@@ -1,106 +1,77 @@
-# Academic Hunter V2 🎯
-![Academic Hunter](https://img.shields.io/badge/Status-Active-success) ![Python](https://img.shields.io/badge/Python-3.12+-blue) ![MCP](https://img.shields.io/badge/Protocol-MCP_Ready-orange)
+<div align="center">
+  <h1>🎯 Academic Hunter V2</h1>
+  <p><b>Automated Systematic Literature Reviews for Decentralized Science (DeSci)</b></p>
 
-**Academic Hunter** is a professional OSINT (Open Source Intelligence) tool and **Multi-Agent MCP Server** designed for Decentralized Science (DeSci) and systematic literature reviews.
+  [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![MCP Ready](https://img.shields.io/badge/Protocol-MCP_Ready-orange.svg)](https://modelcontextprotocol.io/)
+  <a href="https://smithery.ai/server/academic-hunter"><img alt="Smithery Badge" src="https://smithery.ai/badge/academic-hunter"></a>
+</div>
 
-It automates the mining of high-impact scholarly articles across multiple global databases, ranking them using a sophisticated "Technical Elite Score", and exposes these capabilities to LLMs via the **Model Context Protocol (MCP)**.
+<br/>
 
----
+Academic Hunter is a professional Open Source Intelligence (OSINT) engine that automates the mining, deduplication, and mathematical relevance scoring of high-impact scholarly articles. 
 
-## 🌟 Dual-Track Architecture
-
-Academic Hunter is built with a **Hexagonal Architecture**. It can be used in two ways:
-
-### 1. The Core Engine (For Data Engineers & Researchers)
-Use the raw Python Engine to run massive, concurrent scrapes across multiple APIs.
-*   **Multi-Source Aggregation:** OpenAlex, Crossref, ArXiv, Semantic Scholar, CORE.ac.uk.
-*   **Elite Scoring Engine:** Dynamic relevance ranking with dynamic multipliers.
-*   **DOI-Based Deduplication:** Intelligent merging of results using DOIs.
-*   **Professional Reporting:** Generates CSV datasets and Markdown Master Reports.
-
-### 2. The Multi-Agent MCP Server (For AI Engineers & LLMs)
-Connect Academic Hunter directly to **Claude Desktop**, **Cursor**, or any MCP client.
-By turning the Core Engine into an MCP Server, AI Agents can now:
-*    autonomously perform **Quick Topic Discovery** via API.
-*    autonomously **Update Configuration** with optimal technical strings.
-*    autonomously **Execute Snowballing** (explore citation graphs).
-*    autonomously **Export to Obsidian** to build your Second Brain.
-
-(See the `docs/superpowers/agents/` directory for our Role-Playing Agent Prompts).
+Built with a **Hexagonal Architecture**, it serves two masters: it can be run as a raw Python CLI for Data Engineers, or plugged directly into your favorite Large Language Model (like Claude or Cursor) as an autonomous **Model Context Protocol (MCP)** server.
 
 ---
 
-## 📥 Installation
+## ✨ Features
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/youruser/academic-hunter.git
-   cd academic-hunter
-   ```
-
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/macOS
-   # or
-   .\venv\Scripts\activate   # Windows
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+- 🧠 **Elite Scoring Engine:** NLP and Keyword evaluators that score papers mathematically based on your research anchors.
+- 🔗 **Multi-Source Aggregation:** Concurrently scrapes Semantic Scholar, OpenAlex, Crossref, ArXiv, and CORE.ac.uk.
+- 🛡️ **Intelligent Deduplication:** Uses Strict-DOI and Fuzzy Title matching to eliminate academic noise.
+- 🤖 **Native MCP Server:** Let Claude autonomously explore citation graphs, configure search parameters, and export to your Obsidian Second Brain.
+- 🔌 **Plugin Architecture:** Easily hot-swap Vector Stores (Native RAG) and NLP Screeners.
 
 ---
 
-## 🏃 Usage Track A: Python CLI
+## 🚀 Quickstart
 
-1. Copy the configuration template and fill in your search parameters:
+### Track A: Use via Claude Desktop (Zero-Code)
+
+The easiest way to use Academic Hunter is to install it as a tool for your AI assistant via Smithery:
+
+```bash
+npx -y @smithery/cli install academic-hunter --client claude
+```
+
+*(You can now ask Claude: "Run a full systematic review on Zero-Knowledge Proofs in CBDCs" and watch the magic happen).*
+
+### Track B: Use as a Python CLI (Data Engineers)
+
+1. **Clone & Install:**
+   ```bash
+   git clone https://github.com/fnunes/pesquisa_academica.git
+   cd pesquisa_academica
+   pip install -e .
+   ```
+
+2. **Configure your Research Anchors:**
    ```bash
    cp config.example.json config.json
    ```
+   *(Edit `config.json` with your specific market keywords and technical weights).*
 
-2. Run the main script:
+3. **Hunt:**
    ```bash
-   python main.py
+   academic-hunter
    ```
-
-The tool will save results in the `results/` directory (`.csv` and `.md`).
-
----
-
-## 🤖 Usage Track B: MCP Server
-
-To use Academic Hunter as an AI Tool inside Claude Desktop or Cursor IDE, add the following to your MCP configuration file (`mcp.json` or `claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "academic-hunter": {
-      "command": "/absolute/path/to/academic-hunter/venv/bin/python",
-      "args": [
-        "-m",
-        "academic_hunter.interfaces.mcp.server"
-      ],
-      "env": {
-        "PYTHONPATH": "/absolute/path/to/academic-hunter/src"
-      }
-    }
-  }
-}
-```
-
-Restart your client. Your LLM now has full control over the DeSci OSINT engine!
+   *Results will be generated in the `results/` directory as rich CSV datasets and Markdown reports.*
 
 ---
 
-## 📚 Documentation
-- **[Architecture](docs/architecture.md)**: Deep dive into the Hexagonal design.
-- **[Core Engine](docs/core_engine.md)**: Detailed breakdown of the Python internals (`pipeline`, `nlp`, `engine`).
-- **[Plugin: Screeners](docs/plugins/screeners.md)**: NLP and Relevance engines.
-- **[Plugin: Vector Stores](docs/plugins/vector_stores.md)**: Native RAG and Embeddings.
-- **[Plugin Standards](docs/plugins/standard.md)**: Official architecture guidelines for plugins.
-- **[Contributing](CONTRIBUTING.md)**: Guidelines for PRs and issues.
+## 🏛️ Architecture & Documentation
+
+Academic Hunter is designed for massive scalability without Spaghetti Code. Dive into our internal documentation to build your own plugins:
+
+- 🗺️ **[Hexagonal Architecture Map](docs/architecture.md)**
+- ⚙️ **[The Core Engine](docs/core_engine.md)**
+- 🧩 **[How to Build NLP Screener Plugins](docs/plugins/screeners.md)**
+- 🗄️ **[How to Build Vector Store Plugins](docs/plugins/vector_stores.md)**
+- 🤝 **[Contributing Guidelines](CONTRIBUTING.md)**
 
 ---
-*Developed for advanced academic and industrial research in financial technologies and beyond.*
+<div align="center">
+  <i>Developed for advanced academic and industrial research. Let the Hunter do the digging.</i>
+</div>
