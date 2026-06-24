@@ -30,3 +30,7 @@ test_config_*.json
 *.log
 *.db
 archive/
+
+# Agent Planning Documents
+docs/superpowers/plans/
+docs/superpowers/specs/
