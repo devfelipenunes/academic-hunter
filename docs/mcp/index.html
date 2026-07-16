@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCP Tools Reference — Academic Hunter</title>
+  <meta name="description" content="Complete reference documentation for all 15 MCP tools of Academic Hunter. Parameters, types, examples, and setup guide.">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/mcp-docs.css">
+</head>
+<body>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="site-header">
+    <nav class="navbar" aria-label="Main navigation">
+      <a href="../" class="navbar-brand">
+        <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+          <rect width="28" height="28" rx="4" fill="var(--accent-subtle)"/>
+          <text x="14" y="19" text-anchor="middle" font-size="16" font-family="system-ui" font-weight="700" fill="var(--accent)">A</text>
+        </svg>
+        Academic Hunter
+      </a>
+
+      <button id="nav-toggle" class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <line x1="3" y1="5" x2="17" y2="5"/>
+          <line x1="3" y1="10" x2="17" y2="10"/>
+          <line x1="3" y1="15" x2="17" y2="15"/>
+        </svg>
+      </button>
+
+      <ul id="nav-links" class="navbar-links" role="list">
+        <li><a href="../">Home</a></li>
+        <li><a href="./" class="active">MCP Tools</a></li>
+        <li><a href="https://github.com/devfelipenunes/academic-hunter" target="_blank" rel="noopener">GitHub</a></li>
+        <li>
+          <button id="theme-toggle" class="theme-toggle" aria-label="Switch theme">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="8" cy="8" r="3"/>
+              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.5 2.5l1.5 1.5M12 12l1.5 1.5M2.5 13.5l1.5-1.5M12 4l1.5-1.5"/>
+            </svg>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container-wide">
+
+    <!-- ═══ BREADCRUMB ═══ -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../">Home</a>
+      <span class="sep">/</span>
+      <span>MCP Tools Reference</span>
+    </nav>
+
+    <!-- ═══ PAGE HEADER ═══ -->
+    <div class="page-header">
+      <h1>MCP Tools Reference</h1>
+      <p>
+        Academic Hunter exposes 15 tools via the Model Context Protocol (MCP).
+        Any MCP-compatible client — Claude Desktop, Cursor, or custom agents —
+        can drive the research pipeline autonomously.
+      </p>
+    </div>
+
+    <!-- ═══ SETUP QUICK REFERENCE ═══ -->
+    <section class="setup-box">
+      <h2>Setup</h2>
+      <p>
+        Add the following server configuration to your MCP client.
+        The auto-installer (<code>python install.py</code>) can do this for you.
+      </p>
+
+      <pre><code>{
+  "mcpServers": {
+    "academic-hunter": {
+      "command": "/path/to/academic-hunter/venv/bin/python",
+      "args": ["-m", "academic_hunter.interfaces.mcp.server"],
+      "env": {
+        "PYTHONPATH": "/path/to/academic-hunter/src"
+      }
+    }
+  }
+}</code></pre>
+
+      <p>
+        After connecting, the tools appear automatically in your MCP client.
+        Use the <code>quick_topic_discovery</code> tool first to identify jargon,
+        then configure your search via <code>update_config</code>, and run it with
+        <code>run_search</code>.
+      </p>
+    </section>
+
+    <!-- ═══ SEARCH & FILTER ═══ -->
+    <div class="tool-bar" role="search" aria-label="Filter tools">
+      <input
+        type="search"
+        id="tool-search"
+        class="tool-search"
+        placeholder="Search tools by name or description..."
+        aria-label="Search tools"
+      >
+      <div class="filter-group" role="tablist" aria-label="Category filter">
+        <button class="filter-btn active" data-category="all" role="tab" aria-selected="true">All</button>
+        <button class="filter-btn" data-category="config" role="tab">Configuration</button>
+        <button class="filter-btn" data-category="search" role="tab">Search</button>
+        <button class="filter-btn" data-category="discovery" role="tab">Discovery</button>
+        <button class="filter-btn" data-category="export" role="tab">Export</button>
+        <button class="filter-btn" data-category="rag" role="tab">RAG</button>
+      </div>
+    </div>
+
+    <!-- ═══ ═══ TOOLS ═══ ═══ -->
+
+    <!-- ──────────────── CONFIGURATION ──────────────── -->
+    <section class="cat-section" id="configuration">
+      <div class="cat-header">
+        <h2>Configuration</h2>
+        <span class="cat-count">4 tools</span>
+      </div>
+
+      <!-- Tool 1: read_config -->
+      <article class="tool-card" id="read_config" data-category="config"
+        data-name="read_config"
+        data-description="Returns the current full search configuration from config.json">
+        <div class="tool-card-header">
+          <h3><a href="#read_config">read_config</a></h3>
+          <span class="tool-category cat-config">Configuration</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Returns the current full search configuration from <code>config.json</code>.
+            Use this to check which anchors or technical strings are currently configured
+            before planning a search.
+          </p>
+          <div class="tool-sig">read_config() &rarr; str</div>
+          <p class="tool-returns"><strong>Returns:</strong> JSON string of the current configuration (settings, anchors, technical strings, weights, context rules).</p>
+          <pre><code># Example — ask your MCP client:
+"Read my current Academic Hunter config."
+
+# Result:
+{
+  "settings": {
+    "min_relevance_score": 3.5,
+    "start_year": 2021,
+    "limit_per_query": 100
+  },
+  "anchors": {
+    "Blockchain_Projects": ["CBDC", "digital currency"]
+  },
+  ...
+}</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 2: update_config -->
+      <article class="tool-card" id="update_config" data-category="config"
+        data-name="update_config"
+        data-description="Updates the search configuration in config.json with new anchors, terms, and weights">
+        <div class="tool-card-header">
+          <h3><a href="#update_config">update_config</a></h3>
+          <span class="tool-category cat-config">Configuration</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Updates the project's <code>config.json</code> with new research parameters.
+            A backup is automatically saved to the SQLite history before applying changes.
+            You can provide a full or partial <code>SearchConfigUpdate</code> object.
+          </p>
+          <div class="tool-sig">update_config(config_update: SearchConfigUpdate) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">topic</td>
+                <td class="param-type">Optional[str]</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">—</td>
+                <td>Short name for this config (e.g., "CBDC Latency 2025")</td>
+              </tr>
+              <tr>
+                <td class="param-name">research_strategy</td>
+                <td class="param-type">Optional[str]</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">—</td>
+                <td>Paragraph describing your research plan and taxonomy pillars</td>
+              </tr>
+              <tr>
+                <td class="param-name">settings</td>
+                <td class="param-type">Optional[Dict]</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">—</td>
+                <td>System settings (min_relevance_score, start_year, limit_per_query)</td>
+              </tr>
+              <tr>
+                <td class="param-name">anchors</td>
+                <td class="param-type">Optional[Dict]</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">—</td>
+                <td>Mandatory keyword groups. At least one term from each group must match.</td>
+              </tr>
+              <tr>
+                <td class="param-name">technical_strings</td>
+                <td class="param-type">Optional[Dict]</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">—</td>
+                <td>Taxonomy categories for your technical terms</td>
+              </tr>
+              <tr>
+                <td class="param-name">technical_weights</td>
+                <td class="param-type">Optional[Dict]</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">—</td>
+                <td>Weighted terms (5.0=core niche, 3.0=protocols, 1.5=generic)</td>
+              </tr>
+              <tr>
+                <td class="param-name">context_rules</td>
+                <td class="param-type">Optional[Dict[str, List[str]]]</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">—</td>
+                <td>Disambiguation rules — maps ambiguous terms to required context words</td>
+              </tr>
+              <tr>
+                <td class="param-name">keyword_only_terms</td>
+                <td class="param-type">Optional[List[str]]</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">—</td>
+                <td>Generic keywords for fallback search</td>
+              </tr>
+              <tr>
+                <td class="param-name">keyword_only_category</td>
+                <td class="param-type">Optional[str]</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">—</td>
+                <td>Aggregating category for keyword-only terms</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Confirmation message with the applied configuration summary.</p>
+          <pre><code># Example — ask your MCP client:
+"Configure Academic Hunter for CBDC latency research starting from 2022."
+
+# The agent calls update_config with appropriate anchors and weights.
+# Result:
+"Configuration updated successfully. Backup saved to history (ID: 7)."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 3: list_config_history -->
+      <article class="tool-card" id="list_config_history" data-category="config"
+        data-name="list_config_history"
+        data-description="Lists the history of saved configurations in the SQLite database">
+        <div class="tool-card-header">
+          <h3><a href="#list_config_history">list_config_history</a></h3>
+          <span class="tool-category cat-config">Configuration</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Lists previous configurations saved in the MCP SQLite database.
+            Useful for finding a config ID to restore with <code>restore_config_by_id</code>.
+          </p>
+          <div class="tool-sig">list_config_history(limit: int = 5) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">limit</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">5</td>
+                <td>Number of history entries to return</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Formatted list of config entries with ID, timestamp, and topic.</p>
+          <pre><code># Example — ask your MCP client:
+"Show me my recent config changes."
+
+# Result:
+ID: 7 | 2026-07-15 14:32:01 | CBDC Latency Research
+ID: 6 | 2026-07-14 09:15:44 | Blockchain Governance
+ID: 5 | 2026-07-12 18:00:22 | DeFi Cross-Chain</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 4: restore_config_by_id -->
+      <article class="tool-card" id="restore_config_by_id" data-category="config"
+        data-name="restore_config_by_id"
+        data-description="Restores a configuration from the SQLite history by its ID">
+        <div class="tool-card-header">
+          <h3><a href="#restore_config_by_id">restore_config_by_id</a></h3>
+          <span class="tool-category cat-config">Configuration</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Restores a previous configuration backup by its database ID.
+            Use <code>list_config_history</code> first to find the desired config ID.
+          </p>
+          <div class="tool-sig">restore_config_by_id(config_id: int) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">config_id</td>
+                <td class="param-type">int</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>ID of the configuration to restore (from list_config_history)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Confirmation message with the restored configuration summary.</p>
+          <pre><code># Example — ask your MCP client:
+"Restore config ID 5 from my history."
+
+# Result:
+"Configuration restored from ID 5 (DeFi Cross-Chain, saved 2026-07-12)."</code></pre>
+        </div>
+      </article>
+    </section>
+
+    <!-- ──────────────── SEARCH ──────────────── -->
+    <section class="cat-section" id="search">
+      <div class="cat-header">
+        <h2>Search / Execution</h2>
+        <span class="cat-count">2 tools</span>
+      </div>
+
+      <!-- Tool 5: run_search -->
+      <article class="tool-card" id="run_search" data-category="search"
+        data-name="run_search"
+        data-description="Executes the consolidated academic search across all configured databases">
+        <div class="tool-card-header">
+          <h3><a href="#run_search">run_search</a></h3>
+          <span class="tool-category cat-search">Search</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Executes the full academic search pipeline. Spawns concurrent workers
+            for each API connector (Semantic Scholar, OpenAlex, Crossref, ArXiv,
+            CORE, DBLP, DOAJ), deduplicates results, scores them, generates reports,
+            and indexes papers into the vector store.
+          </p>
+          <div class="tool-sig">run_search(limit_per_source: int | None = None) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">limit_per_source</td>
+                <td class="param-type">int | None</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">None</td>
+                <td>Override the global limit_per_query from config.json for this run</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Path to the generated Markdown report and summary of results.</p>
+          <pre><code># Example — ask your MCP client:
+"Run a search for the current configuration."
+
+# Or with a custom limit:
+"Run a quick search with just 10 results per source."
+
+# Result:
+"Search complete. 47 papers found, 23 passed relevance scoring.
+Report saved to results/FLUXO_PRISMA_20260715_103022.md"</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 6: read_latest_report -->
+      <article class="tool-card" id="read_latest_report" data-category="search"
+        data-name="read_latest_report"
+        data-description="Reads the most recent Markdown report in the results directory">
+        <div class="tool-card-header">
+          <h3><a href="#read_latest_report">read_latest_report</a></h3>
+          <span class="tool-category cat-search">Search</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Reads the latest Markdown report from the <code>results/</code> directory.
+            Automatically finds the most recent file by creation time.
+            Content is truncated to 10,000 characters for practical LLM consumption.
+          </p>
+          <div class="tool-sig">read_latest_report() &rarr; str</div>
+          <p class="tool-returns"><strong>Returns:</strong> Content of the latest report (Markdown, truncated to 10k chars).</p>
+          <pre><code># Example — ask your MCP client:
+"Read the latest search report and summarize the findings."
+
+# Result:
+"# PRISMA Flow Report
+## Date: 2026-07-15 10:30:22
+
+| Step | Count |
+|------|-------|
+| Records identified | 47 |
+| After deduplication | 42 |
+| Passed relevance scoring | 23 |
+..."</code></pre>
+        </div>
+      </article>
+    </section>
+
+    <!-- ──────────────── DISCOVERY ──────────────── -->
+    <section class="cat-section" id="discovery">
+      <div class="cat-header">
+        <h2>Discovery / Citation Graph</h2>
+        <span class="cat-count">4 tools</span>
+      </div>
+
+      <!-- Tool 7: explore_citation_graph -->
+      <article class="tool-card" id="explore_citation_graph" data-category="discovery"
+        data-name="explore_citation_graph"
+        data-description="Explores the citation graph of a paper via Semantic Scholar using its DOI">
+        <div class="tool-card-header">
+          <h3><a href="#explore_citation_graph">explore_citation_graph</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Explores the citation graph of a paper using its DOI via Semantic Scholar.
+            Direction can be <code>"citations"</code> (papers that cited this DOI)
+            or <code>"references"</code> (papers this DOI cited).
+            Useful for snowballing — finding relevant papers through citation chains.
+          </p>
+          <div class="tool-sig">explore_citation_graph(doi: str, direction: str = "citations") &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">doi</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>DOI of the paper to explore</td>
+              </tr>
+              <tr>
+                <td class="param-name">direction</td>
+                <td class="param-type">str</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">"citations"</td>
+                <td>"citations" (who cited this) or "references" (what this cited)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Formatted list of papers with titles, authors, and years.</p>
+          <pre><code># Example — ask your MCP client:
+"Find papers that cited doi:10.1109/ACCESS.2023.3267890"
+
+# Or find references:
+"What are the references of doi:10.1016/j.future.2023.01.005?"
+
+# Result:
+"CITING PAPERS:
+1. 'CBDC Architectures' — Smith et al. (2024)
+2. 'Digital Euro Design' — Garcia et al. (2023)"</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 8: fetch_paper_by_doi -->
+      <article class="tool-card" id="fetch_paper_by_doi" data-category="discovery"
+        data-name="fetch_paper_by_doi"
+        data-description="Fetches the abstract and metadata for a specific paper by its DOI">
+        <div class="tool-card-header">
+          <h3><a href="#fetch_paper_by_doi">fetch_paper_by_doi</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Fetches the abstract and metadata for a specific paper using its DOI.
+            Useful when you need details about a single paper without running a full search.
+          </p>
+          <div class="tool-sig">fetch_paper_by_doi(doi: str) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">doi</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>DOI identifier of the paper</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Abstract and metadata (title, authors, year, venue, DOI).</p>
+          <pre><code># Example — ask your MCP client:
+"Fetch the paper with DOI 10.1016/j.elerap.2024.101234"
+
+# Result:
+"Title: Blockchain-Based Digital Currency: A Systematic Review
+Authors: Zhang, L. et al.
+Year: 2024
+Venue: Electronic Commerce Research and Applications
+Abstract: This paper reviews the current state of CBDC research..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 9: fetch_multiple_abstracts -->
+      <article class="tool-card" id="fetch_multiple_abstracts" data-category="discovery"
+        data-name="fetch_multiple_abstracts"
+        data-description="Fetches abstracts for multiple DOIs in a single call">
+        <div class="tool-card-header">
+          <h3><a href="#fetch_multiple_abstracts">fetch_multiple_abstracts</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Fetches abstracts for a list of DOIs in one efficient call.
+            Useful for batch-reading papers to generate a literature review
+            matrix or comparative summary.
+          </p>
+          <div class="tool-sig">fetch_multiple_abstracts(dois: list[str]) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">dois</td>
+                <td class="param-type">list[str]</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>List of DOI strings to fetch</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Abstracts and metadata for each DOI, separated by paper.</p>
+          <pre><code># Example — ask your MCP client:
+"Fetch abstracts for these DOIs: 10.1234/one, 10.5678/two"
+
+# Result:
+"Paper 1: 'Title One' (2024)
+Abstract: ...
+
+Paper 2: 'Title Two' (2023)
+Abstract: ..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 10: quick_topic_discovery -->
+      <article class="tool-card" id="quick_topic_discovery" data-category="discovery"
+        data-name="quick_topic_discovery"
+        data-description="Performs a quick topic search on Semantic Scholar to discover jargon">
+        <div class="tool-card-header">
+          <h3><a href="#quick_topic_discovery">quick_topic_discovery</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Performs a quick search on Semantic Scholar API for a topic.
+            Returns paper titles and years to help identify the jargon and
+            key terms used in that research area — essential before configuring
+            a full search.
+          </p>
+          <div class="tool-sig">quick_topic_discovery(topic: str) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">topic</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Research topic to discover jargon for</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Top 10 paper titles and years with identified key terms.</p>
+          <pre><code># Example — ask your MCP client:
+"Discover jargon for 'atomic settlement in blockchain'"
+
+# Result:
+"DISCOVERED JARGON:
+- atomic settlement
+- delivery-versus-payment (DvP)
+- payment-versus-payment (PvP)
+- hash time locked contracts (HTLC)
+
+TOP PAPERS:
+1. 'Atomic Settlement in DLT Networks' (2024)
+2. 'DvP in Cross-Chain Transactions' (2023)
+..."</code></pre>
+        </div>
+      </article>
+    </section>
+
+    <!-- ──────────────── EXPORT ──────────────── -->
+    <section class="cat-section" id="export">
+      <div class="cat-header">
+        <h2>Export</h2>
+        <span class="cat-count">1 tool</span>
+      </div>
+
+      <!-- Tool 11: export_to_obsidian -->
+      <article class="tool-card" id="export_to_obsidian" data-category="export"
+        data-name="export_to_obsidian"
+        data-description="Exports a formatted Markdown report directly to the user's Obsidian vault">
+        <div class="tool-card-header">
+          <h3><a href="#export_to_obsidian">export_to_obsidian</a></h3>
+          <span class="tool-category cat-export">Export</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Exports a formatted Markdown note directly to your Obsidian vault.
+            The vault path is configured in <code>config.json</code> under
+            <code>settings.obsidian_vault_path</code>.
+            Generates proper YAML frontmatter with title, date, and tags.
+          </p>
+          <div class="tool-sig">export_to_obsidian(topic: str, content: str, tags: list | None = None) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">topic</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Title/topic of the note (used in frontmatter and filename)</td>
+              </tr>
+              <tr>
+                <td class="param-name">content</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Markdown content of the report</td>
+              </tr>
+              <tr>
+                <td class="param-name">tags</td>
+                <td class="param-type">list | None</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">None</td>
+                <td>Optional list of Obsidian tags (e.g., ["research", "CBDC"])</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Confirmation with the vault path where the note was saved.</p>
+          <pre><code># Example — ask your MCP client:
+"Export this research summary to my Obsidian vault with tags
+'CBDC, latency, blockchain'."
+
+# Result:
+"Note exported successfully to:
+Obsidian/Academic_Hunter/CBDC_Latency_Review.md"</code></pre>
+        </div>
+      </article>
+    </section>
+
+    <!-- ──────────────── RAG ──────────────── -->
+    <section class="cat-section" id="rag">
+      <div class="cat-header">
+        <h2>RAG / Vector Store</h2>
+        <span class="cat-count">4 tools</span>
+      </div>
+
+      <!-- Tool 12: semantic_search -->
+      <article class="tool-card" id="semantic_search" data-category="rag"
+        data-name="semantic_search"
+        data-description="Performs embedding-based semantic search across all indexed papers">
+        <div class="tool-card-header">
+          <h3><a href="#semantic_search">semantic_search</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Performs semantic (embedding-based) search across all previously indexed
+            papers using ChromaDB. Finds conceptually related papers even when exact
+            keywords don't match. Uses ONNX-based <code>all-MiniLM-L6-v2</code> embeddings.
+          </p>
+          <div class="tool-sig">semantic_search(query: str, top_k: int = 10, score_threshold: float = 0.0) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">query</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Natural language query</td>
+              </tr>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">10</td>
+                <td>Maximum number of results (max 50)</td>
+              </tr>
+              <tr>
+                <td class="param-name">score_threshold</td>
+                <td class="param-type">float</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">0.0</td>
+                <td>Minimum relevance threshold (0.0 to 1.0)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Formatted results with relevance scores, metadata, and abstract previews.</p>
+          <pre><code># Example — ask your MCP client:
+"Search my indexed papers for 'cross-chain atomic settlement'"
+
+# Result:
+"1. 'Atomic Settlement Mechanisms' (2024) — Relevance: 89%
+   DOI: 10.1234/atomic — Venue: IEEE Access
+   Abstract: This paper proposes a novel atomic settlement...
+
+2. 'DvP Protocols' (2023) — Relevance: 76%
+   DOI: 10.5678/dvp — Venue: Future Generation CS
+   Abstract: Delivery-versus-payment mechanisms..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 13: index_papers -->
+      <article class="tool-card" id="index_papers" data-category="rag"
+        data-name="index_papers"
+        data-description="Indexes the latest search results into ChromaDB for semantic queries">
+        <div class="tool-card-header">
+          <h3><a href="#index_papers">index_papers</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Indexes the latest search results into the ChromaDB vector store.
+            This is also called automatically at the end of each pipeline run,
+            but can be invoked manually to re-index or index from previous runs.
+          </p>
+          <div class="tool-sig">index_papers() &rarr; str</div>
+          <p class="tool-returns"><strong>Returns:</strong> Confirmation with the number of papers indexed and collection name.</p>
+          <pre><code># Example — ask your MCP client:
+"Index the latest papers for semantic search."
+
+# Result:
+"Indexing complete. 23 papers indexed to collection 'papers'."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 14: vector_store_stats -->
+      <article class="tool-card" id="vector_store_stats" data-category="rag"
+        data-name="vector_store_stats"
+        data-description="Shows statistics about the ChromaDB vector store">
+        <div class="tool-card-header">
+          <h3><a href="#vector_store_stats">vector_store_stats</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Shows statistics about the vector store: available collections, paper count,
+            and status. Use this to check if papers have been indexed and how many
+            are available for semantic search.
+          </p>
+          <div class="tool-sig">vector_store_stats() &rarr; str</div>
+          <p class="tool-returns"><strong>Returns:</strong> Collection name, total paper count, and status.</p>
+          <pre><code># Example — ask your MCP client:
+"Check how many papers are indexed."
+
+# Result:
+"Collection: papers | Total papers: 47 | Status: Ready"</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 15: ask_papers -->
+      <article class="tool-card" id="ask_papers" data-category="rag"
+        data-name="ask_papers"
+        data-description="Answers a research question using semantically retrieved papers as context">
+        <div class="tool-card-header">
+          <h3><a href="#ask_papers">ask_papers</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Answers a research question by retrieving relevant papers from the
+            vector store and presenting their content as context. Designed for
+            AI-powered answers grounded in your actual paper collection.
+          </p>
+          <div class="tool-sig">ask_papers(question: str, top_k: int = 5) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">question</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Your research question in natural language</td>
+              </tr>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">5</td>
+                <td>Number of papers to retrieve for context (max 20)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Context from relevant papers — titles, relevance scores, abstract previews.</p>
+          <pre><code># Example — ask your MCP client:
+"What do my indexed papers say about CBDC latency?"
+
+# Result:
+"Based on 5 relevant papers:
+- Paper 1 (Relevance: 0.92): 'CBDC Latency Analysis' (2024)
+  Abstract: Our measurements show sub-second settlement...
+
+- Paper 2 (Relevance: 0.85): 'Digital Euro Performance' (2023)
+  Abstract: Latency remains below 500ms for retail transactions..."</code></pre>
+        </div>
+      </article>
+    </section>
+
+    <!-- ═══ NO RESULTS ═══ -->
+    <div class="no-results" id="no-results">
+      No tools match your search. Try a different term or category.
+    </div>
+
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="https://github.com/devfelipenunes/academic-hunter" target="_blank" rel="noopener">GitHub</a>
+      <a href="../">Home</a>
+    </div>
+    <p>&copy; 2026 Felipe Nunes. MIT License.</p>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+  <script src="../assets/js/mcp-docs.js"></script>
+</body>
+</html>
