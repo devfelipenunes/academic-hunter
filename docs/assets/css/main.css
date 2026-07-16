@@ -553,7 +553,74 @@ pre code {
   line-height: 1.3;
 }
 
-/* MCP mini setup block */
+/* ── Category Tools Listing (Landing page) ── */
+.cat-tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.cat-tools-row {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-lg);
+  transition: border-color var(--transition);
+}
+.cat-tools-row:hover { border-color: var(--accent); }
+
+.cat-tools-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.cat-tools-icon {
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.cat-tools-header h3 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.cat-tools-count {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.cat-tools-list {
+  list-style: none;
+  margin: 0;
+}
+
+.cat-tools-list li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  padding: 0.35rem 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+.cat-tools-list li:last-child { padding-bottom: 0; }
+
+.cat-tools-list li code {
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+}
+
+.cat-tools-list li span {
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+}
+
+/* ── MCP mini setup block ── */
 .mcp-setup-mini {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
@@ -653,9 +720,8 @@ pre code {
 @media (max-width: 1024px) {
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   .mcp-categories { grid-template-columns: repeat(3, 1fr); }
+  .cat-tools { grid-template-columns: 1fr 1fr; }
   .how-steps { grid-template-columns: repeat(2, 1fr); }
-  .mcp-steps { flex-direction: column; }
-  .mcp-step + .mcp-step { border-left: none; border-top: 1px solid var(--border); }
 }
 
 @media (max-width: 768px) {
@@ -681,6 +747,7 @@ pre code {
   .nav-toggle { display: flex; }
 
   .features-grid { grid-template-columns: 1fr; }
+  .cat-tools { grid-template-columns: 1fr; }
   .mcp-categories { grid-template-columns: repeat(2, 1fr); }
   .how-steps { grid-template-columns: 1fr; }
 
@@ -693,6 +760,7 @@ pre code {
   .badges { gap: 0.35rem; }
   .badge { font-size: 0.75rem; padding: 0.2em 0.5em; }
   .btn-group { flex-direction: column; align-items: center; }
+  .cat-tools-list li { flex-direction: column; gap: 0; }
 }
 
 /* ── Reduced Motion ── */
