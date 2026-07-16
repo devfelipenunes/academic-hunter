@@ -127,105 +127,53 @@
         <p class="section-subtitle">
           Academic Hunter is not just a Python CLI — it is a native
           <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">Model Context Protocol (MCP)</a>
-          server. Any MCP-compatible client (Claude Desktop, Cursor, custom agents)
-          can drive the full research pipeline autonomously.
+          server. Any MCP-compatible client can drive the full research pipeline autonomously.
         </p>
 
-        <div class="mcp-arch">
+        <div class="mcp-explainer">
           <p>
-            <strong>Think of MCP as a universal connector between AI and tools.</strong>
-            Instead of copying and pasting data into a chat, the AI calls your research
-            engine directly — configuring searches, exploring citation graphs, running
-            semantic queries, and exporting findings to your Obsidian vault.
+            <strong>MCP is a universal connector between AI and tools.</strong>
+            Instead of switching between apps, your AI assistant calls Academic Hunter
+            directly — configuring searches, exploring citation graphs, running semantic
+            queries, and saving findings to your second brain. All in real time.
           </p>
 
-          <p>
-            The architecture is simple: your AI assistant speaks MCP, Academic Hunter
-            exposes tools through the same protocol, and the research happens in real time.
-          </p>
-
-          <!-- Architecture flow diagram -->
-          <div class="arch-flow">
-            <div class="arch-node">
-              <div class="arch-icon">&#9679;</div>
-              <div class="arch-label">Your AI</div>
-              <div class="arch-sub">Claude, Cursor, agent</div>
+          <div class="mcp-steps">
+            <div class="mcp-step">
+              <span class="mcp-step-num">1</span>
+              <div>
+                <strong>Your AI</strong>
+                <span>Claude, Cursor, Gemini — any MCP client</span>
+              </div>
             </div>
-            <div class="arch-arrow">&#8594;</div>
-            <div class="arch-node">
-              <div class="arch-icon">&#8644;</div>
-              <div class="arch-label">MCP Protocol</div>
-              <div class="arch-sub">JSON-RPC over stdio</div>
+            <div class="mcp-step-connector"></div>
+            <div class="mcp-step">
+              <span class="mcp-step-num">2</span>
+              <div>
+                <strong>MCP Protocol</strong>
+                <span>Standard JSON-RPC calls over stdio</span>
+              </div>
             </div>
-            <div class="arch-arrow">&#8594;</div>
-            <div class="arch-node">
-              <div class="arch-icon">&#9670;</div>
-              <div class="arch-label">Academic Hunter</div>
-              <div class="arch-sub">FastMCP Server</div>
+            <div class="mcp-step-connector"></div>
+            <div class="mcp-step">
+              <span class="mcp-step-num">3</span>
+              <div>
+                <strong>Academic Hunter Server</strong>
+                <span>15 tools across 5 categories</span>
+              </div>
             </div>
-            <div class="arch-arrow">&#8594;</div>
-            <div class="arch-node" style="border-color: var(--accent);">
-              <div class="arch-icon" style="color: var(--accent);">&#9881;</div>
-              <div class="arch-label">15 Tools</div>
-              <div class="arch-sub">5 categories</div>
-            </div>
-            <div class="arch-arrow">&#8594;</div>
-            <div class="arch-node">
-              <div class="arch-icon">&#9733;</div>
-              <div class="arch-label">Research Output</div>
-              <div class="arch-sub">Reports, RAG, Obsidian</div>
+            <div class="mcp-step-connector"></div>
+            <div class="mcp-step">
+              <span class="mcp-step-num">4</span>
+              <div>
+                <strong>Research Outputs</strong>
+                <span>Reports, RAG database, Obsidian notes</span>
+              </div>
             </div>
           </div>
 
-          <!-- Tool categories mapped to research workflow -->
-          <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin-bottom:var(--space-md);">
-            How the 5 tool categories map to your research workflow:
-          </h3>
-
-          <div class="mcp-flow-grid">
-            <div class="mcp-flow-card">
-              <div class="flow-icon">&#9881;</div>
-              <h4>1. Configure</h4>
-              <p>Set anchors, technical terms, and weights via <code>update_config</code>. The AI explores jargon first with <code>quick_topic_discovery</code>.</p>
-              <a href="mcp/#configuration">4 tools &rarr;</a>
-            </div>
-
-            <div class="mcp-flow-card">
-              <div class="flow-icon">&#9733;</div>
-              <h4>2. Search</h4>
-              <p>Execute the full pipeline with <code>run_search</code>. The AI sweeps 7 databases concurrently, deduplicates, and scores.</p>
-              <a href="mcp/#search">2 tools &rarr;</a>
-            </div>
-
-            <div class="mcp-flow-card">
-              <div class="flow-icon">&#8623;</div>
-              <h4>3. Explore</h4>
-              <p>Snowball through citation graphs via DOI. Fetch papers, explore references, and discover relevant work organically.</p>
-              <a href="mcp/#discovery">4 tools &rarr;</a>
-            </div>
-
-            <div class="mcp-flow-card">
-              <div class="flow-icon">&#9776;</div>
-              <h4>4. Analyze</h4>
-              <p>Query indexed papers semantically. Ask natural language questions, find conceptually related work beyond keyword matching.</p>
-              <a href="mcp/#rag">4 tools &rarr;</a>
-            </div>
-
-            <div class="mcp-flow-card">
-              <div class="flow-icon">&#9641;</div>
-              <h4>5. Export</h4>
-              <p>Save findings directly to your Obsidian vault with proper frontmatter for your second brain.</p>
-              <a href="mcp/#export">1 tool &rarr;</a>
-            </div>
-          </div>
-
-          <!-- Inline setup -->
-          <div class="mcp-setup-inline">
-            <h3>Connect in 30 seconds</h3>
-            <p>
-              Add this to your MCP client config. The auto-installer (<code>python install.py</code>)
-              can do this for you.
-            </p>
+          <div class="mcp-setup-mini">
+            <h3>Add to Claude / Cursor</h3>
             <pre><code>{
   "mcpServers": {
     "academic-hunter": {
@@ -235,6 +183,9 @@
     }
   }
 }</code></pre>
+            <p class="mcp-setup-note">
+              The auto-installer (<code>python install.py</code>) does this for you.
+            </p>
           </div>
         </div>
       </div>
