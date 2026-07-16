@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Hunter — OSINT Engine for Systematic Literature Reviews</title>
+  <meta name="description" content="Open Source Intelligence engine that automates the mining, deduplication, and mathematical relevance scoring of scholarly articles across 7 academic databases.">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="site-header">
+    <nav class="navbar" aria-label="Main navigation">
+      <a href="./" class="navbar-brand">
+        <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
+          <rect width="28" height="28" rx="4" fill="var(--accent-subtle)"/>
+          <text x="14" y="19" text-anchor="middle" font-size="16" font-family="system-ui" font-weight="700" fill="var(--accent)">A</text>
+        </svg>
+        Academic Hunter
+      </a>
+
+      <button id="nav-toggle" class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <line x1="3" y1="5" x2="17" y2="5"/>
+          <line x1="3" y1="10" x2="17" y2="10"/>
+          <line x1="3" y1="15" x2="17" y2="15"/>
+        </svg>
+      </button>
+
+      <ul id="nav-links" class="navbar-links" role="list">
+        <li><a href="./" class="active">Home</a></li>
+        <li><a href="mcp/">MCP Tools</a></li>
+        <li><a href="https://github.com/devfelipenunes/academic-hunter" target="_blank" rel="noopener">GitHub</a></li>
+        <li>
+          <button id="theme-toggle" class="theme-toggle" aria-label="Switch theme">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="8" cy="8" r="3"/>
+              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.5 2.5l1.5 1.5M12 12l1.5 1.5M2.5 13.5l1.5-1.5M12 4l1.5-1.5"/>
+            </svg>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ═══ HERO ═══ -->
+    <section class="hero">
+      <div class="container">
+        <p class="tagline">Automated Systematic Literature Reviews</p>
+        <h1>Academic Hunter</h1>
+        <p>
+          An open-source intelligence engine that automates the mining, deduplication,
+          and mathematical relevance scoring of scholarly articles — designed for
+          researchers who need signal, not noise.
+        </p>
+
+        <div class="badges">
+          <span class="badge badge-accent">Python 3.8+</span>
+          <span class="badge badge-green">MIT License</span>
+          <span class="badge badge-accent">MCP Ready</span>
+          <span class="badge">v2.1.0</span>
+          <span class="badge">7 Connectors</span>
+          <span class="badge">15 MCP Tools</span>
+        </div>
+
+        <div class="btn-group">
+          <a href="mcp/" class="btn btn-primary">View MCP Tools</a>
+          <a href="https://github.com/devfelipenunes/academic-hunter" target="_blank" rel="noopener" class="btn">Star on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ FEATURES ═══ -->
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Features</h2>
+        <p class="section-subtitle">Built for systematic rigor. Designed for automation.</p>
+
+        <div class="features-grid">
+          <article class="feature-card">
+            <div class="icon">&#9881;</div>
+            <h3>Multi-Source Aggregation</h3>
+            <p>Concurrently queries Semantic Scholar, OpenAlex, Crossref, ArXiv, CORE.ac.uk, DBLP, and DOAJ — no paper left behind.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="icon">&#9733;</div>
+            <h3>Elite Scoring Engine</h3>
+            <p>NLP and keyword evaluators mathematically score each paper against your research anchors. Configurable weights down to the term level.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="icon">&#8623;</div>
+            <h3>Smart Deduplication</h3>
+            <p>Strict-DOI and fuzzy title matching eliminate duplicates across sources, keeping your dataset clean and defensible.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="icon">&#9678;</div>
+            <h3>Native MCP Server</h3>
+            <p>15 tools accessible to any MCP client. Claude, Cursor, or your agent of choice can autonomously search, explore, and export.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="icon">&#9641;</div>
+            <h3>Plugin Architecture</h3>
+            <p>Hot-swappable screeners, vector stores, exporters, and database connectors. Build your own without touching core logic.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="icon">&#9776;</div>
+            <h3>Multi-Format Export</h3>
+            <p>CSV for spreadsheets, BibTeX for citation managers, RIS for reference tools, Markdown with PRISMA flow diagrams, and direct Obsidian export.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ HOW IT WORKS ═══ -->
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">From configuration to published results in four steps.</p>
+
+        <div class="how-steps">
+          <div class="how-step">
+            <h3>Configure</h3>
+            <p>Define research anchors, technical terms, and scoring weights in <code>config.json</code>. The engine uses these as its compass.</p>
+          </div>
+
+          <div class="how-step">
+            <h3>Mine</h3>
+            <p>The hunter sweeps all 7 academic APIs in parallel. Papers are fetched, deduplicated, and enriched with missing metadata.</p>
+          </div>
+
+          <div class="how-step">
+            <h3>Score</h3>
+            <p>Every paper is evaluated by keyword and semantic screeners. Only those above your <code>min_relevance_score</code> threshold survive.</p>
+          </div>
+
+          <div class="how-step">
+            <h3>Report</h3>
+            <p>Results are exported as rich reports (CSV, BibTeX, Markdown with PRISMA flow) and indexed into ChromaDB for semantic queries.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ MCP TOOLS OVERVIEW ═══ -->
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">MCP Tools</h2>
+        <p class="section-subtitle">
+          Academic Hunter ships with 15 MCP tools across 5 categories.
+          <a href="mcp/">Browse the full reference &rarr;</a>
+        </p>
+
+        <div class="mcp-categories">
+          <div class="mcp-cat-card">
+            <div class="count">4</div>
+            <div class="label">Configuration</div>
+            <div class="tools-list">read, update, history, restore</div>
+          </div>
+
+          <div class="mcp-cat-card">
+            <div class="count">2</div>
+            <div class="label">Search</div>
+            <div class="tools-list">run search, read report</div>
+          </div>
+
+          <div class="mcp-cat-card">
+            <div class="count">4</div>
+            <div class="label">Discovery</div>
+            <div class="tools-list">citation graph, DOIs, topics</div>
+          </div>
+
+          <div class="mcp-cat-card">
+            <div class="count">1</div>
+            <div class="label">Export</div>
+            <div class="tools-list">Obsidian vault export</div>
+          </div>
+
+          <div class="mcp-cat-card">
+            <div class="count">4</div>
+            <div class="label">RAG / Vector Store</div>
+            <div class="tools-list">semantic search, index, stats, Q&amp;A</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ QUICKSTART ═══ -->
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Quickstart</h2>
+        <p class="section-subtitle">Clone, install, and start hunting in under two minutes.</p>
+
+        <div class="quickstart-block">
+          <div class="cmd">
+            <span class="prompt">$</span>
+            <span>git clone https://github.com/devfelipenunes/academic-hunter.git</span>
+          </div>
+          <div class="cmd">
+            <span class="prompt">$</span>
+            <span>cd academic-hunter</span>
+          </div>
+          <div class="cmd">
+            <span class="prompt">$</span>
+            <span>python install.py</span>
+          </div>
+          <div class="cmd" style="border-top: 1px solid var(--border); margin-top: var(--space-sm); padding-top: var(--space-md);">
+            <span class="prompt">$</span>
+            <span>source venv/bin/activate</span>
+          </div>
+          <div class="cmd">
+            <span class="prompt">$</span>
+            <span>academic-hunter</span>
+          </div>
+          <div class="cmd">
+            <span class="prompt">$</span>
+            <span style="color: var(--text-secondary);"># Or, for MCP server mode:</span>
+          </div>
+          <div class="cmd">
+            <span class="prompt">$</span>
+            <span>academic-mcp</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="https://github.com/devfelipenunes/academic-hunter" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/devfelipenunes/academic-hunter/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+      <a href="mcp/">MCP Tools Reference</a>
+    </div>
+    <p>&copy; 2026 Felipe Nunes. Built for academic and industrial research.</p>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
