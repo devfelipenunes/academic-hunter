@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Academic Hunter — OSINT Engine for Systematic Literature Reviews</title>
-  <meta name="description" content="Open Source Intelligence engine that automates the mining, deduplication, and mathematical relevance scoring of scholarly articles across 7 academic databases.">
+  <title>Academic Hunter — MCP Server for Systematic Literature Reviews</title>
+  <meta name="description" content="Open-source MCP server that connects any AI assistant to 7 academic databases. Run searches, explore citation graphs, and export to Obsidian — all through natural language.">
   <meta name="theme-color" content="#0d1117">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="stylesheet" href="assets/css/main.css">
@@ -50,131 +50,196 @@
     <!-- ═══ HERO ═══ -->
     <section class="hero">
       <div class="container">
-        <p class="tagline">Automated Systematic Literature Reviews</p>
+        <p class="tagline">Empower your AI to do systematic reviews</p>
         <h1>Academic Hunter</h1>
         <p>
-          An open-source intelligence engine that automates the mining, deduplication,
-          and mathematical relevance scoring of scholarly articles — designed for
-          researchers who need signal, not noise.
+          A native <strong>MCP server</strong> that gives any LLM the superpower to search,
+          filter, and analyze academic literature across 7 databases — all through
+          natural conversation.
         </p>
 
         <div class="badges">
-          <span class="badge badge-accent">Python 3.8+</span>
+          <span class="badge badge-accent">MCP Server</span>
+          <span class="badge badge-accent">15 Tools</span>
+          <span class="badge">Python 3.8+</span>
           <span class="badge badge-green">MIT License</span>
-          <span class="badge badge-accent">MCP Ready</span>
-          <span class="badge">v2.1.0</span>
           <span class="badge">7 Connectors</span>
-          <span class="badge">15 MCP Tools</span>
+          <span class="badge">RAG-ready</span>
         </div>
 
         <div class="btn-group">
-          <a href="mcp/" class="btn btn-primary">View MCP Tools</a>
-          <a href="https://github.com/devfelipenunes/academic-hunter" target="_blank" rel="noopener" class="btn">Star on GitHub</a>
+          <a href="#tools" class="btn btn-primary">See the 15 Tools</a>
+          <a href="#setup" class="btn">Connect Your AI</a>
+          <a href="https://github.com/devfelipenunes/academic-hunter" target="_blank" rel="noopener" class="btn">GitHub</a>
         </div>
       </div>
     </section>
 
-    <!-- ═══ FEATURES ═══ -->
+    <!-- ═══ WHY MCP ═══ -->
     <section class="section">
       <div class="container">
-        <h2 class="section-title">Features</h2>
-        <p class="section-subtitle">Built for systematic rigor. Designed for automation.</p>
+        <h2 class="section-title">What Is MCP and Why Does It Matter?</h2>
+
+        <div style="max-width: 700px;">
+          <p style="font-size:1rem; color:var(--text-secondary); line-height:1.7; margin-bottom:var(--space-lg);">
+            The <strong>Model Context Protocol (MCP)</strong> is an open standard that lets
+            AI assistants connect directly to external tools — like giving Claude a
+            research lab to command.
+          </p>
+        </div>
 
         <div class="features-grid">
-          <article class="feature-card">
-            <div class="icon">&#9881;</div>
-            <h3>Multi-Source Aggregation</h3>
-            <p>Concurrently queries Semantic Scholar, OpenAlex, Crossref, ArXiv, CORE.ac.uk, DBLP, and DOAJ — no paper left behind.</p>
-          </article>
-
-          <article class="feature-card">
-            <div class="icon">&#9733;</div>
-            <h3>Elite Scoring Engine</h3>
-            <p>NLP and keyword evaluators mathematically score each paper against your research anchors. Configurable weights down to the term level.</p>
-          </article>
-
-          <article class="feature-card">
-            <div class="icon">&#8623;</div>
-            <h3>Smart Deduplication</h3>
-            <p>Strict-DOI and fuzzy title matching eliminate duplicates across sources, keeping your dataset clean and defensible.</p>
-          </article>
-
-          <article class="feature-card">
-            <div class="icon">&#9678;</div>
-            <h3>Native MCP Server</h3>
-            <p>15 tools accessible to any MCP client. Claude, Cursor, or your agent of choice can autonomously search, explore, and export.</p>
-          </article>
-
-          <article class="feature-card">
-            <div class="icon">&#9641;</div>
-            <h3>Plugin Architecture</h3>
-            <p>Hot-swappable screeners, vector stores, exporters, and database connectors. Build your own without touching core logic.</p>
-          </article>
-
-          <article class="feature-card">
-            <div class="icon">&#9776;</div>
-            <h3>Multi-Format Export</h3>
-            <p>CSV for spreadsheets, BibTeX for citation managers, RIS for reference tools, Markdown with PRISMA flow diagrams, and direct Obsidian export.</p>
-          </article>
+          <div class="feature-card">
+            <h3>No more copy-paste</h3>
+            <p>Instead of copying abstracts into a chat, your AI runs <code>run_search</code> across 7 databases in real time and returns structured results.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Autonomous exploration</h3>
+            <p>Claude discovers jargon with <code>quick_topic_discovery</code>, configures anchors with <code>update_config</code>, then snowballs through citation graphs. All without you touching a config file.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Second brain integration</h3>
+            <p>Findings land directly in your Obsidian vault via <code>export_to_obsidian</code> — with proper frontmatter, tags, and links. Your research feeds your knowledge base automatically.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Semantic memory</h3>
+            <p>Every paper is indexed into ChromaDB. Later, you or your AI can ask <code>ask_papers</code> a question and get answers grounded in your own collected literature.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Works with any MCP client</h3>
+            <p>Claude Desktop, Cursor, VS Code, Gemini, custom agents — anything that speaks MCP can drive Academic Hunter.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Also a Python CLI</h3>
+            <p>Prefer the terminal? Run <code>academic-hunter</code> directly. The same engine powers both interfaces.</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ═══ AI-NATIVE RESEARCH VIA MCP ═══ -->
-    <section class="section">
+    <!-- ═══ THE 15 TOOLS ═══ -->
+    <section class="section" id="tools">
       <div class="container">
-        <h2 class="section-title">AI-Native Research via MCP</h2>
+        <h2 class="section-title">The 15 MCP Tools</h2>
         <p class="section-subtitle">
-          Academic Hunter is not just a Python CLI — it is a native
-          <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">Model Context Protocol (MCP)</a>
-          server. Any MCP-compatible client can drive the full research pipeline autonomously.
+          Five categories covering the full research workflow.
+          <a href="mcp/">Full reference with parameters and examples &rarr;</a>
         </p>
 
-        <div class="mcp-explainer">
-          <p>
-            <strong>MCP is a universal connector between AI and tools.</strong>
-            Instead of switching between apps, your AI assistant calls Academic Hunter
-            directly — configuring searches, exploring citation graphs, running semantic
-            queries, and saving findings to your second brain. All in real time.
-          </p>
-
-          <div class="mcp-steps">
-            <div class="mcp-step">
-              <span class="mcp-step-num">1</span>
+        <div class="cat-tools">
+          <div class="cat-tools-row">
+            <div class="cat-tools-header">
+              <span class="cat-tools-icon">&#9881;</span>
               <div>
-                <strong>Your AI</strong>
-                <span>Claude, Cursor, Gemini — any MCP client</span>
+                <h3>Configuration</h3>
+                <span class="cat-tools-count">4 tools</span>
               </div>
             </div>
-            <div class="mcp-step-connector"></div>
-            <div class="mcp-step">
-              <span class="mcp-step-num">2</span>
-              <div>
-                <strong>MCP Protocol</strong>
-                <span>Standard JSON-RPC calls over stdio</span>
-              </div>
-            </div>
-            <div class="mcp-step-connector"></div>
-            <div class="mcp-step">
-              <span class="mcp-step-num">3</span>
-              <div>
-                <strong>Academic Hunter Server</strong>
-                <span>15 tools across 5 categories</span>
-              </div>
-            </div>
-            <div class="mcp-step-connector"></div>
-            <div class="mcp-step">
-              <span class="mcp-step-num">4</span>
-              <div>
-                <strong>Research Outputs</strong>
-                <span>Reports, RAG database, Obsidian notes</span>
-              </div>
-            </div>
+            <ul class="cat-tools-list">
+              <li><code>read_config</code> <span>View current search config</span></li>
+              <li><code>update_config</code> <span>Set anchors, terms, weights</span></li>
+              <li><code>list_config_history</code> <span>Browse past configurations</span></li>
+              <li><code>restore_config_by_id</code> <span>Restore a previous setup</span></li>
+            </ul>
           </div>
 
-          <div class="mcp-setup-mini">
-            <h3>Add to Claude / Cursor</h3>
-            <pre><code>{
+          <div class="cat-tools-row">
+            <div class="cat-tools-header">
+              <span class="cat-tools-icon">&#9733;</span>
+              <div>
+                <h3>Search</h3>
+                <span class="cat-tools-count">2 tools</span>
+              </div>
+            </div>
+            <ul class="cat-tools-list">
+              <li><code>run_search</code> <span>Execute full pipeline across 7 APIs</span></li>
+              <li><code>read_latest_report</code> <span>Read the most recent PRISMA report</span></li>
+            </ul>
+          </div>
+
+          <div class="cat-tools-row">
+            <div class="cat-tools-header">
+              <span class="cat-tools-icon">&#8623;</span>
+              <div>
+                <h3>Discovery</h3>
+                <span class="cat-tools-count">4 tools</span>
+              </div>
+            </div>
+            <ul class="cat-tools-list">
+              <li><code>explore_citation_graph</code> <span>Snowball via citations or references</span></li>
+              <li><code>fetch_paper_by_doi</code> <span>Get abstract and metadata</span></li>
+              <li><code>fetch_multiple_abstracts</code> <span>Batch-read papers for review matrices</span></li>
+              <li><code>quick_topic_discovery</code> <span>Identify jargon in a research area</span></li>
+            </ul>
+          </div>
+
+          <div class="cat-tools-row">
+            <div class="cat-tools-header">
+              <span class="cat-tools-icon">&#9641;</span>
+              <div>
+                <h3>Export</h3>
+                <span class="cat-tools-count">1 tool</span>
+              </div>
+            </div>
+            <ul class="cat-tools-list">
+              <li><code>export_to_obsidian</code> <span>Save note to your vault with frontmatter</span></li>
+            </ul>
+          </div>
+
+          <div class="cat-tools-row">
+            <div class="cat-tools-header">
+              <span class="cat-tools-icon">&#9670;</span>
+              <div>
+                <h3>RAG / Vector Store</h3>
+                <span class="cat-tools-count">4 tools</span>
+              </div>
+            </div>
+            <ul class="cat-tools-list">
+              <li><code>semantic_search</code> <span>Find papers conceptually (not just keywords)</span></li>
+              <li><code>index_papers</code> <span>Index papers into ChromaDB</span></li>
+              <li><code>vector_store_stats</code> <span>Check indexed paper count</span></li>
+              <li><code>ask_papers</code> <span>Ask questions grounded in your collection</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ HOW THE ENGINE WORKS ═══ -->
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Behind the Scenes</h2>
+        <p class="section-subtitle">When you or your AI triggers a search, here is what happens.</p>
+
+        <div class="how-steps">
+          <div class="how-step">
+            <h3>Configure</h3>
+            <p>Research anchors and technical weights define what the engine looks for. Your AI can do this with <code>update_config</code>.</p>
+          </div>
+          <div class="how-step">
+            <h3>Mine</h3>
+            <p>7 academic APIs are queried concurrently. Results are deduplicated by DOI and fuzzy title, then enriched with missing abstracts.</p>
+          </div>
+          <div class="how-step">
+            <h3>Score</h3>
+            <p>Keyword + semantic screeners evaluate every paper. Only those above your threshold survive — noise is discarded.</p>
+          </div>
+          <div class="how-step">
+            <h3>Report</h3>
+            <p>Results exported as CSV, BibTeX, RIS, and Markdown with PRISMA flow. Papers indexed into ChromaDB for future semantic queries.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ CONNECT YOUR AI ═══ -->
+    <section class="section" id="setup">
+      <div class="container">
+        <h2 class="section-title">Connect in 30 Seconds</h2>
+        <p class="section-subtitle">Claude Desktop, Cursor, VS Code, or any MCP client.</p>
+
+        <div class="mcp-setup-mini">
+          <pre><code>{
   "mcpServers": {
     "academic-hunter": {
       "command": "/path/to/venv/bin/python",
@@ -183,123 +248,22 @@
     }
   }
 }</code></pre>
-            <p class="mcp-setup-note">
-              The auto-installer (<code>python install.py</code>) does this for you.
-            </p>
-          </div>
+          <p class="mcp-setup-note">
+            Or run <code>python install.py</code> — the auto-installer injects the config for you.
+          </p>
         </div>
-      </div>
-    </section>
 
-    <!-- ═══ HOW IT WORKS ═══ -->
-    <section class="section">
-      <div class="container">
-        <h2 class="section-title">How It Works</h2>
-        <p class="section-subtitle">From configuration to published results in four steps.</p>
+        <div style="margin-top: var(--space-md);">
+          <pre style="background: var(--bg-secondary);"><code># Clone and install
+git clone https://github.com/devfelipenunes/academic-hunter.git
+cd academic-hunter
+python install.py
 
-        <div class="how-steps">
-          <div class="how-step">
-            <h3>Configure</h3>
-            <p>Define research anchors, technical terms, and scoring weights in <code>config.json</code>. The engine uses these as its compass.</p>
-          </div>
+# Start the MCP server
+academic-mcp
 
-          <div class="how-step">
-            <h3>Mine</h3>
-            <p>The hunter sweeps all 7 academic APIs in parallel. Papers are fetched, deduplicated, and enriched with missing metadata.</p>
-          </div>
-
-          <div class="how-step">
-            <h3>Score</h3>
-            <p>Every paper is evaluated by keyword and semantic screeners. Only those above your <code>min_relevance_score</code> threshold survive.</p>
-          </div>
-
-          <div class="how-step">
-            <h3>Report</h3>
-            <p>Results are exported as rich reports (CSV, BibTeX, Markdown with PRISMA flow) and indexed into ChromaDB for semantic queries.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ MCP TOOLS OVERVIEW ═══ -->
-    <section class="section">
-      <div class="container">
-        <h2 class="section-title">All 15 MCP Tools</h2>
-        <p class="section-subtitle">
-          Full inventory of tools organized by category.
-          Each tool has documented parameters, types, and usage examples.
-          <a href="mcp/">Browse the complete reference &rarr;</a>
-        </p>
-
-        <div class="mcp-categories">
-          <div class="mcp-cat-card">
-            <div class="count">4</div>
-            <div class="label">Configuration</div>
-            <div class="tools-list"><code>read_config</code>, <code>update_config</code>, <code>list_config_history</code>, <code>restore_config_by_id</code></div>
-          </div>
-
-          <div class="mcp-cat-card">
-            <div class="count">2</div>
-            <div class="label">Search</div>
-            <div class="tools-list"><code>run_search</code>, <code>read_latest_report</code></div>
-          </div>
-
-          <div class="mcp-cat-card">
-            <div class="count">4</div>
-            <div class="label">Discovery</div>
-            <div class="tools-list"><code>explore_citation_graph</code>, <code>fetch_paper_by_doi</code>, <code>fetch_multiple_abstracts</code>, <code>quick_topic_discovery</code></div>
-          </div>
-
-          <div class="mcp-cat-card">
-            <div class="count">1</div>
-            <div class="label">Export</div>
-            <div class="tools-list"><code>export_to_obsidian</code></div>
-          </div>
-
-          <div class="mcp-cat-card">
-            <div class="count">4</div>
-            <div class="label">RAG / Vector Store</div>
-            <div class="tools-list"><code>semantic_search</code>, <code>index_papers</code>, <code>vector_store_stats</code>, <code>ask_papers</code></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ QUICKSTART ═══ -->
-    <section class="section">
-      <div class="container">
-        <h2 class="section-title">Quickstart</h2>
-        <p class="section-subtitle">Clone, install, and start hunting in under two minutes.</p>
-
-        <div class="quickstart-block">
-          <div class="cmd">
-            <span class="prompt">$</span>
-            <span>git clone https://github.com/devfelipenunes/academic-hunter.git</span>
-          </div>
-          <div class="cmd">
-            <span class="prompt">$</span>
-            <span>cd academic-hunter</span>
-          </div>
-          <div class="cmd">
-            <span class="prompt">$</span>
-            <span>python install.py</span>
-          </div>
-          <div class="cmd" style="border-top: 1px solid var(--border); margin-top: var(--space-sm); padding-top: var(--space-md);">
-            <span class="prompt">$</span>
-            <span>source venv/bin/activate</span>
-          </div>
-          <div class="cmd">
-            <span class="prompt">$</span>
-            <span>academic-hunter</span>
-          </div>
-          <div class="cmd">
-            <span class="prompt">$</span>
-            <span style="color: var(--text-secondary);"># Or, for MCP server mode:</span>
-          </div>
-          <div class="cmd">
-            <span class="prompt">$</span>
-            <span>academic-mcp</span>
-          </div>
+# Or use the CLI directly
+academic-hunter --limit 10</code></pre>
         </div>
       </div>
     </section>
@@ -312,7 +276,7 @@
       <a href="https://github.com/devfelipenunes/academic-hunter/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
       <a href="mcp/">MCP Tools Reference</a>
     </div>
-    <p>&copy; 2026 Felipe Nunes. Built for academic and industrial research.</p>
+    <p>&copy; 2026 Felipe Nunes. MIT. Open source.</p>
   </footer>
 
   <script src="assets/js/main.js"></script>
