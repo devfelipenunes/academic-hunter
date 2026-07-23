@@ -17,6 +17,7 @@ class SearchState:
         self.seen_ids = set()           # Track ALL unique papers seen in this run
         self.seen_dois = set()
         self.doi_to_slug = {}
+        self.raw_scores = {}            # slug -> {"kw": float, "sem": float} for rank scoring
         self.query_history = []
         self.last_request_time = 0
         self.last_request_by_domain = {}
@@ -36,6 +37,7 @@ class SearchState:
         self.seen_ids = set()
         self.seen_dois = set()
         self.doi_to_slug = {}
+        self.raw_scores = {}
         self.query_history = []
         self.last_request_time = 0
         self.last_request_by_domain = {}
