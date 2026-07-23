@@ -7,13 +7,14 @@ from .resolvers import PaperResolver
 
 class PaperProcessor:
     """Handles duplicate checking, temporal filtering, anchor matching, scoring, and metadata merging for mined papers."""
-    def __init__(self, state: SearchState, scorer: AcademicScorer, config: HunterConfig, connectors: Dict[str, Any], lock: threading.RLock):
+    def __init__(self, state: SearchState, scorer: AcademicScorer, config: HunterConfig, connectors: Dict[str, Any], lock: threading.RLock, semantic_screener=None):
         self.state = state
         self.scorer = scorer
         self.config = config
         self.connectors = connectors
         self.lock = lock
-        self.resolver = PaperResolver(state, scorer, config, connectors, lock)
+        self.semantic_screener = semantic_screener
+        self.resolver = PaperResolver(state, scorer, config, connectors, lock, semantic_screener)
 
     def _check_duplicate(self, title: str, doi_clean: str) -> tuple[bool, str]:
         """Checks if a paper is duplicate by title slug or normalized DOI (thread-safe)."""
