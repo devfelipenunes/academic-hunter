@@ -4,6 +4,7 @@ from pathlib import Path
 from ..infra import SQLiteCache, HunterConfig, SearchState
 from ..nlp import AcademicScorer
 from ...plugins.connectors import CONNECTORS
+from ...plugins.screeners import SemanticScreener
 from .facades import HunterFacadeMixin
 from .exporters import HunterExporterMixin
 
@@ -33,6 +34,7 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
             self.config.anchors, self.config.tech_strings,
             self.config.tech_weights, self.config.context_rules, self.config.settings
         )
+        self.semantic_screener = SemanticScreener()
 
         # Instantiate connectors using plugin registry
         conn_args = (self.cache, self.config.settings, self.state.query_history, self.lock, self.semaphore, self.use_cache)
@@ -48,7 +50,7 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
             conn.setup_pacing()
 
         from ..screening import PaperProcessor
-        self.processor = PaperProcessor(self.state, self.scorer, self.config, self.connectors, self.lock)
+        self.processor = PaperProcessor(self.state, self.scorer, self.config, self.connectors, self.lock, self.semantic_screener)
 
         from ..pipeline import SearchPipeline
         self.pipeline = SearchPipeline(self)
