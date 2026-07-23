@@ -6,13 +6,14 @@ from ..nlp import AcademicScorer
 from .validators import PaperValidator
 
 class PaperResolver:
-    def __init__(self, state: SearchState, scorer: AcademicScorer, config: HunterConfig, connectors: Dict[str, Any], lock: threading.RLock):
+    def __init__(self, state: SearchState, scorer: AcademicScorer, config: HunterConfig, connectors: Dict[str, Any], lock: threading.RLock, semantic_screener=None):
         self.state = state
         self.scorer = scorer
         self.config = config
         self.connectors = connectors
         self.lock = lock
-        self.validator = PaperValidator(config, scorer)
+        self.semantic_screener = semantic_screener
+        self.validator = PaperValidator(config, scorer, semantic_screener)
         
         # Precompute normalized connector names for O(1) lookup
         self._norm_connectors = {self._norm(name): conn for name, conn in connectors.items()}
@@ -59,9 +60,21 @@ class PaperResolver:
             else:
                 existing.merge(paper, anchor_cat, tech_cat)
             
-            # Recalculate score after merging metadata
-            new_score = self.scorer.calculate_score(existing.get("Title", ""), existing.get("Abstract", ""), existing.get("Citations", 0))
+            # Recalculate score after merging metadata (respects ablation mode)
+            new_score = self.validator.compute_hybrid_score(existing)
             existing["Relevance_Score"] = new_score
+            # Store raw scores for rank normalization
+            if "_kw_score" not in existing:
+                existing["_kw_score"] = self.scorer.calculate_score(
+                    existing.get("Title", ""), existing.get("Abstract", ""), existing.get("Citations", 0))
+            if "_sem_score" not in existing and self.semantic_screener is not None:
+                sem_config = {
+                    "anchors": self.config.anchors,
+                    "technical_strings": self.config.tech_strings,
+                    "technical_weights": self.config.tech_weights,
+                }
+                existing["_sem_score"] = round(
+                    self.semantic_screener.evaluate(existing, sem_config), 4)
             
             # Correct the stats if the paper is now promoted
             if old_score < min_score and new_score >= min_score:
@@ -97,7 +110,9 @@ class PaperResolver:
             "Anchor_Terms": anchor_terms,
             "Tech_Category": tech_cat,
             "Tech_Terms": tech_terms,
-            "Relevance_Score": relevance_score
+            "Relevance_Score": relevance_score,
+            "_kw_score": paper.get("_kw_score", 0.0),
+            "_sem_score": paper.get("_sem_score", 0.0),
         })
         
         with self.lock:
@@ -128,6 +143,19 @@ class PaperResolver:
             return
 
         min_score = self.config.settings.get('min_relevance_score', 5.0)
+
+        # Compute raw keyword and semantic scores for rank normalization
+        kw_score = self.scorer.calculate_score(title, paper.get('Abstract', ''), paper.get('Citations', 0))
+        sem_score = 0.0
+        if self.semantic_screener is not None:
+            sem_config = {
+                "anchors": self.config.anchors,
+                "technical_strings": self.config.tech_strings,
+                "technical_weights": self.config.tech_weights,
+            }
+            sem_score = self.semantic_screener.evaluate(paper, sem_config)
+            sem_score = round(sem_score, 4)  # keep precision for rank comparison
+
         paper_metadata = Paper({
             "Title": title,
             "Abstract": paper.get('Abstract', ''),
@@ -142,7 +170,9 @@ class PaperResolver:
             "Anchor_Terms": anchor_terms,
             "Tech_Category": tech_cat,
             "Tech_Terms": tech_terms,
-            "Relevance_Score": relevance_score
+            "Relevance_Score": relevance_score,
+            "_kw_score": kw_score,
+            "_sem_score": sem_score,
         })
 
         with self.lock:
