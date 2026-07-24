@@ -50,3 +50,4 @@ extraPaths = ["src"]
 markers = [
     "integration: marks tests as integration tests that hit real external APIs (deselect with '-m \"not integration\"')"
 ]
+asyncio_mode = "auto"
