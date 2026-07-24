@@ -36,8 +36,8 @@ async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
         resp.raise_for_status()
         data = resp.json()
 
-        person = data.get("person", {})
-        name_data = person.get("name", {})
+        person = data.get("person") or {}
+        name_data = person.get("name") or {}
         given = name_data.get("given-names", {}).get("value", "?")
         family = name_data.get("family-name", {}).get("value", "?")
         credit = name_data.get("credit-name", {}).get("value", f"{given} {family}")
@@ -45,7 +45,7 @@ async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
         lines = [f"# ORCID Profile: {credit}\n", f"**ORCID:** https://orcid.org/{orcid_id}\n"]
 
         # Affiliations
-        employments = person.get("employments", {}).get("employment-summary", [])
+        employments = (person.get("employments") or {}).get("employment-summary", [])
         if employments:
             lines.append("\n## Affiliations\n")
             for emp in employments[:5]:
@@ -61,8 +61,8 @@ async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
                 lines.append(f"- {org}{suffix}\n")
 
         # Publications
-        activities = data.get("activities-summary", {})
-        works = activities.get("works", {}).get("group", [])
+        activities = data.get("activities-summary") or {}
+        works = (activities.get("works") or {}).get("group", [])
         if works:
             lines.append("\n## Recent Publications\n")
             for work in works[:10]:
