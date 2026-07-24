@@ -6,6 +6,7 @@ for logging and progress reporting.
 
 import json
 import logging
+import os
 import requests
 from collections import Counter
 from datetime import datetime
@@ -141,14 +142,32 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
 
     try:
         def _fetch_meta(doi: str) -> dict:
-            """Fetch paper metadata from Semantic Scholar."""
-            url = (
-                f"https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}"
-                "?fields=title,year,abstract"
-            )
-            resp = requests.get(url, timeout=10)
-            resp.raise_for_status()
-            return resp.json()
+            """Fetch paper metadata — tries Semantic Scholar, falls back to AcademicHunter."""
+            last_error = None
+            # Try Semantic Scholar API
+            try:
+                url = (
+                    f"https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}"
+                    "?fields=title,year,abstract"
+                )
+                resp = requests.get(url, timeout=10)
+                resp.raise_for_status()
+                return resp.json()
+            except requests.RequestException as e:
+                last_error = e
+
+            # Fallback: arXiv DOIs (10.48550/arXiv.xxxx) not found by Semantic Scholar
+            try:
+                hunter = AcademicHunter()
+                abstract = hunter.fetch_abstract_by_doi(doi)
+                if abstract:
+                    title = abstract.strip().split("\n")[0][:80] if abstract else doi
+                    return {"title": title, "year": None, "abstract": abstract}
+            except Exception as e:
+                last_error = e
+
+            # Both attempts failed — re-raise the original error
+            raise DiscoveryError(str(last_error)) if last_error else DiscoveryError(f"Paper {doi} not found")
 
         def _keyword_set(text: str) -> set[str]:
             """Extract meaningful keywords from text."""
@@ -213,6 +232,7 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
         return "\n".join(lines)
 
     except DiscoveryError:
+        await ctx.error("Failed to compare papers")
         raise
     except Exception as e:
         await ctx.error(f"Failed to compare papers: {e}")
@@ -236,6 +256,21 @@ async def export_report(
         project_root = get_project_root()
         hunter = AcademicHunter(output_dir=str(project_root / "results"))
         papers = list(hunter.consolidated_results.values())
+
+        # Fallback: load from latest CSV when no in-memory results
+        if not papers:
+            await ctx.info("No in-memory results, trying latest CSV...")
+            results_dir = project_root / "results"
+            csv_files = sorted(
+                results_dir.glob("academic_dataset_*.csv"),
+                key=os.path.getctime,
+                reverse=True,
+            )
+            if csv_files:
+                import pandas as pd
+                df = pd.read_csv(csv_files[0])
+                papers = df.to_dict(orient="records")
+                await ctx.info(f"Loaded {len(papers)} papers from {csv_files[0].name}")
 
         if not papers:
             await ctx.info("No search results to export")
