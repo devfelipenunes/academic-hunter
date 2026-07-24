@@ -79,3 +79,40 @@ async def test_read_latest_report_no_md_files(mock_get_project_root, tmp_path, m
 
     result = await read_latest_report(mock_ctx)
     assert "Error" in result or "No markdown reports" in result
+
+
+@patch("academic_hunter.interfaces.mcp.tools.search.get_project_root")
+async def test_read_latest_report_with_offset(mock_get_project_root, tmp_path, mock_ctx):
+    """Offset parameter skips the first N characters."""
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    mock_get_project_root.return_value = tmp_path
+
+    report_file = results_dir / "RELATORIO_ELITE_test.md"
+    content = "PREFIX" + "ABCDEFGHIJ" * 15  # 6 + 150 = 156 chars
+    report_file.write_text(content)
+
+    # Read with offset=6, should skip "PREFIX"
+    result = await read_latest_report(mock_ctx, offset=6)
+    expected = content[6:]
+    assert result == expected
+    assert result == "ABCDEFGHIJ" * 15
+    assert len(result) == 150
+    mock_ctx.info.assert_called()
+
+
+@patch("academic_hunter.interfaces.mcp.tools.search.get_project_root")
+async def test_read_latest_report_custom_max_chars(mock_get_project_root, tmp_path, mock_ctx):
+    """Custom max_chars truncates to that exact length."""
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    mock_get_project_root.return_value = tmp_path
+
+    report_file = results_dir / "RELATORIO_ELITE_test.md"
+    report_text = "A" * 5000 + "B" * 5000
+    report_file.write_text(report_text)
+
+    result = await read_latest_report(mock_ctx, max_chars=100)
+    assert len(result) == 100
+    assert result == "A" * 100
+    mock_ctx.info.assert_called()
