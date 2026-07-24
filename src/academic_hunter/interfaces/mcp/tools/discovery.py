@@ -4,10 +4,36 @@ All tools accept a ``ctx`` parameter (auto-injected by FastMCP as ``Context``)
 for logging and error reporting.
 """
 
+import asyncio
 import requests
 from academic_hunter import AcademicHunter
 from ..exceptions import DiscoveryError
 from mcp.server.fastmcp import Context
+
+
+async def _request_with_retry(url, max_retries=3, base_delay=2.0, **kwargs):
+    """GET request with exponential backoff on 429 rate-limit responses.
+
+    Uses ``asyncio.sleep()`` and ``run_in_executor`` to avoid blocking
+    the async event loop during retry delays.
+    """
+    loop = asyncio.get_event_loop()
+    for attempt in range(max_retries):
+        response = await loop.run_in_executor(
+            None, lambda: requests.get(url, timeout=10, **kwargs)
+        )
+        if response.status_code == 429:
+            delay = base_delay * (2 ** attempt)
+            await asyncio.sleep(delay)
+            continue
+        response.raise_for_status()
+        return response
+    # Last attempt — let exception propagate
+    response = await loop.run_in_executor(
+        None, lambda: requests.get(url, timeout=10, **kwargs)
+    )
+    response.raise_for_status()
+    return response
 
 
 async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Context = None) -> str:
@@ -28,7 +54,7 @@ async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Co
             f"https://api.semanticscholar.org/graph/v1/paper/{paper_id}"
             f"/{direction}?fields=title,year,authors&limit=10"
         )
-        response = requests.get(url, timeout=10)
+        response = await _request_with_retry(url)
         response.raise_for_status()
 
         data = response.json().get("data", [])
@@ -117,7 +143,7 @@ async def quick_topic_discovery(topic: str, ctx: Context) -> str:
             f"https://api.semanticscholar.org/graph/v1/paper/search"
             f"?query={topic}&limit=10&fields=title,year"
         )
-        response = requests.get(url, timeout=10)
+        response = await _request_with_retry(url)
         response.raise_for_status()
 
         data = response.json().get("data", [])

@@ -257,13 +257,19 @@ async def test_export_report_json(mock_ctx, tmp_path):
             mock_ctx.info.assert_called()
 
 
-async def test_export_report_no_results(mock_ctx):
+async def test_export_report_no_results(mock_ctx, tmp_path):
     """Empty results return a helpful message."""
-    with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
-    ) as m_hunter:
+    with (
+        patch(
+            "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+        ) as m_hunter,
+        patch(
+            "academic_hunter.interfaces.mcp.tools.analysis.get_project_root"
+        ) as m_root,
+    ):
         hunter_instance = m_hunter.return_value
         type(hunter_instance).consolidated_results = PropertyMock(return_value={})
+        m_root.return_value = tmp_path  # no CSV files exist here
 
         result = await export_report(mock_ctx)
 
