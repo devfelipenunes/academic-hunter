@@ -109,7 +109,7 @@ Academic Hunter follows a hexagonal architecture:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Academic Hunter occupies a dual architectural role. **As a standalone SLR pipeline**, it performs multi-source search, domain-specific NLP filtering, Weight-Bleeding scoring, deduplication, and PRISMA-compliant export — all without requiring an LLM. **As an MCP tool server**, it exposes 15 retrieval tools that external LLM agents (Claude, GPT, LangGraph) compose into Agentic RAG workflows [@singh2025]. The Weight-Bleeding engine acts as the controlled semantic retrieval layer within this architecture, where the agent handles query decomposition, adaptive iteration, and result synthesis. This decoupling of retrieval (local, CPU-bound, semantically controlled) from reasoning (LLM-driven) aligns with the emerging multi-layer MCP architectures in agentic systems [@queenbee2026; @hybridagentic2026], where the MCP tool layer provides governed, auditable access to domain-specific knowledge [@bolla2025].
+Academic Hunter occupies a dual architectural role. **As a standalone SLR pipeline**, it performs multi-source search, domain-specific NLP filtering, Weight-Bleeding scoring, deduplication, and PRISMA-compliant export — all without requiring an LLM. **As an MCP tool server**, it exposes 35+ retrieval and analysis tools that external LLM agents (Claude, GPT, LangGraph) compose into Agentic RAG workflows [@singh2025]. The Weight-Bleeding engine acts as the controlled semantic retrieval layer within this architecture, where the agent handles query decomposition, adaptive iteration, and result synthesis. This decoupling of retrieval (local, CPU-bound, semantically controlled) from reasoning (LLM-driven) aligns with the emerging multi-layer MCP architectures in agentic systems [@queenbee2026; @hybridagentic2026], where the MCP tool layer provides governed, auditable access to domain-specific knowledge [@bolla2025].
 
 The scoring pipeline processes each paper through:
 
@@ -227,7 +227,7 @@ The version described in this paper is archived on Zenodo (DOI pending). The com
 Documentation, tutorials, and API reference are available at the project website:
 [https://devfelipenunes.github.io/academic-hunter](https://devfelipenunes.github.io/academic-hunter)
 
-The repository includes a test suite (21 regression tests), issue templates for bug reports and feature requests, and automated CI/CD via GitHub Actions.
+The repository includes a comprehensive test suite (155 tests including unit, integration, and MCP protocol tests), issue templates for bug reports and feature requests, and automated CI/CD via GitHub Actions.
 
 # Conclusion
 
