@@ -79,12 +79,12 @@ def mock_db_fail():
 class TestServerStatusTool:
     """Tests for the server_status MCP tool."""
 
-    def test_returns_healthy_status(
+    async def test_returns_healthy_status(
         self, mock_config_ok, mock_chroma_ok, mock_db_ok, mock_ctx
     ):
         from academic_hunter.interfaces.mcp.server import server_status
 
-        result = server_status(mock_ctx)
+        result = await server_status(mock_ctx)
         data = json.loads(result)
 
         assert data["status"] == "ok"
@@ -93,57 +93,57 @@ class TestServerStatusTool:
         assert data["vector_store"]["paper_count"] == 42
         assert data["last_config_backup"] == "2025-01-01"
 
-    def test_handles_config_failure(
+    async def test_handles_config_failure(
         self, mock_config_fail, mock_chroma_ok, mock_db_ok, mock_ctx
     ):
         from academic_hunter.interfaces.mcp.server import server_status
 
-        result = server_status(mock_ctx)
+        result = await server_status(mock_ctx)
         data = json.loads(result)
 
         assert data["status"] == "degraded"
         assert data["config_loaded"] is False
         assert data["vector_store"]["available"] is True
 
-    def test_handles_chroma_failure(
+    async def test_handles_chroma_failure(
         self, mock_config_ok, mock_chroma_fail, mock_db_ok, mock_ctx
     ):
         from academic_hunter.interfaces.mcp.server import server_status
 
-        result = server_status(mock_ctx)
+        result = await server_status(mock_ctx)
         data = json.loads(result)
 
         assert data["status"] == "degraded"
         assert data["vector_store"]["available"] is False
         assert data["vector_store"]["paper_count"] == 0
 
-    def test_handles_everything_failing(
+    async def test_handles_everything_failing(
         self, mock_config_fail, mock_chroma_fail, mock_db_fail, mock_ctx
     ):
         from academic_hunter.interfaces.mcp.server import server_status
 
-        result = server_status(mock_ctx)
+        result = await server_status(mock_ctx)
         data = json.loads(result)
 
         assert data["status"] == "error"
         assert data["config_loaded"] is False
         assert data["vector_store"]["available"] is False
 
-    def test_logs_calls(self, mock_config_ok, mock_chroma_ok, mock_db_ok, mock_ctx):
+    async def test_logs_calls(self, mock_config_ok, mock_chroma_ok, mock_db_ok, mock_ctx):
         from academic_hunter.interfaces.mcp.server import server_status
 
-        server_status(mock_ctx)
+        await server_status(mock_ctx)
 
         mock_ctx.info.assert_any_call("Checking server status...")
         mock_ctx.info.assert_any_call("Server status: ok")
 
-    def test_db_failure_non_critical(
+    async def test_db_failure_non_critical(
         self, mock_config_ok, mock_chroma_ok, mock_db_fail, mock_ctx
     ):
         """DB failure should not affect overall status — treated as best-effort."""
         from academic_hunter.interfaces.mcp.server import server_status
 
-        result = server_status(mock_ctx)
+        result = await server_status(mock_ctx)
         data = json.loads(result)
 
         # Status remains ok because config and vector store work
