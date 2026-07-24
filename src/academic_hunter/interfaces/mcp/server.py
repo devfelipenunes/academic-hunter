@@ -24,7 +24,7 @@ from .tools.europepmc import search_europepmc
 from .tools.obsidian import export_to_obsidian
 from .tools.analysis import (
     trending_topics, compare_papers, export_report,
-    find_novel_papers, find_related_papers,
+    find_novel_papers, find_related_papers, summarize_paper,
 )
 from .tools.rag import (
     semantic_search, index_papers, vector_store_stats,
@@ -38,6 +38,8 @@ from .tools.lens import search_patents
 from .tools.openaire import search_openaire
 from .tools.clinical_trials import search_clinical_trials
 from .tools.biorxiv import search_biorxiv
+from .tools.orcid import lookup_orcid
+from .tools.datacite import search_datasets
 from .tools.visualization import visualize_landscape, topic_evolution
 
 from .exceptions import ConfigError, VectorStoreError
@@ -389,6 +391,7 @@ def create_mcp_server() -> FastMCP:
     mcp.tool()(trending_topics)
     mcp.tool()(compare_papers)
     mcp.tool()(export_report)
+    mcp.tool()(summarize_paper)
 
     # Clustering tool
     mcp.tool()(cluster_papers)
@@ -412,6 +415,8 @@ def create_mcp_server() -> FastMCP:
     mcp.tool()(search_openaire)
     mcp.tool()(search_clinical_trials)
     mcp.tool()(search_biorxiv)
+    mcp.tool()(lookup_orcid)
+    mcp.tool()(search_datasets)
 
     # ── Resources ───────────────────────────────────────────────────────────
     mcp.resource("academic-hunter://config/current")(_get_config_resource)

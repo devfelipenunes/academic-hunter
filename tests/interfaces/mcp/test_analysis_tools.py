@@ -13,6 +13,7 @@ from academic_hunter.interfaces.mcp.tools.analysis import (
     trending_topics,
     compare_papers,
     export_report,
+    summarize_paper,
 )
 from academic_hunter.interfaces.mcp.exceptions import DiscoveryError, SearchError, MCPToolError
 
@@ -404,3 +405,44 @@ async def test_export_report_write_error(mock_ctx):
 
         assert "Cannot save file" in str(exc_info.value)
         mock_ctx.error.assert_called()
+
+
+# ── summarize_paper ─────────────────────────────────────────────────
+
+
+async def test_summarize_paper(mock_ctx):
+    """Returns extractive summary from abstract."""
+    mock_abstract = "This is the first sentence of the paper. Here is the second one discussing methods. The third sentence presents the key findings. Fourth sentence discusses implications. Fifth sentence concludes the work."
+
+    with patch("academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter") as m_hunter:
+        instance = m_hunter.return_value
+        instance.fetch_abstract_by_doi.return_value = mock_abstract
+
+        with patch("sentence_transformers.SentenceTransformer") as m_st:
+            model = MagicMock()
+            import numpy as np
+            model.encode.return_value = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8], [0.9, 1.0]])
+            m_st.return_value = model
+
+            result = await summarize_paper(mock_ctx, "10.1234/test", num_sentences=3)
+            assert "Extractive Summary" in result
+            assert "Centroid + MMR" in result
+            mock_ctx.info.assert_called()
+
+
+async def test_summarize_paper_not_found(mock_ctx):
+    """Graceful when paper not found."""
+    with patch("academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter") as m_hunter:
+        instance = m_hunter.return_value
+        instance.fetch_abstract_by_doi.return_value = None
+        result = await summarize_paper(mock_ctx, "10.1234/unknown")
+        assert "not available" in result or "Could not fetch" in result
+
+
+async def test_summarize_paper_short_abstract(mock_ctx):
+    """Graceful when abstract is too short."""
+    with patch("academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter") as m_hunter:
+        instance = m_hunter.return_value
+        instance.fetch_abstract_by_doi.return_value = "Short."
+        result = await summarize_paper(mock_ctx, "10.1234/short")
+        assert "too short" in result.lower()
