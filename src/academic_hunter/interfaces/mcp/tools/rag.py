@@ -280,3 +280,58 @@ async def answer_question(question: str, top_k: int = 5, ctx: Context = None) ->
 
     await ctx.info(f"Answered question using {len(results)} papers")
     return "\n".join(lines)
+
+
+async def rerank_search(ctx: Context, query: str, top_k: int = 20, rerank_k: int = 5) -> str:
+    """Semantic search with optional cross-encoder re-ranking for higher precision.
+
+    Uses bi-encoder (MiniLM) for initial retrieval, then optionally re-ranks
+    top results with cross-encoder if ``sentence-transformers`` is installed.
+
+    Args:
+        ctx: FastMCP Context (auto-injected).
+        query: Search query.
+        top_k: Initial results from bi-encoder (default 20).
+        rerank_k: Final results after re-ranking (default 5).
+    """
+    await ctx.info(f"Running re-ranked search for: '{query[:60]}'...")
+    store = _get_vector_store()
+    if store is None:
+        await ctx.error("Vector store not available")
+        return "Error: Vector store not available."
+
+    results = store.query(query, top_k=top_k)
+    if not results:
+        await ctx.info("No results found")
+        return "No semantically relevant papers found."
+
+    # Optional cross-encoder re-ranking
+    try:
+        from sentence_transformers import CrossEncoder
+        ce = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", max_length=512)
+        pairs = [[query, f"{p.get('title','')} {p.get('abstract_preview','')}"] for p in results]
+        scores = ce.predict(pairs)
+        scored = list(zip(results, scores))
+        scored.sort(key=lambda x: x[1], reverse=True)
+        results = [r for r, _ in scored[:rerank_k]]
+        await ctx.info(f"Cross-encoder re-ranked {len(scored)} candidates")
+    except ImportError:
+        await ctx.info("Cross-encoder not installed, using bi-encoder results")
+    except Exception as e:
+        await ctx.warning(f"Cross-encoder failed ({e}), using bi-encoder results")
+
+    lines = [f"# Re-Ranked Search Results\n", f"**Query:** {query}\n",
+             f"**Results:** {len(results)}\n", "---\n"]
+    for i, paper in enumerate(results, 1):
+        title = paper.get("title", "Untitled")
+        score = paper.get("semantic_relevance", 0)
+        year = paper.get("year", "?")
+        doi = paper.get("doi", "")
+        lines.append(f"## {i}. {title}\n")
+        lines.append(f"- **Relevance:** {score:.1%} | **Year:** {year}\n")
+        if doi: lines.append(f"- **DOI:** `{doi}`\n")
+        if paper.get("abstract_preview"):
+            lines.append(f"- {paper['abstract_preview'][:200]}...\n")
+        lines.append("")
+    await ctx.info(f"Returning {len(results)} re-ranked papers")
+    return "\n".join(lines)
