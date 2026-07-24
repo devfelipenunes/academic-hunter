@@ -22,10 +22,23 @@ from .tools.discovery import (
 )
 from .tools.europepmc import search_europepmc
 from .tools.obsidian import export_to_obsidian
-from .tools.analysis import trending_topics, compare_papers, export_report, find_novel_papers, find_related_papers
-from .tools.rag import semantic_search, index_papers, vector_store_stats, ask_papers, answer_question
+from .tools.analysis import (
+    trending_topics, compare_papers, export_report,
+    find_novel_papers, find_related_papers,
+)
+from .tools.rag import (
+    semantic_search, index_papers, vector_store_stats,
+    ask_papers, answer_question, rerank_search,
+)
 from .tools.clustering import cluster_papers
+from .tools.dedup import semantic_dedup
 from .tools.citations import get_citation_count, get_citing_papers
+from .tools.unpaywall import find_open_access
+from .tools.lens import search_patents
+from .tools.openaire import search_openaire
+from .tools.clinical_trials import search_clinical_trials
+from .tools.biorxiv import search_biorxiv
+from .tools.visualization import visualize_landscape, topic_evolution
 
 from .exceptions import ConfigError, VectorStoreError
 
@@ -366,13 +379,11 @@ def create_mcp_server() -> FastMCP:
 
     # RAG tools
     mcp.tool()(semantic_search)
+    mcp.tool()(rerank_search)
     mcp.tool()(index_papers)
     mcp.tool()(vector_store_stats)
     mcp.tool()(ask_papers)
     mcp.tool()(answer_question)
-
-    # Europe PMC
-    mcp.tool()(search_europepmc)
 
     # Analysis tools
     mcp.tool()(trending_topics)
@@ -387,6 +398,20 @@ def create_mcp_server() -> FastMCP:
     mcp.tool()(get_citing_papers)
     mcp.tool()(find_novel_papers)
     mcp.tool()(find_related_papers)
+
+    # Semantic dedup
+    mcp.tool()(semantic_dedup)
+
+    # Visualization tools
+    mcp.tool()(visualize_landscape)
+    mcp.tool()(topic_evolution)
+
+    # Connectors
+    mcp.tool()(find_open_access)
+    mcp.tool()(search_patents)
+    mcp.tool()(search_openaire)
+    mcp.tool()(search_clinical_trials)
+    mcp.tool()(search_biorxiv)
 
     # ── Resources ───────────────────────────────────────────────────────────
     mcp.resource("academic-hunter://config/current")(_get_config_resource)

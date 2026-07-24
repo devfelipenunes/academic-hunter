@@ -407,3 +407,101 @@ def _write_ris(papers: list, output_path: str) -> None:
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n\n".join(records) + "\n")
+
+
+async def find_novel_papers(ctx: Context, top_k: int = 500, contamination: float = 0.1) -> str:
+    """Finds novel/outlier papers that don't fit the main research themes.
+
+    Uses EllipticEnvelope over MiniLM embeddings to detect papers whose content
+    is significantly different from the corpus centroid.
+
+    Args:
+        ctx: FastMCP Context (auto-injected).
+        top_k: Number of papers to analyze (default 500).
+        contamination: Expected proportion of outliers (default 0.1).
+    """
+    await ctx.info(f"Running novelty detection on {top_k} papers...")
+    store = _get_vector_store()
+    if store is None:
+        await ctx.error("Vector store not available")
+        return "Vector store not available. Index papers first."
+
+    results = store.query("research novelty outlier detection", top_k=top_k)
+    if not results or len(results) < 5:
+        await ctx.info("Too few papers for novelty detection")
+        return "Not enough papers for novelty detection."
+
+    try:
+        from sentence_transformers import SentenceTransformer
+        from sklearn.covariance import EllipticEnvelope
+
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+        texts = [f"{p.get('title', '')} {p.get('abstract', '')}" for p in results]
+        embeddings = model.encode(texts)
+
+        detector = EllipticEnvelope(contamination=contamination, random_state=42)
+        predictions = detector.fit_predict(embeddings)
+        scores = detector.decision_function(embeddings)
+
+        outliers = [(i, scores[i]) for i, pred in enumerate(predictions) if pred == -1]
+        outliers.sort(key=lambda x: x[1])
+
+        if not outliers:
+            await ctx.info("No outlier papers detected")
+            return "# Novelty Detection\n\nNo outlier papers detected."
+
+        lines = ["# Novel/Outlier Papers\n",
+                 f"**Papers analyzed:** {len(results)}\n",
+                 f"**Outliers found:** {len(outliers)}\n", "---\n"]
+        for idx, score in outliers[:10]:
+            paper = results[idx]
+            lines.append(f"## {paper.get('title', 'Untitled')} ({paper.get('year', '?')})\n")
+            lines.append(f"- **Anomaly score:** {score:.4f}\n")
+            if paper.get("abstract_preview"):
+                lines.append(f"- **Preview:** {paper['abstract_preview'][:200]}...\n")
+            lines.append("")
+        await ctx.info(f"Found {len(outliers)} outlier papers")
+        return "\n".join(lines)
+    except ImportError as e:
+        await ctx.error(f"Missing dependency: {e}")
+        return f"Required library not installed: {e}"
+    except Exception as e:
+        await ctx.error(f"Novelty detection failed: {e}")
+        return f"Novelty detection failed: {e}"
+
+
+async def find_related_papers(ctx: Context, query: str, top_k: int = 5) -> str:
+    """Finds papers semantically similar to a given query.
+
+    Args:
+        ctx: FastMCP Context (auto-injected).
+        query: Search text (title, DOI, or free text).
+        top_k: Number of results (default 5, max 20).
+    """
+    await ctx.info(f"Finding papers related to: '{query[:60]}'...")
+    store = _get_vector_store()
+    if store is None:
+        await ctx.error("Vector store not available")
+        return "Vector store not available. Index papers first."
+
+    top_k = min(top_k, 20)
+    results = store.query(query, top_k=top_k)
+    if not results:
+        await ctx.info("No related papers found")
+        return "No related papers found. Try a different query."
+
+    lines = ["# Related Papers\n", f"**Query:** {query}\n",
+             f"**Results:** {len(results)}\n", "---\n"]
+    for i, paper in enumerate(results, 1):
+        title = paper.get("title", "Untitled")
+        rel = paper.get("semantic_relevance", 0)
+        year = paper.get("year", "?")
+        doi = paper.get("doi", "")
+        preview = paper.get("abstract_preview", "")
+        lines.append(f"## {i}. {title}\n")
+        lines.append(f"- **Relevance:** {rel:.1%} | **Year:** {year}\n")
+        if doi: lines.append(f"- **DOI:** `{doi}`\n")
+        if preview: lines.append(f"{preview[:200]}...\n")
+        lines.append("")
+    await ctx.info(f"Found {len(results)} related papers")
+    return "\n".join(lines)
