@@ -1,91 +1,137 @@
 <div align="center">
-  <h1>🎯 Academic Hunter V2</h1>
-  <p><b>Automated Systematic Literature Reviews for Decentralized Science (DeSci)</b></p>
+  <h1>🎯 Academic Hunter</h1>
+  <p><b>Automated Systematic Literature Reviews with Semantic Intelligence</b></p>
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Ready](https://img.shields.io/badge/Protocol-MCP_Ready-orange.svg)](https://modelcontextprotocol.io/)
-[![Website](https://img.shields.io/badge/Website-academic--hunter.dev-58a6ff.svg)](https://devfelipenunes.github.io/academic-hunter/)
+[![Tests](https://img.shields.io/badge/tests-155_passing-green.svg)](https://github.com/devfelipenunes/academic-hunter)
 </div>
 
-<br/>
-
-Academic Hunter is a professional Open Source Intelligence (OSINT) engine that automates the mining, deduplication, and mathematical relevance scoring of high-impact scholarly articles.
-
-Built with a **Hexagonal Architecture**, it serves two masters: it can be run as a raw Python CLI for Data Engineers, or plugged directly into your favorite Large Language Model (like Claude or Cursor) as an autonomous **Model Context Protocol (MCP)** server.
+Academic Hunter is an open-source Systematic Literature Review (SLR) tool that combines **multi-source search** (16 academic databases), **semantic relevance scoring** (Weight-Bleeding), **topic clustering** (BERTopic), **novelty detection**, **extractive summarization**, and a **Model Context Protocol (MCP) server** — all running locally on CPU, with zero API costs.
 
 ---
 
-## ✨ Features
+## 🚀 Quickstart: Primeira SLR em 1 minuto
 
-- 🧠 **Elite Scoring Engine:** NLP and Keyword evaluators that score papers mathematically based on your research anchors.
-- 🔗 **Multi-Source Aggregation:** Concurrently scrapes Semantic Scholar, OpenAlex, Crossref, ArXiv, and CORE.ac.uk.
-- 🛡️ **Intelligent Deduplication:** Uses Strict-DOI and Fuzzy Title matching to eliminate academic noise.
-- 🤖 **Native MCP Server:** Let Claude autonomously explore citation graphs, configure search parameters, and export to your Obsidian Second Brain.
-- 🔌 **Plugin Architecture:** Easily hot-swap Vector Stores (Native RAG) and NLP Screeners.
+```bash
+# Instale
+pip install git+https://github.com/devfelipenunes/academic-hunter.git
 
----
+# Modo interativo — só diga o tópico
+academic-hunter interactive
 
-## 🚀 Quickstart
+# Ou inicie o servidor MCP para agentes de IA
+academic-mcp
+```
 
-1. **Clone & Install:**
+## 📖 Tutorial Completo
 
-   ```bash
-   git clone https://github.com/devfelipenunes/academic-hunter.git
-   cd academic-hunter
-   python install.py
-   ```
-
-   _(The automated installer will set up your environment and optionally inject the MCP server into Claude Desktop for you)._
-
-2. **Configure your Research Anchors:**
-   _(Edit the generated `config.json` with your specific market keywords and technical weights)._
-
-3. **Hunt (Command-Line Interface):**
-   To run the main engine and sweep all academic databases simultaneously, activate the virtual environment created during installation and execute the command:
-
-   ```bash
-   source venv/bin/activate  # (No Windows: venv\Scripts\activate)
-   academic-hunter
-   ```
-
-   _Note: By default, running `academic-hunter` will use the global limit defined in your `config.json` (`limit_per_query` field). If you want to limit or expand the results for a quick test, you can force a value with the flag:_
-
-   ```bash
-   academic-hunter --limit 5
-   ```
-
-   _Results will be generated in the `results/` directory as rich CSV datasets, Prisma flows, and Markdown reports._
+Veja o [tutorial passo a passo](docs/tutorial.md) — 10 minutos para fazer sua primeira SLR completa.
 
 ---
 
-## ⚙️ The Brain: `config.json`
+## ✨ Principais Funcionalidades
 
-The `config.json` file is the heart of Academic Hunter. Unlike common scrapers that just pull everything they find, Hunter uses this file to act as an experienced researcher, filtering noise and mathematically scoring the relevance of each article.
+### 🔍 Busca Multi-Fonte
 
-It improves results by focusing on four main pillars:
+Conecta-se a **16 fontes acadêmicas simultaneamente**: arXiv, Crossref, Semantic Scholar, OpenAlex, CORE, DBLP, DOAJ, Europe PMC, OpenCitations, Unpaywall, Lens.org, OpenAIRE, ClinicalTrials.gov, bioRxiv, medRxiv, DataCite.
 
-1. **`settings`**: Defines research limits, minimum cut-off score (`min_relevance_score`), start year (`start_year`), and your **API keys**. Placing API keys here (like Semantic Scholar) prevents _Rate Limit_ errors, speeds up extraction, and opens doors to deeper metadata.
-2. **`anchors`**: Your primary research categories (e.g., "Digital Wallets", "Interbank Settlement"). The engine will only analyze papers that intersect with these core industry themes, immediately eliminating academic research with no market application.
-3. **`technical_strings`**: Deep technical terms (e.g., "zero-knowledge proof", "ISO 20022"). The algorithm reads the Title and Abstract of each article looking for these terms to verify the degree of technological sophistication of that paper.
-4. **`technical_weights`**: The secret of the NLP algorithm. You assign numerical "weights" (e.g., 5.0, 3.0) to each technical term. If the engine finds the terms in the paper, it adds the points (giving extra multipliers if it is in the title). Only papers that pass the `min_relevance_score` survive and enter your Master Report!
+### 🧠 Weight-Bleeding Scoring
+
+Método original de ponderação semântica configurável via centroide ponderado em espaço de embeddings — permite que o pesquisador defina quais termos são mais importantes sem modificar o modelo, sem GPU, sem dados rotulados.
+
+### 📊 12 Análises com o Mesmo Modelo (MiniLM 22MB)
+
+| Análise         | Tool MCP              | O que faz                                           |
+| --------------- | --------------------- | --------------------------------------------------- |
+| Busca semântica | `semantic_search`     | Encontra papers por CONCEITO, não por palavra exata |
+| Re-ranking      | `rerank_search`       | Bi-encoder + cross-encoder para maior precisão      |
+| Clustering      | `cluster_papers`      | Agrupa automaticamente por tema (BERTopic)          |
+| Outliers        | `find_novel_papers`   | Detecta papers inovadores/disruptivos               |
+| Snowballing     | `find_related_papers` | "Mais like this" para cada paper                    |
+| Tópicos         | `trending_topics`     | Identifica os assuntos mais frequentes              |
+| Evolução        | `topic_evolution`     | Mostra como os temas mudam ao longo dos anos        |
+| Mapa 2D         | `visualize_landscape` | Projeção UMAP de todos os papers                    |
+| Duplicatas      | `semantic_dedup`      | Detecta duplicatas por similaridade de embedding    |
+| Resumo          | `summarize_paper`     | Resumo extrativo via MMR                            |
+| Citações        | `get_citation_count`  | Contagem de citações via OpenCitations              |
+| Acesso Aberto   | `find_open_access`    | Versão OA de papers pagos via Unpaywall             |
+
+### 🤖 MCP Server — Integração com Agentes de IA
+
+O Academic Hunter expõe **35+ ferramentas, 4 recursos e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
+
+```bash
+# Inicia o servidor (stdio)
+academic-mcp
+
+# Ou em modo HTTP (SSE) para acesso remoto
+academic-mcp -t sse --host 0.0.0.0 --port 8080
+```
+
+### 📦 Exportação Multi-Formato
+
+CSV, BibTeX, RIS, JSON, Markdown, PRISMA — e exportação direta para **Obsidian**.
 
 ---
 
-## 🏛️ Architecture & Documentation
+## 🔧 Comandos
 
-Academic Hunter is designed for massive scalability without Spaghetti Code. Dive into our internal documentation to build your own plugins:
-
-- 🌐 **[Website & MCP Tools Reference](https://devfelipenunes.github.io/academic-hunter/)** — Landing page and complete MCP tools documentation
-- 📖 **[MCP Tools Reference](https://devfelipenunes.github.io/academic-hunter/mcp/)** — Full reference for all 15 MCP tools
-- 🗺️ **[Hexagonal Architecture Map](docs/architecture.md)**
-- ⚙️ **[The Core Engine](docs/core_engine.md)**
-- 🧩 **[How to Build NLP Screener Plugins](docs/plugins/screeners.md)**
-- 🗄️ **[How to Build Vector Store Plugins](docs/plugins/vector_stores.md)**
-- 🤝 **[Contributing Guidelines](CONTRIBUTING.md)**
+| Comando                       | Descrição                                        |
+| ----------------------------- | ------------------------------------------------ |
+| `academic-hunter interactive` | Modo interativo guiado (não precisa editar JSON) |
+| `academic-hunter run`         | Executa o pipeline com a configuração atual      |
+| `academic-hunter benchmark`   | Benchmark de 3 modos de scoring                  |
+| `academic-mcp`                | Inicia o servidor MCP (stdio)                    |
+| `academic-mcp -t sse`         | Inicia o servidor MCP em modo HTTP               |
 
 ---
 
-<div align="center">
-  <i>Developed for advanced academic and industrial research. Let the Hunter do the digging.</i>
-</div>
+## 📊 Comparação com Ferramentas Existentes
+
+| Recurso              | Academic Hunter    | ASReview       | Rayyan | Covidence |
+| -------------------- | ------------------ | -------------- | ------ | --------- |
+| Código aberto        | ✅                 | ✅             | ❌     | ❌        |
+| Fontes de dados      | **16**             | 1 (importação) | 1      | 1         |
+| Scoring semântico    | ✅ Weight-Bleeding | ❌             | ❌     | ❌        |
+| Cluster automático   | ✅                 | ❌             | ❌     | ❌        |
+| Detecção de novidade | ✅                 | ❌             | ❌     | ❌        |
+| MCP / API para IA    | ✅                 | ❌             | ❌     | ❌        |
+| Offline-first        | ✅                 | ✅             | ❌     | ❌        |
+| Custo                | **Zero**           | Zero           | $$$    | $$$$      |
+
+---
+
+## 🏗️ Arquitetura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    MCP Server (35+ tools)                    │
+│  4 Resources · 2 Prompts · Health Check · SSE Transport     │
+├─────────────────────────────────────────────────────────────┤
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐│
+│ │  Search  │ │  NLP     │ │  MCP     │ │  Exporters       ││
+│ │  16 APIs │ │  Scorer  │ │  Tools   │ │  CSV/Bib/RIS/MD  ││
+│ └──────────┘ └──────────┘ └──────────┘ └──────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📚 Leia os Papers
+
+- **JOSS**: "Academic Hunter: An Open-Source Systematic Literature Review Tool with Agentic RAG and Embedding-Space Relevance Scoring"
+- **Conferência**: "Weight-Bleeding: Configurable Semantic Relevance Scoring via Input-Level Term Repetition in Bi-Encoders"
+
+Ambos em [`papers/`](papers/).
+
+---
+
+## 📄 Licença
+
+MIT License — use, modifique, distribua livremente.
+
+## 🤝 Contribua
+
+Issues, pull requests e feedback são bem-vindos!
