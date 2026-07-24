@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academic Hunter — Visão Completa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f17; --bg-card:#131926; --bg-alt:#111927;
+  --text:#e8edf5; --text-secondary:#8892a8;
+  --accent:#58a6ff; --accent-glow:rgba(88,166,255,.12);
+  --green:#3fb950; --orange:#d29922; --purple:#bc8cff;
+  --red:#f85149; --cyan:#39d2c0;
+  --border:rgba(255,255,255,.08); --radius:14px;
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text)}
+.block{width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;border-bottom:1px solid var(--border)}
+.block-inner{width:min(92vw,1000px)}
+.block-alt{background:var(--bg-alt)}
+h1{font-size:2rem;font-weight:800;line-height:1.25}
+h2{font-size:1.2rem;font-weight:700;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem}
+h2 .num{font-size:.7rem;color:var(--accent);font-weight:500;background:var(--accent-glow);padding:.1rem .5rem;border-radius:100px;border:1px solid rgba(88,166,255,.2)}
+h3{font-size:.85rem;font-weight:600;margin-bottom:.3rem;color:var(--text)}
+p{font-size:.85rem;line-height:1.6;color:var(--text-secondary)}
+.subtitle{font-size:1rem;color:var(--text-secondary);line-height:1.5;margin-top:.3rem}
+.accent{color:var(--accent)}.green{color:var(--green)}.orange{color:var(--orange)}.purple{color:var(--purple)}.red{color:var(--red)}.cyan{color:var(--cyan)}
+.tag{display:inline-block;font-size:.62rem;padding:.12rem .5rem;border-radius:100px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.3rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:.3rem}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.card-highlight{border-color:rgba(88,166,255,.25);background:linear-gradient(135deg,var(--accent-glow),var(--bg-card))}
+.stat{text-align:center}
+.stat .num{font-size:1.8rem;font-weight:800}
+.stat .label{font-size:.65rem;color:var(--text-secondary)}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+th,td{padding:.3rem .5rem;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--text-secondary);font-weight:500;font-size:.62rem;text-transform:uppercase}
+.badge{display:inline-block;font-size:.55rem;padding:.08rem .4rem;border-radius:100px;font-weight:600}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-orange{background:rgba(210,153,34,.15);color:var(--orange)}
+.badge-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-radius:4px;font-size:.75rem}
+.callout{background:linear-gradient(135deg,var(--accent-glow),transparent);border:1px solid var(--border);border-radius:8px;padding:.7rem 1rem}
+.flow{display:flex;align-items:center;gap:.3rem;flex-wrap:wrap;background:var(--bg);border-radius:8px;padding:.5rem .7rem;font-size:.72rem}
+.flow-box{display:inline-block;padding:.2rem .45rem;border-radius:6px;font-size:.65rem;font-weight:500}
+.flow-arrow{color:var(--text-secondary);font-size:.7rem}
+.flex-row{display:flex;gap:.5rem;flex-wrap:wrap}
+.flex-1{flex:1;min-width:100px}
+.part-header{font-size:.7rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:.5rem}
+@media (max-width:768px){.grid-2,.grid-3{grid-template-columns:1fr}.block{padding:2rem 1rem}}
+</style>
+</head>
+<body>
+
+<!-- ═══ PARTE 1: PROBLEMA E VISÃO GERAL ═══ -->
+
+<!-- 1. TITLE -->
+<div class="block block-alt">
+<div class="block-inner">
+  <h1><span class="accent">Academic</span> <span class="green">Hunter</span></h1>
+  <p class="subtitle">Uma plataforma aberta de Revis&atilde;o Sistem&aacute;tica da Literatura<br>com an&aacute;lise sem&acirc;ntica inteligente</p>
+  <p style="font-size:.85rem;color:var(--text-secondary);margin-top:.3rem;"><strong>Pesquisador:</strong> Felipe Nunes &middot; Open Source (MIT)</p>
+  <div class="flex-row" style="margin:.6rem 0;gap:.3rem;">
+    <span class="tag">16 Fontes Acad&ecirc;micas</span>
+    <span class="tag">35+ MCP Tools</span>
+    <span class="tag">12 An&aacute;lises MiniLM</span>
+    <span class="tag">Zero GPU</span>
+    <span class="tag">Open Source</span>
+  </div>
+</div>
+</div>
+
+<!-- 2. O PROBLEMA -->
+<div class="block">
+<div class="block-inner">
+  <div class="part-header">Parte 1 &middot; O Problema</div>
+  <h2><span class="num">1</span> Por que SLR ainda &eacute; t&atilde;o dif&iacute;cil?</h2>
+  <p style="margin-bottom:.8rem;">Fazer uma Revis&atilde;o Sistem&aacute;tica leva de <strong>6 a 12 meses</strong>. As ferramentas existentes obrigam voc&ecirc; a escolher entre:</p>
+  <div class="grid-2">
+    <div class="card"><h3 style="color:var(--red)">⚠️ Keyword matching</h3><p style="font-size:.78rem">Perde sin&ocirc;nimos e conceitos. Um artigo sobre "moeda digital" n&atilde;o aparece numa busca por "CBDC".</p></div>
+    <div class="card"><h3 style="color:var(--orange)">⚠️ Dados rotulados</h3><p style="font-size:.78rem">Ferramentas como ASReview exigem classificar dezenas de artigos manualmente antes de funcionar.</p></div>
+    <div class="card"><h3 style="color:var(--red)">⚠️ Fechadas e pagas</h3><p style="font-size:.78rem">Rayyan e Covidence custam dinheiro, s&atilde;o cloud, n&atilde;o t&ecirc;m API para integrar com IA.</p></div>
+    <div class="card"><h3 style="color:var(--orange)">⚠️ Precisam de GPU</h3><p style="font-size:.78rem">Modelos de IA precisam de placa de v&iacute;deo cara — setup complexo e alto custo.</p></div>
+  </div>
+</div>
+</div>
+
+<!-- 3. VISÃO GERAL DO FLUXO -->
+<div class="block block-alt">
+<div class="block-inner">
+  <div class="part-header">Parte 1 &middot; Vis&atilde;o Geral</div>
+  <h2><span class="num">2</span> O Fluxo Completo</h2>
+  <p style="margin-bottom:.8rem;">Do momento que voc&ecirc; define um t&oacute;pico at&eacute; ter os insights prontos — 4 etapas:</p>
+
+  <div class="flow" style="justify-content:center;font-size:.9rem;padding:1rem;background:var(--bg-card);margin-bottom:1rem;">
+    <span class="flow-box" style="background:var(--accent-glow);color:var(--accent)">1. CONFIGURAR</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-box" style="background:rgba(57,210,192,.12);color:var(--cyan)">2. BUSCAR</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-box" style="background:rgba(188,140,255,.12);color:var(--purple)">3. ANALISAR</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-box" style="background:rgba(63,185,80,.12);color:var(--green)">4. EXPORTAR</span>
+  </div>
+
+  <div class="grid-2">
+    <div class="card"><h3>📝 Configurar</h3><p style="font-size:.78rem">Arquivo JSON com termos do dom&iacute;nio e pesos. Zero c&oacute;digo.</p></div>
+    <div class="card"><h3>🔍 Buscar</h3><p style="font-size:.78rem">16 bases acad&ecirc;micas em paralelo. Milhares de artigos.</p></div>
+    <div class="card"><h3>🧠 Analisar</h3><p style="font-size:.78rem">12 an&aacute;lises autom&aacute;ticas: relev&acirc;ncia, clusters, novidade, evolu&ccedil;&atilde;o, mapa&hellip;</p></div>
+    <div class="card"><h3>💾 Exportar</h3><p style="font-size:.78rem">CSV, BibTeX, RIS, Markdown, PRISMA, Obsidian.</p></div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ PARTE 2: O SOFTWARE EM AÇÃO ═══ -->
+
+<!-- 4. BUSCA MULTI-FONTE -->
+<div class="block">
+<div class="block-inner">
+  <div class="part-header">Parte 2 &middot; O Software em A&ccedil;&atilde;o</div>
+  <h2><span class="num">3</span> 16 Fontes Acad&ecirc;micas</h2>
+  <p style="margin-bottom:.8rem;">Consultas simult&acirc;neas com limite de taxa inteligente:</p>
+  <div class="grid-3">
+    <div class="card"><h3>📚 Bases tradicionais</h3><p style="font-size:.72rem">arXiv, Crossref, PubMed/Europe PMC, DBLP, DOAJ</p></div>
+    <div class="card"><h3>🤖 APIs inteligentes</h3><p style="font-size:.72rem">Semantic Scholar, OpenAlex, CORE</p></div>
+    <div class="card"><h3>🧬 Preprints</h3><p style="font-size:.72rem">bioRxiv, medRxiv</p></div>
+    <div class="card"><h3>📊 Dados complementares</h3><p style="font-size:.72rem">OpenCitations, Unpaywall</p></div>
+    <div class="card"><h3>🔐 Patentes</h3><p style="font-size:.72rem">Lens.org</p></div>
+    <div class="card"><h3>🏛️ Pesquisa</h3><p style="font-size:.72rem">OpenAIRE, DataCite, ClinicalTrials.gov, ORCID</p></div>
+  </div>
+</div>
+</div>
+
+<!-- 5. MCP -->
+<div class="block block-alt">
+<div class="block-inner">
+  <div class="part-header">Parte 2 &middot; Integra&ccedil;&atilde;o</div>
+  <h2><span class="num">4</span> O Ecossistema MCP</h2>
+  <p><strong style="color:var(--text)">MCP (Model Context Protocol):</strong> padr&atilde;o aberto (doado &agrave; Linux Foundation) que permite que QUALQUER agente de IA se conecte a ferramentas externas.</p>
+  <div class="callout" style="margin:.8rem 0;">
+    <p style="font-size:.82rem;color:var(--text)"><strong>Academic Hunter exp&otilde;e:</strong> 35+ ferramentas, 4 recursos, 2 templates de prompt &mdash; tudo via MCP.</p>
+  </div>
+  <div class="card card-highlight" style="margin-top:.5rem;">
+    <p style="font-size:.78rem;color:var(--text-secondary);margin-bottom:.3rem;"><strong>Exemplo real:</strong> Pesquisador → Claude → Academic Hunter (via MCP)</p>
+    <div style="font-family:monospace;font-size:.72rem;background:var(--bg);padding:.5rem;border-radius:6px;line-height:1.6;color:var(--accent)">
+      Pesquisador: "Faça uma revisão sobre CBDC e estabilidade financeira"<br><br>
+      └─ Claude planeia e executa:<br>
+      &nbsp;&nbsp;→ quick_topic_discovery("CBDC financial stability")<br>
+      &nbsp;&nbsp;→ update_config({anchors, weights})<br>
+      &nbsp;&nbsp;→ run_search()<br>
+      &nbsp;&nbsp;→ semantic_search("CBDC bank disintermediation")<br>
+      &nbsp;&nbsp;→ cluster_papers()<br>
+      &nbsp;&nbsp;→ find_novel_papers() → visualize_landscape()<br>
+      &nbsp;&nbsp;→ export_to_obsidian("CBDC Review")<br><br>
+      Pesquisador: valida o resultado em 15 minutos
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 6. POSICIONAMENTO -->
+<div class="block">
+<div class="block-inner">
+  <div class="part-header">Parte 2 &middot; Posicionamento</div>
+  <h2><span class="num">5</span> O que Academic Hunter &eacute; — e n&atilde;o &eacute;</h2>
+  <div class="grid-2">
+    <div class="card" style="border-color:rgba(248,81,73,.2)">
+      <h3 style="color:var(--red)">❌ N&atilde;o &eacute; um LLM</h3>
+      <p style="font-size:.78rem">N&atilde;o gera texto, n&atilde;o inventa respostas, n&atilde;o alucina.</p>
+    </div>
+    <div class="card" style="border-color:rgba(248,81,73,.2)">
+      <h3 style="color:var(--red)">❌ N&atilde;o &eacute; um agente</h3>
+      <p style="font-size:.78rem">É uma CAIXA DE FERRAMENTAS que um agente usa.</p>
+    </div>
+    <div class="card card-highlight">
+      <h3 style="color:var(--accent)">✅ É um motor de busca sem&acirc;ntica</h3>
+      <p style="font-size:.78rem">Entende o SIGNIFICADO, n&atilde;o s&oacute; as palavras.</p>
+    </div>
+    <div class="card card-highlight">
+      <h3 style="color:var(--green)">✅ Viabiliza Agentic RAG</h3>
+      <p style="font-size:.78rem">O agente IA orquestra; o Academic Hunter executa.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ PARTE 3: FUNCIONALIDADES MINILM ═══ -->
+
+<!-- 7. EMBEDDINGS -->
+<div class="block block-alt">
+<div class="block-inner">
+  <div class="part-header">Parte 3 &middot; A "Imprensa Digital" dos Textos</div>
+  <h2><span class="num">6</span> Embeddings: como o computador entende significado</h2>
+  <p style="margin-bottom:.8rem;">Cada artigo vira um vetor de <strong>384 n&uacute;meros</strong> — uma impress&atilde;o digital matem&aacute;tica. Artigos sobre temas parecidos geram vetores parecidos.</p>
+  <div class="card card-highlight" style="text-align:center;font-size:.85rem;">
+    <p style="font-size:.9rem;color:var(--text);line-height:1.8">
+    "Deep learning &eacute; para transformers"<br>
+    <strong style="color:var(--accent)">↓ modelo all-MiniLM-L6-v2 (22MB)</strong><br>
+    <span style="color:var(--text-secondary)">[0.23, -0.15, 0.87, -0.42, 0.11, ...] ← 384 n&uacute;meros</span>
+    </p>
+  </div>
+  <div class="grid-2" style="margin-top:.5rem;">
+    <div class="card"><h3>🗺️ Analogia: mapa da cidade</h3><p style="font-size:.78rem">Artigos sobre IA ficam no "bairro" da intelig&ecirc;ncia artificial. Blockchain fica noutro bairro. A dist&acirc;ncia entre eles reflete a dist&acirc;ncia entre os temas.</p></div>
+    <div class="card"><h3>📦 22MB, CPU, gr&aacute;tis</h3><p style="font-size:.78rem">O modelo que usamos cabe num arquivo menor que uma foto. Roda em QUALQUER computador. Zero custo.</p></div>
+  </div>
+</div>
+</div>
+
+<!-- 8. SEARCH + CLUSTERING -->
+<div class="block">
+<div class="block-inner">
+  <div class="part-header">Parte 3 &middot; Funcionalidades</div>
+  <h2><span class="num">7</span> Busca Sem&acirc;ntica + Agrupamento</h2>
+  <div class="grid-2">
+    <div class="card card-highlight">
+      <h3 style="color:var(--accent)">🔍 Busca Sem&acirc;ntica</h3>
+      <p style="font-size:.78rem">Em vez de procurar PALAVRAS exatas, procura CONCEITOS. "Impacto de moeda digital nos bancos" encontra artigos sobre CBDC — mesmo que as palavras exatas n&atilde;o apare&ccedil;am.</p>
+      <div style="margin-top:.3rem;font-size:.7rem;background:var(--bg);padding:.3rem .5rem;border-radius:4px">
+      <span style="color:var(--orange)">Query:</span> "CBDC impact on bank disintermediation"<br>
+      <span style="color:var(--green)">→</span> Retail Central Bank Digital Currencies: Implications for Banking<br>
+      <span style="color:var(--green)">→</span> CBDC and Financial Stability<br>
+      <span style="color:var(--green)">→</span> The Optimal Quantity of CBDC in a Bank-Based Economy
+      </div>
+    </div>
+    <div class="card card-highlight">
+      <h3 style="color:var(--purple)">🧩 Clusters Autom&aacute;ticos</h3>
+      <p style="font-size:.78rem">Agrupa milhares de artigos em TEMAS automaticamente. Numa busca sobre IA na sa&uacute;de, descobre clusters como: diagn&oacute;stico por imagem, prontu&aacute;rios, descoberta de medicamentos.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 9. NOVELTY + EVOLUTION + LANDSCAPE -->
+<div class="block block-alt">
+<div class="block-inner">
+  <div class="part-header">Parte 3 &middot; Descoberta</div>
+  <h2><span class="num">8</span> Enxergando o que n&atilde;o est&aacute; &oacute;bvio</h2>
+  <div class="grid-3">
+    <div class="card"><h3 style="color:var(--orange)">🆕 Novidade</h3><p style="font-size:.75rem">Detecta artigos que N&Atilde;O se encaixam em nenhum cluster. Frequentemente s&atilde;o pesquisas interdisciplinares ou tend&ecirc;ncias emergentes. Como um radar que aponta o que foge do padr&atilde;o.</p></div>
+    <div class="card"><h3 style="color:var(--cyan)">📈 Evolu&ccedil;&atilde;o</h3><p style="font-size:.75rem">Mostra como os t&oacute;picos mudaram ao longo dos anos. Um tema que cresce → &aacute;rea quente. Um que encolhe → maturidade ou decl&iacute;nio.</p></div>
+    <div class="card"><h3 style="color:var(--accent)">🗺️ Mapa 2D</h3><p style="font-size:.75rem">Projeta TODOS os artigos num mapa interativo. Artigos pr&oacute;ximos = temas similares. D&aacute; pra ver lacunas e oportunidades de pesquisa.</p></div>
+  </div>
+</div>
+</div>
+
+<!-- 10. SUMMARIZATION + DEDUP -->
+<div class="block">
+<div class="block-inner">
+  <div class="part-header">Parte 3 &middot; S&iacute;ntese</div>
+  <h2><span class="num">9</span> Resumo e Qualidade</h2>
+  <div class="grid-2">
+    <div class="card card-highlight">
+      <h3 style="color:var(--green)">📝 Resumo Autom&aacute;tico</h3>
+      <p style="font-size:.78rem">Dado um DOI, o sistema extrai as 3-5 senten&ccedil;as MAIS REPRESENTATIVAS do abstract. Seleciona senten&ccedil;as que s&atilde;o: relevantes ao tema E n&atilde;o redundantes entre si.</p>
+    </div>
+    <div class="card card-highlight">
+      <h3 style="color:var(--purple)">🔍 Duplicatas Sem&acirc;nticas</h3>
+      <p style="font-size:.78rem">Detecta papers que s&atilde;o virtualmente id&ecirc;nticos mas t&ecirc;m DOIs diferentes — preprint vs publicado, tradu&ccedil;&otilde;es. Compara os embeddings e agrupa os similares.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ PARTE 4: WEIGHT-BLEEDING ═══ -->
+
+<!-- 11. O PROBLEMA -->
+<div class="block block-alt">
+<div class="block-inner">
+  <div class="part-header">Parte 4 &middot; Weight-Bleeding</div>
+  <h2><span class="num">10</span> O Problema do Mean Pooling</h2>
+  <p style="margin-bottom:.8rem;">O m&eacute;todo padr&atilde;o para criar embeddings (mean pooling) trata TODAS as palavras igualmente. Num artigo sobre "repeti&ccedil;&atilde;o de termos em bi-encoders", "termo" tem o mesmo peso que "bi-encoder".</p>
+  <div class="card" style="text-align:center;font-size:.9rem;margin-bottom:.5rem;">
+    <p style="color:var(--text);line-height:2">
+    "O <strong>bi-encoder</strong> usa <strong>repeti&ccedil;&atilde;o</strong> de <strong>termos</strong>"<br>
+    <span style="color:var(--text-secondary)">↓ mean pooling d&aacute; o MESMO peso para TODAS as palavras</span>
+    </p>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h3 style="color:var(--orange)">📊 Scores comprimidos</h3><p style="font-size:.78rem">Artigos parecidos mas n&atilde;o exatos ficam com scores muito pr&oacute;ximos — dif&iacute;cil separar o relevante do irrelevante.</p></div>
+    <div class="card"><h3 style="color:var(--orange)">🎯 Sem controle</h3><p style="font-size:.78rem">O pesquisador n&atilde;o consegue "guiar" a busca semanticamente — dizer que certos termos s&atilde;o mais importantes.</p></div>
+  </div>
+</div>
+</div>
+
+<!-- 12. A SOLUÇÃO -->
+<div class="block">
+<div class="block-inner">
+  <div class="part-header">Parte 4 &middot; Weight-Bleeding</div>
+  <h2><span class="num">11</span> A Solu&ccedil;&atilde;o: Centroide Ponderado</h2>
+  <p><strong style="color:var(--text)">Ideia central:</strong> Se repetir um termo W vezes no texto fizesse ele contribuir W vezes mais, por que n&atilde;o fazer isso diretamente no espa&ccedil;o de embeddings?</p>
+  <div class="card card-highlight" style="margin:.5rem 0;">
+    <p style="font-size:.82rem;color:var(--text);line-height:1.8">
+    <strong>1.</strong> Pesquisador define num JSON os termos importantes e seus pesos<br>
+    <strong>2.</strong> Sistema calcula um <strong style="color:var(--accent)">centroide ponderado</strong> — uma "posi&ccedil;&atilde;o alvo" no espa&ccedil;o de embeddings<br>
+    <strong>3.</strong> Cada artigo &eacute; comparado com esse centroide → quanto mais pr&oacute;ximo, mais relevante<br>
+    <strong style="color:var(--green)">4.</strong> Tudo em CPU, milissegundos por artigo, zero dados de treinamento
+    </p>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="color:var(--accent)">📋 Exemplo</h3>
+      <div style="font-family:monospace;font-size:.7rem;background:var(--bg);padding:.4rem;border-radius:4px;line-height:1.5">
+{"CBDC": 5.0,<br>
+&nbsp;"banco central": 5.0,<br>
+&nbsp;"moeda digital": 5.0,<br>
+&nbsp;"liquidez": 2.0,<br>
+&nbsp;"blockchain": 2.0,<br>
+&nbsp;"política": 1.0}
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--green)">🎯 Resultado</h3>
+      <p style="font-size:.78rem">Artigos sobre CBDC sobem no ranking. Artigos sobre blockchain SEM CBDC n&atilde;o s&atilde;o afetados. O controle &eacute; preciso e previs&iacute;vel.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 13. RESULTADOS -->
+<div class="block block-alt">
+<div class="block-inner">
+  <div class="part-header">Parte 4 &middot; Valida&ccedil;&atilde;o</div>
+  <h2><span class="num">12</span> Resultados Pr&aacute;ticos</h2>
+  <div class="grid-3">
+    <div class="card"><div class="stat"><div class="num" style="color:var(--cyan)">96.8%</div></div><p style="font-size:.72rem;text-align:center">Correla&ccedil;&atilde;o com vanilla — ranking MUDA, 40% dos top-10 s&atilde;o diferentes</p></div>
+    <div class="card"><div class="stat"><div class="num" style="color:var(--purple)">-0.75</div></div><p style="font-size:.72rem;text-align:center">Correla&ccedil;&atilde;o entre dom&iacute;nios SLR vs Blockchain — prova que &eacute; ESPEC&Iacute;FICO do dom&iacute;nio</p></div>
+    <div class="card"><div class="stat"><div class="num" style="color:var(--green)">7.5&times;</div></div><p style="font-size:.72rem;text-align:center">Mais r&aacute;pido que cross-encoder. Centroid calculado em 0.5s, cada artigo em milissegundos.</p></div>
+  </div>
+  <p style="margin-top:.5rem;text-align:center;font-size:.82rem;">Resultados consistentes em 3 modelos de embedding diferentes (MiniLM, BGE, GTE)</p>
+</div>
+</div>
+
+<!-- ═══ PARTE 5: CONTRIBUIÇÃO ═══ -->
+
+<!-- 14. ECOSSISTEMA COMPLETO -->
+<div class="block">
+<div class="block-inner">
+  <div class="part-header">Parte 5 &middot; O Que Tudo Isso Significa</div>
+  <h2><span class="num">13</span> Ecossistema Completo vs Concorrentes</h2>
+  <table>
+    <tr><th>Recurso</th><th>Academic Hunter</th><th>ASReview</th><th>Rayyan</th><th>Covidence</th></tr>
+    <tr><td>C&oacute;digo aberto</td><td style="color:var(--green)">✅</td><td style="color:var(--green)">✅</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td></tr>
+    <tr><td>Fontes de dados</td><td><strong style="color:var(--accent)">16</strong></td><td>1 (importa&ccedil;&atilde;o)</td><td>1</td><td>1</td></tr>
+    <tr><td>Scoring sem&acirc;ntico</td><td style="color:var(--green)">✅ WB</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td></tr>
+    <tr><td>Cluster autom&aacute;tico</td><td style="color:var(--green)">✅</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td></tr>
+    <tr><td>Detec&ccedil;&atilde;o de novidade</td><td style="color:var(--green)">✅</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td></tr>
+    <tr><td>Mapa da pesquisa (UMAP)</td><td style="color:var(--green)">✅</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td></tr>
+    <tr><td>MCP / API para IA</td><td style="color:var(--green)">✅</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td></tr>
+    <tr><td>Custo</td><td><strong style="color:var(--green)">Zero</strong></td><td>Zero</td><td>$$$</td><td>$$$$</td></tr>
+    <tr><td>GPU necess&aacute;ria</td><td style="color:var(--green)">N&atilde;o</td><td>N&atilde;o</td><td>N/A (cloud)</td><td>N/A (cloud)</td></tr>
+  </table>
+</div>
+</div>
+
+<!-- 15. POSICIONAMENTO ACADÊMICO -->
+<div class="block block-alt">
+<div class="block-inner">
+  <div class="part-header">Parte 5 &middot; Contribui&ccedil;&atilde;o</div>
+  <h2><span class="num">14</span> Posicionamento &Uacute;nico na Literatura</h2>
+  <div class="card card-highlight" style="margin-bottom:.5rem;">
+    <p style="font-size:.82rem;color:var(--text)"><strong>Academic Hunter &eacute; o &Uacute;NICO sistema que combina:</strong></p>
+    <p style="font-size:.78rem;margin-top:.3rem;">✅ Pipeline SLR completo + 16 fontes + 35+ tools MCP + 12 an&aacute;lises MiniLM + Weight-Bleeding</p>
+  </div>
+  <div class="grid-3">
+    <div class="card"><p style="font-size:.72rem">Survey Singh (2025): 7 arquiteturas Agentic RAG — <strong style="color:var(--orange)">nenhuma menciona SLR</strong></p></div>
+    <div class="card"><p style="font-size:.72rem">Queen-Bee (2026): agentes conectados por MCP — <strong style="color:var(--accent)">AH &eacute; uma "abelha" especializada</strong></p></div>
+    <div class="card"><p style="font-size:.72rem">Mishra (2026): "retrieval misalignment" — <strong style="color:var(--green)">Weight-Bleeding MITIGA esse risco</strong></p></div>
+  </div>
+</div>
+</div>
+
+<!-- 16. PRÓXIMOS PASSOS -->
+<div class="block">
+<div class="block-inner">
+  <div class="part-header">Parte 5 &middot; Publica&ccedil;&otilde;es</div>
+  <h2><span class="num">15</span> Dois Tracks de Publica&ccedil;&atilde;o</h2>
+  <div class="grid-2">
+    <div class="card card-highlight">
+      <h3 style="color:var(--accent)">📄 JOSS — Journal of Open Source Software</h3>
+      <p style="font-size:.78rem"><strong>Foco:</strong> A ferramenta, o ecossistema, como usar</p>
+      <p style="font-size:.78rem">244 linhas, 16 conectores, 35+ tools, 155 testes, demonstra&ccedil;&atilde;o de fluxo completo via MCP</p>
+    </div>
+    <div class="card card-highlight">
+      <h3 style="color:var(--purple)">📄 Confer&ecirc;ncia (alvo: EMNLP/ACL/ECIR)</h3>
+      <p style="font-size:.78rem"><strong>Foco:</strong> O m&eacute;todo Weight-Bleeding, experimentos, baselines</p>
+      <p style="font-size:.78rem">346 linhas, 12 experimentos, 3 modelos (MiniLM/BGE/GTE), 5 baselines (SGPT/SIF/Echo/CE/Vanilla)</p>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:.5rem;">
+    <p style="font-size:.82rem;color:var(--text);margin:0"><strong>Pr&oacute;ximos passos:</strong> PyPI publish &middot; Zenodo DOI &middot; ORCID real &middot; Valida&ccedil;&atilde;o humana (user study)</p>
+  </div>
+</div>
+</div>
+
+<!-- 17. OBRIGADO -->
+<div class="block block-alt">
+<div class="block-inner" style="text-align:center">
+  <h1 style="font-size:2.5rem">Obrigado</h1>
+  <p style="font-size:1rem;margin-top:.5rem;">C&oacute;digo: <strong style="color:var(--accent)">github.com/devfelipenunes/academic-hunter</strong></p>
+  <p style="font-size:.85rem;color:var(--text-secondary)">Documenta&ccedil;&atilde;o: devfelipenunes.github.io/academic-hunter</p>
+  <p style="font-size:.85rem;color:var(--text-secondary);margin-top:1rem;">Perguntas? Cr&iacute;ticas? Sugest&otilde;es?</p>
+</div>
+</div>
+
+</body>
+</html>
