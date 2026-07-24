@@ -5,20 +5,22 @@ build-backend = "hatchling.build"
 [project]
 name = "academic-hunter"
 dynamic = ["version"]
-description = "An automated research tool that aggregates, dedups, and ranks scholarly articles from multiple academic APIs."
+description = "Automated Systematic Literature Review (SLR) tool — semantic search, topic clustering, novelty detection, and MCP server for agentic integration."
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "Filipe Nunes", email = "fnunes@example.com"}
+    {name = "Felipe Nunes", email = "devfelipenunes@gmail.com"}
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Retrieval",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+keywords = ["SLR", "systematic-review", "literature-review", "embeddings", "MCP", "academic-search", "research-tool"]
 dependencies = [
     "pandas>=1.0.0",
     "requests>=2.25.0",
@@ -29,14 +31,16 @@ dependencies = [
 
 [project.optional-dependencies]
 rag = ["chromadb>=1.5.0"]
-dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+ml = ["sentence-transformers>=2.2.0", "scikit-learn>=1.0.0", "umap-learn>=0.5.0", "bertopic>=0.17.0"]
+dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "pytest-asyncio>=0.24.0"]
 
 [project.scripts]
-academic-hunter = "academic_hunter.cli:run_scraper"
+academic-hunter = "academic_hunter.cli:main"
 academic-mcp = "academic_hunter.interfaces.mcp.server:run_mcp_server"
 
 [project.urls]
-"Homepage" = "https://github.com/devfelipenunes/academic-hunter"
+Homepage = "https://github.com/devfelipenunes/academic-hunter"
+Documentation = "https://devfelipenunes.github.io/academic-hunter"
 "Bug Tracker" = "https://github.com/devfelipenunes/academic-hunter/issues"
 
 [tool.hatch.version]
