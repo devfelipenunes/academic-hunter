@@ -10,18 +10,24 @@ async def test_search_openaire(mock_ctx):
     """Returns search results with funding info."""
     mock_response = {
         "response": {
-            "results": [
-                {
-                    "metadata": {
-                        "title": "Blockchain for Healthcare",
-                        "creator": ["Alice Smith", "Bob Jones"],
-                        "publicationDate": "2024-03-15",
-                        "pid": "10.1000/test",
-                        "isOpenAccess": True,
-                        "fundingReference": [{"funderName": "European Commission"}],
+            "results": {
+                "result": [
+                    {
+                        "metadata": {
+                            "oaf:entity": {
+                                "oaf:result": {
+                                    "title": [{"@classid": "main title", "$": "Blockchain for Healthcare"}],
+                                    "creator": [{"$": "Alice Smith"}, {"$": "Bob Jones"}],
+                                    "dateofacceptance": {"$": "2024-03-15"},
+                                    "pid": [{"@classid": "doi", "$": "10.1000/test"}],
+                                    "bestaccessright": {"@classid": "OPEN ACCESS"},
+                                    "project": [{"funder": {"$": "European Commission"}}],
+                                }
+                            }
+                        }
                     }
-                }
-            ]
+                ]
+            }
         }
     }
     with patch("academic_hunter.interfaces.mcp.tools.openaire.requests.get") as m_get:

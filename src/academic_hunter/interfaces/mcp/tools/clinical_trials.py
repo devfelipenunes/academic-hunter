@@ -29,7 +29,6 @@ async def search_clinical_trials(ctx: Context, condition: str, limit: int = 10) 
             "query.term": condition,
             "pageSize": min(limit, 50),
             "format": "json",
-            "fields": "NCTId|briefTitle|overallStatus|phase|startDate|leadSponsorName|condition",
         }
         resp = requests.get(f"{CT_API}/studies", params=params, timeout=15)
         resp.raise_for_status()

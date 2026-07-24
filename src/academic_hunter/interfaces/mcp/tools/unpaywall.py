@@ -16,7 +16,7 @@ logger = logging.getLogger("academic_hunter.mcp.unpaywall")
 UNPAYWALL_API = "https://api.unpaywall.org/v2"
 
 
-async def find_open_access(ctx: Context, doi: str, email: str = "") -> str:
+async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com") -> str:
     """Finds the open-access version of a paper by DOI via Unpaywall.
 
     Returns OA status, best location URL, and license info.
@@ -28,9 +28,12 @@ async def find_open_access(ctx: Context, doi: str, email: str = "") -> str:
     """
     await ctx.info(f"Looking up OA version for DOI {doi}...")
     try:
-        params = {"email": email} if email else {}
+        params = {"email": email}
         url = f"{UNPAYWALL_API}/{doi}"
         resp = requests.get(url, params=params, timeout=10)
+        if resp.status_code == 422:
+            await ctx.warning("Unpaywall requires a valid email")
+            return "Unpaywall requires a valid email. Pass email='your@email.com'."
         resp.raise_for_status()
         data = resp.json()
 
