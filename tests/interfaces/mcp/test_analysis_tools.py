@@ -314,6 +314,75 @@ async def test_export_report_default_output_path(mock_ctx, tmp_path):
             mock_ctx.info.assert_called()
 
 
+async def test_export_report_bibtex(mock_ctx, tmp_path):
+    """BibTeX export produces a valid BibTeX file with expected fields."""
+    mock_papers = [
+        {"Title": "Paper One", "DOI": "10.1000/one", "Year": 2023,
+         "Authors": "Author A and Author B", "Source": "Journal X",
+         "Abstract": "A groundbreaking study."},
+        {"Title": "Paper Two", "DOI": "10.1000/two", "Year": 2024,
+         "Authors": "Author C", "Source": "Journal Y"},
+    ]
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.analysis.get_project_root",
+        return_value=tmp_path,
+    ):
+        with patch(
+            "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+        ) as m_hunter:
+            hunter_instance = m_hunter.return_value
+            type(hunter_instance).consolidated_results = PropertyMock(
+                return_value={f"p{i}": p for i, p in enumerate(mock_papers)}
+            )
+
+            output_file = str(tmp_path / "test_export.bib")
+            result = await export_report(mock_ctx, format="bibtex", output_path=output_file)
+
+            assert "Successfully exported 2 papers" in result
+            assert Path(output_file).exists()
+            content = Path(output_file).read_text()
+            assert "@article{" in content
+            assert "author" in content
+            assert "title" in content
+            assert "Paper One" in content
+            assert "10.1000/one" in content
+            mock_ctx.info.assert_called()
+
+
+async def test_export_report_ris(mock_ctx, tmp_path):
+    """RIS export produces a valid RIS file with expected fields."""
+    mock_papers = [
+        {"Title": "Paper One", "DOI": "10.1000/one", "Year": 2023,
+         "Authors": ["Author A", "Author B"], "Source": "Journal X"},
+    ]
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.analysis.get_project_root",
+        return_value=tmp_path,
+    ):
+        with patch(
+            "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+        ) as m_hunter:
+            hunter_instance = m_hunter.return_value
+            type(hunter_instance).consolidated_results = PropertyMock(
+                return_value={"p0": mock_papers[0]}
+            )
+
+            output_file = str(tmp_path / "test_export.ris")
+            result = await export_report(mock_ctx, format="ris", output_path=output_file)
+
+            assert "Successfully exported 1 papers" in result
+            assert Path(output_file).exists()
+            content = Path(output_file).read_text()
+            assert "TY  - JOUR" in content
+            assert "TI  - Paper One" in content
+            assert "PY  - 2023" in content
+            assert "AU  - Author A" in content
+            assert "AU  - Author B" in content
+            mock_ctx.info.assert_called()
+
+
 async def test_export_report_write_error(mock_ctx):
     """File write errors raise SearchError."""
     with patch(

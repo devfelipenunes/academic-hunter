@@ -45,13 +45,15 @@ async def run_search(ctx: Context, limit_per_source: int = None) -> str:
         raise SearchError(str(e))
 
 
-async def read_latest_report(ctx: Context) -> str:
+async def read_latest_report(ctx: Context, max_chars: int = 10000, offset: int = 0) -> str:
     """Reads the latest Markdown report generated in the results/ folder.
 
     Useful for the agent to summarize the findings right after running run_search().
 
     Args:
         ctx: FastMCP Context (auto-injected).
+        max_chars: Maximum number of characters to return (default 10000).
+        offset: Character offset to start reading from (default 0).
     """
     await ctx.info("Reading latest report...")
     try:
@@ -74,11 +76,15 @@ async def read_latest_report(ctx: Context) -> str:
         with open(latest_file, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Truncate very large reports
-        MAX_CHARS = 10000
-        if len(content) > MAX_CHARS:
-            content = content[:MAX_CHARS]
-            await ctx.info("Report truncated to 10000 characters")
+        # Apply offset
+        if offset > 0:
+            content = content[offset:]
+            await ctx.info(f"Offset applied ({offset} chars)")
+
+        # Truncate to max_chars
+        if len(content) > max_chars:
+            content = content[:max_chars]
+            await ctx.info(f"Report truncated to {max_chars} characters")
 
         await ctx.info(f"Report read ({len(content)} chars)")
         return content
