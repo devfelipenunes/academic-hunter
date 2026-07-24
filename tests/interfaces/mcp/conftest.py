@@ -70,6 +70,7 @@ def mock_hunter_config():
         instance.context_rules = {}
         instance.keyword_only_terms = []
         instance.keyword_only_category = ""
+        instance.save = MagicMock()
         yield instance
 
 
