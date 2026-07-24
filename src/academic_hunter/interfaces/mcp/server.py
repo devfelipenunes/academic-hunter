@@ -4,7 +4,7 @@ import json
 import logging
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 from starlette.responses import JSONResponse
 
 from .tools.configuration import (
@@ -20,9 +20,12 @@ from .tools.discovery import (
     fetch_multiple_abstracts,
     quick_topic_discovery,
 )
+from .tools.europepmc import search_europepmc
 from .tools.obsidian import export_to_obsidian
-from .tools.analysis import trending_topics, compare_papers, export_report
+from .tools.analysis import trending_topics, compare_papers, export_report, find_novel_papers, find_related_papers
 from .tools.rag import semantic_search, index_papers, vector_store_stats, ask_papers, answer_question
+from .tools.clustering import cluster_papers
+from .tools.citations import get_citation_count, get_citing_papers
 
 from .exceptions import ConfigError, VectorStoreError
 
@@ -43,7 +46,7 @@ def _setup_logging():
 # ── Health / status ──────────────────────────────────────────────────────────
 
 
-async def server_status(ctx) -> str:
+async def server_status(ctx: Context) -> str:
     """Returns diagnostic information about the MCP server and its dependencies.
 
     Checks:
@@ -358,6 +361,7 @@ def create_mcp_server() -> FastMCP:
     mcp.tool()(explore_citation_graph)
     mcp.tool()(fetch_multiple_abstracts)
     mcp.tool()(quick_topic_discovery)
+    mcp.tool()(search_europepmc)
     mcp.tool()(export_to_obsidian)
 
     # RAG tools
@@ -367,10 +371,22 @@ def create_mcp_server() -> FastMCP:
     mcp.tool()(ask_papers)
     mcp.tool()(answer_question)
 
+    # Europe PMC
+    mcp.tool()(search_europepmc)
+
     # Analysis tools
     mcp.tool()(trending_topics)
     mcp.tool()(compare_papers)
     mcp.tool()(export_report)
+
+    # Clustering tool
+    mcp.tool()(cluster_papers)
+
+    # Citation tools
+    mcp.tool()(get_citation_count)
+    mcp.tool()(get_citing_papers)
+    mcp.tool()(find_novel_papers)
+    mcp.tool()(find_related_papers)
 
     # ── Resources ───────────────────────────────────────────────────────────
     mcp.resource("academic-hunter://config/current")(_get_config_resource)
