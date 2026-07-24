@@ -42,7 +42,7 @@ def _setup_logging():
 # ── Health / status ──────────────────────────────────────────────────────────
 
 
-def server_status(ctx) -> str:
+async def server_status(ctx) -> str:
     """Returns diagnostic information about the MCP server and its dependencies.
 
     Checks:
@@ -54,7 +54,7 @@ def server_status(ctx) -> str:
     Returns a JSON string with the overall ``status`` (ok / degraded / error)
     and per-component detail.
     """
-    ctx.info("Checking server status...")
+    await ctx.info("Checking server status...")
 
     # Default state
     status = "ok"
@@ -71,7 +71,7 @@ def server_status(ctx) -> str:
     except Exception as exc:
         config_loaded = False
         status = "degraded"
-        ctx.warning(f"Config not available: {exc}")
+        await ctx.warning(f"Config not available: {exc}")
 
     # 2. Vector store check
     try:
@@ -86,7 +86,7 @@ def server_status(ctx) -> str:
             status = "degraded"
         elif not config_loaded:
             status = "error"
-        ctx.warning(f"Vector store not available: {exc}")
+        await ctx.warning(f"Vector store not available: {exc}")
 
     # 3. Last config backup (best-effort)
     try:
@@ -110,7 +110,7 @@ def server_status(ctx) -> str:
         "last_config_backup": last_backup,
     }
 
-    ctx.info(f"Server status: {status}")
+    await ctx.info(f"Server status: {status}")
     return json.dumps(data, ensure_ascii=False)
 
 

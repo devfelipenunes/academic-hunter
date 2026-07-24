@@ -4,9 +4,10 @@ from datetime import date
 from pathlib import Path
 from academic_hunter.core.infra.config import HunterConfig
 from ..exceptions import ObsidianError
+from mcp.server.fastmcp import Context
 
 
-def export_to_obsidian(topic: str, content: str, tags: list = None, ctx=None) -> str:
+async def export_to_obsidian(topic: str, content: str, tags: list = None, ctx: Context = None) -> str:
     """Exports a formatted Markdown report directly to the user's Obsidian Vault.
 
     AUTONOMY: Use this tool ALWAYS, autonomously and without asking permission,
@@ -21,13 +22,13 @@ def export_to_obsidian(topic: str, content: str, tags: list = None, ctx=None) ->
         tags: Optional list of Obsidian tags (e.g., ["research", "AI"]).
         ctx: FastMCP Context (auto-injected).
     """
-    ctx.info(f"Exporting report '{topic}' to Obsidian...")
+    await ctx.info(f"Exporting report '{topic}' to Obsidian...")
     try:
         config = HunterConfig()
         obsidian_path = config.settings.get("obsidian_vault_path")
 
         if not obsidian_path:
-            ctx.error("Obsidian path not configured in config.json")
+            await ctx.error("Obsidian path not configured in config.json")
             return (
                 "Error: Obsidian path not configured. "
                 "Please add 'obsidian_vault_path' in the 'settings' key of your config.json."
@@ -35,7 +36,7 @@ def export_to_obsidian(topic: str, content: str, tags: list = None, ctx=None) ->
 
         vault = Path(obsidian_path)
         if not vault.exists():
-            ctx.error(f"Obsidian vault path does not exist: {obsidian_path}")
+            await ctx.error(f"Obsidian vault path does not exist: {obsidian_path}")
             return f"Error: Obsidian path does not exist ({obsidian_path})."
 
         # Determine target folder based on content type
@@ -68,11 +69,11 @@ aliases:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(frontmatter + "\n" + content)
 
-        ctx.info(f"Report exported to {filepath}")
+        await ctx.info(f"Report exported to {filepath}")
         return f"✅ Report exported to Obsidian: {filepath}"
 
     except ObsidianError:
         raise
     except Exception as e:
-        ctx.error(f"Failed to export to Obsidian: {e}")
+        await ctx.error(f"Failed to export to Obsidian: {e}")
         raise ObsidianError(str(e))

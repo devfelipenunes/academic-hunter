@@ -1,39 +1,89 @@
-import os
-import glob
-from academic_hunter import AcademicHunter
+"""MCP tools for executing the academic search pipeline and reading results.
 
-def run_search(limit_per_source: int = None) -> str:
-    """
-    Executes the consolidated academic search based on the keywords and weights from config.json.
+``run_search`` reports progress through the FastMCP Context when available.
+"""
+
+import os
+from pathlib import Path
+from academic_hunter import AcademicHunter
+from ._utils import get_project_root
+from ..exceptions import SearchError
+from mcp.server.fastmcp import Context
+
+
+async def run_search(ctx: Context, limit_per_source: int = None) -> str:
+    """Executes the consolidated academic search based on the keywords and weights from config.json.
+
     Use this tool only after having configured config.json with update_config (if necessary).
+
+    Args:
+        ctx: FastMCP Context (auto-injected).
+        limit_per_source: Max results per API source (default: from config).
     """
+    await ctx.info("Starting academic search pipeline...")
+    await ctx.report_progress(0, 3, "Initializing hunter")
     try:
-        hunter = AcademicHunter()
+        project_root = get_project_root()
+        output_dir = str(project_root / "results")
+        hunter = AcademicHunter(output_dir=output_dir)
+
         if limit_per_source is None:
             limit_per_source = hunter.config.settings.get("limit_per_query", 100)
-        report_path = hunter.run(limit_per_source=limit_per_source)
-        return f"Search completed successfully. Report generated at: {report_path}"
-    except Exception as e:
-        return f"Search error: {str(e)}"
 
-def read_latest_report() -> str:
-    """
-    Reads the latest Markdown report generated in the results/ folder.
+        await ctx.report_progress(1, 3, f"Querying academic APIs (limit={limit_per_source})")
+        report_path = hunter.run(limit_per_source=limit_per_source)
+
+        await ctx.report_progress(2, 3, "Finalizing report")
+        await ctx.info(f"Search completed. Report at: {report_path}")
+        await ctx.report_progress(3, 3, "Complete")
+
+        return f"Search completed successfully. Report generated at: {report_path}"
+    except SearchError:
+        raise
+    except Exception as e:
+        await ctx.error(f"Search failed: {e}")
+        raise SearchError(str(e))
+
+
+async def read_latest_report(ctx: Context) -> str:
+    """Reads the latest Markdown report generated in the results/ folder.
+
     Useful for the agent to summarize the findings right after running run_search().
+
+    Args:
+        ctx: FastMCP Context (auto-injected).
     """
+    await ctx.info("Reading latest report...")
     try:
-        results_dir = os.path.join(os.getcwd(), "results")
-        if not os.path.exists(results_dir):
+        project_root = get_project_root()
+        results_dir = project_root / "results"
+        if not results_dir.exists():
+            await ctx.info("No results directory found")
             return "Error: No results directory found. Have you run a search yet?"
-            
-        md_files = glob.glob(os.path.join(results_dir, "*.md"))
+
+        # First try RELATORIO_ELITE_* files (the main output format)
+        md_files = list(results_dir.rglob("RELATORIO_ELITE_*.md"))
         if not md_files:
+            # Fallback to any markdown file
+            md_files = list(results_dir.glob("*.md"))
+        if not md_files:
+            await ctx.info("No markdown reports found in results/")
             return "Error: No markdown reports found in results/."
-            
+
         latest_file = max(md_files, key=os.path.getctime)
         with open(latest_file, "r", encoding="utf-8") as f:
             content = f.read()
-            
-        return content[:10000] if len(content) > 10000 else content
+
+        # Truncate very large reports
+        MAX_CHARS = 10000
+        if len(content) > MAX_CHARS:
+            content = content[:MAX_CHARS]
+            await ctx.info("Report truncated to 10000 characters")
+
+        await ctx.info(f"Report read ({len(content)} chars)")
+        return content
+    except SearchError:
+        raise
     except Exception as e:
-        return f"Error reading latest report: {str(e)}"
+        await ctx.error(f"Failed to read latest report: {e}")
+        raise SearchError(str(e))

@@ -16,10 +16,10 @@ def mock_ctx():
     In unit tests we inject this mock directly.
     """
     ctx = AsyncMock()
-    ctx.info = MagicMock()
-    ctx.error = MagicMock()
-    ctx.warning = MagicMock()
-    ctx.debug = MagicMock()
+    ctx.info = AsyncMock()
+    ctx.error = AsyncMock()
+    ctx.warning = AsyncMock()
+    ctx.debug = AsyncMock()
     ctx.report_progress = AsyncMock()
     return ctx
 

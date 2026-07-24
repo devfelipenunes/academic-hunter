@@ -6,18 +6,19 @@ for logging and progress reporting.
 
 import json
 from typing import Dict, List, Optional
+from mcp.server.fastmcp import Context
 from academic_hunter.core.infra.config import HunterConfig
 from ..schemas.config_schema import SearchConfigUpdate
 from ..memory.sqlite_store import MCPDatabaseManager
 from ..exceptions import ConfigError
 
 
-def read_config(ctx) -> str:
+async def read_config(ctx: Context) -> str:
     """Returns the current full search configuration from config.json.
 
     Use this tool to check which anchors or technical_strings are currently configured.
     """
-    ctx.info("Reading configuration...")
+    await ctx.info("Reading configuration...")
     try:
         config = HunterConfig()
         data = {
@@ -29,16 +30,16 @@ def read_config(ctx) -> str:
             "keyword_only_terms": config.keyword_only_terms,
             "keyword_only_category": config.keyword_only_category,
         }
-        ctx.info("Configuration read successfully")
+        await ctx.info("Configuration read successfully")
         return json.dumps(data, indent=2, ensure_ascii=False)
     except ConfigError:
         raise
     except Exception as e:
-        ctx.error(f"Failed to read configuration: {e}")
+        await ctx.error(f"Failed to read configuration: {e}")
         raise ConfigError(str(e))
 
 
-def update_config(config_update: SearchConfigUpdate, ctx) -> str:
+async def update_config(config_update: SearchConfigUpdate, ctx: Context) -> str:
     """Updates the Hunter search configuration.
 
     Use this tool WHENEVER the user asks to research a new topic.
@@ -48,7 +49,7 @@ def update_config(config_update: SearchConfigUpdate, ctx) -> str:
         config_update: The new configuration to apply.
         ctx: FastMCP Context (auto-injected).
     """
-    ctx.info("Updating configuration...")
+    await ctx.info("Updating configuration...")
     try:
         config = HunterConfig()
 
@@ -96,49 +97,49 @@ def update_config(config_update: SearchConfigUpdate, ctx) -> str:
         }
         db.save_config(topic=topic_name, config_data=new_state)
 
-        ctx.info("Configuration updated successfully")
+        await ctx.info("Configuration updated successfully")
         return "Configuration updated and saved to history successfully!"
     except ConfigError:
         raise
     except Exception as e:
-        ctx.error(f"Failed to update configuration: {e}")
+        await ctx.error(f"Failed to update configuration: {e}")
         raise ConfigError(str(e))
 
 
-def list_config_history(ctx, limit: int = 5) -> str:
+async def list_config_history(ctx: Context, limit: int = 5) -> str:
     """Lists the history of the last saved configurations in the MCP SQLite database.
 
     Returns the ID, Timestamp, and Topic. Useful for finding the ID of a past config.
     """
-    ctx.info("Listing configuration history...")
+    await ctx.info("Listing configuration history...")
     try:
         db = MCPDatabaseManager()
         history = db.list_configs(limit=limit)
         if not history:
-            ctx.info("No configuration history found")
+            await ctx.info("No configuration history found")
             return "No configuration history found."
-        ctx.info(f"Found {len(history)} configuration backups")
+        await ctx.info(f"Found {len(history)} configuration backups")
         return json.dumps(history, indent=2, ensure_ascii=False)
     except ConfigError:
         raise
     except Exception as e:
-        ctx.error(f"Failed to list config history: {e}")
+        await ctx.error(f"Failed to list config history: {e}")
         raise ConfigError(str(e))
 
 
-def restore_config_by_id(config_id: int, ctx) -> str:
+async def restore_config_by_id(config_id: int, ctx: Context) -> str:
     """Restores the full project config.json using a database backup (by its ID).
 
     Args:
         config_id: The ID of the backup to restore (from list_config_history).
         ctx: FastMCP Context (auto-injected).
     """
-    ctx.info(f"Restoring configuration ID {config_id}...")
+    await ctx.info(f"Restoring configuration ID {config_id}...")
     try:
         db = MCPDatabaseManager()
         config_data = db.get_config(config_id)
         if not config_data:
-            ctx.error(f"Config ID {config_id} not found")
+            await ctx.error(f"Config ID {config_id} not found")
             raise ConfigError(f"Config ID {config_id} not found.")
 
         config = HunterConfig()
@@ -158,10 +159,10 @@ def restore_config_by_id(config_id: int, ctx) -> str:
             config.keyword_only_category = config_data["keyword_only_category"]
 
         config.save()
-        ctx.info(f"Configuration ID {config_id} restored successfully")
+        await ctx.info(f"Configuration ID {config_id} restored successfully")
         return f"Configuration ID {config_id} restored successfully to config.json!"
     except ConfigError:
         raise
     except Exception as e:
-        ctx.error(f"Failed to restore config: {e}")
+        await ctx.error(f"Failed to restore config: {e}")
         raise ConfigError(str(e))
