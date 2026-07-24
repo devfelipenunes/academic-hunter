@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MCP Tools Reference — Academic Hunter</title>
-  <meta name="description" content="Complete reference documentation for all 15 MCP tools of Academic Hunter. Parameters, types, examples, and setup guide.">
+  <meta name="description" content="Complete reference documentation for all 20 MCP tools of Academic Hunter. Parameters, types, examples, resources, prompts, and setup guide.">
   <meta name="theme-color" content="#0d1117">
   <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
   <link rel="stylesheet" href="../assets/css/main.css">
@@ -60,9 +60,10 @@
     <div class="page-header">
       <h1>MCP Tools Reference</h1>
       <p>
-        Academic Hunter exposes 15 tools via the Model Context Protocol (MCP).
-        Any MCP-compatible client — Claude Desktop, Cursor, or custom agents —
-        can drive the research pipeline autonomously.
+        Academic Hunter exposes 20 tools via the Model Context Protocol (MCP),
+        along with Resources and Prompts. Any MCP-compatible client —
+        Claude Desktop, Cursor, or custom agents — can drive the research
+        pipeline autonomously.
       </p>
     </div>
 
@@ -74,10 +75,22 @@
         The auto-installer (<code>python install.py</code>) can do this for you.
       </p>
 
+      <h3>Stdio mode (default)</h3>
+
       <pre><code>{
   "mcpServers": {
     "academic-hunter": {
-      "command": "/path/to/academic-hunter/venv/bin/python",
+      "command": "academic-mcp"
+    }
+  }
+}</code></pre>
+
+      <p><em>Or, if running from source without installing the CLI entry point:</em></p>
+
+      <pre><code>{
+  "mcpServers": {
+    "academic-hunter": {
+      "command": "/path/to/venv/bin/python",
       "args": ["-m", "academic_hunter.interfaces.mcp.server"],
       "env": {
         "PYTHONPATH": "/path/to/academic-hunter/src"
@@ -92,6 +105,80 @@
         then configure your search via <code>update_config</code>, and run it with
         <code>run_search</code>.
       </p>
+
+      <hr style="margin: var(--space-lg) 0; border: none; border-top: 1px solid var(--border);">
+
+      <h3>SSE mode (HTTP + Server-Sent Events)</h3>
+      <p>
+        Run the server with SSE transport for environments that need an HTTP
+        endpoint (e.g., remote agents, containerised deployments):
+      </p>
+
+      <pre><code># CLI flags
+academic-mcp -t sse --host 0.0.0.0 --port 8080
+
+# Or via environment variables
+export ACADEMIC_MCP_TRANSPORT=sse
+export ACADEMIC_MCP_HOST=0.0.0.0
+export ACADEMIC_MCP_PORT=8080
+academic-mcp</code></pre>
+
+      <p>
+        In SSE mode the server exposes a <strong>health check endpoint</strong>
+        at <code>GET /health</code> and streams tool responses over SSE.
+        Connect your MCP client to <code>http://&lt;host&gt;:&lt;port&gt;/sse</code>.
+      </p>
+
+      <h4>Health Check</h4>
+      <p>
+        Verify the server is running with a simple HTTP request:
+      </p>
+      <pre><code>curl http://127.0.0.1:8080/health
+
+# Response:
+{
+  "status": "ok",
+  "server": "academic-hunter",
+  "config_loaded": true,
+  "vector_store": {
+    "available": true,
+    "paper_count": 47
+  }
+}</code></pre>
+
+      <p>
+        The health endpoint returns a JSON object with overall <code>status</code>
+        (<code>ok</code>, <code>degraded</code>, or <code>error</code>) and
+        per-component diagnostics for the configuration and vector store.
+      </p>
+
+      <h4>Environment Variables</h4>
+      <table class="params-table">
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="param-name">ACADEMIC_MCP_TRANSPORT</td>
+            <td class="param-default">stdio</td>
+            <td>Transport protocol: <code>stdio</code> or <code>sse</code></td>
+          </tr>
+          <tr>
+            <td class="param-name">ACADEMIC_MCP_HOST</td>
+            <td class="param-default">127.0.0.1</td>
+            <td>Bind address for SSE mode</td>
+          </tr>
+          <tr>
+            <td class="param-name">ACADEMIC_MCP_PORT</td>
+            <td class="param-default">8080</td>
+            <td>Port for SSE mode</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <!-- ═══ SEARCH & FILTER ═══ -->
@@ -110,6 +197,7 @@
         <button class="filter-btn" data-category="discovery" role="tab">Discovery</button>
         <button class="filter-btn" data-category="export" role="tab">Export</button>
         <button class="filter-btn" data-category="rag" role="tab">RAG</button>
+        <button class="filter-btn" data-category="system" role="tab">System</button>
       </div>
     </div>
 
@@ -447,7 +535,7 @@ Report saved to results/FLUXO_PRISMA_20260715_103022.md"</code></pre>
     <section class="cat-section" id="discovery">
       <div class="cat-header">
         <h2>Discovery / Citation Graph</h2>
-        <span class="cat-count">4 tools</span>
+        <span class="cat-count">6 tools</span>
       </div>
 
       <!-- Tool 7: explore_citation_graph -->
@@ -663,16 +751,132 @@ TOP PAPERS:
 ..."</code></pre>
         </div>
       </article>
+
+      <!-- Tool 11: trending_topics -->
+      <article class="tool-card" id="trending_topics" data-category="discovery"
+        data-name="trending_topics"
+        data-description="Discovers trending research topics and emerging trends in a field">
+        <div class="tool-card-header">
+          <h3><a href="#trending_topics">trending_topics</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Discovers trending research topics and emerging trends in a given field.
+            Uses Semantic Scholar API to return papers with the highest recent
+            citation velocity — ideal for identifying hot topics before committing
+            to a full search.
+          </p>
+          <div class="tool-sig">trending_topics(query: str, limit: int = 10) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">query</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Research field or topic to find trends for</td>
+              </tr>
+              <tr>
+                <td class="param-name">limit</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">10</td>
+                <td>Number of trending topics to return (max 25)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Trending papers with citation counts, publication year, and relevance indicators.</p>
+          <pre><code># Example — ask your MCP client:
+"What are the trending topics in CBDC research?"
+
+# Result:
+"TRENDING TOPICS in 'CBDC':
+1. 'Privacy-Preserving CBDC' (2025) — 47 citations in last 6 months
+2. 'Offline CBDC Payments' (2024) — 38 citations
+3. 'Interoperability Standards' (2025) — 29 citations
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 12: compare_papers -->
+      <article class="tool-card" id="compare_papers" data-category="discovery"
+        data-name="compare_papers"
+        data-description="Compares multiple papers side by side across selected aspects">
+        <div class="tool-card-header">
+          <h3><a href="#compare_papers">compare_papers</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Compares multiple papers side by side across selected aspects such as
+            methodology, findings, limitations, or venue. Useful for building a
+            literature review matrix or deciding which papers to include.
+          </p>
+          <div class="tool-sig">compare_papers(dois: list[str], aspects: list[str] | None = None) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">dois</td>
+                <td class="param-type">list[str]</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>DOIs of the papers to compare (2–10 papers)</td>
+              </tr>
+              <tr>
+                <td class="param-name">aspects</td>
+                <td class="param-type">list[str] | None</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">all</td>
+                <td>Aspects to compare: methodology, findings, limitations, venue, year</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Formatted comparison table with papers as columns and aspects as rows.</p>
+          <pre><code># Example — ask your MCP client:
+"Compare these two papers on CBDC latency."
+
+# Result:
+"| Aspect       | Paper 1 (2024)             | Paper 2 (2023)             |
+|--------------|---------------------------|---------------------------|
+| Methodology  | Simulation + queuing      | Empirical / testbed       |
+| Findings     | Sub-second settlement     | &lt;500ms retail tx         |
+| Venue        | IEEE Access               | Future Gen. CS            |
+| Limitations  | Single-shard assumption   | Small sample size         |"</code></pre>
+        </div>
+      </article>
     </section>
 
     <!-- ──────────────── EXPORT ──────────────── -->
     <section class="cat-section" id="export">
       <div class="cat-header">
         <h2>Export</h2>
-        <span class="cat-count">1 tool</span>
+        <span class="cat-count">2 tools</span>
       </div>
 
-      <!-- Tool 11: export_to_obsidian -->
+      <!-- Tool 13: export_to_obsidian -->
       <article class="tool-card" id="export_to_obsidian" data-category="export"
         data-name="export_to_obsidian"
         data-description="Exports a formatted Markdown report directly to the user's Obsidian vault">
@@ -734,16 +938,73 @@ TOP PAPERS:
 Obsidian/Academic_Hunter/CBDC_Latency_Review.md"</code></pre>
         </div>
       </article>
+
+      <!-- Tool 14: export_report -->
+      <article class="tool-card" id="export_report" data-category="export"
+        data-name="export_report"
+        data-description="Exports the latest search report in various formats">
+        <div class="tool-card-header">
+          <h3><a href="#export_report">export_report</a></h3>
+          <span class="tool-category cat-export">Export</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Exports the latest search report in various formats for external use.
+            Supports BibTeX, CSV, JSON, and Markdown summary. Saves to the
+            results directory or a custom output path.
+          </p>
+          <div class="tool-sig">export_report(format: str = "bibtex", output_path: str | None = None) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">format</td>
+                <td class="param-type">str</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">"bibtex"</td>
+                <td>Export format: "bibtex", "csv", "json", or "summary"</td>
+              </tr>
+              <tr>
+                <td class="param-name">output_path</td>
+                <td class="param-type">str | None</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">results/</td>
+                <td>Custom output path (optional; defaults to results directory)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Path to the exported file and confirmation message.</p>
+          <pre><code># Example — ask your MCP client:
+"Export the latest results as BibTeX."
+
+# Or:
+"Export the report as CSV to my desktop."
+
+# Result:
+"Report exported successfully to:
+results/export_20260724_103022.bib (47 entries)"</code></pre>
+        </div>
+      </article>
     </section>
 
     <!-- ──────────────── RAG ──────────────── -->
     <section class="cat-section" id="rag">
       <div class="cat-header">
         <h2>RAG / Vector Store</h2>
-        <span class="cat-count">4 tools</span>
+        <span class="cat-count">5 tools</span>
       </div>
 
-      <!-- Tool 12: semantic_search -->
+      <!-- Tool 15: semantic_search -->
       <article class="tool-card" id="semantic_search" data-category="rag"
         data-name="semantic_search"
         data-description="Performs embedding-based semantic search across all indexed papers">
@@ -809,7 +1070,7 @@ Obsidian/Academic_Hunter/CBDC_Latency_Review.md"</code></pre>
         </div>
       </article>
 
-      <!-- Tool 13: index_papers -->
+      <!-- Tool 16: index_papers -->
       <article class="tool-card" id="index_papers" data-category="rag"
         data-name="index_papers"
         data-description="Indexes the latest search results into ChromaDB for semantic queries">
@@ -833,7 +1094,7 @@ Obsidian/Academic_Hunter/CBDC_Latency_Review.md"</code></pre>
         </div>
       </article>
 
-      <!-- Tool 14: vector_store_stats -->
+      <!-- Tool 17: vector_store_stats -->
       <article class="tool-card" id="vector_store_stats" data-category="rag"
         data-name="vector_store_stats"
         data-description="Shows statistics about the ChromaDB vector store">
@@ -857,7 +1118,7 @@ Obsidian/Academic_Hunter/CBDC_Latency_Review.md"</code></pre>
         </div>
       </article>
 
-      <!-- Tool 15: ask_papers -->
+      <!-- Tool 18: ask_papers -->
       <article class="tool-card" id="ask_papers" data-category="rag"
         data-name="ask_papers"
         data-description="Answers a research question using semantically retrieved papers as context">

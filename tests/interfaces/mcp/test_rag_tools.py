@@ -10,6 +10,7 @@ from academic_hunter.interfaces.mcp.tools.rag import (
     index_papers,
     vector_store_stats,
     ask_papers,
+    answer_question,
 )
 from academic_hunter.interfaces.mcp.exceptions import MCPToolError
 
@@ -150,3 +151,51 @@ async def test_ask_papers_no_results(mock_vector_store, mock_ctx):
     result = await ask_papers("unknown", ctx=mock_ctx)
 
     assert "No relevant papers found" in result
+
+
+# ── answer_question ──────────────────────────────────────────────────────
+
+
+async def test_answer_question(mock_vector_store, mock_ctx):
+    """Success path — returns structured answer with findings and citations."""
+    mock_vector_store.query.return_value = [
+        {
+            "title": "Relevant Paper",
+            "doi": "10.1234/paper",
+            "semantic_relevance": 0.92,
+            "year": 2024,
+            "abstract_preview": "This paper discusses important concepts about machine learning.",
+        }
+    ]
+
+    result = await answer_question("What is the main finding?", ctx=mock_ctx, top_k=5)
+
+    assert "Research Answer" in result
+    assert "What is the main finding?" in result
+    assert "Relevant Paper" in result
+    assert "10.1234/paper" in result
+    assert "Key Findings" in result
+    assert "Sources" in result
+    mock_vector_store.query.assert_called_once()
+    mock_ctx.info.assert_called()
+
+
+async def test_answer_question_no_results(mock_vector_store, mock_ctx):
+    """Empty vector store returns a helpful message."""
+    mock_vector_store.query.return_value = []
+
+    result = await answer_question("unknown topic", ctx=mock_ctx)
+
+    assert "No relevant papers found" in result
+    mock_ctx.info.assert_called()
+
+
+async def test_answer_question_store_unavailable(mock_ctx):
+    """When ChromaVectorStore cannot be initialised, return meaningful error."""
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.rag.ChromaVectorStore"
+    ) as m:
+        m.side_effect = RuntimeError("ChromaDB not installed")
+        result = await answer_question("test", ctx=mock_ctx)
+        assert "Error" in result
+        assert "vector store" in result.lower()
