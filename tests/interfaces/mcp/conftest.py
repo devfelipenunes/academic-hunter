@@ -37,7 +37,7 @@ def mock_hunter():
 @pytest.fixture
 def mock_hunter_rag():
     """Mock ``AcademicHunter`` specifically for RAG tool tests."""
-    with patch("academic_hunter.interfaces.mcp.tools.rag.AcademicHunter") as m:
+    with patch("academic_hunter.interfaces.mcp.tools._utils.AcademicHunter") as m:
         yield m.return_value
 
 
@@ -61,7 +61,7 @@ def mock_vector_store():
 def mock_hunter_config():
     """Mock ``HunterConfig`` for configuration tool tests."""
     with patch(
-        "academic_hunter.interfaces.mcp.tools.configuration.HunterConfig"
+        "academic_hunter.core.infra.config.HunterConfig"
     ) as m:
         instance = m.return_value
         instance.settings = {"start_year": 2020, "limit_per_query": 100}
@@ -92,7 +92,7 @@ def mock_discovery_hunter():
 def mock_obsidian_config():
     """Mock ``HunterConfig`` with an ``obsidian_vault_path`` set."""
     with patch(
-        "academic_hunter.interfaces.mcp.tools.obsidian.HunterConfig"
+        "academic_hunter.core.infra.config.HunterConfig"
     ) as m:
         instance = m.return_value
         instance.settings = {"obsidian_vault_path": "/tmp/obsidian_test_vault"}
