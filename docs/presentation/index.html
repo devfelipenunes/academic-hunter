@@ -427,11 +427,38 @@ $ academic-hunter interactive
 </div>
 </div>
 
-<!-- ===== SLIDE 8: SEARCH + CLUSTERING ===== -->
+<!-- ===== SLIDE 9: 12× MINILM ===== -->
+<div class="slide" data-part="3">
+<div class="slide-inner">
+  <div class="part-header">Parte 3 · Um Modelo, 12 Funções</div>
+  <h2><span class="num">9</span> 12× MiniLM — Um Único Modelo de 22MB</h2>
+  <p style="margin-bottom:.5rem;font-size:.78rem">O mesmo <strong>all-MiniLM-L6-v2</strong> (22MB, 384 dimensões) alimenta <strong style="color:var(--accent)">todas</strong> as funcionalidades abaixo. Zero GPU. Zero API paga.</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.4rem">
+    <div class="card card-highlight" style="padding:.5rem .7rem">
+      <p style="font-size:.7rem;color:var(--cyan);font-weight:600;margin-bottom:.2rem">🎯 SCORING</p>
+      <p style="font-size:.65rem;line-height:1.5"><strong style="color:var(--text)">Weight-Bleeding</strong><br><span style="color:var(--text-secondary)">Centroide ponderado configurável</span><br><br><strong style="color:var(--text)">Semantic Screener</strong><br><span style="color:var(--text-secondary)">Filtro por threshold semântico</span></p>
+    </div>
+    <div class="card card-highlight" style="padding:.5rem .7rem">
+      <p style="font-size:.7rem;color:var(--purple);font-weight:600;margin-bottom:.2rem">🔍 SEARCH</p>
+      <p style="font-size:.65rem;line-height:1.5"><strong style="color:var(--text)">semantic_search</strong><br><span style="color:var(--text-secondary)">Busca por conceito (7.338 papers)</span><br><br><strong style="color:var(--text)">rerank_search</strong><br><span style="color:var(--text-secondary)">Bi-encoder + cross-encoder</span><br><br><strong style="color:var(--text)">find_related</strong><br><span style="color:var(--text-secondary)">Snowballing semântico</span></p>
+    </div>
+    <div class="card card-highlight" style="padding:.5rem .7rem">
+      <p style="font-size:.7rem;color:var(--green);font-weight:600;margin-bottom:.2rem">🧠 ANALYSIS</p>
+      <p style="font-size:.65rem;line-height:1.5"><strong style="color:var(--text)">cluster_papers</strong> — BERTopic<br><strong style="color:var(--text)">find_novel_papers</strong> — Outliers<br><strong style="color:var(--text)">topic_evolution</strong> — Timeline<br><strong style="color:var(--text)">visualize_landscape</strong> — UMAP 2D<br><strong style="color:var(--text)">trending_topics</strong> — Bigramas<br><strong style="color:var(--text)">semantic_dedup</strong> — Duplicatas<br><strong style="color:var(--text)">summarize_paper</strong> — MMR</p>
+    </div>
+  </div>
+  <div class="callout" style="text-align:center;background:linear-gradient(135deg,rgba(63,185,80,.08),transparent);border-color:rgba(63,185,80,.2)">
+    <p style="font-size:.78rem;color:var(--text);margin:0"><strong>Um modelo. 22MB. CPU. Zero API paga. Doze funcionalidades.</strong></p>
+  </div>
+</div>
+</div>
+
+<!-- ===== SLIDE 10: SEARCH + CLUSTERING ===== -->
+
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; Funcionalidades</div>
-  <h2><span class="num">9</span> Busca Sem&acirc;ntica + Clusters Autom&aacute;ticos</h2>
+  <h2><span class="num">10</span> Busca Sem&acirc;ntica + Clusters Autom&aacute;ticos</h2>
   <div class="grid-2">
     <div class="card card-highlight">
       <h3 style="color:var(--accent)">🔍 Busca por Conceito</h3>
@@ -467,7 +494,7 @@ $ academic-hunter interactive
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; Descoberta</div>
-  <h2><span class="num">10</span> Enxergando o que N&atilde;o Est&aacute; &Oacute;bvio</h2>
+  <h2><span class="num">11</span> Enxergando o que N&atilde;o Est&aacute; &Oacute;bvio</h2>
   <div class="grid-3">
     <div class="card"><h3 style="color:var(--orange)">🆕 Radar de Novidade</h3><p style="font-size:.7rem">Detecta artigos que N&Atilde;O se encaixam em nenhum cluster. S&atilde;o pesquisas interdisciplinares ou tend&ecirc;ncias emergentes.</p>
     <div class="diagram" style="margin-top:.2rem;font-size:.6rem">
@@ -502,7 +529,7 @@ $ academic-hunter interactive
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; S&iacute;ntese e Qualidade</div>
-  <h2><span class="num">11</span> Precis&atilde;o, Resumo e Qualidade dos Dados</h2>
+  <h2><span class="num">12</span> Precis&atilde;o, Resumo e Qualidade dos Dados</h2>
   <div class="grid-3">
     <div class="card card-highlight">
       <h3 style="color:var(--accent)">🎯 Re-Ranqueamento</h3>
@@ -524,7 +551,7 @@ $ academic-hunter interactive
 <div class="slide" data-part="4">
 <div class="slide-inner">
   <div class="part-header">Parte 4 &middot; O Cora&ccedil;&atilde;o T&eacute;cnico</div>
-  <h2><span class="num">12</span> O Problema: Como dar "peso" &agrave;s palavras num embedding?</h2>
+  <h2><span class="num">13</span> O Problema: Como dar "peso" &agrave;s palavras num embedding?</h2>
 
   <div class="card" style="margin-bottom:.5rem;text-align:center">
     <p style="font-size:.82rem;color:var(--text);line-height:1.8">
@@ -550,7 +577,7 @@ $ academic-hunter interactive
 <div class="slide" data-part="4">
 <div class="slide-inner">
   <div class="part-header">Parte 4 &middot; A Solu&ccedil;&atilde;o</div>
-  <h2><span class="num">13</span> Weight-Bleeding: Pondera&ccedil;&atilde;o Sem&acirc;ntica Configur&aacute;vel</h2>
+  <h2><span class="num">14</span> Weight-Bleeding: Pondera&ccedil;&atilde;o Sem&acirc;ntica Configur&aacute;vel</h2>
 
   <div class="card card-highlight" style="margin-bottom:.5rem">
     <p style="font-size:.78rem;color:var(--text);line-height:1.7">
@@ -583,7 +610,7 @@ $ academic-hunter interactive
 <div class="slide" data-part="4">
 <div class="slide-inner">
   <div class="part-header">Parte 4 &middot; Valida&ccedil;&atilde;o</div>
-  <h2><span class="num">14</span> Resultados Pr&aacute;ticos</h2>
+  <h2><span class="num">15</span> Resultados Pr&aacute;ticos</h2>
   <div class="grid-3">
     <div class="card"><div class="stat"><div class="num" style="color:var(--cyan)">96.8%</div></div><p style="font-size:.68rem;text-align:center">O ranking MUDA em rela&ccedil;&atilde;o ao m&eacute;todo padr&atilde;o — 40% dos top-10 s&atilde;o diferentes. O peso realmente faz diferen&ccedil;a.</p></div>
     <div class="card"><div class="stat"><div class="num" style="color:var(--purple)">-0.75</div></div><p style="font-size:.68rem;text-align:center">Correla&ccedil;&atilde;o NEGATIVA entre dom&iacute;nios SLR e Blockchain. Prova que o efeito &eacute; ESPEC&Iacute;FICO — cada configura&ccedil;&atilde;o produz um resultado &uacute;nico.</p></div>
@@ -599,7 +626,7 @@ $ academic-hunter interactive
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; O Que Tudo Isso Significa</div>
-  <h2><span class="num">15</span> Academic Hunter vs Concorrentes</h2>
+  <h2><span class="num">16</span> Academic Hunter vs Concorrentes</h2>
   <table>
     <tr><th>Recurso</th><th>Academic Hunter</th><th>ASReview</th><th>Rayyan</th><th>Covidence</th></tr>
     <tr><td>C&oacute;digo aberto</td><td style="color:var(--green)">✅</td><td style="color:var(--green)">✅</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td></tr>
@@ -622,7 +649,7 @@ $ academic-hunter interactive
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; Contribui&ccedil;&atilde;o &Uacute;nica</div>
-  <h2><span class="num">16</span> Posicionamento na Literatura</h2>
+  <h2><span class="num">17</span> Posicionamento na Literatura</h2>
   <div class="card card-highlight" style="margin-bottom:.5rem">
     <p style="font-size:.78rem;color:var(--text)"><strong>Academic Hunter &eacute; o &Uacute;NICO sistema que combina:</strong></p>
     <p style="font-size:.72rem;margin-top:.2rem">✅ Pipeline SLR completo + Busca em <strong>16 fontes</strong> + <strong>35+ tools</strong> MCP + <strong>12 an&aacute;lises</strong> MiniLM + <strong>Weight-Bleeding</strong></p>
@@ -640,7 +667,7 @@ $ academic-hunter interactive
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; Publica&ccedil;&otilde;es</div>
-  <h2><span class="num">17</span> Dois Tracks de Publica&ccedil;&atilde;o</h2>
+  <h2><span class="num">18</span> Dois Tracks de Publica&ccedil;&atilde;o</h2>
   <div class="grid-2">
     <div class="card card-highlight">
       <h3 style="color:var(--accent)">📄 JOSS</h3>
@@ -665,7 +692,7 @@ $ academic-hunter interactive
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; Transpar&ecirc;ncia</div>
-  <h2><span class="num">18</span> Limita&ccedil;&otilde;es e Quando N&Atilde;O Usar</h2>
+  <h2><span class="num">19</span> Limita&ccedil;&otilde;es e Quando N&Atilde;O Usar</h2>
   <p style="margin-bottom:.5rem">Nenhuma ferramenta &eacute; perfeita para tudo. Academic Hunter &eacute; &oacute;timo para:</p>
   <div class="grid-2">
     <div class="card card-highlight">
