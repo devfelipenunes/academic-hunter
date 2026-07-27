@@ -5,12 +5,10 @@ for logging and progress reporting.
 """
 
 import logging
-from typing import Optional
 from mcp.server.fastmcp import Context
 
 from academic_hunter import AcademicHunter
-from academic_hunter.plugins.vector_stores import ChromaVectorStore
-from ._utils import get_project_root
+from ._utils import get_project_root, _get_vector_store
 from ..exceptions import VectorStoreError
 
 logger = logging.getLogger("academic_hunter.mcp.rag")
@@ -19,17 +17,6 @@ logger = logging.getLogger("academic_hunter.mcp.rag")
 def _make_hunter() -> AcademicHunter:
     """Create an AcademicHunter rooted at the project directory."""
     return AcademicHunter(output_dir=str(get_project_root() / "results"))
-
-
-def _get_vector_store() -> Optional[ChromaVectorStore]:
-    """Initialize the vector store using the hunter's output dir."""
-    try:
-        hunter = _make_hunter()
-        db_dir = str(hunter.output_dir.parent / ".academic_hunter" / "chroma_db")
-        return ChromaVectorStore(db_dir=db_dir)
-    except Exception as e:
-        logger.warning(f"Could not initialize vector store: {e}")
-        return None
 
 
 async def semantic_search(

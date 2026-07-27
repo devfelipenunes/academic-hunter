@@ -49,11 +49,11 @@ async def test_semantic_search_no_results(mock_vector_store, mock_ctx):
 
 
 async def test_semantic_search_store_unavailable(mock_ctx):
-    """When ChromaVectorStore can't be initialized, return meaningful error."""
+    """When vector store can't be initialized, return meaningful error."""
     with patch(
-        "academic_hunter.interfaces.mcp.tools.rag.ChromaVectorStore"
-    ) as m:
-        m.side_effect = RuntimeError("ChromaDB not installed")
+        "academic_hunter.interfaces.mcp.tools.rag._get_vector_store",
+        return_value=None,
+    ):
         result = await semantic_search("test", ctx=mock_ctx)
         assert "Error" in result
         assert "vector store" in result.lower()
@@ -116,9 +116,9 @@ async def test_vector_store_stats_empty(mock_vector_store, mock_ctx):
 
 async def test_vector_store_stats_unavailable(mock_ctx):
     with patch(
-        "academic_hunter.interfaces.mcp.tools.rag.ChromaVectorStore"
-    ) as m:
-        m.side_effect = RuntimeError("ChromaDB not installed")
+        "academic_hunter.interfaces.mcp.tools.rag._get_vector_store",
+        return_value=None,
+    ):
         result = await vector_store_stats(mock_ctx)
         assert "not available" in result.lower()
 
@@ -191,11 +191,11 @@ async def test_answer_question_no_results(mock_vector_store, mock_ctx):
 
 
 async def test_answer_question_store_unavailable(mock_ctx):
-    """When ChromaVectorStore cannot be initialised, return meaningful error."""
+    """When vector store cannot be initialised, return meaningful error."""
     with patch(
-        "academic_hunter.interfaces.mcp.tools.rag.ChromaVectorStore"
-    ) as m:
-        m.side_effect = RuntimeError("ChromaDB not installed")
+        "academic_hunter.interfaces.mcp.tools.rag._get_vector_store",
+        return_value=None,
+    ):
         result = await answer_question("test", ctx=mock_ctx)
         assert "Error" in result
         assert "vector store" in result.lower()

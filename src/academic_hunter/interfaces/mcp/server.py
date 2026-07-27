@@ -1,47 +1,25 @@
-"""MCP server for Academic Hunter — FastMCP instance, tool registration, and entry point."""
+"""MCP server for Academic Hunter — FastMCP instance, tool registration, and entry point.
 
+Tools are auto-discovered from the ``tools/`` package so that adding a new
+tool module does **not** require editing this file — just create an ``async``
+function with a ``ctx: Context`` parameter.
+"""
+
+import importlib
+import inspect
 import logging
+from pathlib import Path
 
 from mcp.server.fastmcp import Context, FastMCP
 from starlette.responses import JSONResponse
 
-from .tools.configuration import (
-    read_config, update_config, list_config_history, restore_config_by_id,
-)
-from .tools.search import run_search, read_latest_report
-from .tools.discovery import (
-    fetch_paper_by_doi, explore_citation_graph,
-    fetch_multiple_abstracts, quick_topic_discovery,
-)
-from .tools.europepmc import search_europepmc
-from .tools.obsidian import export_to_obsidian
-from .tools.trending import trending_topics
-from .tools.comparison import compare_papers
-from .tools.export import export_report
-from .tools.novelty import find_novel_papers
-from .tools.related import find_related_papers
-from .tools.summarize import summarize_paper
-from .tools.rag import (
-    semantic_search, index_papers, vector_store_stats,
-    ask_papers, answer_question, rerank_search,
-)
-from .tools.clustering import cluster_papers
-from .tools.dedup import semantic_dedup
-from .tools.citations import get_citation_count, get_citing_papers
-from .tools.unpaywall import find_open_access
-from .tools.lens import search_patents
-from .tools.openaire import search_openaire
-from .tools.biorxiv import search_biorxiv
-from .tools.orcid import lookup_orcid
-from .tools.datacite import search_datasets
-from .tools.visualization import visualize_landscape, topic_evolution
-from .exceptions import ConfigError, VectorStoreError
 from .health import server_status, _check_components
 from .resources import (
     get_config_resource, get_latest_report_resource,
     get_vector_stats_resource, get_paper_resource,
 )
 from .prompts import systematic_review, quick_discovery
+from .exceptions import ConfigError, VectorStoreError
 
 logger = logging.getLogger("academic_hunter.mcp")
 
@@ -67,6 +45,42 @@ async def health_check(request):
     return JSONResponse(data)
 
 
+# ── Auto-discovery helpers ────────────────────────────────────────────────────
+
+
+def _discover_and_register(mcp: FastMCP) -> None:
+    """Auto-discover all tool functions from the ``tools/`` package.
+
+    Any ``async def`` function whose **type-annotated** parameters include
+    ``Context`` (from ``mcp.server.fastmcp``) is automatically registered as
+    an MCP tool via ``mcp.tool()``.
+
+    Private modules (``_*.py``) and ``__init__.py`` are skipped.  Helper
+    functions without a ``Context``-typed parameter are ignored.
+    """
+    tools_dir = Path(__file__).resolve().parent / "tools"
+    for f in sorted(tools_dir.glob("*.py")):
+        if f.name.startswith("_") or f.name == "__init__.py":
+            continue
+        module_name = f.stem
+        module = importlib.import_module(
+            f".tools.{module_name}", "academic_hunter.interfaces.mcp"
+        )
+        for attr_name in dir(module):
+            func = getattr(module, attr_name)
+            if not inspect.iscoroutinefunction(func):
+                continue
+            sig = inspect.signature(func)
+            has_ctx = any(
+                p.annotation is Context
+                for p in sig.parameters.values()
+            )
+            if not has_ctx:
+                continue
+            logger.debug("Auto-registering tool: %s (from %s)", func.__name__, module_name)
+            mcp.tool()(func)
+
+
 # ── Server factory ────────────────────────────────────────────────────────────
 
 
@@ -80,25 +94,11 @@ def create_mcp_server() -> FastMCP:
         dependencies=["requests", "pandas", "bibtexparser", "chromadb"],
     )
 
-    # ── Tools ──────────────────────────────────────────────────────────────
-    for fn in [
-        server_status,
-        run_search, read_latest_report,
-        read_config, update_config, list_config_history, restore_config_by_id,
-        fetch_paper_by_doi, explore_citation_graph, fetch_multiple_abstracts,
-        quick_topic_discovery, search_europepmc, export_to_obsidian,
-        semantic_search, rerank_search, index_papers,
-        vector_store_stats, ask_papers, answer_question,
-        trending_topics, compare_papers, export_report, summarize_paper,
-        cluster_papers,
-        get_citation_count, get_citing_papers,
-        find_novel_papers, find_related_papers,
-        semantic_dedup,
-        visualize_landscape, topic_evolution,
-        find_open_access, search_patents, search_openaire,
-        search_biorxiv, lookup_orcid, search_datasets,
-    ]:
-        mcp.tool()(fn)
+    # ── Tools (auto-discovered from tools/ package) ─────────────────────────
+    _discover_and_register(mcp)
+
+    # Tools outside the tools/ package (registered manually)
+    mcp.tool()(server_status)
 
     # ── Resources ───────────────────────────────────────────────────────────
     mcp.resource("academic-hunter://config/current")(get_config_resource)

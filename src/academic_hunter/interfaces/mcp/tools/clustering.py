@@ -6,6 +6,7 @@ and the tool function returns a graceful message when it is missing.
 
 import logging
 from mcp.server.fastmcp import Context
+from ._utils import _get_vector_store
 
 logger = logging.getLogger("academic_hunter.mcp.clustering")
 
@@ -16,24 +17,6 @@ try:
     from bertopic import BERTopic
 except ImportError:
     BERTopic = None
-
-
-def _get_vector_store():
-    """Initialize the ChromaDB vector store (same lazy pattern as rag.py).
-
-    Returns None when ChromaDB is unavailable so the caller can degrade
-    gracefully.
-    """
-    try:
-        from academic_hunter import AcademicHunter
-        from academic_hunter.plugins.vector_stores import ChromaVectorStore
-        from ._utils import get_project_root
-
-        hunter = AcademicHunter(output_dir=str(get_project_root() / "results"))
-        db_dir = str(hunter.output_dir.parent / ".academic_hunter" / "chroma_db")
-        return ChromaVectorStore(db_dir=db_dir)
-    except Exception:
-        return None
 
 
 async def cluster_papers(
