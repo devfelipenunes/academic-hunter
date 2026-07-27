@@ -5,6 +5,7 @@ articles, including preprints from bioRxiv, medRxiv, and ChemRxiv.
 No API key is required.
 """
 
+import asyncio
 import requests
 from mcp.server.fastmcp import Context
 from ..exceptions import DiscoveryError
@@ -32,7 +33,7 @@ async def search_europepmc(ctx: Context, query: str, limit: int = 10) -> str:
     }
 
     try:
-        resp = requests.get(url, params=params, timeout=15)
+        resp = await asyncio.to_thread(requests.get, url, params=params, timeout=15)
         resp.raise_for_status()
         data = resp.json()
 

@@ -6,6 +6,7 @@ Free tier: 1,000 requests/day with token.
 
 import logging
 
+import asyncio
 import requests
 from mcp.server.fastmcp import Context
 
@@ -30,7 +31,7 @@ async def search_patents(ctx: Context, query: str, limit: int = 10) -> str:
             "size": min(limit, 25),
         }
         headers = {"Content-Type": "application/json"}
-        resp = requests.post(url, json=payload, headers=headers, timeout=15)
+        resp = await asyncio.to_thread(requests.post, url, json=payload, headers=headers, timeout=15)
         resp.raise_for_status()
         data = resp.json()
 

@@ -4,6 +4,7 @@ Free, open database of 2B+ citation links.
 """
 
 import logging
+import asyncio
 import requests
 from mcp.server.fastmcp import Context
 from ..exceptions import DiscoveryError
@@ -12,10 +13,10 @@ logger = logging.getLogger("academic_hunter.mcp.citations")
 COCI_API = "https://api.opencitations.net/index/v1"
 
 
-def _coci_request(endpoint: str, doi: str) -> list:
+async def _coci_request(endpoint: str, doi: str) -> list:
     """Make a request to the OpenCitations API.  Response is always a JSON list."""
     url = f"{COCI_API}/{endpoint}/{doi}"
-    resp = requests.get(url, timeout=10)
+    resp = await asyncio.to_thread(requests.get, url, timeout=10)
     resp.raise_for_status()
     return resp.json()
 
@@ -29,7 +30,7 @@ async def get_citation_count(ctx: Context, doi: str) -> str:
     """
     await ctx.info(f"Looking up citation count for DOI {doi}...")
     try:
-        data = _coci_request("citation-count", doi)
+        data = await _coci_request("citation-count", doi)
         count = int(data[0]["count"]) if data else 0
         await ctx.info(f"DOI {doi} has {count} citations")
         return f"DOI {doi} has {count} citations according to OpenCitations."
@@ -48,7 +49,7 @@ async def get_citing_papers(ctx: Context, doi: str, limit: int = 10) -> str:
     """
     await ctx.info(f"Finding citing papers for DOI {doi}...")
     try:
-        citations = _coci_request("citations", doi)
+        citations = await _coci_request("citations", doi)
 
         if not citations:
             await ctx.info(f"No citations found for DOI {doi}")

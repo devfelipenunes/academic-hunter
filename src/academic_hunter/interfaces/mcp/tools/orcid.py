@@ -8,6 +8,8 @@ publications, and funding.
 
 import logging
 
+import asyncio
+
 import requests
 from mcp.server.fastmcp import Context
 
@@ -32,7 +34,7 @@ async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
     try:
         headers = {"Accept": "application/json"}
         url = f"{ORCID_API}/{orcid_id}/record"
-        resp = requests.get(url, headers=headers, timeout=10)
+        resp = await asyncio.to_thread(requests.get, url, headers=headers, timeout=10)
         resp.raise_for_status()
         data = resp.json()
 
