@@ -501,180 +501,274 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 </div>
 </div>
 
-<!-- ===== SLIDE 10: SEARCH + CLUSTERING ===== -->
-
+<!-- ===== SLIDE 10: SEMANTIC SEARCH ===== -->
 <div class="slide" data-part="3">
 <div class="slide-inner">
-  <div class="part-header">Parte 3 &middot; Funcionalidades</div>
-  <h2><span class="num">10</span> Busca Sem&acirc;ntica + Clusters Autom&aacute;ticos</h2>
-  <div class="grid-2">
-    <div class="card card-highlight">
-      <h3 style="color:var(--accent)">🔍 Busca por Conceito</h3>
-      <p style="font-size:.73rem">Em vez de procurar PALAVRAS exatas, procura CONCEITOS. O sistema entende o significado, n&atilde;o s&oacute; o texto.</p>
-      <div style="margin-top:.3rem;font-size:.65rem;background:var(--bg);padding:.3rem .5rem;border-radius:4px">
-        <span style="color:var(--orange)">Pergunta:</span> "CBDC impact on bank disintermediation"<br>
-        <span style="color:var(--green)">→</span> Retail CBDC: Implications for Banking<br>
-        <span style="color:var(--green)">→</span> CBDC and Financial Stability<br>
-        <span style="color:var(--green)">→</span> The Optimal Quantity of CBDC in a Bank-Based Economy
+  <div class="part-header">Parte 3 &middot; Funcionalidade</div>
+  <h2><span class="num">10</span> Busca Sem&acirc;ntica: Como o Sistema "Entende" sua Pergunta</h2>
+  <p style="margin-bottom:.5rem;font-size:.78rem">Todo texto (query, t&iacute;tulo, abstract) vira um vetor de 384 n&uacute;meros. A busca encontra artigos cujo vetor &eacute; <strong>mais pr&oacute;ximo</strong> do vetor da pergunta.</p>
+  
+  <div class="card card-highlight" style="margin-bottom:.4rem">
+    <p style="font-size:.72rem;color:var(--text-secondary);margin-bottom:.2rem"><strong>Passo a passo:</strong></p>
+    <div style="display:flex;gap:.4rem;font-size:.68rem;align-items:center">
+      <div style="background:var(--accent-glow);border:1px solid var(--accent);border-radius:6px;padding:.4rem;flex:1;text-align:center">
+        <p style="font-size:.6rem;color:var(--accent);font-weight:600">SUA PERGUNTA</p>
+        <p style="font-size:.6rem;color:var(--text)">"CBDC impact on<br>bank disintermediation"</p>
       </div>
-      <p style="font-size:.65rem;color:var(--text-secondary);margin-top:.2rem">Nenhum resultado cont&eacute;m "disintermediation" — o sistema entendeu o conceito.</p>
-    </div>
-    <div class="card card-highlight">
-      <h3 style="color:var(--purple)">🧩 Clusters: Descoberta de Temas</h3>
-      <p style="font-size:.73rem">Agrupa automaticamente milhares de artigos por assunto. Taxonomia autom&aacute;tica — voc&ecirc; n&atilde;o precisa definir categorias.</p>
-      <div class="diagram" style="margin-top:.3rem;font-size:.6rem">
-<span style="color:var(--cyan)">Cluster 1:</span> literature, systematic, review (23 papers)
-  - SLR Framework for AI in Healthcare
-  - Systematic Review of Embedding Methods
-
-<span style="color:var(--purple)">Cluster 2:</span> topic, sentence, embedding (15 papers)
-  - Sentence Embedding for Topic Detection
-  - BERT vs MiniLM: A Comparative Study
-
-<span style="color:var(--orange)">Outlier:</span> Graph Anomaly Detection with GNNs
+      <span style="color:var(--text-secondary)">→</span>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.4rem;flex:1;text-align:center">
+        <p style="font-size:.6rem;color:var(--purple);font-weight:600">EMBEDDING</p>
+        <p style="font-size:.5rem;color:var(--text-secondary)">[0.23, -0.15, 0.87,<br>-0.42, 0.11, ...]</p>
+      </div>
+      <span style="color:var(--text-secondary)">→</span>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.4rem;flex:1;text-align:center">
+        <p style="font-size:.6rem;color:var(--green);font-weight:600">COSINE SIMILARITY</p>
+        <p style="font-size:.6rem;color:var(--text)">Compara com os 7.338<br>papers indexados</p>
+      </div>
+      <span style="color:var(--text-secondary)">→</span>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.4rem;flex:1;text-align:center">
+        <p style="font-size:.6rem;color:var(--cyan);font-weight:600">RESULTADO</p>
+        <p style="font-size:.6rem;color:var(--text)">Top-3 mais similares</p>
       </div>
     </div>
   </div>
-</div>
-</div>
-
-<!-- ===== SLIDE 9: NOVELTY + EVOLUTION + LANDSCAPE ===== -->
-<div class="slide" data-part="3">
-<div class="slide-inner">
-  <div class="part-header">Parte 3 &middot; Descoberta</div>
-  <h2><span class="num">11</span> Enxergando o que N&atilde;o Est&aacute; &Oacute;bvio</h2>
-  <div class="grid-3">
-    <div class="card"><h3 style="color:var(--orange)">🆕 Radar de Novidade</h3><p style="font-size:.7rem">Detecta artigos que N&Atilde;O se encaixam em nenhum cluster. S&atilde;o pesquisas interdisciplinares ou tend&ecirc;ncias emergentes.</p>
-    <div class="diagram" style="margin-top:.2rem;font-size:.6rem">
-<span style="color:var(--red)">Outliers encontrados:</span>
-❖ Graph Anomaly Detection with GNNs
-❖ EthCluster: Ethereum Smart Contract
-    </div></div>
-    <div class="card"><h3 style="color:var(--cyan)">📈 Evolu&ccedil;&atilde;o Temporal</h3><p style="font-size:.7rem">Mostra como os t&oacute;picos mudam ao longo dos anos.</p>
-	    <p style="font-size:.7rem">Dados REAIS da nossa base: &aacute;rea em crescimento acelerado.</p>
-	    <svg class="svg-diagram" viewBox="0 0 260 120" style="margin-top:.2rem">
-        <rect x="10" y="85" width="22" height="15" fill="var(--accent)" opacity=".6" rx="2"/><text x="21" y="105" text-anchor="middle" fill="var(--text-secondary)" font-size="5.5">2020</text><text x="21" y="80" text-anchor="middle" fill="var(--text-secondary)" font-size="6">3</text>
-        <rect x="40" y="85" width="22" height="15" fill="var(--accent)" opacity=".6" rx="2"/><text x="51" y="105" text-anchor="middle" fill="var(--text-secondary)" font-size="5.5">2021</text><text x="51" y="80" text-anchor="middle" fill="var(--text-secondary)" font-size="6">3</text>
-        <rect x="70" y="75" width="22" height="25" fill="var(--accent)" opacity=".7" rx="2"/><text x="81" y="105" text-anchor="middle" fill="var(--text-secondary)" font-size="5.5">2022</text><text x="81" y="70" text-anchor="middle" fill="var(--text-secondary)" font-size="6">4</text>
-        <rect x="100" y="55" width="22" height="45" fill="var(--accent)" rx="2"/><text x="111" y="105" text-anchor="middle" fill="var(--text-secondary)" font-size="5.5">2023</text><text x="111" y="50" text-anchor="middle" fill="var(--accent)" font-size="7" font-weight="700">8</text>
-        <rect x="130" y="40" width="22" height="60" fill="var(--green)" rx="2"/><text x="141" y="105" text-anchor="middle" fill="var(--text-secondary)" font-size="5.5">2024</text><text x="141" y="35" text-anchor="middle" fill="var(--green)" font-size="7" font-weight="700">10</text>
-        <rect x="160" y="25" width="22" height="75" fill="var(--green)" rx="2"/><text x="171" y="105" text-anchor="middle" fill="var(--text-secondary)" font-size="5.5">2025</text><text x="171" y="20" text-anchor="middle" fill="var(--green)" font-size="7" font-weight="700">12</text>
-        <rect x="190" y="73" width="22" height="27" fill="var(--orange)" opacity=".8" rx="2"/><text x="201" y="105" text-anchor="middle" fill="var(--text-secondary)" font-size="5.5">2026</text><text x="201" y="68" text-anchor="middle" fill="var(--orange)" font-size="6">4*</text>
-        <line x1="10" y1="108" x2="220" y2="108" stroke="var(--border)" stroke-width=".5"/>
-      </svg>
-	    </div>
-    <div class="card"><h3 style="color:var(--accent)">🗺️ Mapa 2D da Pesquisa</h3><p style="font-size:.7rem">Projeta TODOS os artigos num mapa interativo. Artigos pr&oacute;ximos = temas similares. D&aacute; pra ver lacunas e oportunidades.</p>
-    <div class="diagram" style="margin-top:.2rem;font-size:.6rem">
-    CBDC ●    ● NLP
-         ╲  ╱
- Blockchain ●
-    </div></div>
+  
+  <div class="card card-highlight" style="margin-bottom:.3rem">
+    <p style="font-size:.7rem;color:var(--text-secondary);margin-bottom:.2rem"><strong>Resultado real da busca:</strong></p>
+    <div style="font-size:.62rem;background:var(--bg);padding:.4rem .5rem;border-radius:4px;line-height:1.6">
+      <span style="color:var(--accent)">Pergunta:</span> "CBDC impact on bank disintermediation"<br>
+      <span style="color:var(--green)">1.</span> Retail Central Bank Digital Currencies: Implications for Banking<br>
+      <span style="color:var(--green)">2.</span> CBDC and Financial Stability<br>
+      <span style="color:var(--green)">3.</span> The Optimal Quantity of CBDC in a Bank-Based Economy<br>
+      <span style="color:var(--text-secondary);font-size:.55rem">Nenhum resultado cont&eacute;m a palavra "disintermediation" — o sistema entendeu o CONCEITO.</span>
+    </div>
+  </div>
+  
+  <div style="display:flex;gap:.4rem;font-size:.6rem;color:var(--text-secondary)">
+    <span class="tag">7.338 papers indexados</span>
+    <span class="tag">384 dimens&otilde;es</span>
+    <span class="tag">Cosine similarity</span>
+    <span class="tag">all-MiniLM-L6-v2</span>
   </div>
 </div>
 </div>
-
-<!-- ===== SLIDE 10: RERANK + SUMMARIZE + DEDUP ===== -->
+<!-- ===== SLIDE 11: CLUSTERING ===== -->
 <div class="slide" data-part="3">
 <div class="slide-inner">
-  <div class="part-header">Parte 3 &middot; S&iacute;ntese e Qualidade</div>
-  <h2><span class="num">12</span> Precis&atilde;o, Resumo e Qualidade dos Dados</h2>
-  <div class="grid-3">
-    <div class="card card-highlight">
-      <h3 style="color:var(--accent)">🎯 Re-Ranqueamento</h3>
-      <p style="font-size:.7rem">Dois passos: MiniLM busca r&aacute;pido (top-20) → cross-encoder re-rank preciso (top-5). +9 pontos de precis&atilde;o.</p>
+  <div class="part-header">Parte 3 &middot; Funcionalidade</div>
+  <h2><span class="num">11</span> Clusters: Como o Sistema Descobre os Temas Sozinho</h2>
+  <p style="margin-bottom:.5rem;font-size:.78rem">O cluster_papers agrupa automaticamente milhares de artigos por assunto — sem voc&ecirc; definir categorias. O algoritmo (BERTopic) funciona em 3 etapas:</p>
+  
+  <div style="display:flex;gap:.4rem;margin-bottom:.4rem;font-size:.62rem">
+    <div style="flex:1;background:var(--accent-glow);border:1px solid var(--accent);border-radius:6px;padding:.4rem;text-align:center">
+      <p style="font-size:.6rem;color:var(--accent);font-weight:600">1. UMAP</p>
+      <p style="font-size:.58rem;color:var(--text-secondary)">Reduz 384 dimens&otilde;es<br>para um espa&ccedil;o menor,<br>preservando dist&acirc;ncias</p>
     </div>
-    <div class="card card-highlight">
-      <h3 style="color:var(--green)">📝 Resumo Autom&aacute;tico</h3>
-      <p style="font-size:.7rem">Dado um DOI, extrai as 3 senten&ccedil;as mais representativas do abstract. Relevantes ao tema E n&atilde;o redundantes entre si.</p>
+    <span style="color:var(--text-secondary);align-self:center">→</span>
+    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.4rem;text-align:center">
+      <p style="font-size:.6rem;color:var(--purple);font-weight:600">2. HDBSCAN</p>
+      <p style="font-size:.58rem;color:var(--text-secondary)">Agrupa pontos pr&oacute;ximos<br>por densidade — sem<br>precisar dizer quantos<br>clusters existem</p>
     </div>
-    <div class="card card-highlight">
-      <h3 style="color:var(--purple)">🔍 Dedup Sem&acirc;ntico</h3>
-      <p style="font-size:.7rem">Detecta duplicatas que o DOI n&atilde;o pega. Preprint vs publicado com DOIs diferentes s&atilde;o agrupados automaticamente.</p>
+    <span style="color:var(--text-secondary);align-self:center">→</span>
+    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.4rem;text-align:center">
+      <p style="font-size:.6rem;color:var(--green);font-weight:600">3. c-TF-IDF</p>
+      <p style="font-size:.58rem;color:var(--text-secondary)">Extrai as palavras mais<br>importantes de cada<br>cluster — dando nome<br>aos temas</p>
+    </div>
+  </div>
+  
+  <div class="card card-highlight">
+    <p style="font-size:.68rem;color:var(--text-secondary);margin-bottom:.2rem"><strong>Exemplo real (50 papers):</strong></p>
+    <div style="display:flex;gap:.4rem;font-size:.6rem">
+      <div style="flex:1;background:var(--bg);padding:.3rem;border-radius:4px">
+        <p style="color:var(--accent);font-weight:600">Cluster 1 (23 papers)</p>
+        <p style="color:var(--text-secondary)">literature, systematic, review</p>
+        <p style="color:var(--text-secondary);font-size:.55rem">→ Revis&atilde;o Sistem&aacute;tica</p>
+      </div>
+      <div style="flex:1;background:var(--bg);padding:.3rem;border-radius:4px">
+        <p style="color:var(--purple);font-weight:600">Cluster 2 (15 papers)</p>
+        <p style="color:var(--text-secondary)">topic, sentence, embedding</p>
+        <p style="color:var(--text-secondary);font-size:.55rem">→ Embeddings</p>
+      </div>
+      <div style="flex:1;background:var(--bg);padding:.3rem;border-radius:4px">
+        <p style="color:var(--green);font-weight:600">Cluster 3 (12 papers)</p>
+        <p style="color:var(--text-secondary)">search, ai, intelligent</p>
+        <p style="color:var(--text-secondary);font-size:.55rem">→ IA</p>
+      </div>
+      <div style="flex:1;background:var(--bg);padding:.3rem;border-radius:4px;border-left:2px solid var(--red)">
+        <p style="color:var(--red);font-weight:600">Outliers (2)</p>
+        <p style="color:var(--text-secondary);font-size:.55rem">Graph Anomaly Detection<br>Ethereum Smart Contract</p>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:.58rem;color:var(--text-secondary);margin-top:.2rem">🎯 &Uacute;til para: descobrir a estrutura de um campo, encontrar lacunas, detectar papers interdisciplinares.</p>
+</div>
+</div>
+<!-- ===== SLIDE 12: MORE FEATURES ===== -->
+<div class="slide" data-part="3">
+<div class="slide-inner">
+  <div class="part-header">Parte 3 &middot; Mais Funcionalidades</div>
+  <h2><span class="num">12</span> Novidade, Evolu&ccedil;&atilde;o, Mapa e S&iacute;ntese</h2>
+  
+  <div class="grid-2" style="margin-bottom:.3rem">
+    <div class="card"><h3 style="color:var(--orange)">🆕 Detec&ccedil;&atilde;o de Novidade</h3>
+      <p style="font-size:.68rem">O algoritmo <strong>EllipticEnvelope</strong> estima a distribui&ccedil;&atilde;o dos embeddings e marca como outliers os papers que fogem do padr&atilde;o. &Uacute;til para encontrar pesquisas disruptivas.</p>
+      <p style="font-size:.6rem;color:var(--red);margin-top:.2rem">Exemplo real: GNNs e Ethereum detectados como outliers numa base de SLR.</p>
+    </div>
+    <div class="card"><h3 style="color:var(--cyan)">📈 Evolu&ccedil;&atilde;o Temporal</h3>
+      <p style="font-size:.68rem">Agrupa os papers por ano e mostra como a composi&ccedil;&atilde;o dos t&oacute;picos mudou. Um tema que cresce = &aacute;rea quente. Um que encolhe = maturidade.</p>
+      <p style="font-size:.6rem;color:var(--text-secondary);margin-top:.2rem">Dados reais: de 3 papers (2020) para 12 (2025) — crescimento de 4x.</p>
+    </div>
+    <div class="card"><h3 style="color:var(--accent)">🗺️ Mapa 2D (UMAP)</h3>
+      <p style="font-size:.68rem">Projeta 384 dimens&otilde;es em 2 coordenadas (x,y). Cada paper vira um ponto. Artigos similares ficam pr&oacute;ximos. D&aacute; pra ver clusters, lacunas e outliers num golpe de olho.</p>
+    </div>
+    <div class="card"><h3 style="color:var(--green)">📝 Resumo + Dedup + Re-rank</h3>
+      <p style="font-size:.68rem"><strong>summarize_paper:</strong> extrai as 3 senten&ccedil;as mais relevantes via MMR (centroid + diversidade).<br>
+      <strong>semantic_dedup:</strong> agrupa papers com similaridade >88% — pega duplicatas que o DOI n&atilde;o pega.<br>
+      <strong>rerank_search:</strong> MiniLM busca 20 → cross-encoder re-rank 5 — +9 pontos de precis&atilde;o.</p>
     </div>
   </div>
 </div>
 </div>
-
-<!-- ===== SLIDE 11: WEIGHT-BLEEDING PROBLEM ===== -->
+<!-- ===== SLIDE 13: WEIGHT-BLEEDING PROBLEM ===== -->
 <div class="slide" data-part="4">
 <div class="slide-inner">
-  <div class="part-header">Parte 4 &middot; O Cora&ccedil;&atilde;o T&eacute;cnico</div>
-  <h2><span class="num">13</span> O Problema: Como dar "peso" &agrave;s palavras num embedding?</h2>
-
-  <div class="card" style="margin-bottom:.5rem;text-align:center">
-    <p style="font-size:.82rem;color:var(--text);line-height:1.8">
-    "O <strong>bi-encoder</strong> usa <strong>repeti&ccedil;&atilde;o</strong> de <strong>termos</strong>"<br>
-    <span style="color:var(--text-secondary);font-size:.7rem">↓ O m&eacute;todo padr&atilde;o (mean pooling) d&aacute; o MESMO peso para TODAS as palavras</span>
+  <div class="part-header">Parte 4 &middot; O Problema T&eacute;cnico</div>
+  <h2><span class="num">13</span> Por que "dar peso" a termos &eacute; dif&iacute;cil num embedding?</h2>
+  <p style="margin-bottom:.4rem;font-size:.75rem">Bi-encoders usam <strong>mean pooling</strong>: embedding final = m&eacute;dia simples dos embeddings de cada palavra. O problema: <strong>todas as palavras t&ecirc;m o mesmo peso</strong>.</p>
+  
+  <div class="card" style="margin-bottom:.4rem;text-align:center;padding:.5rem">
+    <p style="font-size:.72rem;color:var(--text);line-height:1.6;font-family:monospace">
+    "O <strong style="color:var(--accent)">bi-encoder</strong> usa <strong style="color:var(--accent)">repeti&ccedil;&atilde;o</strong> de <strong style="color:var(--accent)">termos</strong>"<br>
+    <span style="font-size:.6rem;color:var(--text-secondary)">↓ mean pooling d&aacute; o MESMO peso para TODAS as palavras</span>
     </p>
   </div>
-
+  
   <div class="grid-2">
-    <div class="card"><h3 style="color:var(--orange)">📊 Analogia: Pesquisa de Opini&atilde;o</h3>
-      <p style="font-size:.73rem">Mean pooling &eacute; como uma pesquisa onde todo mundo tem 1 voto — <strong>inclusive quem n&atilde;o entende do assunto</strong>.</p>
-      <p style="font-size:.73rem;margin-top:.3rem">Pesquisador sobre "CBDC" quer que "banco central" e "moeda digital" tenham <strong>mais peso</strong> que "o", "um", "para".</p>
+    <div class="card"><h3 style="color:var(--orange)">📊 Exemplo Concreto</h3>
+      <p style="font-size:.68rem">Numa busca sobre <strong>"bi-encoder"</strong>, as palavras "o", "usa", "de" t&ecirc;m o mesmo peso que "bi-encoder". O embedding n&atilde;o reflete a import&acirc;ncia real dos termos.</p>
+      <p style="font-size:.68rem;margin-top:.3rem">Pesquisador quer que "bi-encoder" pese 5x mais que "o" — mas o modelo n&atilde;o permite.</p>
     </div>
-    <div class="card"><h3 style="color:var(--orange)">🎯 Dois Problemas Pr&aacute;ticos</h3>
-      <p style="font-size:.73rem"><strong>1.</strong> Scores comprimidos: artigos parecidos ficam com scores muito pr&oacute;ximos.</p>
-      <p style="font-size:.73rem;margin-top:.3rem"><strong>2.</strong> Sem controle: o pesquisador n&atilde;o consegue dizer "isso &eacute; mais importante".</p>
+    <div class="card"><h3 style="color:var(--orange)">🎯 Consequ&ecirc;ncias</h3>
+      <p style="font-size:.68rem"><strong>1. Scores comprimidos:</strong> artigos tangencialmente relevantes e irrelevantes ficam com scores muito pr&oacute;ximos (ex: 0.35 vs 0.38). Dif&iacute;cil separar.</p>
+      <p style="font-size:.68rem;margin-top:.3rem"><strong>2. Sem controle:</strong> o pesquisador n&atilde;o consegue "guiar" a busca — dizer que certos termos s&atilde;o mais importantes.</p>
     </div>
   </div>
 </div>
 </div>
-
-<!-- ===== SLIDE 12: WEIGHT-BLEEDING SOLUTION ===== -->
+<!-- ===== SLIDE 14: WEIGHT-BLEEDING SOLUTION ===== -->
 <div class="slide" data-part="4">
 <div class="slide-inner">
   <div class="part-header">Parte 4 &middot; A Solu&ccedil;&atilde;o</div>
-  <h2><span class="num">14</span> Weight-Bleeding: Pondera&ccedil;&atilde;o Sem&acirc;ntica Configur&aacute;vel</h2>
-
-  <div class="card card-highlight" style="margin-bottom:.5rem">
-    <p style="font-size:.78rem;color:var(--text);line-height:1.7">
-    <strong>💡 Ideia central:</strong> Se repetir um termo no texto fizesse ele contribuir mais, por que n&atilde;o fazer isso <strong>diretamente no espa&ccedil;o de embeddings</strong>? &Eacute; matematicamente equivalente — mas sem aumentar o texto, sem custo extra, sem precisar de GPU.
-    </p>
+  <h2><span class="num">14</span> Weight-Bleeding: Centroide Ponderado em Espa&ccedil;o de Embeddings</h2>
+  
+  <div class="card card-highlight" style="margin-bottom:.4rem">
+    <p style="font-size:.72rem;color:var(--text);line-height:1.5"><strong>💡 Ideia central:</strong> Se repetir um termo W vezes no texto fizesse ele contribuir W vezes mais, podemos simular esse efeito <strong>diretamente no espa&ccedil;o de embeddings</strong> — sem aumentar o texto, sem custo, sem GPU.</p>
   </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <h3 style="color:var(--accent)">📋 Exemplo de Configura&ccedil;&atilde;o</h3>
-      <div class="code-block" style="font-size:.62rem">
-{<span class="dim">"CBDC"</span>: 5.0,         <span class="dim"># termo central, peso alto</span>
+  
+  <div style="display:flex;gap:.5rem;margin-bottom:.3rem">
+    <div class="card" style="flex:1">
+      <h3 style="color:var(--accent);font-size:.8rem">📋 Passo 1: Configurar</h3>
+      <div class="code-block" style="font-size:.58rem">
+{<span class="dim">"CBDC"</span>: 5.0,           <span class="dim"># peso alto — termo central</span>
 <span class="dim">"moeda digital"</span>: 5.0,
 <span class="dim">"banco central"</span>: 5.0,
-<span class="dim">"liquidez"</span>: 2.0,      <span class="dim"># relevante mas secund&aacute;rio</span>
-<span class="dim">"blockchain"</span>: 2.0}</div>
+<span class="dim">"liquidez"</span>: 2.0,        <span class="dim"># peso m&eacute;dio</span>
+<span class="dim">"blockchain"</span>: 2.0,
+<span class="dim">"pol&iacute;tica"</span>: 1.0       <span class="dim"># peso baixo — contexto</span>}</div>
     </div>
-    <div class="card">
-      <h3 style="color:var(--green)">🎯 O Que Acontece</h3>
-      <p style="font-size:.73rem">O sistema calcula um <strong>centroide ponderado</strong> — uma "posi&ccedil;&atilde;o alvo" no espa&ccedil;o de embeddings.</p>
-      <p style="font-size:.73rem;margin-top:.3rem">Cada artigo &eacute; comparado com esse centroide: quanto mais pr&oacute;ximo, mais relevante.</p>
-      <p style="font-size:.73rem;margin-top:.3rem">Artigos sobre blockchain SEM CBDC <strong style="color:var(--green)">n&atilde;o s&atilde;o afetados</strong>.</p>
+    <div class="card" style="flex:1">
+      <h3 style="color:var(--green);font-size:.8rem">🎯 Passo 2: Centroide</h3>
+      <p style="font-size:.65rem">Cada termo vira um embedding. O <strong>centroide ponderado</strong> &eacute; a m&eacute;dia de TODOS os embeddings, cada um pesado pelo seu W:</p>
+      <div style="background:var(--bg);padding:.3rem;border-radius:4px;font-size:.55rem;font-family:monospace;color:var(--text-secondary);margin-top:.3rem">
+        centroide = (emb_base×N + emb_cbdc×5 + emb_moeda×5 + emb_blockchain×2) / (N + 5 + 5 + 2)
+      </div>
+      <p style="font-size:.62rem;margin-top:.3rem">O embedding de "CBDC" contribui <strong>5× mais</strong> que uma palavra comum.</p>
     </div>
   </div>
-  <p style="font-size:.7rem;text-align:center;margin-top:.3rem">⏱ Tudo em CPU, milissegundos por artigo, zero dados de treinamento.</p>
+  
+  <div class="card card-highlight" style="padding:.4rem">
+    <div style="display:flex;gap:.5rem;align-items:center;font-size:.65rem">
+      <div style="flex:1;text-align:center">
+        <p style="font-size:.6rem;color:var(--accent);font-weight:600">3. COMPARAR</p>
+        <p style="font-size:.6rem;color:var(--text-secondary)">Cada artigo vs centroide<br>→ cosine similarity</p>
+      </div>
+      <span style="color:var(--text-secondary)">→</span>
+      <div style="flex:1;text-align:center">
+        <p style="font-size:.6rem;color:var(--accent);font-weight:600">4. RANQUEAR</p>
+        <p style="font-size:.6rem;color:var(--text-secondary)">Artigos sobre CBDC sobem<br>Blockchain sem CBDC<br><strong style="color:var(--green)">n&atilde;o &eacute; afetado</strong></p>
+      </div>
+      <span style="color:var(--text-secondary)">→</span>
+      <div style="flex:1;text-align:center">
+        <p style="font-size:.6rem;color:var(--accent);font-weight:600">5. TRANSFORMAR</p>
+        <p style="font-size:.6rem;color:var(--text-secondary)">Score final = sqrt(sim) × 10<br>Expande o range inferior<br>sem mudar a ordem</p>
+      </div>
+    </div>
+  </div>
 </div>
 </div>
-
-<!-- ===== SLIDE 13: RESULTS ===== -->
+<!-- ===== SLIDE 15: SQRT TRANSFORM ===== -->
 <div class="slide" data-part="4">
 <div class="slide-inner">
-  <div class="part-header">Parte 4 &middot; Valida&ccedil;&atilde;o</div>
-  <h2><span class="num">15</span> Resultados Pr&aacute;ticos</h2>
-  <div class="grid-3">
-    <div class="card"><div class="stat"><div class="num" style="color:var(--cyan)">96.8%</div></div><p style="font-size:.68rem;text-align:center">O ranking MUDA em rela&ccedil;&atilde;o ao m&eacute;todo padr&atilde;o — 40% dos top-10 s&atilde;o diferentes. O peso realmente faz diferen&ccedil;a.</p></div>
-    <div class="card"><div class="stat"><div class="num" style="color:var(--purple)">-0.75</div></div><p style="font-size:.68rem;text-align:center">Correla&ccedil;&atilde;o NEGATIVA entre dom&iacute;nios SLR e Blockchain. Prova que o efeito &eacute; ESPEC&Iacute;FICO — cada configura&ccedil;&atilde;o produz um resultado &uacute;nico.</p></div>
-    <div class="card"><div class="stat"><div class="num" style="color:var(--green)">7.5&times;</div></div><p style="font-size:.68rem;text-align:center">Mais r&aacute;pido que cross-encoder. Centroid calculado em 0.5s, cada artigo em milissegundos. Resultado consistente em 3 modelos diferentes.</p></div>
+  <div class="part-header">Parte 4 &middot; O Ajuste Fino</div>
+  <h2><span class="num">15</span> A Transforma&ccedil;&atilde;o Raiz Quadrada: Por Que &eacute; Necess&aacute;ria</h2>
+  <p style="margin-bottom:.4rem;font-size:.75rem">Em 384 dimens&otilde;es, a similaridade cosseno tende a se concentrar numa faixa estreita (~0.05 a 0.50). A transforma&ccedil;&atilde;o linear perde papers relevantes. A raiz quadrada resolve.</p>
+  
+  <div style="display:flex;gap:.5rem;margin-bottom:.3rem">
+    <div class="card" style="flex:1">
+      <h3 style="color:var(--red)">📊 Antes: Linear</h3>
+      <p style="font-size:.65rem">Score = similaridade × 10<br><br>
+      Paper A (relevante): sim=0.30 → score=3.0<br>
+      Paper B (irrelevante): sim=0.25 → score=2.5<br><br>
+      <strong style="color:var(--red)">Diferen&ccedil;a: 0.5 — quase invis&iacute;vel</strong><br>
+      Com threshold em 3.5, <strong style="color:var(--red)">ambos s&atilde;o perdidos</strong>.</p>
+    </div>
+    <div class="card" style="flex:1">
+      <h3 style="color:var(--green)">✅ Depois: Raiz Quadrada</h3>
+      <p style="font-size:.65rem">Score = √sim × 10<br><br>
+      Paper A: √0.30 × 10 = <strong style="color:var(--green)">5.48</strong><br>
+      Paper B: √0.25 × 10 = <strong style="color:var(--orange)">5.00</strong><br><br>
+      <strong style="color:var(--green)">Diferen&ccedil;a: 0.48 — bem definida</strong><br>
+      Paper A passa no threshold 3.5 — <strong style="color:var(--green)">&eacute; resgatado</strong>.</p>
+    </div>
   </div>
-  <div class="callout" style="margin-top:.4rem;text-align:center">
-    <p style="font-size:.75rem;color:var(--text);margin:0"><strong>59 artigos</strong> a mais s&atilde;o aprovados com Weight-Bleeding vs m&eacute;todo tradicional — papers que seriam perdidos s&atilde;o resgatados.</p>
+  
+  <div class="card" style="text-align:center;padding:.4rem">
+    <p style="font-size:.68rem;color:var(--text);margin:0"><strong>Impacto real:</strong> No threshold 5.0, Weight-Bleeding + raiz quadrada aprovam <strong style="color:var(--green)">151 papers</strong> vs <strong style="color:var(--red)">92</strong> do baseline vanilla — <strong style="color:var(--green)">59 papers a mais</strong> que seriam perdidos.</p>
+  </div>
+  <p style="font-size:.58rem;color:var(--text-secondary);margin-top:.2rem">A transforma&ccedil;&atilde;o &eacute; monot&ocirc;nica (preserva a ordem — Spearman &rho;=1.0 contra linear) e foi escolhida entre 6 alternativas (linear, log1p, quadrática, sigmoid, cúbica).</p>
+</div>
+</div>
+<!-- ===== SLIDE 16: RESULTS ===== -->
+<div class="slide" data-part="4">
+<div class="slide-inner">
+  <div class="part-header">Parte 4 &middot; Valida&ccedil;&atilde;o Experimental</div>
+  <h2><span class="num">16</span> Tr&ecirc;s N&uacute;meros Que Comprovam o M&eacute;todo</h2>
+  
+  <div class="grid-3" style="margin-bottom:.3rem">
+    <div class="card"><div class="stat"><div class="num" style="color:var(--cyan)">96.8%</div></div>
+      <p style="font-size:.65rem;text-align:center"><strong>Spearman &rho; vs vanilla bi-encoder</strong></p>
+      <p style="font-size:.6rem;text-align:center;color:var(--text-secondary)">O ranking MUDA — 40% dos top-10 s&atilde;o diferentes. O peso faz diferen&ccedil;a real no resultado. A correla&ccedil;&atilde;o &eacute; alta o suficiente para n&atilde;o bagun&ccedil;ar, mas baixa o suficiente para mostrar que o efeito existe.</p>
+    </div>
+    <div class="card"><div class="stat"><div class="num" style="color:var(--purple)">-0.75</div></div>
+      <p style="font-size:.65rem;text-align:center"><strong>Correla&ccedil;&atilde;o entre dom&iacute;nios</strong></p>
+      <p style="font-size:.6rem;text-align:center;color:var(--text-secondary)">Configura&ccedil;&atilde;o para SLR vs configura&ccedil;&atilde;o para Blockchain produzem rankings <strong>negativamente correlacionados</strong>. Prova que o efeito N&Atilde;O &eacute; um vi&eacute;s global — cada dom&iacute;nio produz um resultado &uacute;nico e espec&iacute;fico.</p>
+    </div>
+    <div class="card"><div class="stat"><div class="num" style="color:var(--green)">7.5&times;</div></div>
+      <p style="font-size:.65rem;text-align:center"><strong>Mais r&aacute;pido que cross-encoder</strong></p>
+      <p style="font-size:.6rem;text-align:center;color:var(--text-secondary)">Centroide calculado em 0.5 segundos (uma vez). Cada artigo: 0.01ms. Total: ~525ms para 500 papers. Cross-encoder equivalente levaria ~4 segundos. O gap cresce com o volume.</p>
+    </div>
+  </div>
+  
+  <div class="callout" style="text-align:center;background:linear-gradient(135deg,rgba(63,185,80,.08),transparent);border-color:rgba(63,185,80,.2)">
+    <p style="font-size:.72rem;color:var(--text);margin:0"><strong>Resultado consistente em 3 modelos:</strong> MiniLM (&rho;=0.915), BGE-base (&rho;=0.952), GTE-small (&rho;=0.939). O m&eacute;todo n&atilde;o depende de um modelo espec&iacute;fico.</p>
   </div>
 </div>
 </div>
-
 <!-- ===== SLIDE 14: COMPARISON ===== -->
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; O Que Tudo Isso Significa</div>
-  <h2><span class="num">16</span> Academic Hunter vs Concorrentes</h2>
+  <h2><span class="num">17</span> Academic Hunter vs Concorrentes</h2>
   <table>
     <tr><th>Recurso</th><th>Academic Hunter</th><th>ASReview</th><th>Rayyan</th><th>Covidence</th></tr>
     <tr><td>C&oacute;digo aberto</td><td style="color:var(--green)">✅</td><td style="color:var(--green)">✅</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td></tr>
@@ -697,7 +791,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; Contribui&ccedil;&atilde;o &Uacute;nica</div>
-  <h2><span class="num">17</span> Posicionamento na Literatura</h2>
+  <h2><span class="num">18</span> Posicionamento na Literatura</h2>
   <div class="card card-highlight" style="margin-bottom:.5rem">
     <p style="font-size:.78rem;color:var(--text)"><strong>Academic Hunter &eacute; o &Uacute;NICO sistema que combina:</strong></p>
     <p style="font-size:.72rem;margin-top:.2rem">✅ Pipeline SLR completo + Busca em <strong>16 fontes</strong> + <strong>35+ tools</strong> MCP + <strong>12 an&aacute;lises</strong> MiniLM + <strong>Weight-Bleeding</strong></p>
@@ -715,7 +809,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; Publica&ccedil;&otilde;es</div>
-  <h2><span class="num">18</span> Dois Tracks de Publica&ccedil;&atilde;o</h2>
+  <h2><span class="num">19</span> Dois Tracks de Publica&ccedil;&atilde;o</h2>
   <div class="grid-2">
     <div class="card card-highlight">
       <h3 style="color:var(--accent)">📄 JOSS</h3>
@@ -740,7 +834,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; Transpar&ecirc;ncia</div>
-  <h2><span class="num">19</span> Limita&ccedil;&otilde;es e Quando N&Atilde;O Usar</h2>
+  <h2><span class="num">20</span> Limita&ccedil;&otilde;es e Quando N&Atilde;O Usar</h2>
   <p style="margin-bottom:.5rem">Nenhuma ferramenta &eacute; perfeita para tudo. Academic Hunter &eacute; &oacute;timo para:</p>
   <div class="grid-2">
     <div class="card card-highlight">
@@ -789,7 +883,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <!-- ===== NAVIGATION ===== -->
 <div id="nav">
   <button id="nav-btn" onclick="prevSlide()" id="prevBtn">◀</button>
-  <span id="counter">1/20</span>
+  <span id="counter">1/21</span>
   <div class="dots" id="dots"></div>
   <button id="nav-btn" onclick="nextSlide()" id="nextBtn">▶</button>
 </div>
