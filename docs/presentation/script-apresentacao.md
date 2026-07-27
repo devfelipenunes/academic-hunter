@@ -1,6 +1,6 @@
 # Script de Apresentação — Academic Hunter
 
-**Duração:** ~35 minutos (19 slides)
+**Duração:** ~37 minutos (20 slides)
 **Público:** Pesquisadores (não necessariamente especialistas em IA)
 **Tom:** Conceitual, entusiasmado mas honesto, foco no "o que faz" não "como funciona"
 
@@ -83,7 +83,27 @@
 
 ---
 
-## PARTE 2 — O SOFTWARE (slides 5-7, ~6 min)
+## PARTE 2 — ARQUITETURA + SOFTWARE (slides 5-7, ~5 min)
+
+---
+
+### SLIDE 5 — Arquitetura Hexagonal (1.5 min)
+
+> "Antes de detalhar as funcionalidades, quero mostrar como o sistema foi construído. A arquitetura é **hexagonal e baseada em plugins** — cada camada tem responsabilidades claras e pode ser substituída independentemente.
+>
+> **MCP Server** — a camada de interface com agentes de IA. 35+ ferramentas, 4 recursos, 2 prompts, health check, suporte a SSE. Tudo que um agente IA precisa para orquestrar uma SLR.
+>
+> **Core Domain** — o núcleo do sistema. O modelo de paper, o scorer NLP com Weight-Bleeding, o pipeline manager, e a exportação PRISMA. Isso tudo funciona SEM LLM — o sistema é autônomo.
+>
+> **Plugin Layer** — a camada de conectores. Cada fonte de dados é um plugin independente. No momento temos 15 conectores, mas adicionar um novo não exige mexer no núcleo. O mesmo vale para screeners, exporters, e o vector store ChromaDB.
+>
+> **Infrastructure** — SQLite para cache, ChromaDB para vetores, config.json para configuração, env vars para override.
+>
+> Essa arquitetura permite que o sistema escale horizontalmente — mais conectores, mais análises, mais formatos de exportação — sem nunca precisar reescrever o núcleo."
+
+**[Avançar]**
+
+---
 
 ---
 
