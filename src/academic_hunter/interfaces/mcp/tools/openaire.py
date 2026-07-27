@@ -1,4 +1,7 @@
-"""MCP tool for searching OpenAIRE Graph — publications linked to grants and funding."""
+"""MCP tool for searching OpenAIRE Graph.
+
+Indexes 198M+ publications linked to 3.7M+ grants.
+"""
 
 import logging
 import requests

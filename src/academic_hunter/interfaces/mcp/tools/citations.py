@@ -1,8 +1,6 @@
 """MCP tools for citation analysis via OpenCitations/COCI.
 
-OpenCitations is a free, open database of 2B+ citation links.
-API: https://api.opencitations.net/index/v2/
-No API key required.
+Free, open database of 2B+ citation links.
 """
 
 import logging

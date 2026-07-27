@@ -46,7 +46,11 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
         import numpy as np
 
         # Split into sentences
-        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', abstract) if len(s.strip()) > 20]
+        sentences = [
+            s.strip()
+            for s in re.split(r'(?<=[.!?])\s+', abstract)
+            if len(s.strip()) > 20
+        ]
         if len(sentences) <= num_sentences:
             await ctx.info("Abstract has fewer sentences than requested")
             return f"# Abstract Summary\n\n{abstract}"
