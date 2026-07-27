@@ -141,7 +141,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="1">
 <div class="slide-inner">
   <div class="part-header">Parte 1 &middot; Na Pr&aacute;tica</div>
-  <h2><span class="num">3</span> O Fluxo Real via MCP</h2>
+  <h2><span class="num">2</span> O Fluxo Real via MCP</h2>
   <p style="margin-bottom:.5rem;font-size:.8rem">O pesquisador usa o Academic Hunter atrav&eacute;s do **Claude** (ou qualquer agente IA compat&iacute;vel com MCP):</p>
   <div class="card card-highlight" style="margin-bottom:.5rem">
     <div class="code-block" style="font-size:.65rem;line-height:1.7">
@@ -179,7 +179,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="1">
 <div class="slide-inner">
   <div class="part-header">Parte 1 &middot; Vis&atilde;o Geral</div>
-  <h2><span class="num">4</span> O Fluxo Completo: 4 Etapas</h2>
+  <h2><span class="num">3</span> O Fluxo Completo: 4 Etapas</h2>
   <p style="margin-bottom:.6rem;">Do t&oacute;pico at&eacute; os insights — tudo autom&aacute;tico:</p>
 
   <svg class="svg-diagram" viewBox="0 0 800 80">
@@ -223,6 +223,44 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 
   <div class="callout" style="margin-top:.5rem;background:linear-gradient(135deg,rgba(63,185,80,.08),transparent);border-color:rgba(63,185,80,.2)">
     <p style="font-size:.78rem;color:var(--text);margin:0"><strong>🎯 E o mais importante:</strong> cada an&aacute;lise pode ser chamada por um agente de IA (Claude, ChatGPT) via MCP. Voc&ecirc; valida o resultado, n&atilde;o executa o trabalho bra&ccedil;al.</p>
+  </div>
+</div>
+</div>
+
+<!-- ===== SLIDE 5: ARQUITETURA ===== -->
+<div class="slide" data-part="2">
+<div class="slide-inner">
+  <div class="part-header">Parte 2 &middot; Arquitetura do Sistema</div>
+  <h2><span class="num">4</span> Arquitetura Hexagonal + Plugins</h2>
+  <p style="margin-bottom:.5rem;font-size:.78rem">O Academic Hunter foi constru&iacute;do em camadas — cada uma com responsabilidades claras e substitu&iacute;veis:</p>
+  <div style="display:flex;gap:.6rem;align-items:stretch;margin-bottom:.4rem">
+    <div style="flex:1;background:var(--accent-glow);border:1px solid var(--accent);border-radius:8px;padding:.5rem .7rem;text-align:center">
+      <p style="font-size:.7rem;color:var(--accent);font-weight:700">🤖 MCP SERVER</p>
+      <p style="font-size:.6rem;color:var(--text-secondary)">35+ tools · 4 resources · 2 prompts<br>Health check · SSE transport</p>
+    </div>
+    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;text-align:center">
+      <p style="font-size:.7rem;color:var(--cyan);font-weight:700">⚙️ CORE DOMAIN</p>
+      <p style="font-size:.6rem;color:var(--text-secondary)">Paper model · NLP Scorer · Pipeline Manager<br>PRISMA Export · Weight-Bleeding</p>
+    </div>
+    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;text-align:center">
+      <p style="font-size:.7rem;color:var(--purple);font-weight:700">🔌 PLUGIN LAYER</p>
+      <p style="font-size:.6rem;color:var(--text-secondary)">Conectores · Screeners · Exporters<br>Vector Store (ChromaDB)</p>
+    </div>
+    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;text-align:center">
+      <p style="font-size:.7rem;color:var(--green);font-weight:700">🗄️ INFRASTRUCTURE</p>
+      <p style="font-size:.6rem;color:var(--text-secondary)">SQLite Cache · ChromaDB · Config JSON<br>Environment Variables</p>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:.3rem">
+    <p style="font-size:.72rem;color:var(--text);margin-bottom:.2rem"><strong>Por que hexagonal + plugins?</strong></p>
+    <p style="font-size:.68rem;color:var(--text-secondary)">Cada conector &eacute; um plugin independente — adicionar uma nova fonte de dados n&atilde;o exige modificar o n&uacute;cleo. O scorer, o vector store e os exporters seguem o mesmo padr&atilde;o. Atualmente s&atilde;o <strong>15 conectores</strong>, mas a arquitetura permite escalar para dezenas sem impacto no resto do sistema.</p>
+  </div>
+  <div style="display:flex;gap:.4rem;font-size:.65rem">
+    <span class="tag">Hexagonal Architecture</span>
+    <span class="tag">Plugin-based</span>
+    <span class="tag">15 conectores</span>
+    <span class="tag">MCP Server acoplado</span>
+    <span class="tag">Zero depend&ecirc;ncia entre camadas</span>
   </div>
 </div>
 </div>
@@ -751,7 +789,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <!-- ===== NAVIGATION ===== -->
 <div id="nav">
   <button id="nav-btn" onclick="prevSlide()" id="prevBtn">◀</button>
-  <span id="counter">1/19</span>
+  <span id="counter">1/20</span>
   <div class="dots" id="dots"></div>
   <button id="nav-btn" onclick="nextSlide()" id="nextBtn">▶</button>
 </div>
