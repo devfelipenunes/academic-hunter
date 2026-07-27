@@ -8,9 +8,7 @@ import logging
 import numpy as np
 from mcp.server.fastmcp import Context
 
-from academic_hunter import AcademicHunter
-from academic_hunter.plugins.vector_stores import ChromaVectorStore
-from ._utils import get_project_root
+from ._utils import _get_vector_store
 
 try:
     from sentence_transformers import SentenceTransformer
@@ -37,12 +35,9 @@ async def semantic_dedup(ctx: Context, threshold: float = 0.85, min_group_size: 
     await ctx.info(f"Running semantic dedup (threshold={threshold})...")
 
     # Get vector store
-    try:
-        hunter = AcademicHunter(output_dir=str(get_project_root() / "results"))
-        db_dir = str(hunter.output_dir.parent / ".academic_hunter" / "chroma_db")
-        store = ChromaVectorStore(db_dir=db_dir)
-    except Exception as e:
-        await ctx.error(f"Vector store not available: {e}")
+    store = _get_vector_store()
+    if store is None:
+        await ctx.error("Vector store not available")
         return "Error: Vector store not available. Index papers first."
 
     # Get all papers

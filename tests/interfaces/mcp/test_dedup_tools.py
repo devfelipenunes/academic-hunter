@@ -14,10 +14,10 @@ async def test_semantic_dedup(mock_ctx):
     ]
     mock_embeddings = [[1.0, 0.0], [0.99, 0.01], [0.0, 1.0]]
 
-    with patch("academic_hunter.interfaces.mcp.tools.dedup.ChromaVectorStore") as m_store_cls:
+    with patch("academic_hunter.interfaces.mcp.tools.dedup._get_vector_store") as m_get:
         store = MagicMock()
         store.query.return_value = mock_papers
-        m_store_cls.return_value = store
+        m_get.return_value = store
         with patch("academic_hunter.interfaces.mcp.tools.dedup.SentenceTransformer") as m_st:
             model = MagicMock()
             model.encode.return_value = mock_embeddings
@@ -29,17 +29,19 @@ async def test_semantic_dedup(mock_ctx):
 
 async def test_semantic_dedup_no_store(mock_ctx):
     """Graceful when no store."""
-    with patch("academic_hunter.interfaces.mcp.tools.dedup.ChromaVectorStore") as m:
-        m.side_effect = Exception("no db")
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.dedup._get_vector_store",
+        return_value=None,
+    ):
         result = await semantic_dedup(mock_ctx)
         assert "not available" in result
 
 
 async def test_semantic_dedup_few_papers(mock_ctx):
     """Graceful with too few papers."""
-    with patch("academic_hunter.interfaces.mcp.tools.dedup.ChromaVectorStore") as m_store_cls:
+    with patch("academic_hunter.interfaces.mcp.tools.dedup._get_vector_store") as m_get:
         store = MagicMock()
         store.query.return_value = [{"title": "Only one paper"}]
-        m_store_cls.return_value = store
+        m_get.return_value = store
         result = await semantic_dedup(mock_ctx)
         assert "Not enough papers" in result

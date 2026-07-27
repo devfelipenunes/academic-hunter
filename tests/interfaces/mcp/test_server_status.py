@@ -34,20 +34,23 @@ def mock_config_fail():
 
 @pytest.fixture
 def mock_chroma_ok():
-    """ChromaVectorStore returns data."""
-    with patch("academic_hunter.plugins.vector_stores.ChromaVectorStore") as m:
-        inst = m.return_value
+    """_get_vector_store returns a working vector store."""
+    with patch("academic_hunter.interfaces.mcp.health._get_vector_store") as m:
+        inst = MagicMock()
         inst.collection_stats.return_value = {"count": 42}
         inst.list_collections.return_value = ["papers"]
+        m.return_value = inst
         yield inst
 
 
 @pytest.fixture
 def mock_chroma_fail():
-    """ChromaVectorStore raises when instantiated."""
-    with patch("academic_hunter.plugins.vector_stores.ChromaVectorStore") as m:
-        m.side_effect = RuntimeError("ChromaDB unreachable")
-        yield m
+    """_get_vector_store returns None."""
+    with patch(
+        "academic_hunter.interfaces.mcp.health._get_vector_store",
+        return_value=None,
+    ):
+        yield None
 
 
 @pytest.fixture

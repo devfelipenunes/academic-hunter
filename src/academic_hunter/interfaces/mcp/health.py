@@ -5,6 +5,11 @@ import logging
 
 logger = logging.getLogger("academic_hunter.mcp")
 
+try:
+    from .tools._utils import _get_vector_store
+except Exception:
+    _get_vector_store = None
+
 
 def _check_components() -> dict:
     """Check all components and return status data.
@@ -29,19 +34,28 @@ def _check_components() -> dict:
         logger.warning("Config not available: %s", exc)
 
     # 2. Vector store check
-    try:
-        from academic_hunter.plugins.vector_stores import ChromaVectorStore
-
-        store = ChromaVectorStore(db_dir="")
-        stats = store.collection_stats("papers")
-        paper_count = stats.get("count", 0)
-    except Exception as exc:
+    if _get_vector_store is None:
         vector_store_available = False
         if status == "ok":
             status = "degraded"
         elif not config_loaded:
             status = "error"
-        logger.warning("Vector store not available: %s", exc)
+        logger.warning("_get_vector_store import failed")
+    else:
+        try:
+            store = _get_vector_store()
+            if store is not None:
+                stats = store.collection_stats("papers")
+                paper_count = stats.get("count", 0)
+            else:
+                raise RuntimeError("Vector store returned None")
+        except Exception as exc:
+            vector_store_available = False
+            if status == "ok":
+                status = "degraded"
+            elif not config_loaded:
+                status = "error"
+            logger.warning("Vector store not available: %s", exc)
 
     # 3. Last config backup (best-effort)
     try:

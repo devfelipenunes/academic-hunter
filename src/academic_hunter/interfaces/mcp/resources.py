@@ -56,9 +56,15 @@ async def get_vector_stats_resource() -> str:
     URI: ``academic-hunter://vector-store/stats``
     """
     try:
-        from academic_hunter.plugins.vector_stores import ChromaVectorStore
+        from .tools._utils import _get_vector_store
 
-        store = ChromaVectorStore()
+        store = _get_vector_store()
+        if store is None:
+            return _json.dumps(
+                {"available": False, "error": "Vector store not available"},
+                ensure_ascii=False,
+                indent=2,
+            )
         collections = store.list_collections()
         total_papers = 0
         collection_data = []

@@ -43,16 +43,17 @@ def mock_hunter_rag():
 
 @pytest.fixture
 def mock_vector_store():
-    """Mock ``ChromaVectorStore`` so no real ChromaDB is needed."""
+    """Mock ``_get_vector_store`` so no real ChromaDB is needed."""
     with patch(
-        "academic_hunter.interfaces.mcp.tools.rag.ChromaVectorStore"
+        "academic_hunter.interfaces.mcp.tools.rag._get_vector_store"
     ) as m:
-        instance = m.return_value
+        instance = MagicMock()
         # Default: empty query result
         instance.query.return_value = []
         instance.collection_stats.return_value = {"count": 0}
         instance.list_collections.return_value = []
         instance.index_papers.return_value = True
+        m.return_value = instance
         yield instance
 
 
