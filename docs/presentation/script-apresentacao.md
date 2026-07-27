@@ -85,7 +85,7 @@ CONFIG → BUSCA (16 bases) → ANALISA (12 análises MiniLM) → EXPORTA
 > **Dados complementares:** OpenCitations (citações), Unpaywall (acesso aberto)
 > **Patentes:** Lens.org
 > **Preprints:** bioRxiv, medRxiv
-> **Dados de pesquisa:** OpenAIRE (grants), DataCite (datasets), ClinicalTrials.gov
+> **Dados de pesquisa:** OpenAIRE (grants), DataCite (datasets), 
 > **Identidade:** ORCID (pesquisadores)
 >
 > Tudo em paralelo, com limite de taxa inteligente para não sobrecarregar as APIs. O resultado é consolidado, deduplicado, e pronto para análise."

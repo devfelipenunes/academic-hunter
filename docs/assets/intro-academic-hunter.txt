@@ -1,0 +1,22 @@
+Academic Hunter é um servidor MCP que conecta qualquer LLM (Claude, Cursor, Gemini)
+a 7 bases acadêmicas.
+
+Na prática: em vez de pesquisar artigo manualmente, você conversa com a IA
+e ela opera o motor de busca inteiro sozinha — descobre os termos certos,
+varre bases em paralelo, pontua relevância, explora citações e salva no Obsidian.
+
+15 ferramentas MCP que cobrem o ciclo completo:
+- Configurar parâmetros de busca
+- Rodar pipeline em 7 APIs
+- Navegar por grafos de citação (snowballing)
+- Indexar em ChromaDB pra busca semântica
+- Exportar pro Obsidian com frontmatter
+
+Por que é interessante pro time:
+É open source (MIT), arquitetura hexagonal com plugins, e transforma qualquer
+LLM num assistente de pesquisa autônomo. Pra quem faz revisão de literatura,
+prospecção de tecnologia ou acompanhamento de fronteira científica, economiza
+dias de trabalho braçal.
+
+Repo: github.com/devfelipenunes/academic-hunter
+Docs MCP: devfelipenunes.github.io/academic-hunter/mcp/

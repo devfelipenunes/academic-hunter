@@ -1,0 +1,144 @@
+================================================================================
+ PROMPT DE PESQUISA — Embeddings + all-MiniLM-L6-v2 no Academic Hunter
+================================================================================
+
+Use este prompt no Google Scholar, arXiv, Semantic Scholar, ou em qualquer
+LLM de pesquisa para aprofundar seu entendimento sobre embeddings e como
+os utilizamos no Academic Hunter.
+
+================================================================================
+ PROMPT (inglês — melhor para resultados acadêmicos)
+================================================================================
+
+I want to understand the all-MiniLM-L6-v2 sentence embedding model in depth
+for an academic paper. Cover:
+
+1. Knowledge Distillation: How MiniLM distills BERT-base (110M params) down
+   to 22M while retaining ~80% of the quality. Explain the teacher-student
+   training, MSE loss on attention distributions, and why 6 layers instead of 12.
+
+2. Contrastive Learning: How the model was trained with 1B+ sentence pairs
+   (MS MARCO, SNLI, MultiNLI, Quora Duplicates, Reddit comments). Explain the
+   contrastive loss function — pulling similar pairs together, pushing dissimilar
+   apart. Why cosine similarity is the distance metric.
+
+3. Sentence Embeddings vs Word Embeddings: How all-MiniLM produces a single
+   384-dim vector per sentence (via mean pooling of token embeddings + L2
+   normalization) rather than per-word vectors like Word2Vec/GloVe. Why this
+   matters for semantic search.
+
+4. Technical Details: Transformer architecture with 6 encoder layers, 4
+   attention heads per layer, hidden size 384, feed-forward 1536. Total
+   parameter breakdown per layer. LayerNorm placement. GELU activation.
+
+5. ONNX Runtime: How the model is converted from PyTorch to ONNX format for
+   CPU-only inference. What optimizations ONNX provides (quantization, operator
+   fusion). Performance: ~10ms per embedding on CPU.
+
+6. Cosine Similarity Math: Formula cos(θ) = (A·B)/(||A||×||B||). Why it ranges
+   from -1 to 1. Interpretation: 1.0 = identical, 0.8 = very similar, 0.3 =
+   unrelated, <0 = opposite. How dot product + L2 norms are computed in numpy.
+
+7. HNSW (Hierarchical Navigable Small World): How vector indexes work for
+   approximate nearest neighbor search. Multi-layer graph structure. Parameters:
+   M (connections per node), ef_construction (build quality), ef_search (search
+   depth). Complexity O(log n) vs O(n) brute force. How ChromaDB implements it
+   internally.
+
+8. Weight-Bleeding Technique (our innovation): How we simulate term weighting
+   in embedding space by repeating high-weight terms proportionally in the
+   reference text before embedding. Example: weight=5.0 → term repeated 5× in
+   reference text. This shifts the reference embedding centroid toward high-weight
+   terms. Paper/reference on this technique if it exists.
+
+9. Comparison with alternatives: How all-MiniLM-L6-v2 compares against:
+   - BERT-base (110M params, 768 dims) — why we chose smaller
+   - SBERT (Sentence-BERT) variants
+   - Instructor-XL (large embedding models)
+   - OpenAI text-embedding-3-small/large
+   - E5, BGE, GTE models
+   - Key tradeoffs: size vs quality, CPU vs GPU, open vs closed
+
+10. Academic Applications: How sentence embeddings are used in systematic
+    literature reviews, research paper clustering, recommendation systems, and
+    knowledge management. Papers on embedding-based literature screening vs
+    traditional keyword/ML approaches.
+
+
+================================================================================
+ PALAVRAS-CHAVE PARA BUSCA (Google Scholar / arXiv)
+================================================================================
+
+- "MiniLM: Deep Self-Attention Distillation"
+- "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks"
+- "all-MiniLM-L6-v2 sentence-transformers"
+- "HNSW hierarchical navigable small world"
+- "contrastive learning sentence embeddings"
+- "ONNX runtime BERT inference optimization"
+- "systematic review automation NLP embeddings"
+- "semantic screening literature review"
+- "embedding-based systematic literature review"
+- "sentence transformers academic search"
+
+
+================================================================================
+ NOSSO FLUXO COMPLETO (Academic Hunter)
+================================================================================
+
+1. Paper text (title + abstract)
+       ↓
+2. all-MiniLM-L6-v2 via ONNX Runtime (CPU, ~10ms)
+       ↓
+3. [384-dimensional vector] representando o paper
+       ↓
+4. Comparação com embedding do texto de referência da config
+   (que contém âncoras + termos técnicos com weight-bleeding)
+       ↓
+5. Cosine Similarity = semantic_score
+       ↓
+6. Final score = 0.7 × keyword_score + 0.3 × semantic_score
+       ↓
+7. Todos os vectors armazenados em ChromaDB com índice HNSW
+       ↓
+8. Busca via ask_papers() embedding da query → HNSW search → top-k
+
+
+================================================================================
+ DIFERENCIAL: WEIGHT-BLEEDING TECHNIQUE
+================================================================================
+
+Para simular pesos nos embeddings (já que embeddings não aceitam pesos
+diretamente), repetimos termos de alto peso proporcionalmente:
+
+    Exemplo: "atomic settlement" com weight=5.0
+    → aparece 5× no texto de referência antes de embeddar
+
+Isso faz o embedding "pender" semanticamente para termos mais importantes.
+Não encontramos literatura formal sobre esta técnica — pode ser original.
+
+
+================================================================================
+ FONTES RECOMENDADAS PARA COMEÇAR
+================================================================================
+
+Paper original do MiniLM (Microsoft):
+  "MiniLM: Deep Self-Attention Distillation for Task-Agnostic Compression
+   of Pre-Trained Transformers" — Wang et al., 2020 (arXiv:2002.10957)
+
+Sentence-BERT (base do all-MiniLM):
+  "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks" —
+  Reimers & Gurevych, 2019 (EMNLP/IJCNLP)
+
+all-MiniLM-L6-v2 no Hugging Face:
+  https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+
+HNSW paper:
+  "Efficient and robust approximate nearest neighbor search using
+   Hierarchical Navigable Small World graphs" — Malkov & Yashunin, 2018
+  (IEEE TPAMI)
+
+ChromaDB:
+  https://docs.trychroma.com/
+  Implementação HNSW via hnswlib
+
+================================================================================
