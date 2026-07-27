@@ -2,10 +2,12 @@
   <h1>🎯 Academic Hunter</h1>
   <p><b>Automated Systematic Literature Reviews with Semantic Intelligence</b></p>
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![PyPI version](https://img.shields.io/pypi/v/academic-hunter?color=blue)](https://pypi.org/project/academic-hunter/)
+[![Python versions](https://img.shields.io/pypi/pyversions/academic-hunter)](https://pypi.org/project/academic-hunter/)
+[![License](https://img.shields.io/github/license/devfelipenunes/academic-hunter)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/github/actions/workflow/status/devfelipenunes/academic-hunter/test.yml?branch=main&label=tests)](https://github.com/devfelipenunes/academic-hunter/actions)
 [![MCP Ready](https://img.shields.io/badge/Protocol-MCP_Ready-orange.svg)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-155_passing-green.svg)](https://github.com/devfelipenunes/academic-hunter)
 </div>
 
 Academic Hunter is an open-source Systematic Literature Review (SLR) tool that combines **multi-source search** (16 academic databases), **semantic relevance scoring** (Weight-Bleeding), **topic clustering** (BERTopic), **novelty detection**, **extractive summarization**, and a **Model Context Protocol (MCP) server** — all running locally on CPU, with zero API costs.
