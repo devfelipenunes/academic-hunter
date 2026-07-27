@@ -66,6 +66,20 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 .code-block .green{color:var(--green)}
 .diagram{font-family:monospace;font-size:.6rem;line-height:1.4;color:var(--text-secondary);white-space:pre}
 
+/* SVG diagram styles */
+.svg-diagram{width:100%;max-height:300px;margin:.3rem 0}
+.svg-diagram text{font-family:'Inter',system-ui,sans-serif;font-size:10px;fill:var(--text-secondary)}
+.svg-diagram .label{fill:var(--text);font-weight:600;font-size:11px}
+.svg-diagram .accent{fill:var(--accent)}
+.svg-diagram .green{fill:var(--green)}
+.svg-diagram .box{fill:var(--bg-card);stroke:var(--border);stroke-width:1;rx:6}
+.svg-diagram .box-accent{fill:var(--accent-glow);stroke:var(--accent);stroke-width:1;rx:6}
+.svg-diagram .arrow{stroke:var(--text-secondary);stroke-width:1.5;fill:none}
+.svg-diagram .arrow-head{fill:var(--text-secondary)}
+.svg-diagram .dot-cluster{fill:var(--accent);opacity:.6}
+.svg-diagram .dot-outlier{fill:var(--red);opacity:.8}
+.svg-diagram .dot-cbd{fill:var(--green);opacity:.7}
+
 @media (max-width:768px){.grid-2,.grid-3{grid-template-columns:1fr}.slide{padding:1.5rem 1rem}.slide-inner{width:100%}}
 </style>
 </head>
@@ -158,15 +172,37 @@ $ academic-hunter interactive
   <h2><span class="num">4</span> O Fluxo Completo: 4 Etapas</h2>
   <p style="margin-bottom:.6rem;">Do t&oacute;pico at&eacute; os insights — tudo autom&aacute;tico:</p>
 
-  <div class="flow" style="margin-bottom:.6rem">
-    <span class="flow-box" style="background:var(--accent-glow);color:var(--accent)">1. CONFIGURAR</span>
-    <span class="flow-arrow">→</span>
-    <span class="flow-box" style="background:rgba(57,210,192,.12);color:var(--cyan)">2. BUSCAR</span>
-    <span class="flow-arrow">→</span>
-    <span class="flow-box" style="background:rgba(188,140,255,.12);color:var(--purple)">3. ANALISAR</span>
-    <span class="flow-arrow">→</span>
-    <span class="flow-box" style="background:rgba(63,185,80,.12);color:var(--green)">4. EXPORTAR</span>
-  </div>
+  <svg class="svg-diagram" viewBox="0 0 800 80">
+    <!-- Configurar -->
+    <rect class="box-accent" x="10" y="15" width="140" height="50"/>
+    <text x="80" y="35" text-anchor="middle" class="accent" font-size="13" font-weight="700">1. CONFIGURAR</text>
+    <text x="80" y="52" text-anchor="middle" fill="var(--text-secondary)" font-size="9">T&oacute;pico + Pesos</text>
+    <!-- Arrow -->
+    <line class="arrow" x1="155" y1="40" x2="195" y2="40"/>
+    <polygon class="arrow-head" points="193,35 203,40 193,45"/>
+    <!-- Buscar -->
+    <rect class="box" x="200" y="15" width="140" height="50" stroke="var(--cyan)"/>
+    <text x="270" y="35" text-anchor="middle" fill="var(--cyan)" font-size="13" font-weight="700">2. BUSCAR</text>
+    <text x="270" y="52" text-anchor="middle" fill="var(--text-secondary)" font-size="9">16 Fontes</text>
+    <!-- Arrow -->
+    <line class="arrow" x1="345" y1="40" x2="385" y2="40"/>
+    <polygon class="arrow-head" points="383,35 393,40 383,45"/>
+    <!-- Analisar -->
+    <rect class="box" x="390" y="15" width="170" height="50" stroke="var(--purple)"/>
+    <text x="475" y="35" text-anchor="middle" fill="var(--purple)" font-size="13" font-weight="700">3. ANALISAR</text>
+    <text x="475" y="52" text-anchor="middle" fill="var(--text-secondary)" font-size="9">12 An&aacute;lises MiniLM</text>
+    <!-- Arrow -->
+    <line class="arrow" x1="565" y1="40" x2="605" y2="40"/>
+    <polygon class="arrow-head" points="603,35 613,40 603,45"/>
+    <!-- Exportar -->
+    <rect class="box" x="610" y="15" width="150" height="50" stroke="var(--green)"/>
+    <text x="685" y="35" text-anchor="middle" fill="var(--green)" font-size="13" font-weight="700">4. EXPORTAR</text>
+    <text x="685" y="52" text-anchor="middle" fill="var(--text-secondary)" font-size="9">CSV, Bib, RIS, MD...</text>
+    <!-- MCP label on top -->
+    <rect x="620" y="0" width="60" height="12" rx="4" fill="var(--accent-glow)" stroke="var(--accent)" stroke-width=".5"/>
+    <text x="650" y="9" text-anchor="middle" fill="var(--accent)" font-size="8" font-weight="600">MCP</text>
+    <line class="arrow" x1="650" y1="13" x2="650" y2="18" stroke="var(--accent)" stroke-dasharray="2"/>
+  </svg>
 
   <div class="grid-2">
     <div class="card"><h3>📝 1. Configurar</h3><p style="font-size:.75rem">Modo interativo: voc&ecirc; s&oacute; diz o t&oacute;pico. O sistema descobre os jarg&otilde;es automaticamente.</p></div>
@@ -268,14 +304,24 @@ $ academic-hunter interactive
     </p>
   </div>
   <div class="grid-2">
-    <div class="card"><h3>🗺️ Analogia: Mapa da Cidade</h3><p style="font-size:.75rem">Artigos sobre IA ficam no "bairro" da intelig&ecirc;ncia artificial. Blockchain fica noutro bairro. A dist&acirc;ncia entre eles no "mapa" de 384 dimens&otilde;es reflete a dist&acirc;ncia entre os temas.</p>
-    <div class="diagram" style="margin-top:.3rem">
-      CBDC ●─────● Digital Currency
-            └────┐
-      Bitcoin ●──┘
+	    <div class="card"><h3>🗺️ Analogia: Mapa da Pesquisa</h3><p style="font-size:.75rem">Artigos sobre o MESMO tema geram embeddings PARECIDOS e ficam PRÓXIMOS no mapa. A distância entre eles reflete a distância entre os assuntos.</p>
+      <svg class="svg-diagram" viewBox="0 0 380 120" style="margin-top:.3rem">
+        <circle class="dot-cbd" cx="130" cy="45" r="12"/>
+        <circle class="dot-cbd" cx="110" cy="50" r="8"/><circle class="dot-cbd" cx="145" cy="40" r="10"/>
+        <circle class="dot-cbd" cx="120" cy="35" r="6"/><circle class="dot-cbd" cx="150" cy="55" r="7"/>
+        <text x="130" y="82" text-anchor="middle" fill="var(--green)" font-size="9" font-weight="600">CBDC</text>
+        <text x="130" y="94" text-anchor="middle" fill="var(--text-secondary)" font-size="7">38 papers</text>
+        <circle class="dot-cluster" cx="280" cy="40" r="14"/><circle class="dot-cluster" cx="260" cy="45" r="9"/>
+        <circle class="dot-cluster" cx="300" cy="35" r="11"/><circle class="dot-cluster" cx="270" cy="30" r="7"/>
+        <circle class="dot-cluster" cx="290" cy="55" r="8"/>
+        <text x="280" y="82" text-anchor="middle" fill="var(--accent)" font-size="9" font-weight="600">IA / ML</text>
+        <text x="280" y="94" text-anchor="middle" fill="var(--text-secondary)" font-size="7">45 papers</text>
+        <circle class="dot-outlier" cx="75" cy="25" r="8"/>
+        <line x1="69" y1="19" x2="81" y2="31" stroke="var(--red)" stroke-width="1.5"/>
+        <line x1="81" y1="19" x2="69" y2="31" stroke="var(--red)" stroke-width="1.5"/>
+        <text x="75" y="12" text-anchor="middle" fill="var(--red)" font-size="7">Outlier</text>
+      </svg>
 
-      Deep Learning ●─────● Transformers
-    </div>
     </div>
     <div class="card"><h3>📦 22MB, CPU, Gr&aacute;tis</h3><p style="font-size:.75rem">O modelo cabe num arquivo menor que uma foto JPEG (22MB). Roda em QUALQUER computador — sem GPU, sem nuvem, sem custo.</p>
     <p style="font-size:.7rem;margin-top:.3rem">E o melhor: esse <strong style="color:var(--accent)">mesmo modelo de 22MB</strong> alimenta <strong style="color:var(--green)">12 funcionalidades diferentes</strong> no Academic Hunter.</p></div>
