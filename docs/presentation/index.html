@@ -137,49 +137,11 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 </div>
 </div>
 
-<!-- ===== SLIDE 3: CASO REAL — MCP ===== -->
-<div class="slide" data-part="1">
-<div class="slide-inner">
-  <div class="part-header">Parte 1 &middot; Na Pr&aacute;tica</div>
-  <h2><span class="num">2</span> O Fluxo Real via MCP</h2>
-  <p style="margin-bottom:.5rem;font-size:.8rem">O pesquisador usa o Academic Hunter atrav&eacute;s do **Claude** (ou qualquer agente IA compat&iacute;vel com MCP):</p>
-  <div class="card card-highlight" style="margin-bottom:.5rem">
-    <div class="code-block" style="font-size:.65rem;line-height:1.7">
-<span class="green">Pesquisador (no Claude):</span> "Fa&ccedil;a uma revis&atilde;o sobre o impacto de CBDCs na estabilidade financeira"
-
-<span class="dim"># Claude planeia e executa via MCP:</span>
-
-1&rarr; quick_topic_discovery("CBDC financial stability")
-   <span class="dim"># descobre os jarg&otilde;es da &aacute;rea automaticamente</span>
-
-2&rarr; update_config({anchors: {CBDC, financial stability}, weights: {5.0, 3.0}})
-   <span class="dim"># configura a busca sem o pesquisador editar JSON</span>
-
-3&rarr; run_search()
-   <span class="dim"># busca em 16 fontes simult&acirc;neas</span>
-
-4&rarr; semantic_search("CBDC bank disintermediation")
-   <span class="dim"># explora os resultados por conceito</span>
-
-5&rarr; cluster_papers() &rarr; find_novel_papers()
-   <span class="dim"># agrupa por tema e detecta outliers</span>
-
-6&rarr; visualize_landscape() &rarr; export_to_obsidian("CBDC Review")
-   <span class="dim"># gera mapa 2D e salva no Second Brain</span>
-
-<span class="green">✅ Pesquisador valida o resultado em 15 minutos</span></div>
-  </div>
-  <div class="callout" style="text-align:center;background:linear-gradient(135deg,rgba(63,185,80,.08),transparent);border-color:rgba(63,185,80,.2);margin-bottom:.3rem">
-    <p style="font-size:.75rem;color:var(--text);margin:0"><strong>🎯 O Claude orquestra 35+ ferramentas MCP — o pesquisador s&oacute; valida.</strong></p>
-  </div>
-</div>
-</div>
-
 <!-- ===== SLIDE 3: FLUXO COMPLETO ===== -->
 <div class="slide" data-part="1">
 <div class="slide-inner">
   <div class="part-header">Parte 1 &middot; Vis&atilde;o Geral</div>
-  <h2><span class="num">3</span> O Fluxo Completo: 4 Etapas</h2>
+  <h2><span class="num">2</span> O Fluxo Completo: 4 Etapas</h2>
   <p style="margin-bottom:.6rem;">Do t&oacute;pico at&eacute; os insights — tudo autom&aacute;tico:</p>
 
   <svg class="svg-diagram" viewBox="0 0 800 80">
@@ -227,49 +189,11 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 </div>
 </div>
 
-<!-- ===== SLIDE 5: ARQUITETURA ===== -->
-<div class="slide" data-part="2">
-<div class="slide-inner">
-  <div class="part-header">Parte 2 &middot; Arquitetura do Sistema</div>
-  <h2><span class="num">4</span> Arquitetura Hexagonal + Plugins</h2>
-  <p style="margin-bottom:.5rem;font-size:.78rem">O Academic Hunter foi constru&iacute;do em camadas — cada uma com responsabilidades claras e substitu&iacute;veis:</p>
-  <div style="display:flex;gap:.6rem;align-items:stretch;margin-bottom:.4rem">
-    <div style="flex:1;background:var(--accent-glow);border:1px solid var(--accent);border-radius:8px;padding:.5rem .7rem;text-align:center">
-      <p style="font-size:.7rem;color:var(--accent);font-weight:700">🤖 MCP SERVER</p>
-      <p style="font-size:.6rem;color:var(--text-secondary)">35+ tools · 4 resources · 2 prompts<br>Health check · SSE transport</p>
-    </div>
-    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;text-align:center">
-      <p style="font-size:.7rem;color:var(--cyan);font-weight:700">⚙️ CORE DOMAIN</p>
-      <p style="font-size:.6rem;color:var(--text-secondary)">Paper model · NLP Scorer · Pipeline Manager<br>PRISMA Export · Weight-Bleeding</p>
-    </div>
-    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;text-align:center">
-      <p style="font-size:.7rem;color:var(--purple);font-weight:700">🔌 PLUGIN LAYER</p>
-      <p style="font-size:.6rem;color:var(--text-secondary)">Conectores · Screeners · Exporters<br>Vector Store (ChromaDB)</p>
-    </div>
-    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;text-align:center">
-      <p style="font-size:.7rem;color:var(--green);font-weight:700">🗄️ INFRASTRUCTURE</p>
-      <p style="font-size:.6rem;color:var(--text-secondary)">SQLite Cache · ChromaDB · Config JSON<br>Environment Variables</p>
-    </div>
-  </div>
-  <div class="card" style="margin-bottom:.3rem">
-    <p style="font-size:.72rem;color:var(--text);margin-bottom:.2rem"><strong>Por que hexagonal + plugins?</strong></p>
-    <p style="font-size:.68rem;color:var(--text-secondary)">Cada conector &eacute; um plugin independente — adicionar uma nova fonte de dados n&atilde;o exige modificar o n&uacute;cleo. O scorer, o vector store e os exporters seguem o mesmo padr&atilde;o. Atualmente s&atilde;o <strong>15 conectores</strong>, mas a arquitetura permite escalar para dezenas sem impacto no resto do sistema.</p>
-  </div>
-  <div style="display:flex;gap:.4rem;font-size:.65rem">
-    <span class="tag">Hexagonal Architecture</span>
-    <span class="tag">Plugin-based</span>
-    <span class="tag">15 conectores</span>
-    <span class="tag">MCP Server acoplado</span>
-    <span class="tag">Zero depend&ecirc;ncia entre camadas</span>
-  </div>
-</div>
-</div>
-
 <!-- ===== SLIDE 4: BUSCA MULTI-FONTE ===== -->
 <div class="slide" data-part="2">
 <div class="slide-inner">
   <div class="part-header">Parte 2 &middot; O Software em A&ccedil;&atilde;o</div>
-  <h2><span class="num">5</span> 16 Fontes Acad&ecirc;micas</h2>
+  <h2><span class="num">3</span> 16 Fontes Acad&ecirc;micas</h2>
   <p style="margin-bottom:.6rem;">Consultas simult&acirc;neas — &uacute;nica ferramenta SLR com esta cobertura:</p>
   <div class="grid-3">
     <div class="card"><h3>📚 Bases</h3><p style="font-size:.7rem">arXiv, Crossref, Europe PMC, DBLP, DOAJ</p></div>
@@ -285,65 +209,11 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 </div>
 </div>
 
-<!-- ===== SLIDE 5: MCP ===== -->
-<div class="slide" data-part="2">
-<div class="slide-inner">
-  <div class="part-header">Parte 2 &middot; Integra&ccedil;&atilde;o com IA</div>
-  <h2><span class="num">6</span> MCP: A Ponte entre SLR e Agentes de IA</h2>
-  <p style="margin-bottom:.6rem;"><strong style="color:var(--text)">MCP (Model Context Protocol)</strong> &eacute; um padr&atilde;o aberto, criado pela Anthropic e adotado pela Linux Foundation, OpenAI e Google. Permite que QUALQUER agente de IA se conecte a ferramentas externas.</p>
-
-  <div class="card card-highlight" style="margin-bottom:.5rem;">
-    <p style="font-size:.75rem;color:var(--text-secondary);margin-bottom:.3rem;"><strong>🔧 Na pr&aacute;tica:</strong> Imagine que voc&ecirc; pede pro Claude fazer uma revis&atilde;o sobre CBDC. O Claude:</p>
-    <div class="code-block" style="font-size:.7rem;line-height:1.7">
-<span class="green">Pesquisador:</span> "Fa&ccedil;a uma SLR sobre impacto de CBDCs na estabilidade financeira"
-
-<span class="dim"># Claude (via MCP) planeja e executa:</span>
-→ quick_topic_discovery("CBDC financial stability")   <span class="dim"># descobre jarg&otilde;es</span>
-→ semantic_search("CBDC bank disintermediation")       <span class="dim"># busca por conceito</span>
-→ cluster_papers(top_k=500)                            <span class="dim"># agrupa por tema</span>
-→ find_novel_papers()                                  <span class="dim"># detecta outliers</span>
-→ visualize_landscape(top_k=500)                       <span class="dim"># mapa 2D</span>
-→ export_to_obsidian("CBDC Review")                    <span class="dim"># salva no seu Second Brain</span>
-
-<span class="green">Pesquisador:</span> valida o resultado em <strong style="color:var(--green)">15 minutos</strong>, n&atilde;o em 6 meses</div>
-  </div>
-
-  <p style="font-size:.75rem">Academic Hunter exp&otilde;e <strong style="color:var(--accent)">35+ ferramentas, 4 recursos e 2 prompts</strong> via MCP.</p>
-</div>
-</div>
-
-<!-- ===== SLIDE 6: POSICIONAMENTO ===== -->
-<div class="slide" data-part="2">
-<div class="slide-inner">
-  <div class="part-header">Parte 2 &middot; O Que N&atilde;o &Eacute;</div>
-  <h2><span class="num">7</span> O Que Academic Hunter &Eacute; — e N&atilde;o &Eacute;</h2>
-  <p style="margin-bottom:.6rem;">Importante entender o papel de cada pe&ccedil;a:</p>
-  <div class="grid-2">
-    <div class="card" style="border-color:rgba(248,81,73,.2)">
-      <h3 style="color:var(--red)">❌ N&atilde;o &eacute; um ChatGPT</h3>
-      <p style="font-size:.75rem">N&atilde;o gera texto, n&atilde;o inventa respostas, n&atilde;o alucina. Ele <strong>recupera e analisa</strong> o que j&aacute; foi publicado.</p>
-    </div>
-    <div class="card" style="border-color:rgba(248,81,73,.2)">
-      <h3 style="color:var(--red)">❌ N&atilde;o &eacute; um agente aut&ocirc;nomo</h3>
-      <p style="font-size:.75rem">Ele &eacute; uma <strong>caixa de ferramentas</strong> que um agente IA usa. Quem decide o que fazer &eacute; o agente (ou voc&ecirc;).</p>
-    </div>
-    <div class="card card-highlight">
-      <h3 style="color:var(--accent)">✅ &Eacute; um motor de busca sem&acirc;ntica</h3>
-      <p style="font-size:.75rem">Entende o <strong>significado</strong> dos textos, n&atilde;o s&oacute; as palavras. "CBDC" e "moeda digital do banco central" s&atilde;o a mesma coisa para ele.</p>
-    </div>
-    <div class="card card-highlight">
-      <h3 style="color:var(--green)">✅ &Eacute; a "parte inteligente" de um sistema maior</h3>
-      <p style="font-size:.75rem">Na literatura, isso se chama <strong>Agentic RAG</strong>: um agente IA orquestra ferramentas especializadas. O Academic Hunter &eacute; a ferramenta especializada em SLR.</p>
-    </div>
-  </div>
-</div>
-</div>
-
 <!-- ===== SLIDE 7: EMBEDDINGS ===== -->
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; Como o Computador "Entende" Textos</div>
-  <h2><span class="num">8</span> Embeddings: A "Impress&atilde;o Digital" dos Artigos</h2>
+  <h2><span class="num">4</span> Embeddings: A "Impress&atilde;o Digital" dos Artigos</h2>
   <div class="card card-highlight" style="text-align:center;margin-bottom:.5rem">
     <p style="font-size:.85rem;color:var(--text);line-height:1.8">
     "Deep learning para diagn&oacute;stico por imagem"<br>
@@ -479,7 +349,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 · Um Modelo, 12 Funções</div>
-  <h2><span class="num">9</span> 12× MiniLM — Um Único Modelo de 22MB</h2>
+  <h2><span class="num">5</span> 12× MiniLM — Um Único Modelo de 22MB</h2>
   <p style="margin-bottom:.5rem;font-size:.78rem">O mesmo <strong>all-MiniLM-L6-v2</strong> (22MB, 384 dimensões) alimenta <strong style="color:var(--accent)">todas</strong> as funcionalidades abaixo. Zero GPU. Zero API paga.</p>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.4rem">
     <div class="card card-highlight" style="padding:.5rem .7rem">
@@ -505,7 +375,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; Funcionalidade</div>
-  <h2><span class="num">10</span> Busca Sem&acirc;ntica: Como o Sistema "Entende" sua Pergunta</h2>
+  <h2><span class="num">6</span> Busca Sem&acirc;ntica: Como o Sistema "Entende" sua Pergunta</h2>
   <p style="margin-bottom:.5rem;font-size:.78rem">Todo texto (query, t&iacute;tulo, abstract) vira um vetor de 384 n&uacute;meros. A busca encontra artigos cujo vetor &eacute; <strong>mais pr&oacute;ximo</strong> do vetor da pergunta.</p>
   
   <div class="card card-highlight" style="margin-bottom:.4rem">
@@ -556,7 +426,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; Funcionalidade</div>
-  <h2><span class="num">11</span> Clusters: Como o Sistema Descobre os Temas Sozinho</h2>
+  <h2><span class="num">7</span> Clusters: Como o Sistema Descobre os Temas Sozinho</h2>
   <p style="margin-bottom:.5rem;font-size:.78rem">O cluster_papers agrupa automaticamente milhares de artigos por assunto — sem voc&ecirc; definir categorias. O algoritmo (BERTopic) funciona em 3 etapas:</p>
   
   <div style="display:flex;gap:.4rem;margin-bottom:.4rem;font-size:.62rem">
@@ -607,7 +477,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; Mais Funcionalidades</div>
-  <h2><span class="num">12</span> Novidade, Evolu&ccedil;&atilde;o, Mapa e S&iacute;ntese</h2>
+  <h2><span class="num">8</span> Novidade, Evolu&ccedil;&atilde;o, Mapa e S&iacute;ntese</h2>
   
   <div class="grid-2" style="margin-bottom:.3rem">
     <div class="card"><h3 style="color:var(--orange)">🆕 Detec&ccedil;&atilde;o de Novidade</h3>
@@ -629,6 +499,136 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
   </div>
 </div>
 </div>
+<!-- ===== SLIDE 5: MCP ===== -->
+<div class="slide" data-part="2">
+<div class="slide-inner">
+  <div class="part-header">Parte 2 &middot; Integra&ccedil;&atilde;o com IA</div>
+  <h2><span class="num">9</span> Integra&ccedil;&atilde;o com Agentes de IA (MCP)</h2>
+  <p style="margin-bottom:.6rem;"><strong style="color:var(--text)">MCP (Model Context Protocol)</strong> &eacute; um padr&atilde;o aberto, criado pela Anthropic e adotado pela Linux Foundation, OpenAI e Google. Permite que QUALQUER agente de IA se conecte a ferramentas externas.</p>
+
+  <div class="card card-highlight" style="margin-bottom:.5rem;">
+    <p style="font-size:.75rem;color:var(--text-secondary);margin-bottom:.3rem;"><strong>🔧 Na pr&aacute;tica:</strong> Imagine que voc&ecirc; pede pro Claude fazer uma revis&atilde;o sobre CBDC. O Claude:</p>
+    <div class="code-block" style="font-size:.7rem;line-height:1.7">
+<span class="green">Pesquisador:</span> "Fa&ccedil;a uma SLR sobre impacto de CBDCs na estabilidade financeira"
+
+<span class="dim"># Claude (via MCP) planeja e executa:</span>
+→ quick_topic_discovery("CBDC financial stability")   <span class="dim"># descobre jarg&otilde;es</span>
+→ semantic_search("CBDC bank disintermediation")       <span class="dim"># busca por conceito</span>
+→ cluster_papers(top_k=500)                            <span class="dim"># agrupa por tema</span>
+→ find_novel_papers()                                  <span class="dim"># detecta outliers</span>
+→ visualize_landscape(top_k=500)                       <span class="dim"># mapa 2D</span>
+→ export_to_obsidian("CBDC Review")                    <span class="dim"># salva no seu Second Brain</span>
+
+<span class="green">Pesquisador:</span> valida o resultado em <strong style="color:var(--green)">15 minutos</strong>, n&atilde;o em 6 meses</div>
+  </div>
+
+  <p style="font-size:.75rem">Academic Hunter exp&otilde;e <strong style="color:var(--accent)">35+ ferramentas, 4 recursos e 2 prompts</strong> via MCP.</p>
+</div>
+</div>
+
+<!-- ===== SLIDE 3: CASO REAL — MCP ===== -->
+<div class="slide" data-part="1">
+<div class="slide-inner">
+  <div class="part-header">Parte 1 &middot; Na Pr&aacute;tica</div>
+  <h2><span class="num">10</span> O Fluxo Real via MCP</h2>
+  <p style="margin-bottom:.5rem;font-size:.8rem">O pesquisador usa o Academic Hunter atrav&eacute;s do **Claude** (ou qualquer agente IA compat&iacute;vel com MCP):</p>
+  <div class="card card-highlight" style="margin-bottom:.5rem">
+    <div class="code-block" style="font-size:.65rem;line-height:1.7">
+<span class="green">Pesquisador (no Claude):</span> "Fa&ccedil;a uma revis&atilde;o sobre o impacto de CBDCs na estabilidade financeira"
+
+<span class="dim"># Claude planeia e executa via MCP:</span>
+
+1&rarr; quick_topic_discovery("CBDC financial stability")
+   <span class="dim"># descobre os jarg&otilde;es da &aacute;rea automaticamente</span>
+
+2&rarr; update_config({anchors: {CBDC, financial stability}, weights: {5.0, 3.0}})
+   <span class="dim"># configura a busca sem o pesquisador editar JSON</span>
+
+3&rarr; run_search()
+   <span class="dim"># busca em 16 fontes simult&acirc;neas</span>
+
+4&rarr; semantic_search("CBDC bank disintermediation")
+   <span class="dim"># explora os resultados por conceito</span>
+
+5&rarr; cluster_papers() &rarr; find_novel_papers()
+   <span class="dim"># agrupa por tema e detecta outliers</span>
+
+6&rarr; visualize_landscape() &rarr; export_to_obsidian("CBDC Review")
+   <span class="dim"># gera mapa 2D e salva no Second Brain</span>
+
+<span class="green">✅ Pesquisador valida o resultado em 15 minutos</span></div>
+  </div>
+  <div class="callout" style="text-align:center;background:linear-gradient(135deg,rgba(63,185,80,.08),transparent);border-color:rgba(63,185,80,.2);margin-bottom:.3rem">
+    <p style="font-size:.75rem;color:var(--text);margin:0"><strong>🎯 O Claude orquestra 35+ ferramentas MCP — o pesquisador s&oacute; valida.</strong></p>
+  </div>
+</div>
+</div>
+
+<!-- ===== SLIDE 6: POSICIONAMENTO ===== -->
+<div class="slide" data-part="2">
+<div class="slide-inner">
+  <div class="part-header">Parte 2 &middot; O Que N&atilde;o &Eacute;</div>
+  <h2><span class="num">11</span> O Que Academic Hunter &Eacute; — e N&atilde;o &Eacute;</h2>
+  <p style="margin-bottom:.6rem;">Importante entender o papel de cada pe&ccedil;a:</p>
+  <div class="grid-2">
+    <div class="card" style="border-color:rgba(248,81,73,.2)">
+      <h3 style="color:var(--red)">❌ N&atilde;o &eacute; um ChatGPT</h3>
+      <p style="font-size:.75rem">N&atilde;o gera texto, n&atilde;o inventa respostas, n&atilde;o alucina. Ele <strong>recupera e analisa</strong> o que j&aacute; foi publicado.</p>
+    </div>
+    <div class="card" style="border-color:rgba(248,81,73,.2)">
+      <h3 style="color:var(--red)">❌ N&atilde;o &eacute; um agente aut&ocirc;nomo</h3>
+      <p style="font-size:.75rem">Ele &eacute; uma <strong>caixa de ferramentas</strong> que um agente IA usa. Quem decide o que fazer &eacute; o agente (ou voc&ecirc;).</p>
+    </div>
+    <div class="card card-highlight">
+      <h3 style="color:var(--accent)">✅ &Eacute; um motor de busca sem&acirc;ntica</h3>
+      <p style="font-size:.75rem">Entende o <strong>significado</strong> dos textos, n&atilde;o s&oacute; as palavras. "CBDC" e "moeda digital do banco central" s&atilde;o a mesma coisa para ele.</p>
+    </div>
+    <div class="card card-highlight">
+      <h3 style="color:var(--green)">✅ &Eacute; a "parte inteligente" de um sistema maior</h3>
+      <p style="font-size:.75rem">Na literatura, isso se chama <strong>Agentic RAG</strong>: um agente IA orquestra ferramentas especializadas. O Academic Hunter &eacute; a ferramenta especializada em SLR.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== SLIDE 5: ARQUITETURA ===== -->
+<div class="slide" data-part="2">
+<div class="slide-inner">
+  <div class="part-header">Parte 2 &middot; Arquitetura do Sistema</div>
+  <h2><span class="num">12</span> Arquitetura Hexagonal + Plugins</h2>
+  <p style="margin-bottom:.5rem;font-size:.78rem">O Academic Hunter foi constru&iacute;do em camadas — cada uma com responsabilidades claras e substitu&iacute;veis:</p>
+  <div style="display:flex;gap:.6rem;align-items:stretch;margin-bottom:.4rem">
+    <div style="flex:1;background:var(--accent-glow);border:1px solid var(--accent);border-radius:8px;padding:.5rem .7rem;text-align:center">
+      <p style="font-size:.7rem;color:var(--accent);font-weight:700">🤖 MCP SERVER</p>
+      <p style="font-size:.6rem;color:var(--text-secondary)">35+ tools · 4 resources · 2 prompts<br>Health check · SSE transport</p>
+    </div>
+    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;text-align:center">
+      <p style="font-size:.7rem;color:var(--cyan);font-weight:700">⚙️ CORE DOMAIN</p>
+      <p style="font-size:.6rem;color:var(--text-secondary)">Paper model · NLP Scorer · Pipeline Manager<br>PRISMA Export · Weight-Bleeding</p>
+    </div>
+    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;text-align:center">
+      <p style="font-size:.7rem;color:var(--purple);font-weight:700">🔌 PLUGIN LAYER</p>
+      <p style="font-size:.6rem;color:var(--text-secondary)">Conectores · Screeners · Exporters<br>Vector Store (ChromaDB)</p>
+    </div>
+    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;text-align:center">
+      <p style="font-size:.7rem;color:var(--green);font-weight:700">🗄️ INFRASTRUCTURE</p>
+      <p style="font-size:.6rem;color:var(--text-secondary)">SQLite Cache · ChromaDB · Config JSON<br>Environment Variables</p>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:.3rem">
+    <p style="font-size:.72rem;color:var(--text);margin-bottom:.2rem"><strong>Por que hexagonal + plugins?</strong></p>
+    <p style="font-size:.68rem;color:var(--text-secondary)">Cada conector &eacute; um plugin independente — adicionar uma nova fonte de dados n&atilde;o exige modificar o n&uacute;cleo. O scorer, o vector store e os exporters seguem o mesmo padr&atilde;o. Atualmente s&atilde;o <strong>15 conectores</strong>, mas a arquitetura permite escalar para dezenas sem impacto no resto do sistema.</p>
+  </div>
+  <div style="display:flex;gap:.4rem;font-size:.65rem">
+    <span class="tag">Hexagonal Architecture</span>
+    <span class="tag">Plugin-based</span>
+    <span class="tag">15 conectores</span>
+    <span class="tag">MCP Server acoplado</span>
+    <span class="tag">Zero depend&ecirc;ncia entre camadas</span>
+  </div>
+</div>
+</div>
+
 <!-- ===== SLIDE 13: WEIGHT-BLEEDING PROBLEM ===== -->
 <div class="slide" data-part="4">
 <div class="slide-inner">
@@ -883,7 +883,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <!-- ===== NAVIGATION ===== -->
 <div id="nav">
   <button id="nav-btn" onclick="prevSlide()" id="prevBtn">◀</button>
-  <span id="counter">1/21</span>
+  <span id="counter">1/22</span>
   <div class="dots" id="dots"></div>
   <button id="nav-btn" onclick="nextSlide()" id="nextBtn">▶</button>
 </div>
