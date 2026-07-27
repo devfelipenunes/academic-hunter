@@ -1,6 +1,6 @@
 # Script de Apresentação — Academic Hunter
 
-**Duração:** ~37 minutos (20 slides)
+**Duração:** ~40 minutos (21 slides)
 **Público:** Pesquisadores (não necessariamente especialistas em IA)
 **Tom:** Conceitual, entusiasmado mas honesto, foco no "o que faz" não "como funciona"
 
@@ -163,7 +163,7 @@
 
 ---
 
-## PARTE 3 — FUNCIONALIDADES MINILM (slides 8-12, ~9 min)
+## PARTE 3 — FUNCIONALIDADES MINILM (slides 8-12, ~10 min)
 
 ---
 
@@ -199,118 +199,135 @@
 
 ---
 
-### SLIDE 10 — Search + Clusters (2 min)
+### SLIDE 10 — Busca Semântica (2 min)
 
-> "Vou mostrar duas funcionalidades em detalhe.
+> "Vamos mergulhar na primeira funcionalidade: **semantic_search**.
 >
-> **Primeiro: busca semântica.** Reparem no exemplo. A pergunta é: 'CBDC impact on bank disintermediation'. Nenhum dos três resultados contém a palavra 'disintermediation' — mas o sistema entendeu o conceito e trouxe artigos relevantes.
+> O slide mostra o passo a passo. Quando o pesquisador faz uma pergunta, o sistema:
 >
-> Isso é a diferença entre buscar por PALAVRAS e buscar por CONCEITOS.
+> **1.** Transforma a pergunta num embedding — 384 números que representam o significado.
+> **2.** Compara esse embedding com os 7.338 papers indexados usando **similaridade cosseno** — basicamente, mede o ângulo entre os vetores.
+> **3.** Retorna os top-3 papers com maior similaridade.
 >
-> **Segundo: clusters automáticos.** Numa base de 50 papers, o sistema descobriu 3 clusters:
+> Reparem no exemplo real. A pergunta é: 'CBDC impact on bank disintermediation'. A palavra 'disintermediation' NÃO aparece em nenhum dos três resultados — mas o sistema entendeu o conceito e trouxe artigos relevantes.
 >
-> - 'literature, systematic, review' — 23 papers sobre revisão sistemática
-> - 'topic, sentence, embedding' — 15 papers sobre embeddings
-> - E um outlier: detecção de anomalia em grafos com GNNs
->
-> Isso é **taxonomia automática** — você não precisa definir as categorias antes. O sistema descobre."
+> Isso é a diferença entre buscar por PALAVRAS e buscar por CONCEITOS. O embedding captura o significado, não o texto exato."
 
 **[Avançar]**
 
 ---
 
-### SLIDE 11 — Novidade + Evolução + Mapa (2 min)
+### SLIDE 11 — Clusters Automáticos (2 min)
 
-> "Três funcionalidades que ajudam o pesquisador a enxergar o que NÃO está óbvio.
+> "A segunda funcionalidade em detalhe: **cluster_papers**.
 >
-> **1. Radar de novidade:** detecta artigos que não se encaixam em nenhum cluster. Esses são frequentemente os mais interessantes — pesquisa interdisciplinar, tendências emergentes. Nos nossos testes, encontramos dois: um sobre detecção de anomalia em GNNs e outro sobre análise de contratos Ethereum.
+> O algoritmo BERTopic funciona em 3 etapas:
 >
-> **2. Evolução temporal:** aqui com DADOS REAIS da nossa base. De 2020 a 2025, o número de papers cresceu de 3 para 12 — um crescimento de 4x em 5 anos. Isso mostra que a área está QUENTE.
+> **1. UMAP** — reduz as 384 dimensões dos embeddings para um espaço menor, preservando as distâncias entre os papers.
+> **2. HDBSCAN** — agrupa os pontos por densidade. Diferente do K-means, ele NÃO precisa que você diga quantos clusters existem. Ele descobre sozinho.
+> **3. c-TF-IDF** — para cada cluster, extrai as palavras mais importantes. Isso dá nome aos temas automaticamente.
 >
-> **3. Mapa 2D:** 100 papers projetados em 2D. CBDC, IA/ML, outliers — tudo visível num golpe de olho."
+> **Exemplo real:** numa base de 50 papers, o sistema encontrou 3 clusters e 2 outliers. Os clusters são coerentes — revisão sistemática, embeddings, IA — e os outliers são genuinamente diferentes (GNNs, Ethereum).
+>
+> Isso é **taxonomia automática**. O sistema descobre a estrutura do seu campo de pesquisa sem você definir nada."
 
 **[Avançar]**
 
 ---
 
-### SLIDE 12 — Precisão + Resumo + Dedup (1.5 min)
+### SLIDE 12 — Novidade, Evolução e Síntese (2 min)
 
-> "Três funcionalidades de precisão e qualidade:
+> "As demais funcionalidades, com mais detalhes:
 >
-> **Re-ranqueamento:** duas etapas. O MiniLM busca rápido os top-20, depois um cross-encoder re-rank os top-5 com mais precisão. Ganho de +9 pontos de precisão.
+> **Detecção de novidade:** o EllipticEnvelope estima a distribuição matemática dos embeddings. Papers que caem fora dessa distribuição são marcados como outliers. Nos testes, encontramos dois papers sobre GNNs e Ethereum — temas genuinamente diferentes do resto da base.
 >
-> **Resumo automático:** dado um DOI, o sistema extrai as 3 sentenças mais representativas do abstract. Ele seleciona sentenças que são relevantes ao tema E não redundantes entre si — isso é o algoritmo MMR.
+> **Evolução temporal:** dados REAIS da nossa base. De 2020 a 2025, o número de papers cresceu de 3 para 12 — um crescimento de 4x. A área está em expansão.
 >
-> **Dedup semântico:** detecta duplicatas que o DOI não pega. Um preprint e sua versão publicada têm DOIs diferentes, mas embeddings similares — o sistema agrupa automaticamente."
+> **Resumo, dedup e re-rank:** funcionalidades de precisão. O summarize_paper usa MMR para extrair as sentenças mais relevantes E não redundantes. O semantic_dedup agrupa papers com mais de 88% de similaridade — pega duplicatas que o DOI não pega. O rerank_search combina MiniLM (rápido) com cross-encoder (preciso) para o melhor dos dois mundos."
 
 **[Avançar — Parte 4]**
 
 ---
 
-## PARTE 4 — WEIGHT-BLEEDING (slides 13-15, ~7 min)
+## PARTE 4 — WEIGHT-BLEEDING (slides 13-16, ~10 min)
 
 ---
 
-### SLIDE 13 — O Problema (2 min)
+### SLIDE 13 — O Problema do Mean Pooling (2 min)
 
 > "Agora vamos ao coração técnico: o **Weight-Bleeding**.
 >
-> O problema que a gente resolve é sutil, mas importante. Quando um bi-encoder cria o embedding de um texto, ele usa **mean pooling** — tira a média de todas as palavras. O problema é que a média trata TODO mundo igual.
+> O problema que a gente resolve é sutil. Quando um bi-encoder cria o embedding de um texto, ele usa **mean pooling** — simplesmente tira a MÉDIA dos embeddings de cada palavra.
 >
-> **A analogia é uma pesquisa de opinião:** mean pooling é como dar 1 voto para cada pessoa — inclusive para quem não entende do assunto.
+> O problema: a média trata TODO mundo igual. Na frase 'O bi-encoder usa repetição de termos', as palavras 'O', 'de' têm o mesmo peso que 'bi-encoder' e 'repetição'. O embedding não reflete a importância real dos termos.
 >
-> Um pesquisador sobre CBDC quer que 'banco central' e 'moeda digital' tenham MAIS PESO que 'o', 'um', 'para'.
+> **Exemplo concreto:** pesquisador quer que 'CBDC' e 'banco central' pesem mais que 'o', 'um', 'para'. Com mean pooling, é impossível.
 >
-> Isso gera dois problemas práticos:
->
-> 1. **Scores comprimidos** — artigos parecidos mas não exatos ficam com scores muito próximos, difícil separar o relevante do irrelevante.
-> 2. **Sem controle** — o pesquisador não consegue 'guiar' a busca."
+> Isso gera dois problemas:
+> **1. Scores comprimidos** — artigos tangencialmente relevantes e irrelevantes ficam com scores quase idênticos. Difícil separar.
+> **2. Sem controle** — o pesquisador não consegue GUIAR a busca semanticamente."
 
 **[Avançar]**
 
 ---
 
-### SLIDE 14 — A Solução (2.5 min)
+### SLIDE 14 — A Solução em 5 Passos (2.5 min)
 
 > "A solução é elegantemente simples.
 >
-> **Ideia central:** se repetir um termo no texto fizesse ele contribuir mais, por que não fazer isso diretamente no espaço de embeddings? É matematicamente equivalente — mas sem aumentar o texto, sem custo extra, sem precisar de GPU.
+> **Ideia central:** se repetir um termo W vezes no texto fizesse ele contribuir W vezes mais no embedding final, podemos simular esse efeito DIRETAMENTE no espaço de embeddings — sem aumentar o texto, sem custo, sem GPU.
 >
-> Na prática:
+> São 5 passos:
 >
-> **1.** O pesquisador define num JSON os termos importantes e seus pesos. Por exemplo: 'CBDC' com peso 5.0, 'moeda digital' com 5.0, 'liquidez' com 2.0, 'blockchain' com 2.0.
+> **1.** O pesquisador define num JSON os termos e pesos: CBDC=5, moeda digital=5, liquidez=2, blockchain=2.
+> **2.** Cada termo vira um embedding. O sistema calcula o **centroide ponderado** — a média dos embeddings, cada um multiplicado pelo seu peso. CBDC contribui 5× mais que uma palavra normal.
+> **3.** Cada artigo é comparado com esse centroide via similaridade cosseno.
+> **4.** Artigos sobre CBDC sobem no ranking. Artigos sobre blockchain SEM CBDC NÃO são afetados.
+> **5.** O score final passa por uma transformação de raiz quadrada — que resolve o problema dos scores comprimidos.
 >
-> **2.** O sistema calcula um **centroide ponderado** — uma 'posição alvo' no espaço de embeddings que reflete esses pesos.
->
-> **3.** Cada artigo é comparado com esse centroide. Quanto mais próximo, mais relevante. Artigos sobre blockchain SEM CBDC não são afetados — o controle é preciso.
->
-> Tudo em CPU, milissegundos por artigo, zero dados de treinamento."
+> Tudo em CPU. Milissegundos por artigo. Zero dados de treinamento."
 
 **[Avançar]**
 
 ---
 
-### SLIDE 15 — Resultados (2 min)
+### SLIDE 15 — A Transformação Raiz Quadrada (2 min)
 
-> "E os resultados comprovam que funciona:
+> "Por que a raiz quadrada é necessária? Porque em 384 dimensões, as similaridades cosseno se concentram numa faixa estreita — tipicamente entre 0.05 e 0.50. A transformação linear (score = sim × 10) não consegue separar o relevante do irrelevante.
 >
-> **96.8% de correlação com vanilla** — o ranking MUDA em relação ao método padrão. 40% dos top-10 são diferentes. O peso realmente faz diferença.
+> **Antes (linear):** paper relevante com sim=0.30 → score 3.0. Paper irrelevante com sim=0.25 → score 2.5. Diferença de 0.5 — quase invisível. Com threshold em 3.5, AMBOS são perdidos.
 >
-> **-0.75 de correlação entre domínios** — correlação NEGATIVA entre configurações de SLR e Blockchain. Isso prova que o efeito é ESPECÍFICO de cada domínio. Cada configuração produz um resultado único.
+> **Depois (raiz quadrada):** paper relevante → √0.30 × 10 = 5.48. Irrelevante → √0.25 × 10 = 5.00. Diferença de 0.48 — bem definida. O paper relevante passa no threshold.
 >
-> **7.5× mais rápido que cross-encoder** — o centroide é calculado em 0.5 segundos, cada artigo é milissegundos. Resultado consistente em 3 modelos de embedding diferentes.
+> **Impacto real:** no threshold 5.0, Weight-Bleeding + raiz quadrada aprovam **151 papers** contra **92** do baseline vanilla — **59 papers a mais** que seriam perdidos.
 >
-> Na prática: **59 artigos a mais** são aprovados com Weight-Bleeding contra o método tradicional. Papers que seriam perdidos são resgatados."
+> A transformação é monotônica — preserva a ordem original. E foi escolhida entre 6 alternativas testadas."
+
+**[Avançar]**
+
+---
+
+### SLIDE 16 — Resultados Experimentais (2 min)
+
+> "Três números que comprovam o método:
+>
+> **96.8%** — correlação de Spearman com o bi-encoder vanilla. O ranking MUDA: 40% dos top-10 são diferentes. O peso realmente faz diferença. A correlação é alta o suficiente para não bagunçar, mas baixa o suficiente para mostrar que o efeito existe.
+>
+> **-0.75** — correlação NEGATIVA entre domínios SLR e Blockchain. Isso é a prova definitiva de que o efeito é ESPECÍFICO de cada domínio. Cada configuração produz um resultado ÚNICO. Não é um viés global.
+>
+> **7.5× mais rápido que cross-encoder** — centroide calculado em 0.5 segundos (uma vez), cada artigo em 0.01ms. O gap cresce com o volume de papers.
+>
+> Resultado consistente em 3 modelos: MiniLM, BGE-base, GTE-small — todos apresentam comportamento similar. O método não depende de um modelo específico."
 
 **[Avançar — Parte 5]**
 
 ---
 
-## PARTE 5 — CONTRIBUIÇÃO (slides 16-19, ~5 min)
+## PARTE 5 — CONTRIBUIÇÃO (slides 17-20, ~5 min)
 
 ---
 
-### SLIDE 16 — vs Concorrentes (1.5 min)
+### SLIDE 17 — vs Concorrentes (1.5 min)
 
 > "Como o Academic Hunter se compara com as ferramentas existentes?
 >
@@ -328,7 +345,7 @@
 
 ---
 
-### SLIDE 17 — Posicionamento (1 min)
+### SLIDE 18 — Posicionamento (1 min)
 
 > "Academic Hunter ocupa uma posição ÚNICA na literatura atual:
 >
@@ -342,7 +359,7 @@
 
 ---
 
-### SLIDE 18 — Publicações (1 min)
+### SLIDE 19 — Publicações (1 min)
 
 > "Dois tracks de publicação:
 >
@@ -377,18 +394,21 @@
 
 - Parte 1 (slides 1-4): ~7 min — não apressar, é onde o público decide se vai prestar atenção
 - Parte 2 (slides 5-7): ~6 min — manter ritmo, MCP é o diferencial
-- Parte 3 (slides 8-12): ~9 min — parte mais densa, pausar para perguntas se necessário
-- Parte 4 (slides 13-15): ~7 min — coração técnico, ir devagar
-- Parte 5 (slides 16-19): ~5 min — fechamento rápido, deixar tempo para perguntas
+- Parte 3 (slides 8-12): ~10 min — mais leve, cada funcionalidade tem seu próprio slide
+- Parte 4 (slides 13-16): ~10 min — coração técnico, ir devagar, o slide 15 (sqrt) é o mais difícil
+- Parte 5 (slides 17-21): ~5 min — fechamento rápido, deixar tempo para perguntas
 
 ### Dicas
 
-- **Slide 3** (MCP): enfatizar que o pesquisador NÃO executa comandos — ele só pede pro Claude. O foco é a ORQUESTRAÇÃO via MCP
+- **Slide 3** (MCP): enfatizar que o pesquisador NÃO executa comandos — ele só pede pro Claude
 - **Slide 8** (embedding SVG): apontar para outliers vermelhos no mapa
-- **Slide 9** (12× MiniLM): fazer pausa dramática antes do callout final
-- **Slide 14** (solução): não mostrar a fórmula — a analogia é suficiente
-- **Slide 18** (limitações): falar com naturalidade — mostra transparência
-- **Slide 19** (CTA): terminar com entusiasmo, não com pressa
+- **Slide 10** (semantic_search): mostrar o fluxo passo a passo, explicar cada etapa
+- **Slide 11** (clustering): os 3 algoritmos (UMAP, HDBSCAN, c-TF-IDF) — explicar o papel de cada um
+- **Slide 13** (mean pooling): usar a analogia da pesquisa de opinião
+- **Slide 15** (sqrt): mostrar o antes/depois com os números — é o slide mais técnico
+- **Slide 16** (resultados): cada número tem uma INTERPRETAÇÃO, não só o valor
+- **Slide 20** (limitações): falar com naturalidade — mostra transparência
+- **Slide 21** (CTA): terminar com entusiasmo, não com pressa
 
 ### Perguntas frequentes (preparar respostas)
 
