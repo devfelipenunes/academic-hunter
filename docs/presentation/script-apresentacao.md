@@ -39,23 +39,28 @@
 
 ---
 
-### SLIDE 3 — Caso Real (2 min)
+### SLIDE 3 — Caso Real via MCP (2 min)
 
-> "Vamos ver na prática. Aqui está o fluxo real de uma SLR sobre **'Impacto de CBDCs na estabilidade financeira'**.
+> "Agora vou mostrar como o Academic Hunter funciona na prática — e o fluxo é inteiramente **via MCP**.
 >
-> O pesquisador abre o terminal e digita:
+> O pesquisador não abre terminal, não edita JSON, não configura nada manualmente. Ele simplesmente **pede para o Claude** fazer a revisão:
 >
 > ```
-> $ academic-hunter interactive
-> 📌 Qual o tópico da sua revisão?
-> > CBDC e estabilidade financeira
+> Pesquisador: "Faça uma revisão sobre o impacto de CBDCs na estabilidade financeira"
 > ```
 >
-> O sistema **descobre os jargões automaticamente** — ele busca no Semantic Scholar, identifica os termos mais frequentes, e monta uma configuração sugerida. O pesquisador só confirma.
+> O Claude — que é um agente de IA conectado ao Academic Hunter via protocolo MCP — **planeia e executa** cada etapa:
 >
-> O resultado: busca em **16 fontes simultâneas**, **12 análises automáticas**, exportação em **múltiplos formatos**, e integração com **agentes de IA via MCP**.
+> 1. **quick_topic_discovery** — descobre os jargões da área automaticamente
+> 2. **update_config** — configura âncoras e pesos sem o pesquisador editar JSON
+> 3. **run_search** — dispara a busca em 16 fontes simultâneas
+> 4. **semantic_search** — explora os resultados por conceito
+> 5. **cluster_papers + find_novel_papers** — agrupa por tema e detecta outliers
+> 6. **visualize_landscape + export_to_obsidian** — gera o mapa 2D e salva no Second Brain
 >
-> Tudo sem editar JSON, sem programar, sem saber o que é MCP."
+> O resultado: **o pesquisador valida em 15 minutos** o que levaria 6 meses.
+>
+> **O Claude orquestra 35+ ferramentas MCP. O pesquisador só valida.**"
 
 **[Avançar]**
 
@@ -358,7 +363,7 @@
 
 ### Dicas
 
-- **Slide 3** (terminal): falar pausadamente como se fosse o computador respondendo
+- **Slide 3** (MCP): enfatizar que o pesquisador NÃO executa comandos — ele só pede pro Claude. O foco é a ORQUESTRAÇÃO via MCP
 - **Slide 8** (embedding SVG): apontar para outliers vermelhos no mapa
 - **Slide 9** (12× MiniLM): fazer pausa dramática antes do callout final
 - **Slide 14** (solução): não mostrar a fórmula — a analogia é suficiente

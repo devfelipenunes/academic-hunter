@@ -137,30 +137,40 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 </div>
 </div>
 
-<!-- ===== SLIDE 3: CASO REAL — FLUXO COMPLETO ===== -->
+<!-- ===== SLIDE 3: CASO REAL — MCP ===== -->
 <div class="slide" data-part="1">
 <div class="slide-inner">
   <div class="part-header">Parte 1 &middot; Na Pr&aacute;tica</div>
-  <h2><span class="num">3</span> Vamos Fazer uma SLR Juntos</h2>
-  <p style="margin-bottom:.5rem;font-size:.8rem">Tema: <strong>"Impacto de CBDCs na estabilidade financeira"</strong> — veja o fluxo real:</p>
+  <h2><span class="num">3</span> O Fluxo Real via MCP</h2>
+  <p style="margin-bottom:.5rem;font-size:.8rem">O pesquisador usa o Academic Hunter atrav&eacute;s do **Claude** (ou qualquer agente IA compat&iacute;vel com MCP):</p>
   <div class="card card-highlight" style="margin-bottom:.5rem">
-    <div class="code-block" style="font-size:.65rem">
-$ academic-hunter interactive
-<span class="dim">📌 Qual o tópico da sua revisão?</span>
-&gt; CBDC e estabilidade financeira
-<span class="dim">🔍 Descobrindo jargões...</span>
-✅ 12 termos encontrados automaticamente
-<span class="dim">📋 Configuração sugerida:</span>
-  Core_Concepts: digital currencies (5.0), financial stability (5.0)
-  Context: monetary policy (2.0), liquidity (2.0)
-<span class="dim">Aceitar e buscar? [S/n]</span> S
-<span class="dim">🔍 Buscando em 16 fontes...</span>    </div>
+    <div class="code-block" style="font-size:.65rem;line-height:1.7">
+<span class="green">Pesquisador (no Claude):</span> "Fa&ccedil;a uma revis&atilde;o sobre o impacto de CBDCs na estabilidade financeira"
+
+<span class="dim"># Claude planeia e executa via MCP:</span>
+
+1&rarr; quick_topic_discovery("CBDC financial stability")
+   <span class="dim"># descobre os jarg&otilde;es da &aacute;rea automaticamente</span>
+
+2&rarr; update_config({anchors: {CBDC, financial stability}, weights: {5.0, 3.0}})
+   <span class="dim"># configura a busca sem o pesquisador editar JSON</span>
+
+3&rarr; run_search()
+   <span class="dim"># busca em 16 fontes simult&acirc;neas</span>
+
+4&rarr; semantic_search("CBDC bank disintermediation")
+   <span class="dim"># explora os resultados por conceito</span>
+
+5&rarr; cluster_papers() &rarr; find_novel_papers()
+   <span class="dim"># agrupa por tema e detecta outliers</span>
+
+6&rarr; visualize_landscape() &rarr; export_to_obsidian("CBDC Review")
+   <span class="dim"># gera mapa 2D e salva no Second Brain</span>
+
+<span class="green">✅ Pesquisador valida o resultado em 15 minutos</span></div>
   </div>
-  <div class="grid-2">
-    <div class="card"><h3 style="color:var(--cyan)">📥 Busca (16 fontes)</h3><p style="font-size:.7rem">arXiv, S2, CrossRef, EuropePMC, OpenAlex, CORE, DBLP, DOAJ, OpenCitations, bioRxiv, medRxiv, Lens.org, OpenAIRE, DataCite, ORCID</p></div>
-    <div class="card"><h3 style="color:var(--purple)">🧠 An&aacute;lises (12)</h3><p style="font-size:.7rem">Ranking, clusters, outlier, evolu&ccedil;&atilde;o, mapa 2D, resumo, dedup, re-rank, t&oacute;picos, snowballing, cita&ccedil;&otilde;es, OA</p></div>
-    <div class="card"><h3 style="color:var(--green)">💾 Exporta&ccedil;&atilde;o</h3><p style="font-size:.7rem">CSV, BibTeX, RIS, JSON, Markdown, PRISMA, Obsidian</p></div>
-    <div class="card card-highlight"><h3 style="color:var(--accent)">🤖 Agente IA via MCP</h3><p style="font-size:.7rem">Claude ou ChatGPT orquestra tudo automaticamente</p></div>
+  <div class="callout" style="text-align:center;background:linear-gradient(135deg,rgba(63,185,80,.08),transparent);border-color:rgba(63,185,80,.2);margin-bottom:.3rem">
+    <p style="font-size:.75rem;color:var(--text);margin:0"><strong>🎯 O Claude orquestra 35+ ferramentas MCP — o pesquisador s&oacute; valida.</strong></p>
   </div>
 </div>
 </div>
