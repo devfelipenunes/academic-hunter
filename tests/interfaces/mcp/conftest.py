@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 
+
 @pytest.fixture
 def mock_ctx():
     """Standard mock for FastMCP Context.
@@ -43,12 +44,11 @@ def mock_hunter_rag():
 
 @pytest.fixture
 def mock_vector_store():
-    """Mock ``_get_vector_store`` so no real ChromaDB is needed."""
+    """Mock ``_get_vector_store``."""
     with patch(
         "academic_hunter.interfaces.mcp.tools.rag._get_vector_store"
     ) as m:
         instance = MagicMock()
-        # Default: empty query result
         instance.query.return_value = []
         instance.collection_stats.return_value = {"count": 0}
         instance.list_collections.return_value = []

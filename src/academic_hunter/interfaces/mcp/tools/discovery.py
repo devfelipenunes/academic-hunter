@@ -8,6 +8,7 @@ import asyncio
 import requests
 from academic_hunter import AcademicHunter
 from ..exceptions import DiscoveryError
+from ..validation import validate_doi, validate_topic
 from mcp.server.fastmcp import Context
 
 
@@ -49,6 +50,7 @@ async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Co
         raise DiscoveryError("direction must be 'citations' or 'references'.")
 
     try:
+        doi = validate_doi(doi)
         paper_id = f"DOI:{doi}"
         url = (
             f"https://api.semanticscholar.org/graph/v1/paper/{paper_id}"
@@ -76,6 +78,8 @@ async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Co
         return "\n".join(results)
     except DiscoveryError:
         raise
+    except ValueError as e:
+        raise DiscoveryError(str(e))
     except requests.RequestException as e:
         await ctx.error(f"Semantic Scholar API error: {e}")
         raise DiscoveryError(str(e))

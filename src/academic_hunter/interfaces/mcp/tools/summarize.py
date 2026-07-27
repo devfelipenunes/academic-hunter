@@ -10,6 +10,7 @@ import re
 from mcp.server.fastmcp import Context
 
 from academic_hunter import AcademicHunter
+from ..validation import validate_doi
 
 logger = logging.getLogger("academic_hunter.mcp.summarize")
 
@@ -29,8 +30,12 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
 
     # Fetch abstract
     try:
+        doi = validate_doi(doi)
         hunter = AcademicHunter()
         abstract = hunter.fetch_abstract_by_doi(doi)
+    except ValueError as e:
+        await ctx.error(f"Invalid DOI: {e}")
+        return f"Invalid DOI: {e}"
     except Exception as e:
         await ctx.error(f"Failed to fetch paper: {e}")
         return f"Could not fetch paper with DOI {doi}."
