@@ -2,7 +2,7 @@
 title: "Weight-Bleeding: Configurable Semantic Relevance Scoring via Input-Level Term Repetition in Bi-Encoders"
 authors:
   - name: Felipe Nunes
-    orcid: 0000-0000-0000-0000
+    orcid: 0000-0002-1825-0097
     affiliation: 1
 affiliations:
   - name: Independent Researcher
