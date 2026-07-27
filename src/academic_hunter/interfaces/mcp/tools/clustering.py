@@ -13,9 +13,9 @@ logger = logging.getLogger("academic_hunter.mcp.clustering")
 # BERTopic is never used outside the tool function, but a module-level name
 # allows clean patching in tests without interfering with sys.modules.
 try:
-    from bertopic import BERTopic  # noqa: F401
+    from bertopic import BERTopic
 except ImportError:
-    BERTopic = None  # type: ignore[assignment]
+    BERTopic = None
 
 
 def _get_vector_store():

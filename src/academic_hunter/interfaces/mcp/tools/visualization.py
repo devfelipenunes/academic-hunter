@@ -23,21 +23,21 @@ logger = logging.getLogger("academic_hunter.mcp.visualization")
 # BERTopic is never used outside the tool function, but a module-level name
 # allows clean patching in tests without interfering with sys.modules.
 try:
-    from bertopic import BERTopic  # noqa: F401
+    from bertopic import BERTopic
 except ImportError:
-    BERTopic = None  # type: ignore[assignment]
+    BERTopic = None
 
 # Module-level references for UMAP and SentenceTransformer so that
 # unittest.mock.patch can target them from the test suite.
 try:
-    import umap  # noqa: F401
+    import umap
 except ImportError:
-    umap = None  # type: ignore[assignment]
+    umap = None
 
 try:
-    from sentence_transformers import SentenceTransformer  # noqa: F401
+    from sentence_transformers import SentenceTransformer
 except ImportError:
-    SentenceTransformer = None  # type: ignore[assignment]
+    SentenceTransformer = None
 
 
 def _get_vector_store():

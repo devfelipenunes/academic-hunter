@@ -1,0 +1,108 @@
+"""MCP tool for semantic deduplication of papers using MiniLM embeddings."""
+
+import logging
+
+import numpy as np
+from mcp.server.fastmcp import Context
+
+from academic_hunter import AcademicHunter
+from academic_hunter.plugins.vector_stores import ChromaVectorStore
+from ._utils import get_project_root
+
+try:
+    from sentence_transformers import SentenceTransformer
+
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SentenceTransformer = None
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+
+logger = logging.getLogger("academic_hunter.mcp.dedup")
+
+
+async def semantic_dedup(ctx: Context, threshold: float = 0.85, min_group_size: int = 2) -> str:
+    """Finds near-duplicate papers using embedding similarity.
+
+    Papers with cosine similarity above the threshold are grouped as
+    potential duplicates. Uses MiniLM embeddings from the vector store.
+
+    Args:
+        ctx: FastMCP Context (auto-injected).
+        threshold: Cosine similarity threshold (default 0.85).
+        min_group_size: Minimum papers to form a group (default 2).
+    """
+    await ctx.info(f"Running semantic dedup (threshold={threshold})...")
+
+    # Get vector store
+    try:
+        hunter = AcademicHunter(output_dir=str(get_project_root() / "results"))
+        db_dir = str(hunter.output_dir.parent / ".academic_hunter" / "chroma_db")
+        store = ChromaVectorStore(db_dir=db_dir)
+    except Exception as e:
+        await ctx.error(f"Vector store not available: {e}")
+        return "Error: Vector store not available. Index papers first."
+
+    # Get all papers
+    results = store.query("research paper", top_k=1000)
+    if not results or len(results) < min_group_size:
+        await ctx.info("Too few papers for dedup")
+        return "Not enough papers for deduplication."
+
+    # Compute embeddings for all papers
+    if SentenceTransformer is None:
+        await ctx.error("sentence-transformers not installed")
+        return "Error: sentence-transformers not installed."
+
+    try:
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+        texts = [f"{p.get('title', '')} {p.get('abstract_preview', '')}" for p in results]
+        embeddings = model.encode(texts)
+    except Exception as e:
+        await ctx.error(f"Embedding failed: {e}")
+        return f"Error: embedding computation failed: {e}"
+
+    # Compute pairwise cosine similarity efficiently
+    norm = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+    sim_matrix = np.dot(norm, norm.T)
+
+    # Find duplicate groups
+    visited = set()
+    groups = []
+    for i in range(len(results)):
+        if i in visited:
+            continue
+        group = [i]
+        for j in range(i + 1, len(results)):
+            if j in visited:
+                continue
+            if sim_matrix[i][j] >= threshold:
+                group.append(j)
+                visited.add(j)
+        if len(group) >= min_group_size:
+            visited.add(i)
+            groups.append(group)
+
+    if not groups:
+        await ctx.info(f"No duplicates found (threshold={threshold})")
+        return f"# Semantic Dedup\n\nNo duplicate groups found above threshold {threshold}."
+
+    lines = [
+        "# Semantic Dedup Results\n",
+        f"**Papers analyzed:** {len(results)}\n",
+        f"**Duplicate groups:** {len(groups)}\n",
+        f"**Threshold:** {threshold}\n",
+        "---\n",
+    ]
+
+    for g_idx, group in enumerate(groups, 1):
+        lines.append(f"## Group {g_idx} ({len(group)} papers)\n")
+        for idx in group:
+            p = results[idx]
+            title = p.get("title", "Untitled")
+            doi = p.get("doi", "?")
+            score = sim_matrix[group[0]][idx]
+            lines.append(f"- {title} (DOI: `{doi}`, sim: {score:.2%})\n")
+        lines.append("")
+
+    await ctx.info(f"Found {len(groups)} duplicate groups")
+    return "\n".join(lines)
