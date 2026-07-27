@@ -7,6 +7,7 @@ import logging
 import asyncio
 import requests
 from mcp.server.fastmcp import Context
+from ..cache import cached, citation_cache
 from ..exceptions import DiscoveryError
 from ..validation import validate_doi, validate_limit
 
@@ -22,6 +23,7 @@ async def _coci_request(endpoint: str, doi: str) -> list:
     return resp.json()
 
 
+@cached(citation_cache)
 async def get_citation_count(ctx: Context, doi: str) -> str:
     """Returns the number of citations a paper has received via OpenCitations.
 
@@ -43,6 +45,7 @@ async def get_citation_count(ctx: Context, doi: str) -> str:
         raise DiscoveryError(str(e))
 
 
+@cached(citation_cache)
 async def get_citing_papers(ctx: Context, doi: str, limit: int = 10) -> str:
     """Lists the papers that cite a given DOI.
 

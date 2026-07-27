@@ -6,6 +6,7 @@ Uses pytest fixtures and unittest.mock throughout.
 
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
+from academic_hunter.interfaces.mcp.cache import citation_cache, discovery_cache
 
 
 
@@ -33,6 +34,13 @@ def mock_hunter():
         # Default: ``run()`` returns a dummy report path
         instance.run.return_value = "/tmp/dummy/report.md"
         yield instance
+
+
+@pytest.fixture(autouse=True)
+def _clear_mcp_caches():
+    """Clear TTL caches before each test to avoid cross-test interference."""
+    citation_cache.clear()
+    discovery_cache.clear()
 
 
 @pytest.fixture

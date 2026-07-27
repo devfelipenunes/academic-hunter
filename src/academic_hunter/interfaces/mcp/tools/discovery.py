@@ -7,6 +7,7 @@ for logging and error reporting.
 import asyncio
 import requests
 from academic_hunter import AcademicHunter
+from ..cache import cached, discovery_cache
 from ..exceptions import DiscoveryError
 from ..validation import validate_doi, validate_topic
 from mcp.server.fastmcp import Context
@@ -37,6 +38,7 @@ async def _request_with_retry(url, max_retries=3, base_delay=2.0, **kwargs):
     return response
 
 
+@cached(discovery_cache)
 async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Context = None) -> str:
     """Explore the citation graph of a paper using its DOI via Semantic Scholar.
 
@@ -135,6 +137,7 @@ async def fetch_multiple_abstracts(dois: list[str], ctx: Context) -> str:
         raise DiscoveryError(str(e))
 
 
+@cached(discovery_cache)
 async def quick_topic_discovery(topic: str, ctx: Context) -> str:
     """Performs a quick topic search via the Semantic Scholar API.
 

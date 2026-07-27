@@ -13,6 +13,7 @@ import asyncio
 import requests
 from mcp.server.fastmcp import Context
 
+from ..cache import cached, citation_cache
 from ..exceptions import DiscoveryError
 from ..validation import validate_orcid
 
@@ -20,6 +21,7 @@ logger = logging.getLogger("academic_hunter.mcp.orcid")
 ORCID_API = "https://pub.orcid.org/v3.0"
 
 
+@cached(citation_cache)
 async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
     """Looks up a researcher's profile and publications via ORCID.
 
