@@ -1,12 +1,12 @@
 # Script de Apresentação — Academic Hunter
 
-**Duração:** ~42 minutos (22 slides)
+**Duração:** ~40 minutos (20 slides)
 **Público:** Pesquisadores (não necessariamente especialistas em IA)
 **Tom:** Conceitual, constrói conhecimento passo a passo, sem jargão técnico não explicado
 
 ---
 
-## PARTE 1 — O QUE É O ACADEMIC HUNTER (slides 1-4, ~7 min)
+## PARTE 1 — O PROBLEMA E O DIFERENCIAL (slides 1-5, ~8 min)
 
 ---
 
@@ -64,7 +64,7 @@
 
 ---
 
-## PARTE 2 — COMO O SISTEMA ENTENDE TEXTOS (slides 5-9, ~10 min)
+## PARTE 2 — FONTES E ARQUITETURA (slides 6-8, ~5 min)
 
 ---
 
@@ -146,7 +146,7 @@
 
 ---
 
-## PARTE 3 — INTEGRAÇÃO COM IA (slides 10-13, ~7 min)
+## PARTE 3 — COMO O SISTEMA ENTENDE TEXTOS (slides 9-13, ~10 min)
 
 ---
 
@@ -286,7 +286,7 @@
 
 ---
 
-## PARTE 5 — CONTRIBUIÇÃO (slides 18-22, ~5 min)
+## PARTE 5 — CONTRIBUIÇÃO (slides 18-20, ~4 min)
 
 ---
 
