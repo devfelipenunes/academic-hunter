@@ -1,4 +1,7 @@
-"""MCP tool for semantic deduplication of papers using MiniLM embeddings."""
+"""MCP tool for semantic deduplication of papers.
+
+Uses MiniLM embeddings to find near-duplicate papers.
+"""
 
 import logging
 

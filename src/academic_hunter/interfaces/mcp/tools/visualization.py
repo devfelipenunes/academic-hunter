@@ -1,16 +1,6 @@
 """MCP tools for research landscape visualization using UMAP and BERTopic.
 
-Provides two tools for exploring the paper embedding space:
-
-- ``visualize_landscape`` — generates a 2D UMAP scatter-plot projection of
-  paper embeddings, returning paper metadata with (x, y) coordinates for
-  client-side rendering.
-- ``topic_evolution`` — groups papers by year and tracks topic composition
-  changes over time using BERTopic, returning a Markdown report.
-
-UMAP and BERTopic are optional dependencies — the module stays importable
-without them, and each tool returns a user-facing message when they are
-missing.
+Provides visualize_landscape and topic_evolution tools.
 """
 
 import json

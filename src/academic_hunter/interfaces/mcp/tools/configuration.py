@@ -5,7 +5,6 @@ for logging and progress reporting.
 """
 
 import json
-from typing import Dict, List, Optional
 from mcp.server.fastmcp import Context
 from academic_hunter.core.infra.config import HunterConfig
 from ..schemas.config_schema import SearchConfigUpdate

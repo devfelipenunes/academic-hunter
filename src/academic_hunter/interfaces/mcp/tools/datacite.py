@@ -1,9 +1,4 @@
-"""MCP tool for searching datasets, software, and research outputs via DataCite.
-
-DataCite (https://api.datacite.org/) provides persistent DOIs for datasets,
-software, and other research outputs. It indexes content from Zenodo, Figshare,
-Dryad, and 1000+ repositories.  The public REST API requires no API key for
-read-only access.
+"""MCP tool for searching datasets and software via DataCite API.
 """
 
 import logging
