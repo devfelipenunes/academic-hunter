@@ -1,384 +1,374 @@
-# Script de Apresentação — Nova Estrutura (~30 min, 17 slides)
+# Script de Apresentação — Academic Hunter
 
+**Duração:** ~35 minutos (19 slides)
 **Público:** Pesquisadores (não necessariamente especialistas em IA)
-**Tom:** Conceitual, pouca matemática, muitas analogias, foco no "o que faz" não "como funciona internamente"
+**Tom:** Conceitual, entusiasmado mas honesto, foco no "o que faz" não "como funciona"
 
 ---
 
-## PARTE 1 — O PROBLEMA E A VISÃO GERAL (slides 1-3)
+## PARTE 1 — O PROBLEMA (slides 1-4, ~7 min)
 
 ---
 
 ### SLIDE 1 — Título (1 min)
 
-> "Bom dia. Hoje vou apresentar o **Academic Hunter**, uma plataforma aberta de Revisão Sistemática da Literatura. Diferente das ferramentas existentes, ela combina busca multi-fonte, análise semântica configurável, e integração com agentes de IA — tudo gratuito, tudo local, sem precisar de GPU."
+> "Bom dia. Hoje vou apresentar o **Academic Hunter**, uma plataforma aberta de Revisão Sistemática da Literatura.
+>
+> O problema que a gente resolve é simples: fazer uma SLR hoje leva de **6 a 12 meses**. A gente reduz isso para **15 minutos** — não porque a gente substitui o pesquisador, mas porque a gente automatiza o trabalho braçal de busca, triagem e análise inicial.
+>
+> E tudo isso é **open source, gratuito, e roda em qualquer notebook — sem GPU, sem API paga**."
 
-**Título:** Academic Hunter: Revisão Sistemática da Literatura com Análise Semântica Inteligente
-**Subtítulo:** 16 bases acadêmicas · 35+ ferramentas de análise · Sem GPU · Open Source
+**[Avançar]**
 
 ---
 
-### SLIDE 2 — O Problema (2 min)
+### SLIDE 2 — O Problema (1.5 min)
 
-> "Fazer uma Revisão Sistemática da Literatura hoje é um processo que leva de 6 a 12 meses. O problema não é só o volume de artigos — é que as ferramentas existentes OBRIGAM você a escolher entre:
+> "Vamos começar pelo problema.
 >
-> - **Ferramentas gratuitas mas limitadas** (keyword matching perde sinônimos)
-> - **Ferramentas que exigem rotular dados manualmente** (ASReview — você precisa classificar dezenas de papers antes dela aprender)
-> - **Ferramentas pagas e fechadas** (Rayyan, Covidence — sem API, sem integração)
-> - **Soluções que precisam de GPU caríssima** (cross-encoders)
+> **6 a 12 meses.** É quanto tempo uma Revisão Sistemática leva hoje. E por que? Porque as ferramentas que existem obrigam você a escolher entre:
 >
-> O Academic Hunter resolve todos esses problemas de uma vez."
+> - **Keyword matching** — que perde sinônimos. Se você busca "CBDC" e o artigo fala "moeda digital do banco central", você perde o artigo.
+> - **Rotular dados manualmente** — o ASReview exige que você classifique dezenas de papers antes de começar a funcionar.
+> - **Pagos e fechados** — Rayyan e Covidence custam de 100 a 500 dólares POR MÊS, são cloud, e não têm API pra integrar com IA.
+> - **Dependem de GPU** — modelos de IA precisam de placa de vídeo de mil dólares+.
+>
+> **Academic Hunter resolve todos esses problemas — de graça.**"
 
-**[Mostrar na tela]**
-
-| Problema                                | Consequência                             | Solução no AH                                       |
-| --------------------------------------- | ---------------------------------------- | --------------------------------------------------- |
-| Keyword matching perde sinônimos        | Artigos relevantes escapam               | Weight-Bleeding: entende conceitos, não só palavras |
-| Ferramentas precisam de dados rotulados | Horas perdidas classificando manualmente | Zero-shot: funciona de primeira, sem treino         |
-| Ferramentas pagas e sem API             | Sem integração com IA                    | MCP: qualquer agente de IA pode usar                |
-| GPU necessária para análise semântica   | Custo alto, setup complexo               | Roda em CPU, 22MB de modelo                         |
-| Busca em uma base só                    | Cobertura parcial                        | 16 bases acadêmicas simultâneas                     |
+**[Avançar]**
 
 ---
 
-### SLIDE 3 — Visão Geral do Fluxo Completo (2 min)
+### SLIDE 3 — Caso Real (2 min)
 
-> "Antes de entrar nos detalhes técnicos, quero mostrar o FLUXO COMPLETO do Academic Hunter — do momento que você define um tópico até ter os insights prontos.
+> "Vamos ver na prática. Aqui está o fluxo real de uma SLR sobre **'Impacto de CBDCs na estabilidade financeira'**.
 >
-> O fluxo tem 4 etapas principais:
+> O pesquisador abre o terminal e digita:
 >
-> **1. CONFIGURAR** — Você define o que quer pesquisar num arquivo JSON simples. Diz quais são os termos principais do seu domínio e quanto peso cada um tem.
+> ```
+> $ academic-hunter interactive
+> 📌 Qual o tópico da sua revisão?
+> > CBDC e estabilidade financeira
+> ```
 >
-> **2. BUSCAR** — O sistema consulta 16 bases acadêmicas em paralelo, baixa milhares de artigos, remove duplicatas.
+> O sistema **descobre os jargões automaticamente** — ele busca no Semantic Scholar, identifica os termos mais frequentes, e monta uma configuração sugerida. O pesquisador só confirma.
 >
-> **3. ANALISAR** — Esta é a parte mais poderosa. Usando um modelo de IA de 22MB (chamado MiniLM), o sistema faz 12 análises diferentes automaticamente: ranqueia relevância, agrupa por tema, detecta papers inovadores, mostra tendências ao longo do tempo, gera resumos, identifica duplicatas semânticas, e cria um mapa 2D da produção científica.
+> O resultado: busca em **16 fontes simultâneas**, **12 análises automáticas**, exportação em **múltiplos formatos**, e integração com **agentes de IA via MCP**.
 >
-> **4. EXPORTAR** — Os resultados saem em qualquer formato: CSV, BibTeX, RIS, Markdown, PRISMA. E pode salvar direto no seu Obsidian.
->
-> E o mais importante: **cada uma dessas análises pode ser chamada por um agente de IA** (Claude, ChatGPT) através do protocolo MCP — o novo padrão da indústria para conectar IAs a ferramentas."
+> Tudo sem editar JSON, sem programar, sem saber o que é MCP."
 
-**[Mostrar diagrama do fluxo]**
-
-```
-CONFIG → BUSCA (16 bases) → ANALISA (12 análises MiniLM) → EXPORTA
-                                │
-                    ┌───────────┴───────────┐
-                    ▼                       ▼
-               MCP Server              Agentes IA
-             (35+ ferramentas)       (Claude, GPT, etc.)
-```
+**[Avançar]**
 
 ---
 
-## PARTE 2 — O SOFTWARE EM AÇÃO (slides 4-6)
+### SLIDE 4 — Fluxo Completo (1.5 min)
+
+> "O fluxo completo tem 4 etapas, representadas neste diagrama:
+>
+> **1. Configurar** — o pesquisador só diz o tópico. O sistema descobre os jargões.
+> **2. Buscar** — 16 bases acadêmicas em paralelo. Milhares de artigos em minutos.
+> **3. Analisar** — 12 análises automáticas usando o mesmo modelo de IA.
+> **4. Exportar** — CSV, BibTeX, RIS, JSON, Markdown, PRISMA, Obsidian.
+>
+> E o mais importante: **cada uma dessas análises pode ser chamada por um agente de IA** como Claude ou ChatGPT, através do protocolo MCP — representado aqui no canto superior direito.
+>
+> O pesquisador não executa o trabalho braçal — ele **valida** o resultado."
+
+**[Avançar — Parte 2]**
 
 ---
 
-### SLIDE 4 — Busca Multi-Fonte (2 min)
-
-> "Vamos ver cada etapa em mais detalhe. Primeiro: a busca.
->
-> Quando você define uma configuração de busca, o Academic Hunter dispara consultas simultâneas para **16 fontes acadêmicas**:
->
-> **Bases tradicionais:** arXiv, Crossref, PubMed/Europe PMC, DBLP, DOAJ
-> **APIs inteligentes:** Semantic Scholar, OpenAlex, CORE
-> **Dados complementares:** OpenCitations (citações), Unpaywall (acesso aberto)
-> **Patentes:** Lens.org
-> **Preprints:** bioRxiv, medRxiv
-> **Dados de pesquisa:** OpenAIRE (grants), DataCite (datasets), 
-> **Identidade:** ORCID (pesquisadores)
->
-> Tudo em paralelo, com limite de taxa inteligente para não sobrecarregar as APIs. O resultado é consolidado, deduplicado, e pronto para análise."
+## PARTE 2 — O SOFTWARE (slides 5-7, ~6 min)
 
 ---
 
-### SLIDE 5 — O Ecossistema MCP (2 min)
+### SLIDE 5 — 16 Fontes (1.5 min)
 
-> "Aqui está talvez o diferencial mais importante do Academic Hunter: ele é um **servidor MCP**.
+> "Vamos detalhar cada etapa. Primeiro: **a busca**.
 >
-> MCP significa Model Context Protocol — é um padrão aberto, criado pela Anthropic e doado pra Linux Foundation em 2025, que permite que QUALQUER agente de IA (Claude, ChatGPT, Gemini, LangChain) se conecte a ferramentas externas de forma padronizada.
+> O Academic Hunter se conecta a **16 fontes acadêmicas simultaneamente** — é a única ferramenta SLR com essa cobertura. Temos:
 >
-> O Academic Hunter expõe **35+ ferramentas, 4 recursos e 2 templates de prompt** via MCP. Isso significa que:
+> - **Bases tradicionais:** arXiv, Crossref, Europe PMC, DBLP, DOAJ
+> - **APIs inteligentes:** Semantic Scholar, OpenAlex, CORE
+> - **Preprints:** bioRxiv, medRxiv
+> - **Dados complementares:** OpenCitations (2 bilhões de links de citação), Unpaywall (acesso aberto)
+> - **Patentes:** Lens.org
+> - **Grants e dados:** OpenAIRE (3.7 milhões de grants), DataCite, ORCID
 >
-> - Um pesquisador pode pedir pro Claude: 'Faça uma revisão sobre CBDC'
-> - O Claude planeia: descobre jargão → configura busca → executa → analisa resultados → exporta
-> - O Claude chama cada ferramenta MCP na sequência correta
-> - O pesquisador só VALIDA o resultado final
->
-> É como ter um assistente de pesquisa que sabe usar todas as ferramentas do Academic Hunter automaticamente."
+> Tudo em paralelo, com limite de taxa inteligente para não sobrecarregar as APIs."
 
-**[Mostrar exemplo de diálogo]**
-
-```
-Pesquisador: "Faça uma SLR sobre impacto de CBDCs na estabilidade financeira"
-
-Claude (via MCP):
-  → quick_topic_discovery("CBDC financial stability")
-  → update_config({anchors: {...}, weights: {...}})
-  → run_search()
-  → semantic_search("CBDC bank disintermediation")
-  → cluster_papers()
-  → find_novel_papers()
-  → visualize_landscape()
-  → export_report("csv")
-  → export_to_obsidian("CBDC Review")
-
-Pesquisador (valida o resultado em 15 min em vez de 6 meses)
-```
+**[Avançar]**
 
 ---
 
-### SLIDE 6 — Posicionamento: O que Academic Hunter NÃO é (1 min)
+### SLIDE 6 — MCP (2 min)
 
-> "É importante entender o que Academic Hunter é e o que ele NÃO é:
+> "Aqui está talvez o diferencial mais importante: o Academic Hunter é um **servidor MCP**.
 >
-> - **NÃO é um LLM** — ele não gera texto, não inventa respostas, não 'alucina'
-> - **NÃO é um agente** — ele é uma CAIXA DE FERRAMENTAS que um agente usa
-> - **NÃO substitui o pesquisador** — ele ACELERA o trabalho manual, não toma decisões
+> MCP significa **Model Context Protocol** — é um padrão aberto, criado pela Anthropic e adotado pela Linux Foundation, OpenAI e Google. Ele permite que QUALQUER agente de IA se conecte a ferramentas externas de forma padronizada.
 >
-> O que ele É:
+> **Na prática**, funciona assim: você pede pro Claude fazer uma revisão sobre CBDC. O Claude **planeia** o que precisa ser feito, e chama cada ferramenta do Academic Hunter na sequência correta:
 >
-> - É um **motor de busca e análise** que entende o SIGNIFICADO dos textos, não só as palavras
-> - É um **servidor de ferramentas** que qualquer IA pode usar via protocolo padrão
-> - É um **pipeline SLR completo** que roda sem IA também
+> 1. `quick_topic_discovery` — descobre os jargões da área
+> 2. `semantic_search` — busca artigos por conceito
+> 3. `cluster_papers` — agrupa os resultados por tema
+> 4. `find_novel_papers` — detecta artigos fora do padrão
+> 5. `visualize_landscape` — gera o mapa 2D da pesquisa
+> 6. `export_to_obsidian` — salva no Second Brain
 >
-> Na taxonomia acadêmica: Academic Hunter é um **MCP Tool Server especializado em IR acadêmico** que **viabiliza Agentic RAG** — o agente é o LLM externo que orquestra as ferramentas."
+> **O pesquisador valida o resultado em 15 minutos.**"
+
+**[Avançar]**
 
 ---
 
-## PARTE 3 — AS FUNCIONALIDADES MINILM (slides 7-10)
+### SLIDE 7 — Posicionamento (1.5 min)
+
+> "É importante deixar claro o que o Academic Hunter **é** e o que ele **não é**, porque isso evita expectativas erradas.
+>
+> ❌ **Não é um ChatGPT** — ele não gera texto, não inventa respostas, não alucina. Ele RECUPERA e ANALISA o que já foi publicado.
+>
+> ❌ **Não é um agente autônomo** — ele é uma caixa de ferramentas que um agente IA usa.
+>
+> ✅ **É um motor de busca semântica** — entende o SIGNIFICADO, não só as palavras.
+>
+> ✅ **É a 'parte inteligente' de um sistema maior** — na literatura, isso se chama Agentic RAG: o agente IA orquestra; o Academic Hunter executa a parte especializada em SLR."
+
+**[Avançar — Parte 3]**
 
 ---
 
-### SLIDE 7 — Embeddings: a "impressão digital" dos textos (2 min)
-
-> "Para entender as análises que o sistema faz, primeiro precisa entender o conceito de **embeddings**.
->
-> Um embedding é uma **impressão digital matemática** de um texto. Imagine que cada artigo vira um vetor de 384 números. Artigos sobre temas parecidos geram vetores PARECIDOS — ficam próximos uns dos outros num espaço multidimensional.
->
-> É como um mapa da cidade: artigos sobre 'deep learning' ficam no bairro da inteligência artificial, artigos sobre 'blockchain' ficam no bairro de criptomoedas. A distância entre eles no mapa reflete a distância semântica entre os temas.
->
-> O modelo que usamos (all-MiniLM-L6-v2) tem apenas 22 milhões de parâmetros — cabe num arquivo de 22MB. Roda em QUALQUER computador, sem GPU. E é gratuito."
-
-**[Mostrar analogia visual]**
-
-```
-     Blockchain ●─────────● CBDC
-                     ┌────┘
-      Bitcoin ●──────┘
-
-                     Deep Learning ●─────● Transformers
-                                            │
-                              NLP ●────────┘
-```
+## PARTE 3 — FUNCIONALIDADES MINILM (slides 8-12, ~9 min)
 
 ---
 
-### SLIDE 8 — Search e Clustering (2 min)
+### SLIDE 8 — Embeddings (2 min)
 
-> "Com esses embeddings, o Academic Hunter faz duas coisas fundamentalmente diferentes de ferramentas tradicionais:
+> "Para entender as análises, primeiro precisa entender o conceito de **embeddings**.
 >
-> **1. BUSCA SEMÂNTICA** (`semantic_search`)
-> Em vez de procurar PALAVRAS exatas, ele procura CONCEITOS. 'Impacto de moeda digital nos bancos' encontra artigos sobre CBDC e desintermediação financeira — mesmo que as palavras exatas não apareçam.
+> Embedding é uma **impressão digital matemática** de um texto. Cada artigo vira um vetor de **384 números**. Artigos sobre temas parecidos geram vetores parecidos — ficam próximos uns dos outros num espaço multidimensional.
 >
-> **2. AGRUPAMENTO AUTOMÁTICO** (`cluster_papers`)
-> O sistema agrupa milhares de artigos em TEMAS automaticamente, sem você precisar definir categorias antes. Ele descobre a estrutura da sua área de pesquisa. Por exemplo, numa busca sobre 'IA na saúde', ele pode encontrar clusters como: diagnóstico por imagem, prontuários eletrônicos, descoberta de medicamentos, ética em IA.
+> A analogia é um **mapa da cidade**: artigos sobre IA ficam no 'bairro' da inteligência artificial. Blockchain fica noutro bairro. A distância entre eles reflete a distância entre os temas.
 >
-> Além disso, o `trending_topics` mostra quais são os tópicos mais frequentes — um rápido 'raio-x' da sua base."
+> **Aqui no slide, vocês estão vendo dados REAIS** — 100 papers do Academic Hunter projetados em 2D. Os pontos verdes são papers sobre CBDC, os azuis são IA/ML, os vermelhos são outliers — papers que não se encaixam em nenhum cluster.
+>
+> E o modelo que faz tudo isso? **22 megabytes.** Cabe num arquivo menor que uma foto JPEG. Roda em QUALQUER computador."
+
+**[Avançar]**
 
 ---
 
-### SLIDE 9 — Descoberta: Novidade, Evolução e Mapa (2 min)
+### SLIDE 9 — 12× MiniLM (1.5 min)
 
-> "Três funcionalidades que ajudam o pesquisador a enxergar o que NÃO está óbvio:
+> "E aqui está talvez o fato mais impressionante do Academic Hunter: **o mesmo modelo de 22MB alimenta 12 funcionalidades diferentes**.
 >
-> **1. DETECÇÃO DE NOVIDADE** (`find_novel_papers`)
-> O sistema identifica artigos que são DIFERENTES de tudo que já foi publicado — papers que não se encaixam em nenhum cluster existente. Isso é valioso porque esses papers frequentemente representam NOVAS ABORDAGENS, pesquisa interdisciplinar, ou tendências emergentes. O algoritmo de detecção de outliers (EllipticEnvelope) funciona como um 'radar' que aponta o que foge do padrão.
+> **Scoring:** Weight-Bleeding (o método de ranqueamento que a gente desenvolveu) e o Semantic Screener (filtro por similaridade).
 >
-> **2. EVOLUÇÃO TEMPORAL** (`topic_evolution`)
-> Mostra como os tópicos mudaram ao longo dos anos. Um tema que cresce sugere uma área quente. Um que encolhe sugere maturidade ou declínio. Essencial para entender a dinâmica de um campo.
+> **Search:** busca semântica por conceito, re-ranqueamento com cross-encoder, e snowballing — encontrar papers relacionados a partir de qualquer artigo.
 >
-> **3. MAPA DA PESQUISA** (`visualize_landscape`)
-> Projeta TODOS os artigos num mapa 2D interativo. Cada ponto é um paper. Artigos próximos = temas similares. Dá pra ver rapidamente: onde tem mais papers (áreas consolidadas), onde tem lacunas (oportunidades de pesquisa), papers isolados (tópicos nicho)."
+> **Analysis:** clustering temático com BERTopic, detecção de outliers, evolução temporal, mapa 2D com UMAP, tópicos frequentes, dedup semântico, e sumarização automática.
+>
+> **Tudo do mesmo modelo. Zero GPU. Zero API paga.** Nenhuma outra ferramenta SLR faz isso."
+
+**[Avançar]**
 
 ---
 
-### SLIDE 10 — Síntese e Qualidade (2 min)
+### SLIDE 10 — Search + Clusters (2 min)
 
-> "Completando as funcionalidades MiniLM:
+> "Vou mostrar duas funcionalidades em detalhe.
 >
-> **RESUMO AUTOMÁTICO** (`summarize_paper`)
-> Dado um DOI, o sistema extrai as sentenças MAIS REPRESENTATIVAS do abstract usando o algoritmo MMR (Maximal Marginal Relevance). Ele seleciona sentenças que são: (1) relevantes ao tema central do paper e (2) NÃO redundantes entre si. O resultado é um resumo de 3-5 sentenças que captura a essência do trabalho.
+> **Primeiro: busca semântica.** Reparem no exemplo. A pergunta é: 'CBDC impact on bank disintermediation'. Nenhum dos três resultados contém a palavra 'disintermediation' — mas o sistema entendeu o conceito e trouxe artigos relevantes.
 >
-> **DUPLICATAS SEMÂNTICAS** (`semantic_dedup`)
-> Além de remover duplicatas por DOI (que todo mundo faz), o sistema detecta papers que são virtualmente idênticos mas têm DOIs diferentes — como um preprint e sua versão publicada, ou traduções. Ele compara os embeddings e agrupa papers com similaridade acima de 88%.
+> Isso é a diferença entre buscar por PALAVRAS e buscar por CONCEITOS.
 >
-> **RE-RANQUEAMENTO** (`rerank_search`)
-> Opcionalmente, o sistema pode usar um modelo mais preciso (cross-encoder) para re-ranquear os top-20 resultados. É mais lento (~7x) mas mais preciso — útil para a etapa final de seleção."
+> **Segundo: clusters automáticos.** Numa base de 50 papers, o sistema descobriu 3 clusters:
+>
+> - 'literature, systematic, review' — 23 papers sobre revisão sistemática
+> - 'topic, sentence, embedding' — 15 papers sobre embeddings
+> - E um outlier: detecção de anomalia em grafos com GNNs
+>
+> Isso é **taxonomia automática** — você não precisa definir as categorias antes. O sistema descobre."
+
+**[Avançar]**
 
 ---
 
-## PARTE 4 — WEIGHT-BLEEDING (slides 11-13)
+### SLIDE 11 — Novidade + Evolução + Mapa (2 min)
+
+> "Três funcionalidades que ajudam o pesquisador a enxergar o que NÃO está óbvio.
+>
+> **1. Radar de novidade:** detecta artigos que não se encaixam em nenhum cluster. Esses são frequentemente os mais interessantes — pesquisa interdisciplinar, tendências emergentes. Nos nossos testes, encontramos dois: um sobre detecção de anomalia em GNNs e outro sobre análise de contratos Ethereum.
+>
+> **2. Evolução temporal:** aqui com DADOS REAIS da nossa base. De 2020 a 2025, o número de papers cresceu de 3 para 12 — um crescimento de 4x em 5 anos. Isso mostra que a área está QUENTE.
+>
+> **3. Mapa 2D:** 100 papers projetados em 2D. CBDC, IA/ML, outliers — tudo visível num golpe de olho."
+
+**[Avançar]**
 
 ---
 
-### SLIDE 11 — O Problema que o Weight-Bleeding Resolve (2 min)
+### SLIDE 12 — Precisão + Resumo + Dedup (1.5 min)
 
-> "Agora vamos ao coração técnico: **Weight-Bleeding**.
+> "Três funcionalidades de precisão e qualidade:
 >
-> Lembram que eu falei que embeddings transformam textos em vetores de números? Pois bem: o método padrão para criar esses vetores se chama **mean pooling** — ele simplesmente tira a MÉDIA de todos os tokens do texto.
+> **Re-ranqueamento:** duas etapas. O MiniLM busca rápido os top-20, depois um cross-encoder re-rank os top-5 com mais precisão. Ganho de +9 pontos de precisão.
 >
-> O problema é que a média trata TODAS as palavras igualmente. Numa busca sobre 'repetição de termos em bi-encoders', as palavras 'termo', 'repetição' e 'codificador' têm o mesmo peso. O pesquisador não tem como dizer que 'bi-encoder' é mais importante que 'termo'.
+> **Resumo automático:** dado um DOI, o sistema extrai as 3 sentenças mais representativas do abstract. Ele seleciona sentenças que são relevantes ao tema E não redundantes entre si — isso é o algoritmo MMR.
+>
+> **Dedup semântico:** detecta duplicatas que o DOI não pega. Um preprint e sua versão publicada têm DOIs diferentes, mas embeddings similares — o sistema agrupa automaticamente."
+
+**[Avançar — Parte 4]**
+
+---
+
+## PARTE 4 — WEIGHT-BLEEDING (slides 13-15, ~7 min)
+
+---
+
+### SLIDE 13 — O Problema (2 min)
+
+> "Agora vamos ao coração técnico: o **Weight-Bleeding**.
+>
+> O problema que a gente resolve é sutil, mas importante. Quando um bi-encoder cria o embedding de um texto, ele usa **mean pooling** — tira a média de todas as palavras. O problema é que a média trata TODO mundo igual.
+>
+> **A analogia é uma pesquisa de opinião:** mean pooling é como dar 1 voto para cada pessoa — inclusive para quem não entende do assunto.
+>
+> Um pesquisador sobre CBDC quer que 'banco central' e 'moeda digital' tenham MAIS PESO que 'o', 'um', 'para'.
 >
 > Isso gera dois problemas práticos:
 >
-> 1. Artigos sobre temas PARECIDOS mas não EXATOS ficam com scores comprimidos — difícil separar o relevante do irrelevante
-> 2. O pesquisador não consegue 'guiar' a busca semanticamente
->
-> O Weight-Bleeding resolve isso de forma surpreendentemente simples."
+> 1. **Scores comprimidos** — artigos parecidos mas não exatos ficam com scores muito próximos, difícil separar o relevante do irrelevante.
+> 2. **Sem controle** — o pesquisador não consegue 'guiar' a busca."
 
-**[Analogia]**
-
-```
-Mean pooling é como uma pesquisa de opinião onde todo mundo tem 1 voto.
-
-Weight-Bleeding é como dar mais votos para os especialistas no assunto.
-```
+**[Avançar]**
 
 ---
 
-### SLIDE 12 — Como o Weight-Bleeding Funciona (2 min)
+### SLIDE 14 — A Solução (2.5 min)
 
-> "A ideia é elegantemente simples:
+> "A solução é elegantemente simples.
 >
-> **Se repetir um termo W vezes no texto fizesse ele contribuir W vezes mais, por que não fazer isso diretamente no espaço de embeddings?**
->
-> É matematicamente equivalente — mas sem precisar aumentar o tamanho do texto, sem custo computacional extra.
+> **Ideia central:** se repetir um termo no texto fizesse ele contribuir mais, por que não fazer isso diretamente no espaço de embeddings? É matematicamente equivalente — mas sem aumentar o texto, sem custo extra, sem precisar de GPU.
 >
 > Na prática:
 >
-> 1. O pesquisador define num arquivo JSON quais são os termos importantes do seu domínio e qual o peso de cada um
-> 2. O sistema calcula um **centroide ponderado** — uma 'posição alvo' no espaço de embeddings que reflete os pesos definidos
-> 3. Cada artigo é comparado com esse centroide: quanto mais próximo, mais relevante
+> **1.** O pesquisador define num JSON os termos importantes e seus pesos. Por exemplo: 'CBDC' com peso 5.0, 'moeda digital' com 5.0, 'liquidez' com 2.0, 'blockchain' com 2.0.
 >
-> O ajuste final é uma **transformação de raiz quadrada** no score de similaridade — que resolve o problema dos scores comprimidos sem alterar a ordem dos resultados.
+> **2.** O sistema calcula um **centroide ponderado** — uma 'posição alvo' no espaço de embeddings que reflete esses pesos.
 >
-> Tudo isso roda em CPU, leva milissegundos por artigo, e não precisa de nenhum dado de treinamento."
+> **3.** Cada artigo é comparado com esse centroide. Quanto mais próximo, mais relevante. Artigos sobre blockchain SEM CBDC não são afetados — o controle é preciso.
+>
+> Tudo em CPU, milissegundos por artigo, zero dados de treinamento."
 
-**[Mostrar exemplo simplificado]**
-
-```
-Configuração para busca sobre "CBDC":
-{
-  "CBDC": 5.0,        ← termo central, peso alto
-  "banco central": 5.0,
-  "moeda digital": 5.0,
-  "liquidez": 2.0,    ← relevante mas secundário
-  "blockchain": 2.0,
-  "política": 1.0     ← contexto, peso baixo
-}
-
-Resultado: artigos sobre CBDC sobem no ranking.
-Artigos sobre blockchain SEM CBDC não são afetados.
-```
+**[Avançar]**
 
 ---
 
-### SLIDE 13 — Resultados Práticos (2 min)
+### SLIDE 15 — Resultados (2 min)
 
-> "O Weight-Bleeding foi validado experimentalmente. Os resultados mais importantes:
+> "E os resultados comprovam que funciona:
 >
-> **1. MUDA O RANKING** — A ordem dos artigos é significativamente diferente de um bi-encoder puro (correlação de 96.8% — alta mas não perfeita). 40% dos top-10 são diferentes.
+> **96.8% de correlação com vanilla** — o ranking MUDA em relação ao método padrão. 40% dos top-10 são diferentes. O peso realmente faz diferença.
 >
-> **2. ESPECÍFICO DO DOMÍNIO** — Uma configuração para 'SLR' e uma para 'Blockchain' produzem rankings NEGATIVAMENTE correlacionados (-0.75). Isso prova que o método não é um viés global — ele realmente REFLETE O DOMÍNIO escolhido.
+> **-0.75 de correlação entre domínios** — correlação NEGATIVA entre configurações de SLR e Blockchain. Isso prova que o efeito é ESPECÍFICO de cada domínio. Cada configuração produz um resultado único.
 >
-> **3. RESGATA ARTIGOS PERDIDOS** — Com a transformação de raiz quadrada, o sistema aprova 151 artigos vs 92 do baseline — 59 artigos a mais que seriam perdidos.
+> **7.5× mais rápido que cross-encoder** — o centroide é calculado em 0.5 segundos, cada artigo é milissegundos. Resultado consistente em 3 modelos de embedding diferentes.
 >
-> **4. EFICIÊNCIA** — 7.5x mais rápido que cross-encoder. O centroide é calculado uma vez (0.5 segundos) e cada artigo é milissegundos.
->
-> **5. ROBUSTO** — Funciona consistentemente em 3 modelos de embedding diferentes (MiniLM, BGE, GTE). A configuração é estável: valores próximos de parâmetros produzem resultados quase idênticos."
+> Na prática: **59 artigos a mais** são aprovados com Weight-Bleeding contra o método tradicional. Papers que seriam perdidos são resgatados."
 
----
-
-## PARTE 5 — O QUE TUDO ISSO SIGNIFICA (slides 14-17)
+**[Avançar — Parte 5]**
 
 ---
 
-### SLIDE 14 — O Ecossistema Completo (2 min)
-
-> "Vamos juntar todas as peças:
->
-> **O Academic Hunter é o ÚNICO sistema que combina:**
->
-> ✅ **Pipeline SLR completo** — busca, dedup, scoring, PRISMA — tudo local
-> ✅ **16 bases acadêmicas** — a cobertura mais ampla entre ferramentas SLR
-> ✅ **35+ ferramentas MCP** — qualquer agente IA pode orquestrar
-> ✅ **12 análises MiniLM** — do ranking semântico ao mapa 2D, tudo do mesmo modelo de 22MB
-> ✅ **Weight-Bleeding** — controle semântico configurável inédito em bi-encoders
-> ✅ **Zero GPU, zero API paga** — roda em qualquer notebook
->
-> **Comparado com outras ferramentas:**
->
-> | Recurso              | Academic Hunter | ASReview       | Rayyan      | Covidence   |
-> | -------------------- | --------------- | -------------- | ----------- | ----------- |
-> | Código aberto        | ✅              | ✅             | ❌          | ❌          |
-> | Fontes de dados      | 16              | 1 (importação) | 1           | 1           |
-> | Scoring semântico    | ✅ WB           | ❌             | ❌          | ❌          |
-> | Cluster automático   | ✅              | ❌             | ❌          | ❌          |
-> | Detecção de novidade | ✅              | ❌             | ❌          | ❌          |
-> | MCP / API para IA    | ✅              | ❌             | ❌          | ❌          |
-> | Custo                | Zero            | Zero           | $$$         | $$$$        |
-> | GPU necessária       | Não             | Não            | N/A (cloud) | N/A (cloud) |
+## PARTE 5 — CONTRIBUIÇÃO (slides 16-19, ~5 min)
 
 ---
 
-### SLIDE 15 — Posicionamento Acadêmico (1 min)
+### SLIDE 16 — vs Concorrentes (1.5 min)
 
-> "Academic Hunter ocupa uma posição ÚNICA no cenário acadêmico atual:
+> "Como o Academic Hunter se compara com as ferramentas existentes?
 >
-> **Agente de Retrieval vs Ferramenta de Retrieval**
+> A tabela fala por si:
 >
-> - Não somos um agente de IA — somos as FERRAMENTAS que o agente usa
-> - Não substituímos o pesquisador — ACELERAMOS o trabalho dele
-> - Não competimos com ChatGPT/Claude — nos INTEGRAMOS a eles via MCP
+> - **16 fontes de dados** — contra 1 das concorrentes
+> - **Scoring semântico** — único com Weight-Bleeding
+> - **Cluster automático, detecção de novidade, mapa da pesquisa** — ninguém mais tem
+> - **API para agentes de IA via MCP** — único
+> - **Custo: zero** — ASReview é grátis mas limitado, Rayyan e Covidence custam caro
 >
-> **Na literatura recente:**
->
-> - O survey de Singh et al. (2025) cataloga 7 arquiteturas de Agentic RAG — nenhuma menciona SLR
-> - Queen-Bee Agents (2026) propõe agentes especialistas conectados por MCP — Academic Hunter é uma dessas 'abelhas'
-> - O SoK de Mishra et al. (2026) identifica 'retrieval misalignment' como risco crítico — Weight-Bleeding MITIGA esse risco
-> - Nenhum paper de 2025-2026 combina SLR + Weight-Bleeding + MCP
+> Academic Hunter é a única ferramenta SLR 100% gratuita, open-source, com 16 fontes, análise semântica E integração com agentes de IA."
 
----
-
-### SLIDE 16 — O que Estamos Construindo (1 min)
-
-> **Publicações:**
->
-> 📄 **JOSS** — Journal of Open Source Software
-> → Foco: a ferramenta, o ecossistema, como usar
-> → 244 linhas, 16 conectores, 35+ tools, 155 testes
->
-> 📄 **Conferência** (alvo: EMNLP/ACL/ECIR)
-> → Foco: o método Weight-Bleeding, experimentos, baselines
-> → 346 linhas, 12 experimentos, 3 modelos, 5 baselines
->
-> **Próximos passos:**
->
-> - Publicar no PyPI (`pip install academic-hunter`)
-> - DOI Zenodo definitivo
-> - ORCID real
-> - Validação humana dos resultados (user study)
+**[Avançar]**
 
 ---
 
-### SLIDE 17 — Obrigado (1 min)
+### SLIDE 17 — Posicionamento (1 min)
 
-> "Código aberto: **github.com/devfelipenunes/academic-hunter**
-> Documentação: **devfelipenunes.github.io/academic-hunter**
+> "Academic Hunter ocupa uma posição ÚNICA na literatura atual:
 >
-> Perguntas? Críticas? Sugestões?
+> - **Survey do Singh (2025):** cataloga 7 arquiteturas de Agentic RAG — **nenhuma menciona SLR**.
+> - **Queen-Bee Agents (2026):** propõe agentes especialistas conectados por MCP — **Academic Hunter é uma dessas 'abelhas'**.
+> - **Mishra (2026):** identifica 'retrieval misalignment' como risco crítico em sistemas Agentic RAG — **Weight-Bleeding MITIGA esse risco** ao dar controle semântico configurável.
 >
-> **A discussão é o que vai definir os próximos passos.**"
+> Nenhum paper de 2025-2026 combina SLR + Weight-Bleeding + MCP."
+
+**[Avançar]**
 
 ---
+
+### SLIDE 18 — Publicações (1 min)
+
+> "Dois tracks de publicação:
+>
+> **JOSS — Journal of Open Source Software:** foco na ferramenta, no ecossistema, em como usar. 16 conectores, 35+ ferramentas, 155 testes.
+>
+> **Conferência (alvo: EMNLP/ACL/ECIR):** foco no método Weight-Bleeding. 12 experimentos, 3 modelos de embedding, 5 baselines comparados.
+>
+> **Próximos passos:** PyPI publish, Zenodo DOI, ORCID real, validação humana com pesquisadores."
+
+**[Avançar]**
+
+---
+
+### SLIDE 19 — Obrigado (1 min)
+
+> "Bom, é isso. Academic Hunter está disponível em **github.com/devfelipenunes/academic-hunter**.
+>
+> **O que vocês podem fazer agora:**
+>
+> - **Instalar:** é um `pip install` do repositório
+> - **Reportar bugs:** github issues
+> - **Citar nos seus papers:** os papers JOSS e da conferência estão em andamento
+> - **Contribuir:** pull requests, feedback, ideias são bem-vindos
+>
+> **Perguntas?**"
+
+---
+
+## Notas para o apresentador
+
+### Timing
+
+- Parte 1 (slides 1-4): ~7 min — não apressar, é onde o público decide se vai prestar atenção
+- Parte 2 (slides 5-7): ~6 min — manter ritmo, MCP é o diferencial
+- Parte 3 (slides 8-12): ~9 min — parte mais densa, pausar para perguntas se necessário
+- Parte 4 (slides 13-15): ~7 min — coração técnico, ir devagar
+- Parte 5 (slides 16-19): ~5 min — fechamento rápido, deixar tempo para perguntas
+
+### Dicas
+
+- **Slide 3** (terminal): falar pausadamente como se fosse o computador respondendo
+- **Slide 8** (embedding SVG): apontar para outliers vermelhos no mapa
+- **Slide 9** (12× MiniLM): fazer pausa dramática antes do callout final
+- **Slide 14** (solução): não mostrar a fórmula — a analogia é suficiente
+- **Slide 18** (limitações): falar com naturalidade — mostra transparência
+- **Slide 19** (CTA): terminar com entusiasmo, não com pressa
+
+### Perguntas frequentes (preparar respostas)
+
+1. "Precisa de GPU?" — Não. Roda em CPU, 22MB de modelo.
+2. "Comparado com ChatGPT?" — AH não gera texto. Ele recupera e analisa.
+3. "Dá pra usar com qualquer LLM?" — Sim, qualquer cliente MCP funciona.
+4. "Vai ter UI web?" — Futuramente. Hoje é CLI interativo ou MCP.
+5. "Já publicaram?" — JOSS submetido, conference paper em preparação.
