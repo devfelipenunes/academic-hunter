@@ -7,6 +7,7 @@ for logging and progress reporting.
 import logging
 import re
 
+import asyncio
 import requests
 from mcp.server.fastmcp import Context
 
@@ -31,7 +32,7 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
     await ctx.info(f"Comparing papers: {doi_a} vs {doi_b}")
 
     try:
-        def _fetch_meta(doi: str) -> dict:
+        async def _fetch_meta(doi: str) -> dict:
             """Fetch paper metadata — tries Semantic Scholar, falls back to AcademicHunter."""
             last_error = None
             # Try Semantic Scholar API
@@ -40,7 +41,7 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
                     f"https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}"
                     "?fields=title,year,abstract"
                 )
-                resp = requests.get(url, timeout=10)
+                resp = await asyncio.to_thread(requests.get, url, timeout=10)
                 resp.raise_for_status()
                 return resp.json()
             except requests.RequestException as e:
@@ -65,8 +66,8 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
             return {w for w in words if w not in _STOPWORDS}
 
         # Fetch metadata for both papers
-        meta_a = _fetch_meta(doi_a)
-        meta_b = _fetch_meta(doi_b)
+        meta_a = await _fetch_meta(doi_a)
+        meta_b = await _fetch_meta(doi_b)
 
         hunter = AcademicHunter()
 

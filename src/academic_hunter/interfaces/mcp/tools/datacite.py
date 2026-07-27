@@ -3,6 +3,7 @@
 
 import logging
 
+import asyncio
 import requests
 from mcp.server.fastmcp import Context
 
@@ -40,7 +41,7 @@ async def search_datasets(
         if resource_type:
             params["resource-type-id"] = resource_type
 
-        resp = requests.get(DATACITE_API, params=params, timeout=15)
+        resp = await asyncio.to_thread(requests.get, DATACITE_API, params=params, timeout=15)
         resp.raise_for_status()
         data = resp.json()
         results = data.get("data", [])

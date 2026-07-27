@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger("academic_hunter.mcp.resources")
 """MCP resource functions — expose data as read-only content.
 
 Each function is registered via ``mcp.resource()`` in server.py.
@@ -84,6 +87,7 @@ async def get_vector_stats_resource() -> str:
             indent=2,
         )
     except Exception as exc:
+        logger.warning("Resource error: %s", exc)
         return _json.dumps(
             {"available": False, "error": str(exc)},
             ensure_ascii=False,

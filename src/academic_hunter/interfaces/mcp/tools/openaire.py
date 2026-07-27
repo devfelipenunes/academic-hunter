@@ -3,6 +3,7 @@
 Indexes 198M+ publications linked to 3.7M+ grants.
 """
 
+import asyncio
 import logging
 import requests
 from mcp.server.fastmcp import Context
@@ -63,7 +64,7 @@ async def search_openaire(ctx: Context, query: str, limit: int = 10) -> str:
     await ctx.info(f"Searching OpenAIRE for: '{query}'...")
     try:
         params = {"keywords": query, "size": min(limit, 50), "format": "json"}
-        resp = requests.get("https://api.openaire.eu/search/publications", params=params, timeout=15)
+        resp = await asyncio.to_thread(requests.get, "https://api.openaire.eu/search/publications", params=params, timeout=15)
         resp.raise_for_status()
         data = resp.json()
 

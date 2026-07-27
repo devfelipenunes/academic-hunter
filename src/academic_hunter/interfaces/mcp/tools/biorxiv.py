@@ -8,6 +8,7 @@ No API key is needed.
 import logging
 from datetime import datetime, timedelta
 
+import asyncio
 import requests
 from mcp.server.fastmcp import Context
 
@@ -58,7 +59,7 @@ async def search_biorxiv(
         # The API cursor parameter is ``{start}/{end}/{cursor}/{count}``.
         url = f"{api_url}/{start_date}/{end_date}/0/{limit * 3}"
 
-        resp = requests.get(url, timeout=15)
+        resp = await asyncio.to_thread(requests.get, url, timeout=15)
         resp.raise_for_status()
         data = resp.json()
 

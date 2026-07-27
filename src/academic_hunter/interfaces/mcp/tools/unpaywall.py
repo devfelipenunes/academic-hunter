@@ -7,6 +7,7 @@ rate limits but not strictly required.
 
 import logging
 
+import asyncio
 import requests
 from mcp.server.fastmcp import Context
 
@@ -30,7 +31,7 @@ async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com"
     try:
         params = {"email": email}
         url = f"{UNPAYWALL_API}/{doi}"
-        resp = requests.get(url, params=params, timeout=10)
+        resp = await asyncio.to_thread(requests.get, url, params=params, timeout=10)
         if resp.status_code == 422:
             await ctx.warning("Unpaywall requires a valid email")
             return "Unpaywall requires a valid email. Pass email='your@email.com'."
