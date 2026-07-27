@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import pytest
-from academic_hunter.interfaces.mcp.memory.sqlite_store import MCPDatabaseManager
+from academic_hunter.interfaces.mcp.memory.config_backup import MCPDatabaseManager
 
 @pytest.fixture
 def temp_db(tmp_path):

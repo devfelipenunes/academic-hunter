@@ -8,6 +8,7 @@ from academic_hunter.interfaces.mcp.exceptions import MCPToolError
 from academic_hunter.interfaces.mcp.tools.orcid import lookup_orcid
 
 
+@pytest.mark.asyncio
 async def test_lookup_orcid(mock_ctx):
     """Returns researcher profile with name and publications."""
     mock_response = {

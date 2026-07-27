@@ -19,36 +19,7 @@ BIORXIV_API = "https://api.biorxiv.org/details/biorxiv"
 MEDRXIV_API = "https://api.biorxiv.org/details/medrxiv"
 
 # Common bioRxiv subject categories (for reference / hinting)
-CATEGORIES = [
-    "animal behavior and cognition",
-    "biochemistry",
-    "bioengineering",
-    "bioinformatics",
-    "biophysics",
-    "cancer biology",
-    "cell biology",
-    "clinical trials",
-    "computational biology",
-    "developmental biology",
-    "ecology",
-    "epidemiology",
-    "evolutionary biology",
-    "genetics",
-    "genomics",
-    "immunology",
-    "microbiology",
-    "molecular biology",
-    "neuroscience",
-    "paleontology",
-    "pathology",
-    "pharmacology",
-    "physiology",
-    "plant biology",
-    "scientific communication and education",
-    "synthetic biology",
-    "systems biology",
-    "zoology",
-]
+
 
 
 async def search_biorxiv(

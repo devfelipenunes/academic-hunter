@@ -54,7 +54,7 @@ def mock_chroma_fail():
 def mock_db_ok():
     """MCPDatabaseManager returns config history."""
     with patch(
-        "academic_hunter.interfaces.mcp.memory.sqlite_store.MCPDatabaseManager"
+        "academic_hunter.interfaces.mcp.memory.config_backup.MCPDatabaseManager"
     ) as m:
         inst = m.return_value
         inst.list_configs.return_value = [
@@ -67,7 +67,7 @@ def mock_db_ok():
 def mock_db_fail():
     """MCPDatabaseManager raises (non-critical — handled silently)."""
     with patch(
-        "academic_hunter.interfaces.mcp.memory.sqlite_store.MCPDatabaseManager"
+        "academic_hunter.interfaces.mcp.memory.config_backup.MCPDatabaseManager"
     ) as m:
         m.side_effect = RuntimeError("DB unreachable")
         yield m
