@@ -14,9 +14,9 @@ async def get_config_resource() -> str:
 
     URI: ``academic-hunter://config/current``
     """
-    from academic_hunter.core.infra.config import HunterConfig
+    from academic_hunter.core import get_config
 
-    config = HunterConfig()
+    config = get_config()
     data = {
         "settings": config.settings,
         "anchors": config.anchors,

@@ -37,7 +37,7 @@ async def test_export_to_obsidian_success(tmp_path, mock_ctx):
     vault_path = str(tmp_path)
 
     with patch(
-        "academic_hunter.interfaces.mcp.tools.obsidian.HunterConfig"
+        "academic_hunter.core.infra.config.HunterConfig"
     ) as MockConfig:
         mock_instance = MockConfig.return_value
         mock_instance.settings = {"obsidian_vault_path": vault_path}

@@ -2,7 +2,7 @@
 
 from datetime import date
 from pathlib import Path
-from academic_hunter.core.infra.config import HunterConfig
+from academic_hunter.core import get_config
 from ..exceptions import ObsidianError
 from mcp.server.fastmcp import Context
 
@@ -24,7 +24,7 @@ async def export_to_obsidian(topic: str, content: str, tags: list = None, ctx: C
     """
     await ctx.info(f"Exporting report '{topic}' to Obsidian...")
     try:
-        config = HunterConfig()
+        config = get_config()
         obsidian_path = config.settings.get("obsidian_vault_path")
 
         if not obsidian_path:

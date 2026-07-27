@@ -45,6 +45,11 @@ def get_project_root() -> Path:
     return Path.cwd()
 
 
+def _make_hunter() -> AcademicHunter:
+    """Create an AcademicHunter rooted at the project directory."""
+    return AcademicHunter(output_dir=str(get_project_root() / "results"))
+
+
 def _get_vector_store() -> ChromaVectorStore | None:
     """Initialize the ChromaDB vector store (same pattern as rag.py)."""
     try:

@@ -30,7 +30,7 @@ async def test_read_config(mock_hunter_config, mock_ctx):
 
 async def test_read_config_failure(mock_ctx):
     with patch(
-        "academic_hunter.interfaces.mcp.tools.configuration.HunterConfig"
+        "academic_hunter.core.infra.config.HunterConfig"
     ) as m:
         m.side_effect = RuntimeError("config.json missing")
         with pytest.raises(MCPToolError, match="config.json missing"):

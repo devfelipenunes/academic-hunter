@@ -6,7 +6,7 @@ for logging and progress reporting.
 
 import json
 from mcp.server.fastmcp import Context
-from academic_hunter.core.infra.config import HunterConfig
+from academic_hunter.core import get_config
 from ..schemas.config_schema import SearchConfigUpdate
 from ..memory.config_backup import MCPDatabaseManager
 from ..exceptions import ConfigError
@@ -19,7 +19,7 @@ async def read_config(ctx: Context) -> str:
     """
     await ctx.info("Reading configuration...")
     try:
-        config = HunterConfig()
+        config = get_config()
         data = {
             "settings": config.settings,
             "anchors": config.anchors,
@@ -50,7 +50,7 @@ async def update_config(config_update: SearchConfigUpdate, ctx: Context) -> str:
     """
     await ctx.info("Updating configuration...")
     try:
-        config = HunterConfig()
+        config = get_config()
 
         # 1. Backup current state
         db = MCPDatabaseManager()
@@ -141,7 +141,7 @@ async def restore_config_by_id(config_id: int, ctx: Context) -> str:
             await ctx.error(f"Config ID {config_id} not found")
             raise ConfigError(f"Config ID {config_id} not found.")
 
-        config = HunterConfig()
+        config = get_config()
         if "settings" in config_data:
             config.settings = config_data["settings"]
         if "anchors" in config_data:

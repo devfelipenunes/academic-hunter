@@ -12,7 +12,7 @@ import sys
 import time
 from pathlib import Path
 from academic_hunter import AcademicHunter
-from academic_hunter.core.infra.config import HunterConfig
+from academic_hunter.core import get_config
 
 _STOPWORDS = {
     "the", "a", "an", "of", "in", "for", "and", "or", "to", "with",

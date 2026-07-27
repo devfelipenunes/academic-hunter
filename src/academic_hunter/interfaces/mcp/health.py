@@ -25,9 +25,9 @@ def _check_components() -> dict:
 
     # 1. Config check
     try:
-        from academic_hunter.core.infra.config import HunterConfig
+        from academic_hunter.core import get_config
 
-        HunterConfig()
+        get_config()
     except Exception as exc:
         config_loaded = False
         status = "degraded"

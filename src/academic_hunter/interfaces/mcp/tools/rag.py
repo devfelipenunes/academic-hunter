@@ -7,16 +7,13 @@ for logging and progress reporting.
 import logging
 from mcp.server.fastmcp import Context
 
-from academic_hunter import AcademicHunter
-from ._utils import get_project_root, _get_vector_store
+from ._utils import _get_vector_store, _make_hunter
 from ..exceptions import VectorStoreError
 
 logger = logging.getLogger("academic_hunter.mcp.rag")
 
 
-def _make_hunter() -> AcademicHunter:
-    """Create an AcademicHunter rooted at the project directory."""
-    return AcademicHunter(output_dir=str(get_project_root() / "results"))
+
 
 
 async def semantic_search(
