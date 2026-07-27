@@ -77,33 +77,76 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
   <div class="part-header" style="margin-bottom:1rem">Academic Hunter</div>
   <h1 style="font-size:2.5rem"><span class="accent">Academic</span> <span class="green">Hunter</span></h1>
   <p class="subtitle">Uma plataforma aberta de Revis&atilde;o Sistem&aacute;tica da Literatura<br>com an&aacute;lise sem&acirc;ntica inteligente &mdash; sem GPU, sem API paga</p>
-  <p style="font-size:.8rem;color:var(--text-secondary);margin-top:.4rem;"><strong>Pesquisador:</strong> Felipe Nunes &middot; Open Source (MIT) &middot; <span style="color:var(--accent)">github.com/devfelipenunes/academic-hunter</span></p>
-  <div class="flex-row" style="margin:.6rem 0;gap:.3rem;justify-content:center">
-    <span class="tag">16 Fontes</span>
+  <div class="card card-highlight" style="max-width:500px;margin:.8rem auto">
+    <p style="font-size:.85rem;color:var(--text);margin:0;line-height:1.5">
+    ⏱️ <strong>6 meses</strong> de trabalho manual &rarr; <strong style="color:var(--green);font-size:1.1rem">15 minutos</strong> com IA + Academic Hunter
+    </p>
+  </div>
+  <p style="font-size:.8rem;color:var(--text-secondary);margin-top:.4rem;"><strong>Pesquisador:</strong> Felipe Nunes &middot; Open Source (MIT)</p>
+  <div class="flex-row" style="margin:.5rem 0;gap:.3rem;justify-content:center">
+    <span class="tag">16 Fontes Acad&ecirc;micas</span>
     <span class="tag">35+ Tools MCP</span>
     <span class="tag">12 An&aacute;lises MiniLM</span>
     <span class="tag">Zero GPU</span>
-    <span class="tag">155 Testes</span>
     <span class="tag">Open Source</span>
   </div>
-  <p style="margin-top:1.5rem;font-size:.7rem;color:var(--text-secondary)"><span class="key-hint">→ Use as setas do teclado ou clique nos bullets abaixo</span></p>
+  <p style="margin-top:1.5rem;font-size:.65rem;color:var(--text-secondary)"><span class="key-hint">→ Use as setas do teclado ou clique nos bullets abaixo</span></p>
 </div>
 </div>
 
-<!-- ===== SLIDE 2: O PROBLEMA ===== -->
+<!-- ===== SLIDE 2: O PROBLEMA + TEMPO ===== -->
 <div class="slide" data-part="1">
 <div class="slide-inner">
   <div class="part-header">Parte 1 &middot; O Problema</div>
   <h2><span class="num">1</span> Por que uma SLR ainda &eacute; t&atilde;o dif&iacute;cil?</h2>
-  <p style="margin-bottom:.6rem;">Uma Revis&atilde;o Sistem&aacute;tica leva de <strong>6 a 12 meses</strong>. As ferramentas que existem obrigam voc&ecirc; a escolher entre:</p>
-  <div class="grid-2">
-    <div class="card"><h3 style="color:var(--red)">⚠️ Keyword matching</h3><p style="font-size:.75rem">Perde sin&ocirc;nimos. "Moeda digital" n&atilde;o encontra "CBDC".</p></div>
-    <div class="card"><h3 style="color:var(--orange)">⚠️ Rotular dados</h3><p style="font-size:.75rem">ASReview exige classificar dezenas de papers manualmente.</p></div>
-    <div class="card"><h3 style="color:var(--red)">⚠️ Pagos e fechados</h3><p style="font-size:.75rem">Rayyan/Covidence custam caro, s&atilde;o cloud, sem API.</p></div>
-    <div class="card"><h3 style="color:var(--orange)">⚠️ Precisam de GPU</h3><p style="font-size:.75rem">Modelos de IA requerem placa de v&iacute;deo cara.</p></div>
+  <div style="display:flex;gap:1rem;align-items:stretch;margin-bottom:.6rem">
+    <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;text-align:center">
+      <p style="font-size:2rem;font-weight:800;color:var(--red);margin:0">6-12</p>
+      <p style="font-size:.7rem;color:var(--text-secondary)">meses de trabalho manual</p>
+    </div>
+    <div style="display:flex;align-items:center;font-size:1.5rem;color:var(--text-secondary)">→</div>
+    <div style="flex:1;background:linear-gradient(135deg,rgba(63,185,80,.1),var(--bg-card));border:1px solid rgba(63,185,80,.3);border-radius:10px;padding:.8rem 1rem;text-align:center">
+      <p style="font-size:2rem;font-weight:800;color:var(--green);margin:0">15</p>
+      <p style="font-size:.7rem;color:var(--text-secondary)">minutos com IA + Academic Hunter</p>
+    </div>
   </div>
-  <div class="callout" style="margin-top:.5rem;text-align:center">
-    <p style="font-size:.78rem;color:var(--text);margin:0"><strong>Academic Hunter resolve todos esses problemas de uma vez — e tudo de gra&ccedil;a.</strong></p>
+  <p style="margin-bottom:.5rem;font-size:.8rem">E as ferramentas existentes obrigam voc&ecirc; a escolher entre:</p>
+  <div class="grid-2">
+    <div class="card"><h3 style="color:var(--red)">⚠️ Keyword matching</h3><p style="font-size:.73rem">Perde sin&ocirc;nimos. "Moeda digital" n&atilde;o encontra "CBDC".</p></div>
+    <div class="card"><h3 style="color:var(--orange)">⚠️ Rotular dados manualmente</h3><p style="font-size:.73rem">ASReview exige classificar dezenas de papers antes de funcionar.</p></div>
+    <div class="card"><h3 style="color:var(--red)">⚠️ Pagos e fechados</h3><p style="font-size:.73rem">Rayyan/Covidence: US$ 100-500/m&ecirc;s, sem API, sem integra&ccedil;&atilde;o com IA.</p></div>
+    <div class="card"><h3 style="color:var(--orange)">⚠️ Dependem de GPU</h3><p style="font-size:.73rem">Modelos de IA precisam de placa de v&iacute;deo cara (US$ 1.000+).</p></div>
+  </div>
+  <div class="callout" style="margin-top:.4rem;text-align:center;background:linear-gradient(135deg,rgba(63,185,80,.08),transparent);border-color:rgba(63,185,80,.2)">
+    <p style="font-size:.78rem;color:var(--text);margin:0"><strong>Academic Hunter resolve TUDO isso — 100% gratuito, open-source, sem GPU.</strong></p>
+  </div>
+</div>
+</div>
+
+<!-- ===== SLIDE 3: CASO REAL — FLUXO COMPLETO ===== -->
+<div class="slide" data-part="1">
+<div class="slide-inner">
+  <div class="part-header">Parte 1 &middot; Na Pr&aacute;tica</div>
+  <h2><span class="num">3</span> Vamos Fazer uma SLR Juntos</h2>
+  <p style="margin-bottom:.5rem;font-size:.8rem">Tema: <strong>"Impacto de CBDCs na estabilidade financeira"</strong> — veja o fluxo real:</p>
+  <div class="card card-highlight" style="margin-bottom:.5rem">
+    <div class="code-block" style="font-size:.65rem">
+$ academic-hunter interactive
+<span class="dim">📌 Qual o tópico da sua revisão?</span>
+&gt; CBDC e estabilidade financeira
+<span class="dim">🔍 Descobrindo jargões...</span>
+✅ 12 termos encontrados automaticamente
+<span class="dim">📋 Configuração sugerida:</span>
+  Core_Concepts: digital currencies (5.0), financial stability (5.0)
+  Context: monetary policy (2.0), liquidity (2.0)
+<span class="dim">Aceitar e buscar? [S/n]</span> S
+<span class="dim">🔍 Buscando em 16 fontes...</span>    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h3 style="color:var(--cyan)">📥 Busca (16 fontes)</h3><p style="font-size:.7rem">arXiv, S2, CrossRef, EuropePMC, OpenAlex, CORE, DBLP, DOAJ, OpenCitations, bioRxiv, medRxiv, Lens.org, OpenAIRE, ClinicalTrials, DataCite, ORCID</p></div>
+    <div class="card"><h3 style="color:var(--purple)">🧠 An&aacute;lises (12)</h3><p style="font-size:.7rem">Ranking, clusters, outlier, evolu&ccedil;&atilde;o, mapa 2D, resumo, dedup, re-rank, t&oacute;picos, snowballing, cita&ccedil;&otilde;es, OA</p></div>
+    <div class="card"><h3 style="color:var(--green)">💾 Exporta&ccedil;&atilde;o</h3><p style="font-size:.7rem">CSV, BibTeX, RIS, JSON, Markdown, PRISMA, Obsidian</p></div>
+    <div class="card card-highlight"><h3 style="color:var(--accent)">🤖 Agente IA via MCP</h3><p style="font-size:.7rem">Claude ou ChatGPT orquestra tudo automaticamente</p></div>
   </div>
 </div>
 </div>
@@ -112,7 +155,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="1">
 <div class="slide-inner">
   <div class="part-header">Parte 1 &middot; Vis&atilde;o Geral</div>
-  <h2><span class="num">2</span> O Fluxo Completo: 4 Etapas</h2>
+  <h2><span class="num">4</span> O Fluxo Completo: 4 Etapas</h2>
   <p style="margin-bottom:.6rem;">Do t&oacute;pico at&eacute; os insights — tudo autom&aacute;tico:</p>
 
   <div class="flow" style="margin-bottom:.6rem">
@@ -142,7 +185,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="2">
 <div class="slide-inner">
   <div class="part-header">Parte 2 &middot; O Software em A&ccedil;&atilde;o</div>
-  <h2><span class="num">3</span> 16 Fontes Acad&ecirc;micas</h2>
+  <h2><span class="num">5</span> 16 Fontes Acad&ecirc;micas</h2>
   <p style="margin-bottom:.6rem;">Consultas simult&acirc;neas — &uacute;nica ferramenta SLR com esta cobertura:</p>
   <div class="grid-3">
     <div class="card"><h3>📚 Bases</h3><p style="font-size:.7rem">arXiv, Crossref, Europe PMC, DBLP, DOAJ</p></div>
@@ -162,7 +205,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="2">
 <div class="slide-inner">
   <div class="part-header">Parte 2 &middot; Integra&ccedil;&atilde;o com IA</div>
-  <h2><span class="num">4</span> MCP: A Ponte entre SLR e Agentes de IA</h2>
+  <h2><span class="num">6</span> MCP: A Ponte entre SLR e Agentes de IA</h2>
   <p style="margin-bottom:.6rem;"><strong style="color:var(--text)">MCP (Model Context Protocol)</strong> &eacute; um padr&atilde;o aberto, criado pela Anthropic e adotado pela Linux Foundation, OpenAI e Google. Permite que QUALQUER agente de IA se conecte a ferramentas externas.</p>
 
   <div class="card card-highlight" style="margin-bottom:.5rem;">
@@ -189,7 +232,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="2">
 <div class="slide-inner">
   <div class="part-header">Parte 2 &middot; O Que N&atilde;o &Eacute;</div>
-  <h2><span class="num">5</span> O Que Academic Hunter &Eacute; — e N&atilde;o &Eacute;</h2>
+  <h2><span class="num">7</span> O Que Academic Hunter &Eacute; — e N&atilde;o &Eacute;</h2>
   <p style="margin-bottom:.6rem;">Importante entender o papel de cada pe&ccedil;a:</p>
   <div class="grid-2">
     <div class="card" style="border-color:rgba(248,81,73,.2)">
@@ -216,7 +259,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; Como o Computador "Entende" Textos</div>
-  <h2><span class="num">6</span> Embeddings: A "Impress&atilde;o Digital" dos Artigos</h2>
+  <h2><span class="num">8</span> Embeddings: A "Impress&atilde;o Digital" dos Artigos</h2>
   <div class="card card-highlight" style="text-align:center;margin-bottom:.5rem">
     <p style="font-size:.85rem;color:var(--text);line-height:1.8">
     "Deep learning para diagn&oacute;stico por imagem"<br>
@@ -244,7 +287,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; Funcionalidades</div>
-  <h2><span class="num">7</span> Busca Sem&acirc;ntica + Clusters Autom&aacute;ticos</h2>
+  <h2><span class="num">9</span> Busca Sem&acirc;ntica + Clusters Autom&aacute;ticos</h2>
   <div class="grid-2">
     <div class="card card-highlight">
       <h3 style="color:var(--accent)">🔍 Busca por Conceito</h3>
@@ -280,7 +323,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; Descoberta</div>
-  <h2><span class="num">8</span> Enxergando o que N&atilde;o Est&aacute; &Oacute;bvio</h2>
+  <h2><span class="num">10</span> Enxergando o que N&atilde;o Est&aacute; &Oacute;bvio</h2>
   <div class="grid-3">
     <div class="card"><h3 style="color:var(--orange)">🆕 Radar de Novidade</h3><p style="font-size:.7rem">Detecta artigos que N&Atilde;O se encaixam em nenhum cluster. S&atilde;o pesquisas interdisciplinares ou tend&ecirc;ncias emergentes.</p>
     <div class="diagram" style="margin-top:.2rem;font-size:.6rem">
@@ -311,7 +354,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="3">
 <div class="slide-inner">
   <div class="part-header">Parte 3 &middot; S&iacute;ntese e Qualidade</div>
-  <h2><span class="num">9</span> Precis&atilde;o, Resumo e Qualidade dos Dados</h2>
+  <h2><span class="num">11</span> Precis&atilde;o, Resumo e Qualidade dos Dados</h2>
   <div class="grid-3">
     <div class="card card-highlight">
       <h3 style="color:var(--accent)">🎯 Re-Ranqueamento</h3>
@@ -333,7 +376,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="4">
 <div class="slide-inner">
   <div class="part-header">Parte 4 &middot; O Cora&ccedil;&atilde;o T&eacute;cnico</div>
-  <h2><span class="num">10</span> O Problema: Como dar "peso" &agrave;s palavras num embedding?</h2>
+  <h2><span class="num">12</span> O Problema: Como dar "peso" &agrave;s palavras num embedding?</h2>
 
   <div class="card" style="margin-bottom:.5rem;text-align:center">
     <p style="font-size:.82rem;color:var(--text);line-height:1.8">
@@ -359,7 +402,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="4">
 <div class="slide-inner">
   <div class="part-header">Parte 4 &middot; A Solu&ccedil;&atilde;o</div>
-  <h2><span class="num">11</span> Weight-Bleeding: Pondera&ccedil;&atilde;o Sem&acirc;ntica Configur&aacute;vel</h2>
+  <h2><span class="num">13</span> Weight-Bleeding: Pondera&ccedil;&atilde;o Sem&acirc;ntica Configur&aacute;vel</h2>
 
   <div class="card card-highlight" style="margin-bottom:.5rem">
     <p style="font-size:.78rem;color:var(--text);line-height:1.7">
@@ -392,7 +435,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="4">
 <div class="slide-inner">
   <div class="part-header">Parte 4 &middot; Valida&ccedil;&atilde;o</div>
-  <h2><span class="num">12</span> Resultados Pr&aacute;ticos</h2>
+  <h2><span class="num">14</span> Resultados Pr&aacute;ticos</h2>
   <div class="grid-3">
     <div class="card"><div class="stat"><div class="num" style="color:var(--cyan)">96.8%</div></div><p style="font-size:.68rem;text-align:center">O ranking MUDA em rela&ccedil;&atilde;o ao m&eacute;todo padr&atilde;o — 40% dos top-10 s&atilde;o diferentes. O peso realmente faz diferen&ccedil;a.</p></div>
     <div class="card"><div class="stat"><div class="num" style="color:var(--purple)">-0.75</div></div><p style="font-size:.68rem;text-align:center">Correla&ccedil;&atilde;o NEGATIVA entre dom&iacute;nios SLR e Blockchain. Prova que o efeito &eacute; ESPEC&Iacute;FICO — cada configura&ccedil;&atilde;o produz um resultado &uacute;nico.</p></div>
@@ -408,7 +451,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; O Que Tudo Isso Significa</div>
-  <h2><span class="num">13</span> Academic Hunter vs Concorrentes</h2>
+  <h2><span class="num">15</span> Academic Hunter vs Concorrentes</h2>
   <table>
     <tr><th>Recurso</th><th>Academic Hunter</th><th>ASReview</th><th>Rayyan</th><th>Covidence</th></tr>
     <tr><td>C&oacute;digo aberto</td><td style="color:var(--green)">✅</td><td style="color:var(--green)">✅</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td></tr>
@@ -431,7 +474,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; Contribui&ccedil;&atilde;o &Uacute;nica</div>
-  <h2><span class="num">14</span> Posicionamento na Literatura</h2>
+  <h2><span class="num">16</span> Posicionamento na Literatura</h2>
   <div class="card card-highlight" style="margin-bottom:.5rem">
     <p style="font-size:.78rem;color:var(--text)"><strong>Academic Hunter &eacute; o &Uacute;NICO sistema que combina:</strong></p>
     <p style="font-size:.72rem;margin-top:.2rem">✅ Pipeline SLR completo + Busca em <strong>16 fontes</strong> + <strong>35+ tools</strong> MCP + <strong>12 an&aacute;lises</strong> MiniLM + <strong>Weight-Bleeding</strong></p>
@@ -449,7 +492,7 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 <div class="slide" data-part="5">
 <div class="slide-inner">
   <div class="part-header">Parte 5 &middot; Publica&ccedil;&otilde;es</div>
-  <h2><span class="num">15</span> Dois Tracks de Publica&ccedil;&atilde;o</h2>
+  <h2><span class="num">17</span> Dois Tracks de Publica&ccedil;&atilde;o</h2>
   <div class="grid-2">
     <div class="card card-highlight">
       <h3 style="color:var(--accent)">📄 JOSS</h3>
@@ -470,22 +513,47 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
 </div>
 </div>
 
-<!-- ===== SLIDE 17: OBRIGADO ===== -->
+<!-- ===== SLIDE 18: LIMITAÇÕES ===== -->
+<div class="slide" data-part="5">
+<div class="slide-inner">
+  <div class="part-header">Parte 5 &middot; Transpar&ecirc;ncia</div>
+  <h2><span class="num">18</span> Limita&ccedil;&otilde;es e Quando N&Atilde;O Usar</h2>
+  <p style="margin-bottom:.5rem">Nenhuma ferramenta &eacute; perfeita para tudo. Academic Hunter &eacute; &oacute;timo para:</p>
+  <div class="grid-2">
+    <div class="card card-highlight">
+      <h3 style="color:var(--green)">✅ Ideal para</h3>
+      <p style="font-size:.72rem">SLRs explorat&oacute;rias, revis&otilde;es r&aacute;pidas, an&aacute;lise de tend&ecirc;ncias, mapeamento de campo, snowballing sem&acirc;ntico, pr&eacute;-sele&ccedil;&atilde;o para revis&atilde;o manual.</p>
+    </div>
+    <div class="card" style="border-color:rgba(248,81,73,.2)">
+      <h3 style="color:var(--orange)">⚠️ N&atilde;o substitui</h3>
+      <p style="font-size:.72rem">Revis&atilde;o manual completa (PRISMA full), meta-an&aacute;lise estat&iacute;stica, avalia&ccedil;&atilde;o de risco de vi&eacute;s (RoB), extra&ccedil;&atilde;o manual de dados — o pesquisador sempre valida.</p>
+    </div>
+    <div class="card" style="border-color:rgba(248,81,73,.2)">
+      <h3 style="color:var(--red)">❌ N&atilde;o faz</h3>
+      <p style="font-size:.72rem">N&atilde;o gera texto, n&atilde;o "escreve" a revis&atilde;o, n&atilde;o toma decis&otilde;es, n&atilde;o avalia qualidade metodol&oacute;gica dos artigos.</p>
+    </div>
+    <div class="card" style="border-color:rgba(210,153,34,.2)">
+      <h3 style="color:var(--orange)">📌 Em desenvolvimento</h3>
+      <p style="font-size:.72rem">Cross-encoder &eacute; opcional (pesado), APIs do Semantic Scholar/Lens.org podem pedir chave gratuita para alto volume.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== SLIDE 19: OBRIGADO + CTA ===== -->
 <div class="slide" data-part="5">
 <div class="slide-inner" style="text-align:center">
   <h1 style="font-size:2.5rem">Obrigado</h1>
   <p style="font-size:.9rem;margin-top:.4rem">C&oacute;digo: <strong style="color:var(--accent)">github.com/devfelipenunes/academic-hunter</strong></p>
   <p style="font-size:.8rem;color:var(--text-secondary)">Documenta&ccedil;&atilde;o: devfelipenunes.github.io/academic-hunter</p>
-  <div style="margin:1rem auto;width:100px;height:100px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center">
-    <span style="font-size:.65rem;color:var(--text-secondary);text-align:center">QR Code<br>do GitHub</span>
-  </div>
-  <p style="font-size:.8rem;color:var(--text-secondary)">Perguntas? Cr&iacute;ticas? Sugest&otilde;es?</p>
-  <div style="margin-top:1rem;font-size:.65rem;color:var(--text-secondary)">
-    <span class="tag">16 Fontes</span>
-    <span class="tag">35+ MCP Tools</span>
-    <span class="tag">12 An&aacute;lises MiniLM</span>
-    <span class="tag">155 Testes</span>
-    <span class="tag">Zero GPU</span>
+  <div class="card card-highlight" style="max-width:400px;margin:1rem auto">
+    <p style="font-size:.78rem;color:var(--text);margin:0;line-height:1.6">
+    <strong>🎯 O que voc&ecirc; pode fazer agora:</strong><br>
+    ⭐ <strong>Instalar:</strong> <code style="font-size:.7rem">pip install git+https://github.com/devfelipenunes/academic-hunter.git</code><br>
+    🐛 <strong>Reportar bugs:</strong> github.com/devfelipenunes/academic-hunter/issues<br>
+    📄 <strong>Citar nos seus papers:</strong> JOSS + Conference Paper (DOI pendente)<br>
+    💬 <strong>Contribuir:</strong> Pull requests, feedback, ideias
+    </p>
   </div>
 </div>
 </div>
