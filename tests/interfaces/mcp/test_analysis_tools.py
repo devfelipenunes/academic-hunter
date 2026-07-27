@@ -444,3 +444,52 @@ async def test_summarize_paper_short_abstract(mock_ctx):
         instance.fetch_abstract_by_doi.return_value = "Short."
         result = await summarize_paper(mock_ctx, "10.1234/short")
         assert "too short" in result.lower()
+
+
+# ── find_related_papers ─────────────────────────────────────────────────
+
+
+async def test_find_related_papers_basic(mock_ctx):
+    """Returns related papers from semantic search."""
+    from academic_hunter.interfaces.mcp.tools.related import find_related_papers
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.related._get_vector_store"
+    ) as m_get:
+        store = MagicMock()
+        store.query.return_value = [
+            {"title": "Paper A", "semantic_relevance": 0.95, "year": 2024},
+        ]
+        m_get.return_value = store
+
+        result = await find_related_papers(mock_ctx, "test query", top_k=5)
+        assert "Paper A" in result
+        assert "95" in result
+        mock_ctx.info.assert_called()
+
+
+async def test_find_related_papers_no_results(mock_ctx):
+    """Returns message when no related papers found."""
+    from academic_hunter.interfaces.mcp.tools.related import find_related_papers
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.related._get_vector_store"
+    ) as m_get:
+        store = MagicMock()
+        store.query.return_value = []
+        m_get.return_value = store
+
+        result = await find_related_papers(mock_ctx, "unknown topic")
+        assert "No related papers found" in result
+
+
+async def test_find_related_papers_no_store(mock_ctx):
+    """Returns error when vector store unavailable."""
+    from academic_hunter.interfaces.mcp.tools.related import find_related_papers
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.related._get_vector_store",
+        return_value=None,
+    ):
+        result = await find_related_papers(mock_ctx, "test")
+        assert "not available" in result.lower()

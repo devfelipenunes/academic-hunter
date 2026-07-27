@@ -199,3 +199,36 @@ async def test_answer_question_store_unavailable(mock_ctx):
         result = await answer_question("test", ctx=mock_ctx)
         assert "Error" in result
         assert "vector store" in result.lower()
+
+
+# ── rerank_search ───────────────────────────────────────────────────
+
+
+async def test_rerank_search_basic(mock_vector_store, mock_ctx):
+    """Returns re-ranked search results."""
+    from academic_hunter.interfaces.mcp.tools.rag import rerank_search
+
+    mock_vector_store.query.return_value = [
+        {"title": "Paper A", "semantic_relevance": 0.95},
+        {"title": "Paper B", "semantic_relevance": 0.87},
+    ]
+
+    with patch("sentence_transformers.cross_encoder.CrossEncoder") as m_ce:
+        instance = MagicMock()
+        instance.predict.return_value = [0.9, 0.8]
+        m_ce.return_value = instance
+
+        result = await rerank_search(mock_ctx, "test", top_k=10, rerank_k=5)
+        assert "Re-Ranked" in result
+        assert "Paper A" in result
+        mock_ctx.info.assert_called()
+
+
+async def test_rerank_search_no_results(mock_vector_store, mock_ctx):
+    """Returns message when no results."""
+    from academic_hunter.interfaces.mcp.tools.rag import rerank_search
+
+    mock_vector_store.query.return_value = []
+
+    result = await rerank_search(mock_ctx, "unknown")
+    assert "No semantically relevant" in result
