@@ -20,7 +20,7 @@ bibliography: paper.bib
 
 # Summary
 
-Academic Hunter is an automated Systematic Literature Review (SLR) tool that combines keyword-based and semantic relevance scoring in a configurable hybrid pipeline. It connects to 16 academic databases and preprint servers (ArXiv, Crossref, OpenAlex, Semantic Scholar, CORE, DBLP, DOAJ, Europe PMC, OpenCitations, Unpaywall, Lens.org, OpenAIRE, ClinicalTrials.gov, bioRxiv, medRxiv, DataCite), deduplicates results across sources, scores papers using both exact keyword matching and weighted sentence embeddings, clusters results by topic, detects novel/outlier papers, generates extractive summaries, projects embeddings onto a 2D research landscape via UMAP, and exports results in CSV, BibTeX, RIS, Markdown, PRISMA, and JSON formats. The tool exposes a Model Context Protocol (MCP) server with 35+ tools, 4 resources, and 2 prompt templates, enabling Large Language Models and agentic workflows to interact with the review pipeline autonomously. The server supports both stdio and SSE transport for local and remote agent access.
+Academic Hunter is an automated Systematic Literature Review (SLR) tool that combines keyword-based and semantic relevance scoring in a configurable hybrid pipeline. It connects to 16 academic databases and preprint servers (ArXiv, Crossref, OpenAlex, Semantic Scholar, CORE, DBLP, DOAJ, Europe PMC, OpenCitations, Unpaywall, Lens.org, OpenAIRE, bioRxiv, medRxiv, DataCite), deduplicates results across sources, scores papers using both exact keyword matching and weighted sentence embeddings, clusters results by topic, detects novel/outlier papers, generates extractive summaries, projects embeddings onto a 2D research landscape via UMAP, and exports results in CSV, BibTeX, RIS, Markdown, PRISMA, and JSON formats. The tool exposes a Model Context Protocol (MCP) server with 35+ tools, 4 resources, and 2 prompt templates, enabling Large Language Models and agentic workflows to interact with the review pipeline autonomously. The server supports both stdio and SSE transport for local and remote agent access.
 
 # Statement of Need
 
@@ -75,7 +75,7 @@ Academic Hunter follows a hexagonal architecture:
 │  Core Tools    │  MiniLM Features    │  Connectors               │
 │  run_search    │  cluster_papers     │  Europe PMC, OpenCitations│
 │  semantic_srch │  find_novel_papers  │  Unpaywall, Lens.org      │
-│  read_config   │  find_related       │  OpenAIRE, ClinicalTrials │
+│  read_config   │  find_related       │  OpenAIRE│
 │  update_config │  trending_topics    │  bioRxiv, medRxiv, ORCID  │
 │  compare_paper │  topic_evolution    │  DataCite, arXiv, S2, ... │
 │  export_report │  semantic_dedup     │                           │

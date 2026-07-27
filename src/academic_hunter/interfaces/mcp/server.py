@@ -36,7 +36,6 @@ from .tools.citations import get_citation_count, get_citing_papers
 from .tools.unpaywall import find_open_access
 from .tools.lens import search_patents
 from .tools.openaire import search_openaire
-from .tools.clinical_trials import search_clinical_trials
 from .tools.biorxiv import search_biorxiv
 from .tools.orcid import lookup_orcid
 from .tools.datacite import search_datasets
@@ -413,7 +412,6 @@ def create_mcp_server() -> FastMCP:
     mcp.tool()(find_open_access)
     mcp.tool()(search_patents)
     mcp.tool()(search_openaire)
-    mcp.tool()(search_clinical_trials)
     mcp.tool()(search_biorxiv)
     mcp.tool()(lookup_orcid)
     mcp.tool()(search_datasets)
