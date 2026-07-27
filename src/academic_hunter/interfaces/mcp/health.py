@@ -11,7 +11,7 @@ except Exception:
     _get_vector_store = None
 
 
-def _check_components() -> dict:
+async def _check_components() -> dict:
     """Check all components and return status data.
 
     Returns a dict with ``status`` (ok/degraded/error), ``config_loaded``,
@@ -93,6 +93,6 @@ async def server_status(ctx) -> str:
     and per-component detail.
     """
     await ctx.info("Checking server status...")
-    data = _check_components()
+    data = await _check_components()
     await ctx.info(f"Server status: {data['status']}")
     return json.dumps(data, ensure_ascii=False)

@@ -8,6 +8,7 @@ import asyncio
 import requests
 from mcp.server.fastmcp import Context
 from ..exceptions import DiscoveryError
+from ..validation import validate_doi, validate_limit
 
 logger = logging.getLogger("academic_hunter.mcp.citations")
 COCI_API = "https://api.opencitations.net/index/v1"
@@ -30,10 +31,13 @@ async def get_citation_count(ctx: Context, doi: str) -> str:
     """
     await ctx.info(f"Looking up citation count for DOI {doi}...")
     try:
+        doi = validate_doi(doi)
         data = await _coci_request("citation-count", doi)
         count = int(data[0]["count"]) if data else 0
         await ctx.info(f"DOI {doi} has {count} citations")
         return f"DOI {doi} has {count} citations according to OpenCitations."
+    except ValueError as e:
+        raise DiscoveryError(str(e))
     except Exception as e:
         await ctx.error(f"Failed to get citation count: {e}")
         raise DiscoveryError(str(e))
@@ -49,6 +53,8 @@ async def get_citing_papers(ctx: Context, doi: str, limit: int = 10) -> str:
     """
     await ctx.info(f"Finding citing papers for DOI {doi}...")
     try:
+        doi = validate_doi(doi)
+        limit = validate_limit(limit, default=10, max_limit=50)
         citations = await _coci_request("citations", doi)
 
         if not citations:
@@ -66,6 +72,8 @@ async def get_citing_papers(ctx: Context, doi: str, limit: int = 10) -> str:
 
         await ctx.info(f"Found {len(citations)} citing papers")
         return "\n".join(lines)
+    except ValueError as e:
+        raise DiscoveryError(str(e))
     except Exception as e:
         await ctx.error(f"Failed to get citing papers: {e}")
         raise DiscoveryError(str(e))

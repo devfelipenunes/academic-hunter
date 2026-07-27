@@ -14,6 +14,7 @@ from mcp.server.fastmcp import Context
 from academic_hunter import AcademicHunter
 from ._utils import _STOPWORDS
 from ..exceptions import DiscoveryError
+from ..validation import validate_doi
 
 logger = logging.getLogger("academic_hunter.mcp.comparison")
 
@@ -32,6 +33,9 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
     await ctx.info(f"Comparing papers: {doi_a} vs {doi_b}")
 
     try:
+        doi_a = validate_doi(doi_a)
+        doi_b = validate_doi(doi_b)
+
         async def _fetch_meta(doi: str) -> dict:
             """Fetch paper metadata — tries Semantic Scholar, falls back to AcademicHunter."""
             last_error = None
@@ -120,6 +124,8 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
         await ctx.info("Comparison complete")
         return "\n".join(lines)
 
+    except ValueError as e:
+        raise DiscoveryError(str(e))
     except DiscoveryError:
         await ctx.error("Failed to compare papers")
         raise

@@ -12,6 +12,7 @@ import requests
 from mcp.server.fastmcp import Context
 
 from ..exceptions import DiscoveryError
+from ..validation import validate_doi, validate_email
 
 logger = logging.getLogger("academic_hunter.mcp.unpaywall")
 UNPAYWALL_API = "https://api.unpaywall.org/v2"
@@ -29,6 +30,9 @@ async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com"
     """
     await ctx.info(f"Looking up OA version for DOI {doi}...")
     try:
+        doi = validate_doi(doi)
+        if email:
+            email = validate_email(email)
         params = {"email": email}
         url = f"{UNPAYWALL_API}/{doi}"
         resp = await asyncio.to_thread(requests.get, url, params=params, timeout=10)
@@ -65,6 +69,8 @@ async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com"
         await ctx.info(f"OA status for {doi}: {oa_status}")
         return "\n".join(lines)
 
+    except ValueError as e:
+        raise DiscoveryError(str(e))
     except requests.RequestException as e:
         await ctx.error(f"Unpaywall API error: {e}")
         raise DiscoveryError(str(e))

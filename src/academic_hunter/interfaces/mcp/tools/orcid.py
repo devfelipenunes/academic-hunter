@@ -14,6 +14,7 @@ import requests
 from mcp.server.fastmcp import Context
 
 from ..exceptions import DiscoveryError
+from ..validation import validate_orcid
 
 logger = logging.getLogger("academic_hunter.mcp.orcid")
 ORCID_API = "https://pub.orcid.org/v3.0"
@@ -32,6 +33,7 @@ async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
     """
     await ctx.info(f"Looking up ORCID {orcid_id}...")
     try:
+        orcid_id = validate_orcid(orcid_id)
         headers = {"Accept": "application/json"}
         url = f"{ORCID_API}/{orcid_id}/record"
         resp = await asyncio.to_thread(requests.get, url, headers=headers, timeout=10)
@@ -85,6 +87,8 @@ async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
         await ctx.info(f"ORCID lookup complete for {credit}")
         return "\n".join(lines)
 
+    except ValueError as e:
+        raise DiscoveryError(str(e))
     except requests.RequestException as e:
         await ctx.error(f"ORCID API error: {e}")
         raise DiscoveryError(str(e))

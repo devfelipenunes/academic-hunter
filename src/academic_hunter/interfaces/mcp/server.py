@@ -40,7 +40,7 @@ async def health_check(request):
 
     Reuses the same component checks as ``server_status``.
     """
-    data = _check_components()
+    data = await _check_components()
     del data["last_config_backup"]
     return JSONResponse(data)
 
