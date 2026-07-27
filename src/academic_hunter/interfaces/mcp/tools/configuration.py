@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 from mcp.server.fastmcp import Context
 from academic_hunter.core.infra.config import HunterConfig
 from ..schemas.config_schema import SearchConfigUpdate
-from ..memory.sqlite_store import MCPDatabaseManager
+from ..memory.config_backup import MCPDatabaseManager
 from ..exceptions import ConfigError
 
 

@@ -15,10 +15,12 @@ from .tools.discovery import (
 )
 from .tools.europepmc import search_europepmc
 from .tools.obsidian import export_to_obsidian
-from .tools.analysis import (
-    trending_topics, compare_papers, export_report,
-    find_novel_papers, find_related_papers, summarize_paper,
-)
+from .tools.trending import trending_topics
+from .tools.comparison import compare_papers
+from .tools.export import export_report
+from .tools.novelty import find_novel_papers
+from .tools.related import find_related_papers
+from .tools.summarize import summarize_paper
 from .tools.rag import (
     semantic_search, index_papers, vector_store_stats,
     ask_papers, answer_question, rerank_search,

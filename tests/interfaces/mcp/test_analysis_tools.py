@@ -1,7 +1,7 @@
 """Tests for analysis MCP tools (trending_topics, compare_papers, export_report).
 
 Uses mock_ctx from conftest and patches ChromaVectorStore / AcademicHunter / requests
-in the analysis module.
+in the relevant tool modules.
 """
 
 import json
@@ -9,12 +9,10 @@ import pytest
 from unittest.mock import patch, MagicMock, PropertyMock
 from pathlib import Path
 
-from academic_hunter.interfaces.mcp.tools.analysis import (
-    trending_topics,
-    compare_papers,
-    export_report,
-    summarize_paper,
-)
+from academic_hunter.interfaces.mcp.tools.trending import trending_topics
+from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
+from academic_hunter.interfaces.mcp.tools.export import export_report
+from academic_hunter.interfaces.mcp.tools.summarize import summarize_paper
 from academic_hunter.interfaces.mcp.exceptions import DiscoveryError, SearchError, MCPToolError
 
 
@@ -34,7 +32,7 @@ async def test_trending_topics(mock_ctx):
     ]
 
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis._get_vector_store"
+        "academic_hunter.interfaces.mcp.tools.trending._get_vector_store"
     ) as m_get:
         store = MagicMock()
         store.query.return_value = mock_papers
@@ -52,7 +50,7 @@ async def test_trending_topics(mock_ctx):
 async def test_trending_topics_no_results(mock_ctx):
     """Empty vector store returns the expected message."""
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis._get_vector_store"
+        "academic_hunter.interfaces.mcp.tools.trending._get_vector_store"
     ) as m_get:
         store = MagicMock()
         store.query.return_value = []
@@ -67,7 +65,7 @@ async def test_trending_topics_no_results(mock_ctx):
 async def test_trending_topics_store_unavailable(mock_ctx):
     """When the vector store cannot be initialised, return a meaningful message."""
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis._get_vector_store",
+        "academic_hunter.interfaces.mcp.tools.trending._get_vector_store",
         return_value=None,
     ):
         result = await trending_topics(mock_ctx)
@@ -85,7 +83,7 @@ async def test_trending_topics_below_threshold(mock_ctx):
     ]
 
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis._get_vector_store"
+        "academic_hunter.interfaces.mcp.tools.trending._get_vector_store"
     ) as m_get:
         store = MagicMock()
         store.query.return_value = mock_papers
@@ -113,7 +111,7 @@ async def test_compare_papers(mock_ctx):
         "abstract": "Recent advances in deep reinforcement learning for autonomous systems.",
     }
 
-    with patch("academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter") as m_hunter:
+    with patch("academic_hunter.interfaces.mcp.tools.comparison.AcademicHunter") as m_hunter:
         hunter_instance = m_hunter.return_value
         hunter_instance.fetch_abstract_by_doi.return_value = ""
 
@@ -153,7 +151,7 @@ async def test_compare_papers_one_not_found(mock_ctx):
         "abstract": "Deep learning methods for NLP.",
     }
 
-    with patch("academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter") as m_hunter:
+    with patch("academic_hunter.interfaces.mcp.tools.comparison.AcademicHunter") as m_hunter:
         hunter_instance = m_hunter.return_value
         hunter_instance.fetch_abstract_by_doi.return_value = ""
 
@@ -206,11 +204,11 @@ async def test_export_report_csv(mock_ctx, tmp_path):
     ]
 
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis.get_project_root",
+        "academic_hunter.interfaces.mcp.tools.export.get_project_root",
         return_value=tmp_path,
     ):
         with patch(
-            "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+            "academic_hunter.interfaces.mcp.tools.export.AcademicHunter"
         ) as m_hunter:
             hunter_instance = m_hunter.return_value
             type(hunter_instance).consolidated_results = PropertyMock(
@@ -236,11 +234,11 @@ async def test_export_report_json(mock_ctx, tmp_path):
     ]
 
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis.get_project_root",
+        "academic_hunter.interfaces.mcp.tools.export.get_project_root",
         return_value=tmp_path,
     ):
         with patch(
-            "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+            "academic_hunter.interfaces.mcp.tools.export.AcademicHunter"
         ) as m_hunter:
             hunter_instance = m_hunter.return_value
             type(hunter_instance).consolidated_results = PropertyMock(
@@ -262,10 +260,10 @@ async def test_export_report_no_results(mock_ctx, tmp_path):
     """Empty results return a helpful message."""
     with (
         patch(
-            "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+            "academic_hunter.interfaces.mcp.tools.export.AcademicHunter"
         ) as m_hunter,
         patch(
-            "academic_hunter.interfaces.mcp.tools.analysis.get_project_root"
+            "academic_hunter.interfaces.mcp.tools.export.get_project_root"
         ) as m_root,
     ):
         hunter_instance = m_hunter.return_value
@@ -281,7 +279,7 @@ async def test_export_report_no_results(mock_ctx, tmp_path):
 async def test_export_report_unsupported_format(mock_ctx):
     """Unsupported format string returns an error message."""
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+        "academic_hunter.interfaces.mcp.tools.export.AcademicHunter"
     ) as m_hunter:
         hunter_instance = m_hunter.return_value
         type(hunter_instance).consolidated_results = PropertyMock(
@@ -301,11 +299,11 @@ async def test_export_report_default_output_path(mock_ctx, tmp_path):
     mock_papers = [{"Title": "Paper One", "Year": 2023}]
 
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis.get_project_root",
+        "academic_hunter.interfaces.mcp.tools.export.get_project_root",
         return_value=tmp_path,
     ):
         with patch(
-            "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+            "academic_hunter.interfaces.mcp.tools.export.AcademicHunter"
         ) as m_hunter:
             hunter_instance = m_hunter.return_value
             type(hunter_instance).consolidated_results = PropertyMock(
@@ -332,11 +330,11 @@ async def test_export_report_bibtex(mock_ctx, tmp_path):
     ]
 
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis.get_project_root",
+        "academic_hunter.interfaces.mcp.tools.export.get_project_root",
         return_value=tmp_path,
     ):
         with patch(
-            "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+            "academic_hunter.interfaces.mcp.tools.export.AcademicHunter"
         ) as m_hunter:
             hunter_instance = m_hunter.return_value
             type(hunter_instance).consolidated_results = PropertyMock(
@@ -365,11 +363,11 @@ async def test_export_report_ris(mock_ctx, tmp_path):
     ]
 
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis.get_project_root",
+        "academic_hunter.interfaces.mcp.tools.export.get_project_root",
         return_value=tmp_path,
     ):
         with patch(
-            "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+            "academic_hunter.interfaces.mcp.tools.export.AcademicHunter"
         ) as m_hunter:
             hunter_instance = m_hunter.return_value
             type(hunter_instance).consolidated_results = PropertyMock(
@@ -393,7 +391,7 @@ async def test_export_report_ris(mock_ctx, tmp_path):
 async def test_export_report_write_error(mock_ctx):
     """File write errors raise SearchError."""
     with patch(
-        "academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter"
+        "academic_hunter.interfaces.mcp.tools.export.AcademicHunter"
     ) as m_hunter:
         hunter_instance = m_hunter.return_value
         type(hunter_instance).consolidated_results = PropertyMock(
@@ -414,7 +412,7 @@ async def test_summarize_paper(mock_ctx):
     """Returns extractive summary from abstract."""
     mock_abstract = "This is the first sentence of the paper. Here is the second one discussing methods. The third sentence presents the key findings. Fourth sentence discusses implications. Fifth sentence concludes the work."
 
-    with patch("academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter") as m_hunter:
+    with patch("academic_hunter.interfaces.mcp.tools.summarize.AcademicHunter") as m_hunter:
         instance = m_hunter.return_value
         instance.fetch_abstract_by_doi.return_value = mock_abstract
 
@@ -432,7 +430,7 @@ async def test_summarize_paper(mock_ctx):
 
 async def test_summarize_paper_not_found(mock_ctx):
     """Graceful when paper not found."""
-    with patch("academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter") as m_hunter:
+    with patch("academic_hunter.interfaces.mcp.tools.summarize.AcademicHunter") as m_hunter:
         instance = m_hunter.return_value
         instance.fetch_abstract_by_doi.return_value = None
         result = await summarize_paper(mock_ctx, "10.1234/unknown")
@@ -441,7 +439,7 @@ async def test_summarize_paper_not_found(mock_ctx):
 
 async def test_summarize_paper_short_abstract(mock_ctx):
     """Graceful when abstract is too short."""
-    with patch("academic_hunter.interfaces.mcp.tools.analysis.AcademicHunter") as m_hunter:
+    with patch("academic_hunter.interfaces.mcp.tools.summarize.AcademicHunter") as m_hunter:
         instance = m_hunter.return_value
         instance.fetch_abstract_by_doi.return_value = "Short."
         result = await summarize_paper(mock_ctx, "10.1234/short")

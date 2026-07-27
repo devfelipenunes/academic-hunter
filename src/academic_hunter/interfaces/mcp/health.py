@@ -45,7 +45,7 @@ def _check_components() -> dict:
 
     # 3. Last config backup (best-effort)
     try:
-        from .memory.sqlite_store import MCPDatabaseManager
+        from .memory.config_backup import MCPDatabaseManager
 
         db = MCPDatabaseManager()
         history = db.list_configs(limit=1)
