@@ -1,39 +1,38 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-dist/
-build/
-
-# Environments
-.env
-.venv
-env/
+# Dependencies
+.venv/
 venv/
-ENV/
+node_modules/
 
-# Pytest / Test Cache
-.pytest_cache/
-.coverage
-htmlcov/
+# Runtime data
+.academic_hunter/
+results/
+*.db
+
+# Build artifacts
+dist/
+*.egg-info/
+build/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Project Specific
-results/
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.coverage
+.pytest_cache/
+
+# Claude
+.claude/
+
+# User config (has API keys)
 config.json
-test_config.json
-test_config_*.json
-*.log
-*.db
-archive/
-
-# Agent Planning Documents
-docs/superpowers/plans/
-docs/superpowers/specs/
-
-# Academic Hunter DB Storage
-.academic_hunter/
+/config.json
