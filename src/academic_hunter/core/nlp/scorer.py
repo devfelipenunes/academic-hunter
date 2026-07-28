@@ -54,6 +54,49 @@ class AcademicScorer:
     def normalize_anchor(self, term: str) -> str:
         return term.strip().lower().replace(' ', '_').replace('-', '_')
 
+    def compute_hybrid_score(
+        self,
+        title: str,
+        abstract: str,
+        citations: int,
+        semantic_score: float,
+        has_semantic: bool = False,
+        ablation_mode: str = "hybrid",
+        score_precision: int = 1,
+    ) -> float:
+        """Compute final relevance score respecting ablation mode.
+
+        This is the single source of truth for hybrid scoring. All callers
+        (Validator, Pipeline) should use this instead of duplicating the math.
+
+        Args:
+            title: Paper title.
+            abstract: Paper abstract.
+            citations: Citation count.
+            semantic_score: Semantic relevance (0-1) from Weight-Bleeding.
+            has_semantic: Whether semantic scoring is available.
+            ablation_mode: One of 'hybrid', 'embedding', 'keyword'.
+            score_precision: Decimal places for rounding.
+
+        Returns:
+            Final relevance score.
+        """
+        kw_score = self.calculate_score(title, abstract, citations)
+
+        if has_semantic and ablation_mode != "keyword":
+            if ablation_mode == "embedding":
+                return round(
+                    math.sqrt(semantic_score) * 10.0,
+                    score_precision,
+                )
+            # Fused: sqrt(WB) as base, keyword as bonus
+            return round(
+                (math.sqrt(semantic_score) * 10.0) + (kw_score * 0.3),
+                score_precision,
+            )
+        # Keyword-only or no semantic: use regex score as-is
+        return round(kw_score, score_precision)
+
     def find_matching_terms(self, text: str, terms_list: List[str]) -> str:
         if not text: return ""
         text_lower = str(text).lower()

@@ -15,6 +15,7 @@ without the artificial-text problem.
 import hashlib
 import json
 import logging
+import sys
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -195,12 +196,23 @@ class SemanticScreener(BaseScreener):
 class _ZeroEmbedding:
     """Fallback embedding that returns zero vectors.
 
-    Used when ChromaDB is unavailable. All scores will be 0.0.
-    A warning is emitted once at instantiation time via the caller.
+    Used when ChromaDB/ONNX is unavailable. All semantic scores will be 0.0,
+    effectively disabling Weight-Bleeding scoring. Keyword-only and hybrid
+    modes still work, but embedding-only mode will produce zero scores.
     """
 
     def __init__(self, dim: int = _DEFAULT_EMBED_DIM) -> None:
         self._dim = dim
+        logger.warning(
+            "Semantic screener running in ZERO-VECTOR mode — all semantic scores "
+            "will be 0.0. Install chromadb with ONNX support for full functionality:\n"
+            "  pip install chromadb>=1.5.0"
+        )
+        print(
+            "[WARNING] Academic Hunter: Semantic screener in zero-vector mode. "
+            "All semantic scores will be 0.0. Install chromadb with ONNX support.",
+            file=sys.stderr,
+        )
 
     def __call__(self, texts):
         return [np.zeros(self._dim, dtype=np.float32) for _ in texts]

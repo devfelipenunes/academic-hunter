@@ -1,6 +1,5 @@
 import re
 from typing import Dict, Any, List
-from ...plugins.connectors import CONNECTORS
 
 class HunterFacadeMixin:
     """
@@ -163,7 +162,8 @@ class HunterFacadeMixin:
 
 # Helper decorator to bind fetch facades dynamically on the Mixin
 def _register_facades():
-    for name, connector_cls in CONNECTORS.items():
+    from ...plugins.connectors import CONNECTORS as _CONNECTORS
+    for name, connector_cls in _CONNECTORS.items():
         suffix = getattr(connector_cls, 'fetch_suffix', name.lower().replace(" ", "_"))
         def _create_facade(s=suffix, n=name):
             def facade(self, anchors, tech_strings, limit=50):
