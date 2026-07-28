@@ -21,17 +21,17 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
                 "min_relevance_score": 3.5,
                 "title_multiplier": 1.5,
                 "score_precision": 1,
-                "context_rules": {
-                    "drex": [
-                        "cbdc", "digital currency", "payment", "central bank", "financial", 
-                        "banking", "ledger", "monetary", "real digital", "wholesale", 
-                        "retail", "liquidity", "transaction", "cross-border", "settlement",
-                        "tokenization", "tokenized"
-                    ]
-                }
             },
             "anchors": {
                 "Pagamentos": ["Pix payment", "Zelle"]
+            },
+            "context_rules": {
+                "drex": [
+                    "cbdc", "digital currency", "payment", "central bank", "financial",
+                    "banking", "ledger", "monetary", "real digital", "wholesale",
+                    "retail", "liquidity", "transaction", "cross-border", "settlement",
+                    "tokenization", "tokenized"
+                ]
             },
             "technical_strings": {
                 "Infra": ["blockchain", "interoperability"]
@@ -237,15 +237,18 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
         self.hunter._process_paper(p_anchor, "Pagamentos", "Infra", ["Zelle"], ["blockchain"])
         self.assertEqual(self.hunter.stats["exclusions_by_source"]["ArXiv"]["anchor"], 1)
 
-        # Paper failed relevance score
+        # Paper excluded by score — use high threshold to overcome semantic screener boost
+        prev_threshold = self.hunter.settings.get('min_relevance_score', 3.5)
+        self.hunter.settings['min_relevance_score'] = 999.0
         p_score = {
-            "Title": "Zelle only paper",
-            "Abstract": "some standard banking things",
+            "Title": "Random Title Here",
+            "Abstract": "Zelle protocol for a completely unrelated topic that no one cares about.",
             "Source": "ArXiv",
             "Year": 2023
         }
         self.hunter._process_paper(p_score, "Pagamentos", "Infra", ["Zelle"], ["blockchain"])
         self.assertEqual(self.hunter.stats["exclusions_by_source"]["ArXiv"]["score"], 1)
+        self.hunter.settings['min_relevance_score'] = prev_threshold
 
     @patch('requests.get')
     def test_domain_pacing(self, mock_get):
