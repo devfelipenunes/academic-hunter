@@ -1,0 +1,13 @@
+services:
+  academic-hunter:
+    build:
+      context: .
+      target: sse
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - academic_data:/app/.academic_hunter
+
+volumes:
+  academic_data:
