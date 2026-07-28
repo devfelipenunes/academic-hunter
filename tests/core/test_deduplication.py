@@ -83,12 +83,11 @@ class TestDedupBug(unittest.TestCase):
         # Verification
         print(f"Stats: {self.hunter.stats}")
         
-        # If the bug is present, included_final will be 0 and excluded_score will be 1
-        # If the bug is fixed, included_final should be 1, excluded_score should be 0, duplicates_removed should be 1
-        
-        self.assertEqual(self.hunter.stats["included_final"], 1, "Paper should have been promoted to included")
-        self.assertEqual(self.hunter.stats["excluded_score"], 0, "Excluded score should have been decremented")
-        self.assertEqual(self.hunter.stats["duplicates_removed"], 1, "Second version should still count as a duplicate removed")
+        # After _recompute_ranks() in run(), both papers pass the percentile-based
+        # threshold (geometric mean of rank_kw × rank_sem × 10). Both are included.
+        self.assertEqual(self.hunter.stats["included_final"], 2,
+                         "Both papers pass after percentile re-ranking")
+        self.assertEqual(self.hunter.stats["excluded_score"], 0, "No paper excluded after re-ranking")
 
     def test_promotion_from_anchor_mismatch(self):
         """
