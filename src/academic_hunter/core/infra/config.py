@@ -9,16 +9,8 @@ import os
 import time
 from pathlib import Path
 from typing import Dict, Any, List, Set, Optional
-from dataclasses import dataclass, field
 
-from ...plugins.connectors import CONNECTORS
-
-
-@dataclass
-class ConfigSnapshot:
-    """Immutable snapshot of config state for history tracking."""
-    data: Dict[str, Any] = field(default_factory=dict)
-    timestamp: float = 0.0
+from .history import ConfigHistory
 
 
 class HunterConfig:
@@ -27,12 +19,9 @@ class HunterConfig:
     Features:
     - Lazy-loading with cache invalidation via mtime check
     - Environment variable overrides (prefixed with ACADEMIC_HUNTER_)
-    - Change history tracking for MCP undo/restore
+    - Change history tracking for MCP undo/restore (via ConfigHistory)
     - Type-validated accessors for all config sections
     """
-
-    _history: List[ConfigSnapshot] = []
-    _max_history: int = 20
 
     def __init__(self, config_path: str = 'config.json'):
         self.config_path = Path(config_path)
@@ -58,7 +47,8 @@ class HunterConfig:
         self.pacing_delays: Dict[str, float] = {}
 
         # Populate pacing delays dynamically from connector plugins registry
-        for name, connector_cls in CONNECTORS.items():
+        from ...plugins.connectors import CONNECTORS as _CONNECTORS
+        for name, connector_cls in _CONNECTORS.items():
             domain = getattr(connector_cls, 'domain', '')
             delay = getattr(connector_cls, 'default_delay', 1.5)
             if domain:
@@ -148,12 +138,7 @@ class HunterConfig:
 
     def _push_history(self, snapshot_data: Dict[str, Any]):
         """Store a config snapshot for undo/restore functionality."""
-        self._history.append(ConfigSnapshot(
-            data=snapshot_data,
-            timestamp=time.time(),
-        ))
-        if len(self._history) > self._max_history:
-            self._history.pop(0)
+        ConfigHistory.push(snapshot_data)
 
     def save(self):
         """Persist current config back to the JSON file."""
@@ -192,20 +177,9 @@ class HunterConfig:
     @classmethod
     def get_history(cls) -> List[Dict[str, Any]]:
         """Get config change history for MCP tool display."""
-        return [
-            {
-                "id": i,
-                "timestamp": snap.timestamp,
-                "data": snap.data,
-            }
-            for i, snap in enumerate(cls._history)
-        ]
+        return ConfigHistory.list_history()
 
     @classmethod
     def restore_snapshot(cls, snapshot_id: int) -> bool:
         """Restore config to a previous snapshot."""
-        if snapshot_id < 0 or snapshot_id >= len(cls._history):
-            return False
-        snap = cls._history[snapshot_id]
-        # The caller should write snap.data back to file and reload
-        return True
+        return ConfigHistory.restore(snapshot_id)
