@@ -17,7 +17,7 @@ logger = logging.getLogger("academic_hunter.mcp.rag")
 
 
 async def semantic_search(
-    query: str, top_k: int = 10, score_threshold: float = 0.0, ctx: Context = None
+    query: str, top_k: int = 20, score_threshold: float = 0.0, ctx: Context = None
 ) -> str:
     """Performs a semantic (embedding-based) search across all previously indexed papers.
 
@@ -151,7 +151,7 @@ async def vector_store_stats(ctx: Context = None) -> str:
     return "\n".join(lines)
 
 
-async def ask_papers(question: str, top_k: int = 5, ctx: Context = None) -> str:
+async def ask_papers(question: str, top_k: int = 15, ctx: Context = None) -> str:
     """Answers a research question using semantically retrieved papers as context.
 
     Use this tool when you want an AI-powered answer grounded in the actual papers
@@ -201,7 +201,7 @@ async def ask_papers(question: str, top_k: int = 5, ctx: Context = None) -> str:
     return "\n".join(lines)
 
 
-async def answer_question(question: str, top_k: int = 5, ctx: Context = None) -> str:
+async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -> str:
     """Full RAG tool: retrieves semantically relevant papers and synthesises a structured answer.
 
     Use this tool when you want a grounded answer to a research question, complete with
