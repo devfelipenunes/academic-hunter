@@ -13,7 +13,7 @@ from ._utils import _get_vector_store
 logger = logging.getLogger("academic_hunter.mcp.related")
 
 
-async def find_related_papers(ctx: Context, query: str, top_k: int = 5) -> str:
+async def find_related_papers(ctx: Context, query: str, top_k: int = 20) -> str:
     """Finds papers semantically similar to a given query.
 
     Args:
