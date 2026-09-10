@@ -1,10 +1,12 @@
-import unittest
 import json
-import tempfile
-import shutil
 import re
+import shutil
+import tempfile
+import unittest
 from pathlib import Path
+
 from academic_hunter import AcademicHunter
+
 
 class TestAcademicRigor(unittest.TestCase):
     def setUp(self):
@@ -55,6 +57,7 @@ class TestAcademicRigor(unittest.TestCase):
             "excluded_anchors": 0,
             "excluded_technical_score": 0,
             "included_final": 0,
+            "reranked": 0,
             "exclusions_by_source": {}
         }
         self.assertEqual(self.hunter.stats, expected_stats)
@@ -182,8 +185,9 @@ class TestAcademicRigor(unittest.TestCase):
         existing = {"Title": "T", "Abstract": "Short", "Citations": 10, "DOI": "", "Anchor_Category": "A1", "Tech_Category": "T1"}
         new = {"Title": "T", "Abstract": "Much Longer Abstract", "Citations": 20, "DOI": "10.1234", "Source": "S2"}
         
-        from academic_hunter.core.screening.resolvers import PaperResolver
         import threading
+
+        from academic_hunter.core.screening.resolvers import PaperResolver
         resolver = PaperResolver(self.hunter.state, self.hunter.scorer, self.hunter.config, self.hunter.connectors, threading.RLock())
         resolver.resolve_existing_duplicate(existing, new, "A2", "T2", "S2")
         
@@ -197,8 +201,9 @@ class TestAcademicRigor(unittest.TestCase):
 
     def test_peer_review_detection(self):
         """Verify peer-review status detection heuristic."""
-        from academic_hunter.core.screening.resolvers import PaperResolver
         import threading
+
+        from academic_hunter.core.screening.resolvers import PaperResolver
         resolver = PaperResolver(self.hunter.state, self.hunter.scorer, self.hunter.config, self.hunter.connectors, threading.RLock())
         papers = [
             {"Source": "Crossref", "Type": "journal-article", "expected": "Yes"},
@@ -225,8 +230,9 @@ class TestAcademicRigor(unittest.TestCase):
             "Type": "journal-article"
         }
         
-        from academic_hunter.core.screening.resolvers import PaperResolver
         import threading
+
+        from academic_hunter.core.screening.resolvers import PaperResolver
         resolver = PaperResolver(self.hunter.state, self.hunter.scorer, self.hunter.config, self.hunter.connectors, threading.RLock())
         resolver.resolve_existing_duplicate(existing, new, "A", "T", "Crossref")
         

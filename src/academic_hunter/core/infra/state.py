@@ -1,4 +1,5 @@
-from typing import Dict, Set, List, Any
+from typing import Any, Dict, List, Set
+
 
 class SearchState:
     """Manages active search statistics, deduplication sets, and consolidated output tables."""
@@ -11,6 +12,7 @@ class SearchState:
             "excluded_anchors": 0,
             "excluded_technical_score": 0,
             "included_final": 0,
+            "reranked": 0,
             "exclusions_by_source": {}
         }
         self.consolidated_results = {}  # Key: Title-Slug or DOI
@@ -31,6 +33,7 @@ class SearchState:
             "excluded_anchors": 0,
             "excluded_technical_score": 0,
             "included_final": 0,
+            "reranked": 0,
             "exclusions_by_source": {}
         }
         self.consolidated_results = {}

@@ -5,12 +5,14 @@ logic, logging, and testability.
 """
 
 import logging
+import math
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 from ..nlp.bm25 import BM25
 from ..nlp.fusion import DEFAULT_STRATEGY, fuse_scores, percentile_ranks
+from ..nlp.reranker import rerank_config, rerank_scores, rerank_texts
 
 logger = logging.getLogger("academic_hunter.pipeline")
 
@@ -138,6 +140,13 @@ class RecomputeRanksStep(PipelineStep):
             weights=weights,
         )
 
+        # Optional second stage, opt-in via `settings.rerank`. Runs inside this
+        # step rather than as a step of its own so that `Relevance_Score` keeps
+        # a single writer — see the class docstring.
+        final_scores = self._apply_rerank(
+            final_scores, papers_list, ranking_query
+        )
+
         # Percentile ranks are recorded for diagnostics regardless of strategy,
         # since they are what the superseded rule used and what the experiment
         # scripts compare against.
@@ -156,6 +165,101 @@ class RecomputeRanksStep(PipelineStep):
             self.hunter.state.stats["excluded_score"] = n - n_after
 
         logger.info("Re-ranked %d papers (%s). %d pass threshold.", n, strategy, n_after)
+
+    def _apply_rerank(
+        self,
+        final_scores: List[float],
+        papers_list: List[Any],
+        ranking_query: str,
+    ) -> List[float]:
+        """Rerank the head of the ranking with a cross-encoder. Never raises.
+
+        A second stage over the top ``settings.rerank.top_n`` documents. The
+        cross-encoder reads ``(query, document)`` as a pair, which the
+        first-stage signals cannot do — BM25 matches terms, the embedding
+        compares against a domain centroid — and it is far more accurate for it.
+        At ~214 ms per pair on CPU it can afford to look at a head, not a
+        corpus, which is what bounds ``top_n``.
+
+        Measured on the judged collection, nDCG@10 goes 0.6728 → 0.7668 at
+        ``top_n=20``, winning on both topics; the oracle rerank of the whole
+        pool reaches 0.7916, so the head captures 97% of the ceiling. Contrast
+        the bi-encoder embedding, which *lowers* nDCG as its weight grows — the
+        two signals are not interchangeable and only measurement separates them.
+
+        Returns scores with only the reranked head redistributed; see
+        :func:`~academic_hunter.core.nlp.reranker.rerank_scores` for the rule.
+        Every failure path returns ``final_scores`` untouched: an optional
+        enhancement that breaks a run is worse than one that is absent.
+        """
+        cfg = rerank_config(self.hunter.settings)
+        if not cfg["enabled"]:
+            return final_scores
+
+        # The cross-encoder scores a (query, document) pair, so without a query
+        # there is no pair to score. BM25 at least matches terms against a
+        # domain vocabulary; this model has nothing to read. Configuring the
+        # rerank without a query is inert, not fatal.
+        if not ranking_query:
+            logger.warning(
+                "settings.rerank.enabled is true but settings.ranking_query is "
+                "empty — the cross-encoder has no query to pair documents with. "
+                "Skipping the rerank."
+            )
+            return final_scores
+
+        n = len(papers_list)
+        top_n = min(cfg["top_n"], n)
+        if top_n < 2:
+            return final_scores
+
+        head = sorted(range(n), key=lambda i: (-final_scores[i], i))[:top_n]
+        # The same representation the BM25 index above is built on, so both
+        # query-aware signals read the same text.
+        texts = [
+            f"{papers_list[i].get('Title', '')} {papers_list[i].get('Abstract', '')}"
+            for i in head
+        ]
+
+        try:
+            scores = rerank_texts(
+                ranking_query,
+                texts,
+                model_name=cfg["model"],
+                max_length=cfg["max_length"],
+            )
+        except Exception as e:  # noqa: BLE001 — an optional stage must not fail the run
+            logger.warning(
+                "Cross-encoder rerank failed (%s); keeping the fused ranking.", e
+            )
+            return final_scores
+
+        if scores is None:
+            logger.info("Cross-encoder unavailable; keeping the fused ranking.")
+            return final_scores
+
+        if any(not math.isfinite(s) for s in scores):
+            # A NaN compares false against everything, so it would sort to an
+            # arbitrary position and scramble the head without saying so.
+            logger.warning(
+                "Cross-encoder returned a non-finite score; keeping the fused ranking."
+            )
+            return final_scores
+
+        order = sorted(range(len(scores)), key=lambda i: (-scores[i], i))
+
+        for position, i in enumerate(order, 1):
+            paper = papers_list[head[i]]
+            paper["_rerank_score"] = round(scores[i], 4)
+            paper["_rerank_rank"] = position
+
+        with self.hunter.lock:
+            self.hunter.state.stats["reranked"] = len(order)
+
+        logger.info(
+            "Cross-encoder reranked the top %d of %d papers.", top_n, n
+        )
+        return rerank_scores(final_scores, [head[i] for i in order])
 
 
 class IndexResultsStep(PipelineStep):

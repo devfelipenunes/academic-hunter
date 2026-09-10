@@ -33,7 +33,13 @@
         "tokenized"
       ]
     },
-    "ranking_query": ""
+    "ranking_query": "",
+    "rerank": {
+      "enabled": false,
+      "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+      "top_n": 20,
+      "max_length": 512
+    }
   },
   "anchors": {
     "Retail_Instant_Payments": [
