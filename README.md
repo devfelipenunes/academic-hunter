@@ -2,9 +2,8 @@
   <h1>🎯 Academic Hunter</h1>
   <p><b>Automated Systematic Literature Reviews with Semantic Intelligence</b></p>
 
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![PyPI version](https://img.shields.io/pypi/v/academic-hunter?color=blue)](https://pypi.org/project/academic-hunter/)
-[![Python versions](https://img.shields.io/pypi/pyversions/academic-hunter)](https://pypi.org/project/academic-hunter/)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/github/license/devfelipenunes/academic-hunter)](https://opensource.org/licenses/MIT)
 [![Tests](https://img.shields.io/github/actions/workflow/status/devfelipenunes/academic-hunter/test.yml?branch=main&label=tests)](https://github.com/devfelipenunes/academic-hunter/actions)
 [![MCP Ready](https://img.shields.io/badge/Protocol-MCP_Ready-orange.svg)](https://modelcontextprotocol.io/)

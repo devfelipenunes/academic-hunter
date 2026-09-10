@@ -7,13 +7,16 @@ name = "academic-hunter"
 dynamic = ["version"]
 description = "Automated Systematic Literature Review (SLR) tool — semantic search, topic clustering, novelty detection, and MCP server for agentic integration."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Felipe Nunes", email = "devfelipenunes@gmail.com"}
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
