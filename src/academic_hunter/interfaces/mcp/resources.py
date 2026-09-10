@@ -1,5 +1,7 @@
 import logging
 
+from .tools._utils import run_blocking
+
 logger = logging.getLogger("academic_hunter.mcp.resources")
 """MCP resource functions — expose data as read-only content.
 
@@ -104,7 +106,7 @@ async def get_paper_resource(doi: str) -> str:
     try:
         from academic_hunter import AcademicHunter
 
-        hunter = AcademicHunter()
+        hunter = await run_blocking(AcademicHunter)
         abstract = hunter.fetch_abstract_by_doi(doi)
         if abstract:
             return _json.dumps(

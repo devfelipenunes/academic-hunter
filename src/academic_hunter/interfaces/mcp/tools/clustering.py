@@ -9,7 +9,7 @@ import logging
 from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
-from ._utils import _get_vector_store
+from ._utils import _get_vector_store, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.clustering")
 
@@ -86,7 +86,7 @@ async def cluster_papers(
 
     # ── Run BERTopic ────────────────────────────────────────────────────────
     try:
-        embedding_model = get_sentence_transformer()
+        embedding_model = await run_blocking(get_sentence_transformer)
         if embedding_model is None:
             raise ImportError("sentence-transformers")
         topic_model = BERTopic(
@@ -94,7 +94,7 @@ async def cluster_papers(
             min_topic_size=min_cluster_size,
             verbose=False,
         )
-        topics, _ = topic_model.fit_transform(documents)
+        topics, _ = await run_blocking(topic_model.fit_transform, documents)
 
         # ── Build report ────────────────────────────────────────────────────
         n_topics = len({t for t in topics if t != -1})

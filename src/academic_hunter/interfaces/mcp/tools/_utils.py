@@ -1,8 +1,10 @@
 """Shared utilities and constants for MCP tools."""
 
+import asyncio
 import logging
 import os
 from pathlib import Path
+from typing import Any, Callable
 from academic_hunter import AcademicHunter
 from academic_hunter.plugins.vector_stores import ChromaVectorStore
 import academic_hunter as pkg
@@ -17,6 +19,19 @@ _STOPWORDS = {
     "those", "it", "its", "study", "research", "paper", "approach",
     "method", "result", "analysis", "based", "using", "new", "novel",
 }
+
+
+async def run_blocking(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    """Run synchronous work off the event loop.
+
+    Every tool on this server shares one event loop. A tool that calls blocking
+    code — a pipeline that joins threads for minutes, an ONNX encode, a pandas
+    read — freezes every other request for as long as it takes, including the
+    SSE heartbeat that keeps the connection alive. The HTTP tools here already
+    offload their requests; this is the same treatment for the heavy local work,
+    in one place so the reasoning travels with it.
+    """
+    return await asyncio.to_thread(fn, *args, **kwargs)
 
 
 def get_project_root() -> Path:

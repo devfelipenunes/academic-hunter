@@ -12,6 +12,7 @@ from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
 from ..validation import validate_doi
+from ._utils import run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.summarize")
 
@@ -32,7 +33,7 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
     # Fetch abstract
     try:
         doi = validate_doi(doi)
-        hunter = AcademicHunter()
+        hunter = await run_blocking(AcademicHunter)
         abstract = hunter.fetch_abstract_by_doi(doi)
     except ValueError as e:
         await ctx.error(f"Invalid DOI: {e}")
@@ -63,10 +64,10 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
         # Embed sentences. The model comes from the shared cache — loading
         # MiniLM takes seconds and this tool used to pay it on every call.
         # Raising ImportError keeps the existing handler's message intact.
-        model = get_sentence_transformer()
+        model = await run_blocking(get_sentence_transformer)
         if model is None:
             raise ImportError("sentence-transformers")
-        emb = model.encode(sentences)
+        emb = await run_blocking(model.encode, sentences)
 
         # Centroid
         centroid = np.mean(emb, axis=0)

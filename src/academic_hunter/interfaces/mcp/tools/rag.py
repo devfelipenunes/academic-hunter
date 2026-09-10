@@ -10,7 +10,12 @@ from academic_hunter.core.nlp.reranker import rerank_texts
 from mcp.server.fastmcp import Context
 
 from ..exceptions import VectorStoreError
-from ._utils import _get_vector_store, _load_latest_papers, _make_hunter
+from ._utils import (
+    _get_vector_store,
+    _load_latest_papers,
+    _make_hunter,
+    run_blocking,
+)
 
 logger = logging.getLogger("academic_hunter.mcp.rag")
 
@@ -39,7 +44,11 @@ async def semantic_search(
         return "Error: Vector store not available. Run a search first to index papers."
 
     top_k = min(top_k, 50)
-    results = store.query(query, top_k=top_k, score_threshold=score_threshold)
+    # The store embeds the query with ONNX and scans the collection: real
+    # work, and on the event loop it would stall every other tool.
+    results = await run_blocking(
+        store.query, query, top_k=top_k, score_threshold=score_threshold
+    )
 
     if not results:
         await ctx.info("No semantically relevant papers found")
@@ -89,7 +98,7 @@ async def index_papers(ctx: Context = None) -> str:
     """
     await ctx.info("Indexing papers into vector store...")
     try:
-        hunter = _make_hunter()
+        hunter = await run_blocking(_make_hunter)
         papers = list(hunter.consolidated_results.values())
 
         # The hunter here is always freshly built, so this is the normal path
@@ -97,7 +106,7 @@ async def index_papers(ctx: Context = None) -> str:
         # hunter owned by `run_search`, and nothing carries it across calls.
         if not papers:
             await ctx.info("No in-memory results, reading the latest run...")
-            papers = _load_latest_papers()
+            papers = await run_blocking(_load_latest_papers)
 
         if not papers:
             await ctx.info("No papers found to index")
@@ -111,7 +120,7 @@ async def index_papers(ctx: Context = None) -> str:
             return "Error: Could not initialize vector store."
 
         await ctx.report_progress(0, 1, f"Indexing {len(papers)} papers...")
-        success = store.index_papers(papers)
+        success = await run_blocking(store.index_papers, papers)
         await ctx.report_progress(1, 1, "Indexing complete")
 
         if success:
@@ -178,7 +187,7 @@ async def ask_papers(question: str, top_k: int = 15, ctx: Context = None) -> str
         return "Error: Vector store not available. Run a search first."
 
     top_k = min(top_k, 20)
-    results = store.query(question, top_k=top_k)
+    results = await run_blocking(store.query, question, top_k=top_k)
 
     if not results:
         await ctx.info(f"No relevant papers found for: '{question}'")
@@ -229,7 +238,7 @@ async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -
         return "Error: Vector store not available. Run a search first."
 
     top_k = min(top_k, 20)
-    results = store.query(question, top_k=top_k)
+    results = await run_blocking(store.query, question, top_k=top_k)
 
     if not results:
         await ctx.info(f"No relevant papers found for: '{question}'")
@@ -293,7 +302,7 @@ async def rerank_search(ctx: Context, query: str, top_k: int = 20, rerank_k: int
         await ctx.error("Vector store not available")
         return "Error: Vector store not available."
 
-    results = store.query(query, top_k=top_k)
+    results = await run_blocking(store.query, query, top_k=top_k)
     if not results:
         await ctx.info("No results found")
         return "No semantically relevant papers found."

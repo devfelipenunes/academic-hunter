@@ -9,7 +9,7 @@ import logging
 from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
-from ._utils import _get_vector_store
+from ._utils import _get_vector_store, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.novelty")
 
@@ -39,14 +39,14 @@ async def find_novel_papers(ctx: Context, top_k: int = 500, contamination: float
     try:
         from sklearn.covariance import EllipticEnvelope
 
-        model = get_sentence_transformer()
+        model = await run_blocking(get_sentence_transformer)
         if model is None:
             raise ImportError("sentence-transformers")
         texts = [f"{p.get('title', '')} {p.get('abstract', '')}" for p in results]
-        embeddings = model.encode(texts)
+        embeddings = await run_blocking(model.encode, texts)
 
         detector = EllipticEnvelope(contamination=contamination, random_state=42)
-        predictions = detector.fit_predict(embeddings)
+        predictions = await run_blocking(detector.fit_predict, embeddings)
         scores = detector.decision_function(embeddings)
 
         outliers = [(i, scores[i]) for i, pred in enumerate(predictions) if pred == -1]

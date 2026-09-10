@@ -10,7 +10,7 @@ import numpy as np
 from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
-from ._utils import _get_vector_store
+from ._utils import _get_vector_store, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.dedup")
 
@@ -42,14 +42,14 @@ async def semantic_dedup(ctx: Context, threshold: float = 0.85, min_group_size: 
 
     # Compute embeddings for all papers. The model is shared and cached —
     # loading MiniLM takes seconds and this tool used to pay it on every call.
-    model = get_sentence_transformer()
+    model = await run_blocking(get_sentence_transformer)
     if model is None:
         await ctx.error("sentence-transformers not installed")
         return "Error: sentence-transformers not installed."
 
     try:
         texts = [f"{p.get('title', '')} {p.get('abstract_preview', '')}" for p in results]
-        embeddings = model.encode(texts)
+        embeddings = await run_blocking(model.encode, texts)
     except Exception as e:
         await ctx.error(f"Embedding failed: {e}")
         return f"Error: embedding computation failed: {e}"

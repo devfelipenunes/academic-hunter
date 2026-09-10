@@ -8,6 +8,7 @@ import asyncio
 import requests
 from academic_hunter import AcademicHunter
 from ..cache import cached, discovery_cache
+from ._utils import run_blocking
 from ..exceptions import DiscoveryError
 from ..validation import validate_doi, validate_topic
 from mcp.server.fastmcp import Context
@@ -98,7 +99,7 @@ async def fetch_paper_by_doi(doi: str, ctx: Context) -> str:
     """
     await ctx.info(f"Fetching paper by DOI {doi}...")
     try:
-        hunter = AcademicHunter()
+        hunter = await run_blocking(AcademicHunter)
         abstract = hunter.fetch_abstract_by_doi(doi)
         if abstract:
             await ctx.info(f"Abstract found for DOI {doi}")
@@ -120,7 +121,7 @@ async def fetch_multiple_abstracts(dois: list[str], ctx: Context) -> str:
     """
     await ctx.info(f"Fetching abstracts for {len(dois)} DOIs...")
     try:
-        hunter = AcademicHunter()
+        hunter = await run_blocking(AcademicHunter)
         results = []
         for doi in dois:
             abstract = hunter.fetch_abstract_by_doi(doi)

@@ -8,7 +8,7 @@ import logging
 
 from mcp.server.fastmcp import Context
 
-from ._utils import _get_vector_store
+from ._utils import _get_vector_store, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.visualization")
 
@@ -58,7 +58,7 @@ async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int =
         await ctx.error("UMAP is not installed")
         return "Required library not installed: umap-learn. Install with: pip install umap-learn"
 
-    model = get_sentence_transformer()
+    model = await run_blocking(get_sentence_transformer)
     if model is None:
         await ctx.error("SentenceTransformer is not installed")
         return "Required library not installed: sentence-transformers"
@@ -67,10 +67,10 @@ async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int =
         import numpy as np
 
         texts = [f"{p.get('title','')} {p.get('abstract_preview','')}" for p in results]
-        embeddings = model.encode(texts)
+        embeddings = await run_blocking(model.encode, texts)
 
         reducer = umap.UMAP(n_neighbors=min(n_neighbors, len(results) - 1), min_dist=0.1, random_state=42)
-        coords_2d = reducer.fit_transform(embeddings)
+        coords_2d = await run_blocking(reducer.fit_transform, embeddings)
 
         # Build JSON output with coordinates + metadata
         points = []
@@ -124,7 +124,7 @@ async def topic_evolution(ctx: Context, top_k: int = 500) -> str:
             "Install it with: pip install bertopic umap-learn hdbscan"
         )
 
-    model = get_sentence_transformer()
+    model = await run_blocking(get_sentence_transformer)
     if model is None:
         await ctx.error("SentenceTransformer is not installed")
         return "Required library not installed: sentence-transformers"
@@ -143,7 +143,7 @@ async def topic_evolution(ctx: Context, top_k: int = 500) -> str:
             years.append(int(year) if year else 0)
 
         topic_model = BERTopic(embedding_model=model, min_topic_size=3, verbose=False)
-        topics, _ = topic_model.fit_transform(documents)
+        topics, _ = await run_blocking(topic_model.fit_transform, documents)
 
         # Group by year and topic
         year_topic = defaultdict(lambda: defaultdict(int))

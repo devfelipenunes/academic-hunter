@@ -6,7 +6,7 @@
 import os
 from pathlib import Path
 from academic_hunter import AcademicHunter
-from ._utils import get_project_root
+from ._utils import get_project_root, run_blocking
 from ..exceptions import SearchError
 from mcp.server.fastmcp import Context
 
@@ -25,13 +25,15 @@ async def run_search(ctx: Context, limit_per_source: int = None) -> str:
     try:
         project_root = get_project_root()
         output_dir = str(project_root / "results")
-        hunter = AcademicHunter(output_dir=output_dir)
+        hunter = await run_blocking(AcademicHunter, output_dir=output_dir)
 
         if limit_per_source is None:
             limit_per_source = hunter.config.settings.get("limit_per_query", 100)
 
         await ctx.report_progress(1, 3, f"Querying academic APIs (limit={limit_per_source})")
-        report_path = hunter.run(limit_per_source=limit_per_source)
+        # The pipeline joins connector threads and paces requests: minutes of
+        # wall clock that would otherwise freeze every other tool on the server.
+        report_path = await run_blocking(hunter.run, limit_per_source=limit_per_source)
 
         await ctx.report_progress(2, 3, "Finalizing report")
         await ctx.info(f"Search completed. Report at: {report_path}")

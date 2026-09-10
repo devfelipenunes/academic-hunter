@@ -12,7 +12,7 @@ import requests
 from mcp.server.fastmcp import Context
 
 from academic_hunter import AcademicHunter
-from ._utils import _STOPWORDS
+from ._utils import _STOPWORDS, run_blocking
 from ..exceptions import DiscoveryError
 from ..validation import validate_doi
 
@@ -53,7 +53,7 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
 
             # Fallback: arXiv DOIs (10.48550/arXiv.xxxx) not found by Semantic Scholar
             try:
-                hunter = AcademicHunter()
+                hunter = await run_blocking(AcademicHunter)
                 abstract = hunter.fetch_abstract_by_doi(doi)
                 if abstract:
                     title = abstract.strip().split("\n")[0][:80] if abstract else doi
@@ -73,7 +73,7 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
         meta_a = await _fetch_meta(doi_a)
         meta_b = await _fetch_meta(doi_b)
 
-        hunter = AcademicHunter()
+        hunter = await run_blocking(AcademicHunter)
 
         title_a = meta_a.get("title") or "Unknown Title"
         title_b = meta_b.get("title") or "Unknown Title"

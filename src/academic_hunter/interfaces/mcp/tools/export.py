@@ -13,7 +13,7 @@ from typing import Optional
 from mcp.server.fastmcp import Context
 
 from academic_hunter import AcademicHunter
-from ._utils import _load_latest_papers, get_project_root
+from ._utils import _load_latest_papers, get_project_root, run_blocking
 from ..exceptions import SearchError
 
 logger = logging.getLogger("academic_hunter.mcp.export")
@@ -34,7 +34,12 @@ async def export_report(
 
     try:
         project_root = get_project_root()
-        hunter = AcademicHunter(output_dir=str(project_root / "results"))
+        # Building a hunter compiles every configured term into a regex and
+        # opens the cache — measured near 0.3 s on a real config, which is a
+        # third of a second that every other tool would spend waiting.
+        hunter = await run_blocking(
+            AcademicHunter, output_dir=str(project_root / "results")
+        )
         papers = list(hunter.consolidated_results.values())
 
         # Fallback: load from the latest run's CSV when nothing is in memory.
@@ -42,7 +47,7 @@ async def export_report(
         # not an edge case — see `_load_latest_papers`.
         if not papers:
             await ctx.info("No in-memory results, trying latest CSV...")
-            papers = _load_latest_papers()
+            papers = await run_blocking(_load_latest_papers)
             if papers:
                 await ctx.info(f"Loaded {len(papers)} papers from the latest run")
 
