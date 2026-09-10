@@ -72,6 +72,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `settings.score_precision` era ignorada no `RecomputeRanksStep`, que arredondava
+  `Relevance_Score` para 1 casa fixo. Passa a ser lida (com fallback), e a mesma precisão
+  alimenta a rede do reranking — que tem de ser construída na resolução em que o score é
+  escrito, senão o arredondamento apaga a ordem que o reranking produziu.
+- `settings.rerank.enabled` aceitava qualquer valor _truthy_: `"enabled": "false"`, escrito
+  como string no JSON, **ligava** o estágio e seus ~6 s de carregamento de modelo. Agora só
+  um booleano real habilita.
+- O reranking reportava um trabalho que não aconteceu: quando a faixa de scores dos candidatos
+  é estreita demais para a rede, `rerank_scores` abstém e devolve tudo intacto, mas o estágio
+  já gravava `_rerank_score`/`_rerank_rank` e contava os papers como reranqueados. Agora
+  `stats["reranked"]` conta só o que **mudou de fato**, e o log distingue os dois casos.
 - `RecomputeRanksStep` fazia _early return_ com menos de dois papers, deixando `Relevance_Score`
   no valor padrão — o filtro de limiar então descartava tudo em silêncio, esvaziando qualquer
   run que deduplicasse para um único paper.

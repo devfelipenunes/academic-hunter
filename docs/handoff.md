@@ -194,9 +194,31 @@ base já produz só 14–19 valores distintos num top-20. A regra que funciona
 constrói a ordem na resolução de exportação (`rerank_scores`). Há teste
 específico que falha na regra ingênua.
 
-**A `score_precision` existe mas não é respeitada ali.** A setting é lida em
-`core/nlp/scorer.py` e nos validators, mas `steps.py` usa `round(..., 1)`
-hardcoded. Não é bug novo, mas é a razão de o arredondamento acima ser fixo.
+**A `score_precision` era ignorada ali — corrigido.** O `steps.py` arredondava
+`Relevance_Score` para 1 casa fixo, embora a setting exista e seja respeitada em
+`core/nlp/scorer.py` e nos validators. O rerank tornou a divergência
+_load-bearing_: `rerank_scores` constrói a rede **na** precisão em que o score é
+escrito, e uma rede mais fina que o arredondamento seria apagada levando a ordem
+junto. Agora um único `_score_decimals` alimenta os dois.
+
+**Uma revisão de qualidade pegou duas coisas que a medição não pegaria.** Vale
+registrar porque são da mesma família — código que afirma uma coisa e faz outra:
+
+- O script de medição gravava `remap_rule: "... see reranker.rerank_scores"` no
+  artefato **sem nunca chamar `rerank_scores`**; fazia um `sorted(head) + tail`
+  próprio. Os números por acaso coincidiam (a regra redistribui os scores
+  preservando a ordem do cross-encoder), mas a proveniência apontava para código
+  não exercitado. Ao consertar, o `Timing` do projeto se revelou a abstração
+  certa — a docstring dele já dizia contar pares `(query, documento)`, e eu havia
+  escrito o contrário para justificar não usá-lo.
+- `settings.rerank.enabled` usava `bool(...)`, e **`bool("false")` é `True`** — um
+  `"enabled": "false"` escrito como string ligava o estágio. Agora só um booleano
+  real habilita.
+- E o estágio contava como reranqueado o que não foi: quando a faixa de scores é
+  estreita demais para a rede, `rerank_scores` abstém e devolve tudo intacto, mas
+  `stats["reranked"]` e os diagnósticos já tinham sido gravados. Agora o contador
+  conta o que **mudou** e os diagnósticos registram o que o cross-encoder **disse**
+  — dois fatos distintos, ambos verdadeiros.
 
 ---
 

@@ -1,9 +1,8 @@
 import logging
-import time
 import threading
-from typing import Dict, List, Any, Optional
+import time
 
-from .steps import RecomputeRanksStep, IndexResultsStep, AutoExportObsidianStep
+from .steps import AutoExportObsidianStep, IndexResultsStep, RecomputeRanksStep
 
 logger = logging.getLogger("academic_hunter")
 
@@ -150,6 +149,10 @@ class SearchPipeline:
         logger.info(f"   - Excluded (No Industry Anchors): {self.hunter.stats['excluded_anchors']}")
         logger.info(f"   - Excluded (Low Relevance Score): {self.hunter.stats['excluded_technical_score']}")
         logger.info(f"   - Final Included: {self.hunter.stats['included_final']}")
+        if "reranked" in self.hunter.stats:
+            logger.info(
+                f"   - Reranked (cross-encoder): {self.hunter.stats['reranked']}"
+            )
 
         import os
         return os.path.join(self.hunter.output_dir, f"RELATORIO_ELITE_{timestamp}.md")

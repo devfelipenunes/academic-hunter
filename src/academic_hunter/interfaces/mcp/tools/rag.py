@@ -6,9 +6,9 @@ for logging and progress reporting.
 
 import logging
 
+from academic_hunter.core.nlp.reranker import rerank_texts
 from mcp.server.fastmcp import Context
 
-from ....core.nlp.model_cache import get_cross_encoder
 from ..exceptions import VectorStoreError
 from ._utils import _get_vector_store, _make_hunter
 
@@ -50,7 +50,7 @@ async def semantic_search(
         )
 
     lines = [
-        f"# Semantic Search Results\n",
+        "# Semantic Search Results\n",
         f"**Query:** {query}\n",
         f"**Results found:** {len(results)}\n",
         "---\n",
@@ -181,7 +181,7 @@ async def ask_papers(question: str, top_k: int = 15, ctx: Context = None) -> str
         )
 
     lines = [
-        f"# Research Context\n",
+        "# Research Context\n",
         f"**Question:** {question}\n",
         f"**Retrieved {len(results)} papers as context:**\n",
         "---\n",
@@ -250,7 +250,7 @@ async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -
             citations.append(f"- **{title}**")
 
     lines = [
-        f"# Research Answer\n",
+        "# Research Answer\n",
         f"**Question:** {question}\n",
         f"**Papers consulted:** {len(results)}\n",
         "---\n",
@@ -294,21 +294,20 @@ async def rerank_search(ctx: Context, query: str, top_k: int = 20, rerank_k: int
     # Optional cross-encoder re-ranking. The model is cached by
     # `core.nlp.model_cache`: loading it costs ~5.9 s on CPU, which this tool
     # used to pay on every call before doing any work.
-    ce = get_cross_encoder()
-    if ce is None:
-        await ctx.info("Cross-encoder not installed, using bi-encoder results")
+    texts = [f"{p.get('title','')} {p.get('abstract_preview','')}" for p in results]
+    try:
+        scores = rerank_texts(query, texts)
+    except Exception as e:
+        await ctx.warning(f"Cross-encoder failed ({e}), using bi-encoder results")
     else:
-        try:
-            pairs = [[query, f"{p.get('title','')} {p.get('abstract_preview','')}"] for p in results]
-            scores = ce.predict(pairs)
-            scored = list(zip(results, scores))
-            scored.sort(key=lambda x: x[1], reverse=True)
-            results = [r for r, _ in scored[:rerank_k]]
-            await ctx.info(f"Cross-encoder re-ranked {len(scored)} candidates")
-        except Exception as e:
-            await ctx.warning(f"Cross-encoder failed ({e}), using bi-encoder results")
+        if scores is None:
+            await ctx.info("Cross-encoder not installed, using bi-encoder results")
+        else:
+            order = sorted(range(len(scores)), key=lambda i: (-scores[i], i))
+            results = [results[i] for i in order[:rerank_k]]
+            await ctx.info(f"Cross-encoder re-ranked {len(scores)} candidates")
 
-    lines = [f"# Re-Ranked Search Results\n", f"**Query:** {query}\n",
+    lines = ["# Re-Ranked Search Results\n", f"**Query:** {query}\n",
              f"**Results:** {len(results)}\n", "---\n"]
     for i, paper in enumerate(results, 1):
         title = paper.get("title", "Untitled")

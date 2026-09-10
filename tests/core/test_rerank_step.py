@@ -197,7 +197,26 @@ def test_only_the_top_n_carry_rerank_diagnostics():
 
     scored = [k for k, p in papers.items() if "_rerank_score" in p]
     assert len(scored) == 2, "top_n bounds how many are scored"
-    assert step.hunter.state.stats["reranked"] == 2
+
+
+def test_the_stat_counts_what_moved_not_what_was_scored():
+    """The counter reports the effect, the diagnostics report what was said.
+
+    With two candidates that already sit at the band's extremes the lattice has
+    nowhere to move them, so the cross-encoder runs, the diagnostics land, and
+    nothing changes. A counter that reported "2 reranked" there would claim an
+    order the exported scores do not carry.
+    """
+    papers = sample_papers()
+    step = make_step(papers, {**QUERY, "rerank": {"enabled": True, "top_n": 2}})
+
+    run_with_stub(papers, step, prefer("astrophysics"))
+
+    scored = [k for k, p in papers.items() if "_rerank_score" in p]
+    assert len(scored) == 2, "the cross-encoder did score both candidates"
+    assert step.hunter.state.stats["reranked"] == 0, (
+        "nothing moved, so nothing was reranked"
+    )
 
 
 def test_the_rank_diagnostic_records_the_new_position():
@@ -222,6 +241,23 @@ def test_the_cross_encoder_receives_title_and_abstract():
     assert any("Unrelated work" in t and "astrophysics" in t for t in texts)
 
 
+def test_the_score_precision_setting_is_read():
+    """`Relevance_Score` used to be rounded to one decimal regardless.
+
+    The rerank made the disagreement matter: its lattice is built at the written
+    precision, so a finer lattice than the rounding would be erased and take the
+    order with it. Anything unusable falls back rather than raising.
+    """
+    from academic_hunter.core.pipeline.steps import _score_decimals
+
+    assert _score_decimals({"score_precision": 3}) == 3
+    assert _score_decimals({"score_precision": 0}) == 0
+    assert _score_decimals({}) == 1
+    assert _score_decimals({"score_precision": "dois"}) == 1
+    assert _score_decimals({"score_precision": None}) == 1
+    assert _score_decimals({"score_precision": -1}) == 1
+
+
 def test_invalid_top_n_falls_back_to_the_default():
     papers = sample_papers()
     step = make_step(papers, {**QUERY, "rerank": {"enabled": True, "top_n": "vinte"}})
@@ -229,7 +265,8 @@ def test_invalid_top_n_falls_back_to_the_default():
     run_with_stub(papers, step, prefer("astrophysics"))
 
     # Falls back to 20, which exceeds the three papers here, so all are scored.
-    assert step.hunter.state.stats["reranked"] == 3
+    scored = [k for k, p in papers.items() if "_rerank_score" in p]
+    assert len(scored) == 3
 
 
 if __name__ == "__main__":

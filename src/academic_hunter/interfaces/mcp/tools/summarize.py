@@ -97,8 +97,8 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
             remaining.remove(best)
 
         selected.sort()
-        lines = [f"# Extractive Summary\n", f"**DOI:** {doi}\n",
-                 f"**Method:** Centroid + MMR (MiniLM)\n", f"**Sentences:** {num_sentences}\n", "---\n"]
+        lines = ["# Extractive Summary\n", f"**DOI:** {doi}\n",
+                 "**Method:** Centroid + MMR (MiniLM)\n", f"**Sentences:** {num_sentences}\n", "---\n"]
         for i, idx in enumerate(selected, 1):
             lines.append(f"**{i}.** {sentences[idx]}\n\n")
 

@@ -3,23 +3,24 @@
 
 Companion to ``retrieval_eval.py``, which compares *first-stage* rankers. This
 one holds the first stage fixed (BM25, the shipped query-mode signal) and varies
-the second: how many of the head documents the cross-encoder gets to reorder.
+the second: how many of the ranking's head documents the cross-encoder gets to
+reorder.
 
-Why a separate script rather than a mode of its own in the sibling
------------------------------------------------------------------
-``retrieval_eval``'s contract is ``factory(corpus) -> scorer(doc, query)``,
-which fits a reranker poorly: its ``Timing`` would start counting (query,
-document) pairs while still reporting them as documents, changing the meaning of
-``seconds_per_document`` without changing its name. The sweeps here (several
-``top_n`` values, plus an oracle) are not shared either.
+It calls the shipped code rather than a paraphrase of it
+-------------------------------------------------------
+The first stage is ``fuse_scores`` — the function the pipeline calls — and the
+reordering is ``rerank_scores``, the rule ``_apply_rerank`` applies. An
+experiment that reimplements either is free to drift from the product, and then
+the number stops describing what ships. This is the same argument
+``core/nlp/fusion.py`` makes for keeping the fusion a pure function.
 
 The pool is not chosen by the metric under test
 -----------------------------------------------
 Each query is ranked over the **judged pool only** — the documents carrying a
 grade, as ``documents_for`` returns them. The cross-encoder reorders *within*
-that pool; it never selects it. Picking "the top-N by BM25" is candidate
-selection for reranking, which is exactly what the pipeline does, and is not the
-same thing as choosing which documents get judged. The qrels pool was built as
+that pool; it never selects it. Taking "the top-N by BM25" is candidate
+selection for reranking, which is what the pipeline does, and is not the same as
+choosing which documents get judged. The qrels pool was built as
 ``top-30-by-score UNION random-30(seed=20260910)`` for that reason, and
 ``tests/test_evaluation_collection.py`` pins the property.
 
@@ -47,40 +48,33 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from retrieval_eval import load_documents
 
-from academic_hunter.core.evaluation import documents_for, evaluate_run, load_qrels
+from academic_hunter.core.evaluation import (
+    Timing,
+    documents_for,
+    evaluate_run,
+    load_qrels,
+    mean_metrics,
+    topics,
+)
 from academic_hunter.core.nlp import BM25, fuse_scores
+from academic_hunter.core.nlp.model_cache import (
+    DEFAULT_CE_MAX_LENGTH,
+    DEFAULT_CE_MODEL,
+    get_cross_encoder,
+)
+from academic_hunter.core.nlp.reranker import rerank_scores
 
 RESULTS_DIR = Path(__file__).parent / "results"
 DEFAULT_QRELS = ROOT / "papers" / "evaluation" / "qrels_pilot_genre_analysis.json"
 KS = (5, 10, 20)
 DEFAULT_TOP_N = (5, 10, 20, 30)
-#: Same model the pipeline ships with; see `core/nlp/reranker.py`.
-MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-#: Matches `settings.rerank.max_length` and the `rerank_search` tool.
-MAX_LENGTH = 512
-
-
-def build_first_stage(documents, query):
-    """BM25 over the corpus, fused exactly as ``RecomputeRanksStep`` fuses it.
-
-    Query mode defaults to BM25 alone (weight 1.0 on the sparse signal, 0.0 on
-    the embedding) because adding the embedding measured monotonically worse.
-    Calling the shipped ``fuse_scores`` rather than reimplementing the
-    normalisation is the point: an experiment that reimplements the rule is free
-    to drift from it, and then the measurement stops describing the product.
-    """
-    corpus = [
-        f"{documents[doc_id].get('Title', '')} {documents[doc_id].get('Abstract', '')}"
-        for doc_id in documents
-    ]
-    raw = BM25(corpus).score(query)
-    return fuse_scores(
-        raw, [0.0] * len(documents), weights={"keyword": 1.0, "embedding": 0.0}
-    )
+#: Key of the first-stage row, shared by the tables, the topic deltas and the JSON.
+BASELINE = "bm25 (first stage)"
+ORACLE = "ce_oracle (ceiling)"
 
 
 def rank_by(ids, scores):
-    """Descending by score, ties broken by document id for determinism."""
+    """Ids best-first, ties broken by id: the total order the pipeline uses."""
     return [i for _, i in sorted(zip(scores, ids), key=lambda pair: (-pair[0], pair[1]))]
 
 
@@ -102,78 +96,82 @@ def main() -> int:
     try:
         top_ns = [int(n) for n in args.top_n.split(",") if n.strip()]
     except ValueError:
-        print(f"❌ --top-n must be a comma-separated list of integers: {args.top_n!r}")
+        print(f"--top-n must be a comma-separated list of integers: {args.top_n!r}")
         return 2
 
     qrels_path = Path(args.qrels)
     qrels = load_qrels(qrels_path)
     documents, _ = load_documents(qrels_path)
 
-    rows = {n: {} for n in top_ns}
-    baseline, oracle = {}, {}
-    strategy_names = ["bm25"]
-
-    try:
-        from sentence_transformers import CrossEncoder
-    except ImportError:
-        print("❌ sentence-transformers not installed. Install the 'ml' extra:")
-        print("   pip install 'academic-hunter[ml]'")
-        return 1
+    # Title + Abstract is a property of the document, not of the query, so it is
+    # built once instead of per query.
+    doc_text = {
+        doc_id: f"{doc.get('Title', '')} {doc.get('Abstract', '')}"
+        for doc_id, doc in documents.items()
+    }
 
     print("=" * 78)
     print("  Cross-encoder rerank evaluation")
     print("=" * 78)
     print(f"  qrels     : {qrels_path.relative_to(ROOT)}")
     print(f"  documents : {len(documents)} judged")
-    print(f"  model     : {MODEL} (max_length={MAX_LENGTH})")
+    print(f"  model     : {DEFAULT_CE_MODEL} (max_length={DEFAULT_CE_MAX_LENGTH})")
     print()
 
     load_started = time.perf_counter()
-    model = CrossEncoder(MODEL, max_length=MAX_LENGTH)
+    model = get_cross_encoder()
     load_seconds = time.perf_counter() - load_started
+    if model is None:
+        print("sentence-transformers is not available. Install the 'ml' extra:")
+        print("   pip install 'academic-hunter[ml]'")
+        return 1
     print(f"  model loaded in {load_seconds:.1f} s\n")
 
-    pairs_scored = 0
-    infer_started = time.perf_counter()
+    rows = {n: {} for n in top_ns}
+    baseline, oracle = {}, {}
+    timing = Timing()
 
     for query_id, judgment in qrels.queries.items():
         pool = list(documents_for(qrels, query_id))
-        texts = {
-            doc_id: f"{documents[doc_id].get('Title', '')} "
-                    f"{documents[doc_id].get('Abstract', '')}"
-            for doc_id in pool
-        }
+        corpus = [doc_text[doc_id] for doc_id in pool]
 
-        first_stage = build_first_stage({d: documents[d] for d in pool}, judgment.text)
+        first_stage = fuse_scores(
+            BM25(corpus).score(judgment.text),
+            [0.0] * len(pool),
+            weights={"keyword": 1.0, "embedding": 0.0},
+        )
         order = rank_by(pool, first_stage)
         baseline[query_id] = order
 
-        # One pass over the pool. The cross-encoder scores a pair in isolation
-        # — a document's score does not depend on its neighbours — so slicing
-        # the top-N out of this is identical to scoring only those N, and the
-        # whole sweep costs a single pass.
-        scores = model.predict([[judgment.text, texts[d]] for d in pool])
-        pairs_scored += len(pool)
-        by_id = dict(zip(pool, (float(s) for s in scores)))
+        # The oracle needs the whole pool; otherwise the widest sweep bounds what
+        # has to be scored, since only the top-N of `order` is ever reranked.
+        to_score = len(pool) if not args.no_oracle else min(max(top_ns), len(pool))
+        head_ids = order[:to_score]
 
+        started = time.perf_counter()
+        scores = model.predict([[judgment.text, doc_text[d]] for d in head_ids])
+        timing.per_query[query_id] = time.perf_counter() - started
+        timing.pool_size[query_id] = len(head_ids)
+        by_id = dict(zip(head_ids, (float(s) for s in scores)))
+
+        index_of = {doc_id: i for i, doc_id in enumerate(pool)}
         for n in top_ns:
-            head, tail = order[:n], order[n:]
-            reranked = sorted(head, key=lambda d: (-by_id[d], d))
-            rows[n][query_id] = reranked + tail
+            head = order[:n]
+            ce_order = sorted(head, key=lambda d: (-by_id[d], d))
+            # The shipped rule, over the shipped first-stage scores: it
+            # redistributes the head's band, so the final order is a sort of the
+            # result rather than a splice of the cross-encoder's order.
+            reranked = rerank_scores(first_stage, [index_of[d] for d in ce_order])
+            rows[n][query_id] = rank_by(pool, reranked)
 
         if not args.no_oracle:
             oracle[query_id] = rank_by(pool, [by_id[d] for d in pool])
 
-    infer_seconds = time.perf_counter() - infer_started
-    ms_per_pair = 1000 * infer_seconds / pairs_scored if pairs_scored else 0.0
-
-    strategies = {"bm25 (first stage)": baseline}
+    strategies = {BASELINE: baseline}
     for n in top_ns:
         strategies[f"bm25 + rerank@{n}"] = rows[n]
-        strategy_names.append(f"bm25 + rerank@{n}")
     if not args.no_oracle:
-        strategies["ce_oracle (ceiling)"] = oracle
-        strategy_names.append("ce_oracle (ceiling)")
+        strategies[ORACLE] = oracle
 
     reports = {}
     print("-" * 78)
@@ -189,25 +187,38 @@ def main() -> int:
         )
     print("-" * 78)
 
+    per_pair = timing.seconds_per_document * 1000
+    print()
+    print(f"  {'cross-encoder pass':<24}{'total s':>10}{'ms / pair':>12}{'pairs':>9}")
+    print("  " + "-" * 53)
+    print(f"  {'cross-encoder pass':<24}{timing.total_seconds:>10.2f}"
+          f"{per_pair:>12.1f}{timing.total_documents:>9}")
+    print()
+
     # A mean over two unrelated corpora hides which one was helped, and a gain
-    # that lifts one topic while wrecking the other is not a gain.
-    print("\n  nDCG@10 by topic")
+    # that lifts one topic while wrecking the other is not a gain. Every topic
+    # here has an entry in every report, so a missing value is a bug, not a gap.
+    print("  nDCG@10 by topic")
     by_topic = {}
-    for topic in sorted({j.topic for j in qrels.queries.values()}):
-        query_ids = [q for q, j in qrels.queries.items() if j.topic == topic]
-        subset = type(qrels)(queries={q: qrels.queries[q] for q in query_ids})
+    for topic, query_ids in topics(qrels).items():
         row = {}
-        for name, rankings in strategies.items():
-            row[name] = evaluate_run(subset, rankings, ks=KS).mean["ndcg@10"]
+        for name, report in reports.items():
+            subset = [report.per_query[q] for q in query_ids if q in report.per_query]
+            row[name] = mean_metrics(subset).get("ndcg@10") if subset else None
         by_topic[topic] = row
         print(f"\n    {topic}")
         for name, value in row.items():
-            delta = value - row["bm25 (first stage)"]
-            marker = f"  ({delta:+.4f})" if name != "bm25 (first stage)" else ""
-            print(f"      {name:<24} {value:.4f}{marker}")
+            delta = (
+                value - row[BASELINE]
+                if value is not None and row[BASELINE] is not None
+                else 0.0
+            )
+            marker = f"  ({delta:+.4f})" if name != BASELINE else ""
+            shown = f"{value:.4f}" if value is not None else "n/a"
+            print(f"      {name:<24} {shown}{marker}")
 
-    print(f"\n  inference: {infer_seconds:.1f} s / {pairs_scored} pairs "
-          f"= {ms_per_pair:.0f} ms per pair")
+    print(f"\n  inference: {timing.total_seconds:.1f} s / {timing.total_documents} pairs "
+          f"= {per_pair:.0f} ms per pair")
     print(f"  model load: {load_seconds:.1f} s (once per process, cached in the pipeline)")
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -217,24 +228,23 @@ def main() -> int:
         "document_count": len(documents),
         "ks": list(KS),
         "model": {
-            "id": MODEL,
-            "max_length": MAX_LENGTH,
+            "id": DEFAULT_CE_MODEL,
+            "max_length": DEFAULT_CE_MAX_LENGTH,
             "load_seconds": round(load_seconds, 3),
         },
         "remap_rule": (
-            "band lattice at export precision; see core/nlp/reranker.rerank_scores"
+            "core.nlp.reranker.rerank_scores — called directly, not reimplemented"
         ),
         "strategies": {name: report.as_dict() for name, report in reports.items()},
         "by_topic": by_topic,
-        "timing": {
-            "pairs_scored": pairs_scored,
-            "inference_seconds": round(infer_seconds, 3),
-            "ms_per_pair": round(ms_per_pair, 3),
-            "model_load_seconds": round(load_seconds, 3),
-            "note": (
-                "quality per top_n is exact (a pair's score is independent of its "
-                "neighbours, so the sweep shares one pass); the cost of a smaller "
-                "top_n is top_n/N of the reported pairs, not separately clocked"
+        "timing": timing.as_dict(),
+        "notes": {
+            "timing_unit": (
+                "seconds per (query, candidate) pair scored by the cross-encoder; "
+                "a smaller top_n scores proportionally fewer pairs"
+            ),
+            "scored_per_query": (
+                "the whole pool when the oracle runs, otherwise max(top_n)"
             ),
         },
     }

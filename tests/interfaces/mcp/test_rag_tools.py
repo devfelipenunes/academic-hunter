@@ -5,9 +5,6 @@ Uses mock_ctx from conftest and patches ChromaVectorStore / AcademicHunter.
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from academic_hunter.interfaces.mcp.exceptions import MCPToolError
 from academic_hunter.interfaces.mcp.tools.rag import (
     answer_question,
     ask_papers,

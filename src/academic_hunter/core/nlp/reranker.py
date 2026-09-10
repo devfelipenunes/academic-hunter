@@ -40,19 +40,25 @@ from .model_cache import DEFAULT_CE_MAX_LENGTH, DEFAULT_CE_MODEL, get_cross_enco
 
 logger = logging.getLogger("academic_hunter.reranker")
 
-#: The pipeline rounds ``Relevance_Score`` to this many decimals. Reranking has
-#: to work *at* that precision, not around it — see :func:`rerank_scores`.
+#: Fallback for the reported score's precision when the caller does not say.
+#: The pipeline passes ``settings.score_precision``; the two must agree, because
+#: :func:`rerank_scores` builds its lattice *at* the precision the score is
+#: written with — a finer lattice would be rounded away and the order lost.
 SCORE_DECIMALS = 1
 
 #: Top of the reported score scale.
 MAX_SCORE = 10.0
+
+#: How many of the ranking's head documents the cross-encoder reorders. Chosen
+#: by measurement: on the judged collection this captures 97% of the ceiling
+#: that reranking the whole pool reaches. See `papers/experiments/rerank_eval.py`.
+DEFAULT_TOP_N = 20
 
 
 def rerank_scores(
     base_scores: Sequence[float],
     ranked_indexes: Sequence[int],
     decimals: int = SCORE_DECIMALS,
-    max_score: float = MAX_SCORE,
 ) -> List[float]:
     """Redistribute the candidates' own scores along the reranked order.
 
@@ -66,7 +72,15 @@ def rerank_scores(
     own** minimum, in cross-encoder order. The extremes survive exactly and
     nothing leaves the band its own members defined; the interior values are
     nudged onto the lattice, by at most half a step, so that every assigned
-    score is representable at the pipeline's rounding precision.
+    score is representable at the caller's rounding precision. ``decimals`` must
+    match that rounding: a lattice finer than the written value is rounded away
+    and takes the order with it.
+
+    The lattice re-spaces the band, so the *count* of candidates above any
+    threshold inside it can change. With ``decimals=1`` the reported scale has
+    101 levels, and any reordering that is not a tie-break has to spend levels.
+    That is why counts like ``included_final`` are not comparable between runs
+    with and without the rerank.
 
     That last property is the whole point. The obvious rule — hand the
     candidates' existing scores back in the new order — preserves the multiset
@@ -95,36 +109,40 @@ def rerank_scores(
     """
     out = [float(s) for s in base_scores]
     unit = 10 ** decimals
-    ceiling = int(round(max_score * unit))
+    ceiling = int(round(MAX_SCORE * unit))
+
+    def on_lattice(value: float) -> int:
+        """The score as a whole number of lattice steps, clamped to the scale."""
+        return min(max(int(round(round(value, decimals) * unit)), 0), ceiling)
 
     # Deduplicate while preserving order: a caller that repeats an index would
     # otherwise assign it twice and lose the first (better) position.
     candidates = list(dict.fromkeys(ranked_indexes))
+    if len(candidates) < 2:
+        return out
 
-    while True:
-        k = len(candidates)
-        if k < 2:
-            # Nothing to reorder, or no room for a distinct-value lattice.
-            return out
+    # Pruning drops from the bottom of the *base* order, so that order decides
+    # who survives a band too narrow to hold everyone. Only the tail is dropped,
+    # and each pass drops one, so the loop is bounded by the candidate count.
+    by_base = sorted(candidates, key=lambda i: (-out[i], i))
+    hi = on_lattice(out[by_base[0]])
+    k = len(by_base)
+    while k >= 2 and hi - on_lattice(out[by_base[k - 1]]) + 1 < k:
+        k -= 1
+    if k < 2:
+        # Nothing to reorder, or no lattice wide enough to hold the candidates.
+        return out
 
-        by_base = sorted(candidates, key=lambda i: (-out[i], i))
-        hi = min(int(round(round(out[by_base[0]], decimals) * unit)), ceiling)
-        lo = max(int(round(round(out[by_base[-1]], decimals) * unit)), 0)
-        if hi - lo + 1 >= k:
-            break
-        candidates = [i for i in candidates if i != by_base[-1]]
-
-    span = hi - lo
+    kept = set(by_base[:k])
+    span = hi - on_lattice(out[by_base[k - 1]])
     positions: List[int] = []
-    for j in range(k):
+    for j, index in enumerate(i for i in candidates if i in kept):
         position = int(round(hi - j * span / (k - 1)))
         if positions and position >= positions[-1]:
-            # Rounding can collide two neighbours; force strict descent so the
-            # exported order is exactly the cross-encoder's order.
+            # Rounding can collide two neighbours; force descent so the exported
+            # order is exactly the cross-encoder's order.
             position = positions[-1] - 1
         positions.append(position)
-
-    for position, index in zip(positions, candidates):
         out[index] = position / unit
     return out
 
@@ -144,11 +162,14 @@ def rerank_texts(
     enhancement, and a pipeline that raises because a reranker was missing would
     be worse than one that never had it.
     """
+    if not texts:
+        # Checked before the load: loading the model costs ~6 s to discover, and
+        # there would be nothing to score anyway.
+        return []
+
     model = get_cross_encoder(model_name, max_length=max_length)
     if model is None:
         return None
-    if not texts:
-        return []
 
     scores = model.predict([[query, text] for text in texts])
     return [float(s) for s in scores]
@@ -173,8 +194,12 @@ def rerank_config(settings: Dict[str, Any]) -> Dict[str, Any]:
         return parsed if parsed > 0 else default
 
     return {
-        "enabled": bool(cfg.get("enabled", False)),
+        # `is True` on purpose. `bool("false")` is `True`, so a stringly-typed
+        # `"enabled": "false"` would silently switch on a ~6 s model load — the
+        # opposite of what this function promises for an unusable value. Only a
+        # real boolean enables it; anything else leaves it off.
+        "enabled": cfg.get("enabled", False) is True,
         "model": str(cfg.get("model", DEFAULT_CE_MODEL)),
-        "top_n": _positive_int(cfg.get("top_n"), 20),
+        "top_n": _positive_int(cfg.get("top_n"), DEFAULT_TOP_N),
         "max_length": _positive_int(cfg.get("max_length"), DEFAULT_CE_MAX_LENGTH),
     }

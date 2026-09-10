@@ -1,5 +1,7 @@
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
+
 from pydantic import BaseModel, Field
+
 
 class SearchConfigUpdate(BaseModel):
     topic: Optional[str] = Field(
@@ -11,8 +13,17 @@ class SearchConfigUpdate(BaseModel):
         description="Write a paragraph detailing your research plan. Describe the taxonomy pillars (e.g., Architecture, Core, Performance) and list the jargon you discovered on the web."
     )
     settings: Optional[Dict] = Field(
-        None, 
-        description="General system settings. E.g., {'min_relevance_score': 3.5, 'start_year': 2021, 'limit_per_query': 100}. DO NOT put API keys here."
+        None,
+        description=(
+            "General system settings. E.g., {'min_relevance_score': 3.5, "
+            "'start_year': 2021, 'limit_per_query': 100}. "
+            "Set 'ranking_query' to the research question: papers are then ranked "
+            "by BM25 against it instead of by domain-term count, which is what "
+            "moves retrieval quality most. Optional 'rerank': {'enabled': true, "
+            "'top_n': 20} reorders the top papers with a cross-encoder; it needs "
+            "'ranking_query' set and stays off unless enabled is exactly true. "
+            "DO NOT put API keys here."
+        )
     )
     anchors: Optional[Dict] = Field(
         None, 

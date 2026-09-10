@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from academic_hunter.interfaces.mcp.tools.dedup import semantic_dedup
 
 

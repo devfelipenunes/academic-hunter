@@ -205,6 +205,21 @@ class TestRerankConfig:
         """`"rerank": true` is a plausible typo; it must not crash a run."""
         assert rerank_config({"rerank": True})["enabled"] is False
 
+    @pytest.mark.parametrize("truthy_string", ["false", "no", "0", "", "off"])
+    def test_a_stringly_typed_enabled_stays_off(self, truthy_string):
+        """`bool("false")` is True, so a quoted false must not enable the stage.
+
+        The trap is real: the config file is free-form JSON typed by hand, and
+        `"enabled": "false"` would otherwise switch on a ~6 s model load.
+        """
+        cfg = rerank_config({"rerank": {"enabled": truthy_string}})
+
+        assert cfg["enabled"] is False
+
+    def test_only_a_real_boolean_enables_it(self):
+        assert rerank_config({"rerank": {"enabled": True}})["enabled"] is True
+        assert rerank_config({"rerank": {"enabled": 1}})["enabled"] is False
+
     def test_unusable_numbers_fall_back_to_defaults(self):
         cfg = rerank_config(
             {"rerank": {"enabled": True, "top_n": "vinte", "max_length": -3}}
