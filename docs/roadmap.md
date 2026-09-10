@@ -11,6 +11,13 @@ sistema não mede o que diz medir.
 
 ## Fase 0 — Correções que condicionam tudo
 
+> **Status: concluída.** Os cinco itens abaixo foram implementados, mais um sexto que
+> não estava previsto aqui: a fusão dos dois sinais foi substituída após a avaliação
+> mostrar que a regra vigente ranqueava pior que cada um dos seus próprios componentes
+> (`docs/roadmap.md` §2.3 e `papers/evaluation/README.md`). O texto de cada item é
+> mantido como registro do problema original — os detalhes de implementação estão nos
+> commits e nos docstrings.
+
 Sem isso, qualquer melhoria de retrieval é impossível de avaliar: não dá para saber se um
 embedding novo é melhor quando o score reportado não é o score usado.
 
@@ -167,13 +174,31 @@ _Evaluating Chunking Strategies for RAG on Academic Texts_, arXiv 2607.01852).
 
 ### 2.5 Conectores inefetivos
 
-O experimento de unicidade revelou que **DBLP, DOAJ e CORE contribuíram zero papers** no run
-analisado — são `is_keyword_only` e seus índices não cobrem bem o tópico. Antes de adicionar
-fontes novas, vale entender se esses três valem o custo de latência.
+O experimento de unicidade (`papers/experiments/source_uniqueness.py`, artefato em
+`results/source_uniqueness.json`) mostra que, num corpus de 1.538 papers, **DBLP, DOAJ e CORE
+contribuíram zero**. Só quatro fontes trouxeram resultado: OpenAlex 685, Crossref 582, ArXiv
+292 e Semantic Scholar 90.
 
-**Ação:** medir contribuição marginal por fonte em vários tópicos (o
-`papers/experiments/source_uniqueness.py` já faz isso) e considerar desativar por padrão as
-que não pagam o próprio custo.
+**A explicação anterior estava errada.** Este documento afirmava que os três eram
+`is_keyword_only`, e isso não se sustenta no código:
+
+| Conector         | `is_keyword_only` | Contribuiu?         |
+| ---------------- | ----------------- | ------------------- |
+| DBLP             | **True**          | não                 |
+| DOAJ             | **True**          | não                 |
+| CORE             | **False**         | não                 |
+| Semantic Scholar | **True**          | **sim** (90 papers) |
+
+Ou seja, o flag não separa quem contribui de quem não contribui: CORE é `False` e não trouxe
+nada, enquanto Semantic Scholar é `True` e trouxe 90. O flag descreve _como_ o conector é
+consultado (por termos genéricos em vez de por categoria técnica), não se o índice dele cobre
+o tópico. A causa real da contribuição zero é de cobertura de índice, e é específica do tópico
+— não uma propriedade do conector.
+
+**Ação:** medir contribuição marginal em vários tópicos, não em um só, e desativar por padrão
+apenas o que não pagar o custo de latência em _todos_ eles. Um único run de blockchain não
+autoriza desligar DBLP para sempre — DBLP é forte em ciência da computação e o tópico testado
+não era esse.
 
 ---
 

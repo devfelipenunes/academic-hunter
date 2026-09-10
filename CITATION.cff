@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "Academic Hunter"
+abstract: >-
+  An open-source systematic literature review tool that searches seven academic
+  databases in parallel, deduplicates across them, and ranks results with
+  Weight-Bleeding — a configurable semantic weighting method that biases a
+  bi-encoder's embedding space toward domain terms without fine-tuning, GPU
+  compute, or labelled data. Exposes its capabilities as a Model Context
+  Protocol server so an LLM agent can orchestrate a review end to end, and runs
+  entirely on CPU with no API costs.
+authors:
+  - family-names: "Nunes"
+    given-names: "Felipe"
+    email: "devfelipenunes@gmail.com"
+version: 2.1.0
+date-released: "2026-09-10"
+license: MIT
+repository-code: "https://github.com/devfelipenunes/academic-hunter"
+url: "https://devfelipenunes.github.io/academic-hunter"
+keywords:
+  - systematic-literature-review
+  - literature-review
+  - sentence-embeddings
+  - semantic-search
+  - model-context-protocol
+  - research-tool
+  - retrieval
+type: software
