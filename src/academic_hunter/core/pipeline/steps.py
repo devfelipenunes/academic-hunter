@@ -9,6 +9,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
+from ..nlp.bm25 import BM25
 from ..nlp.fusion import DEFAULT_STRATEGY, fuse_scores, percentile_ranks
 
 logger = logging.getLogger("academic_hunter.pipeline")
@@ -30,25 +31,40 @@ class PipelineStep(ABC):
 
 
 class RecomputeRanksStep(PipelineStep):
-    """Compute the reported score by fusing the keyword and embedding signals.
+    """Compute the reported score by fusing a sparse and a dense signal.
 
-    Default fusion (``settings.fusion == "weighted_norm"``):
+    Two modes, decided by whether the configuration names a **ranking query**.
 
-        score = (α · minmax(kw) + β · minmax(emb)) / (α + β) × 10
+    **Without a query** (the default), the sparse signal is the domain-term
+    count — a weighted tally of the configured anchor and technical terms. It
+    answers "does this paper look like the domain?" and never sees a question,
+    which is why every strategy measured without one turned out to be
+    query-independent and why the best of them depended on the topic rather
+    than on the question.
 
-    with ``α``/``β`` from ``settings.fusion_weights`` (default 0.7 / 0.3, i.e.
-    70% keyword + 30% embedding — the ratio the pipeline's own mode labels have
-    always claimed, which the previous formula did not actually implement).
+    **With ``settings.ranking_query``**, the sparse signal becomes BM25 over
+    that query, computed across the collected papers. Having an actual question
+    is what moved nDCG@10 from 0.28 to 0.67 on the judged collection — far more
+    than any change of scoring rule achieved.
 
-    The previous rule, still available as ``settings.fusion == "rank_geometric"``::
+    Fusion (``settings.fusion == "weighted_norm"``, the default)::
 
-        score = sqrt(rank_sem × rank_kw) × 10
+        score = (α · minmax(sparse) + β · minmax(emb)) / (α + β) × 10
 
-    Both signals are min-max normalised to [0, 1] and combined as a *weighted
-    sum*, so a paper strong on one signal is not dragged down by being mid-pack
-    on the other. Nothing is lost: the raw magnitudes survive the normalisation,
-    only the offset and scale are removed. ``_rank_kw`` and ``_rank_sem`` are
-    recorded per paper for diagnostics.
+    with ``α``/``β`` from ``settings.fusion_weights``. Defaults are 0.7 / 0.3
+    without a query — the ratio the pipeline's own mode labels always claimed
+    and the old formula did not implement — and 1.0 / 0.0 with one, because
+    adding the embedding measured monotonically worse there (90/10 0.6558,
+    70/30 0.6221, 50/50 0.5638, against 0.6728 for BM25 alone).
+
+    The superseded rule remains available as ``settings.fusion ==
+    "rank_geometric"``::
+
+        score = sqrt(rank_sparse × rank_emb) × 10
+
+    Both signals are min-max normalised and combined as a *weighted sum*, so a
+    paper strong on one signal is not dragged down by being mid-pack on the
+    other — the property the rank-geometric rule lacked.
 
     This step is the **sole writer** of ``Relevance_Score``. Ingest records the
     ablation-dependent inclusion score under ``_hybrid_score`` instead, so that
@@ -89,16 +105,43 @@ class RecomputeRanksStep(PipelineStep):
             )
             strategy = DEFAULT_STRATEGY
 
+        # A configured ranking query switches the sparse signal from the
+        # domain-term count to BM25 over that query. The domain count answers
+        # "does this paper look like the domain?" — it never sees a question,
+        # which is why every strategy measured without one turned out to be
+        # query-independent and why the best of them depended on the topic
+        # rather than on the question.
+        ranking_query = str(self.hunter.settings.get("ranking_query", "") or "").strip()
+        sparse_list, weights = kw_list, self.hunter.settings.get("fusion_weights")
+
+        if ranking_query:
+            index = BM25([
+                f"{p.get('Title', '')} {p.get('Abstract', '')}" for p in papers_list
+            ])
+            sparse_list = index.score(ranking_query)
+            for i, slug in enumerate(results.keys()):
+                results[slug]["_bm25_score"] = round(float(sparse_list[i]), 4)
+
+            if weights is None:
+                # Measured on the judged collection: BM25 alone scores 0.6728
+                # nDCG@10, and adding the embedding lowers it monotonically
+                # (90/10 0.6558, 70/30 0.6221, 50/50 0.5638). So the default
+                # when a query is present is BM25 alone. Pass fusion_weights
+                # explicitly to override.
+                weights = {"keyword": 1.0, "embedding": 0.0}
+
+            logger.info("Ranking against the configured query (BM25).")
+
         final_scores = fuse_scores(
-            kw_list, sem_list,
+            sparse_list, sem_list,
             strategy=strategy,
-            weights=self.hunter.settings.get("fusion_weights"),
+            weights=weights,
         )
 
         # Percentile ranks are recorded for diagnostics regardless of strategy,
         # since they are what the superseded rule used and what the experiment
         # scripts compare against.
-        rank_kw = percentile_ranks(kw_list)
+        rank_kw = percentile_ranks(sparse_list)
         rank_sem = percentile_ranks(sem_list)
 
         for i, slug in enumerate(results.keys()):

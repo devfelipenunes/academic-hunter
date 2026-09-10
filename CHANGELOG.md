@@ -24,6 +24,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `obsidian_export` e `semantic_screener` passam a ser injetáveis.
 - `CITATION.cff`.
 
+### Added
+- **BM25** (`core/nlp/bm25.py`) e **ranking por consulta**: definir
+  `settings.ranking_query` troca o sinal esparso da contagem de termos do domínio
+  por BM25 sobre essa consulta. É o primeiro sinal do pipeline condicionado à
+  consulta — a contagem de termos responde "este paper parece com o domínio?" e
+  nunca vê uma pergunta. Medido na coleção julgada, **ter uma consulta** levou o
+  nDCG@10 de 0,28 para 0,67, mais do que qualquer mudança de regra de
+  pontuação conseguiu.
+- **Métricas de custo** na avaliação (`Timing`, `build_rankings_timed`): tempo
+  total, por documento e por consulta, ao lado das métricas de qualidade.
+- Cache LRU do embedding do paper no `SemanticScreener`. O mesmo texto era
+  re-embedado a cada chamada, e o pipeline pontua o mesmo paper mais de uma vez
+  — cerca de 1,5 s por documento com abstract. Medido: 1500 ms → 209 ms.
+
 ### Changed
 
 - **Fusão do score substituída.** A regra vigente (`sqrt(rank_kw × rank_sem) × 10`) media

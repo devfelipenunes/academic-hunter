@@ -14,20 +14,62 @@
     },
     "context_rules": {
       "drex": [
-        "cbdc", "digital currency", "payment", "central bank", "financial", 
-        "banking", "ledger", "monetary", "real digital", "wholesale", 
-        "retail", "liquidity", "transaction", "cross-border", "settlement",
-        "tokenization", "tokenized"
+        "cbdc",
+        "digital currency",
+        "payment",
+        "central bank",
+        "financial",
+        "banking",
+        "ledger",
+        "monetary",
+        "real digital",
+        "wholesale",
+        "retail",
+        "liquidity",
+        "transaction",
+        "cross-border",
+        "settlement",
+        "tokenization",
+        "tokenized"
       ]
-    }
+    },
+    "ranking_query": ""
   },
   "anchors": {
-    "Retail_Instant_Payments": ["Pix payment", "Zelle payment", "FedNow", "UPI payment", "Faster Payments"],
-    "Interbank_Settlement": ["SWIFT banking", "CHIPS payment", "Fedwire", "Target2", "SEPA payment", "ISO 20022", "mBridge"]
+    "Retail_Instant_Payments": [
+      "Pix payment",
+      "Zelle payment",
+      "FedNow",
+      "UPI payment",
+      "Faster Payments"
+    ],
+    "Interbank_Settlement": [
+      "SWIFT banking",
+      "CHIPS payment",
+      "Fedwire",
+      "Target2",
+      "SEPA payment",
+      "ISO 20022",
+      "mBridge"
+    ]
   },
   "technical_strings": {
-    "Comparative_Analysis": ["comparative analysis", "taxonomy", "survey", "framework", "architecture", "interoperability"],
-    "Operational_Performance": ["transaction throughput", "TPS", "settlement latency", "scalability", "processing time", "idempotency"]
+    "Comparative_Analysis": [
+      "comparative analysis",
+      "taxonomy",
+      "survey",
+      "framework",
+      "architecture",
+      "interoperability"
+    ],
+    "Operational_Performance": [
+      "transaction throughput",
+      "TPS",
+      "settlement latency",
+      "scalability",
+      "processing time",
+      "idempotency"
+    ]
   },
   "technical_weights": {
     "atomic settlement": 5.0,
