@@ -34,4 +34,4 @@ class BibtexExporter(BaseExporter):
                 abstract = str(row.get('Abstract', '')).replace('{', '\\{').replace('}', '\\}')
                 f.write(f"  abstract = {{{abstract}}}\n")
                 f.write("}\n\n")
-        print(f"📄 BibTeX Export: {bib_file}")
+        logger.info("BibTeX Export: %s", bib_file)

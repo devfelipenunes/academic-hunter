@@ -1,5 +1,9 @@
+import logging
 import os
+
 from .sqlite_conn import connect
+
+logger = logging.getLogger("academic_hunter.cache")
 
 class SQLiteCache:
     """Thread-safe persistent request caching using SQLite3.
@@ -43,4 +47,4 @@ class SQLiteCache:
                 )
                 conn.commit()
         except Exception as e:
-            print(f"Cache write error: {e}")
+            logger.warning("Cache write error: %s", e)

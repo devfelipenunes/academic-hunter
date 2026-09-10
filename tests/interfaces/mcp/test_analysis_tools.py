@@ -257,7 +257,13 @@ async def test_export_report_json(mock_ctx, tmp_path):
 
 
 async def test_export_report_no_results(mock_ctx, tmp_path):
-    """Empty results return a helpful message."""
+    """Empty results return a helpful message.
+
+    The disk read is patched away rather than pointed at an empty tmp_path:
+    `_load_latest_papers` resolves the project root through `_utils`, not
+    through `export`, so patching the latter left it reading the repository's
+    real `results/` and exporting 135 papers instead of none.
+    """
     with (
         patch(
             "academic_hunter.interfaces.mcp.tools.export.AcademicHunter"
@@ -265,6 +271,10 @@ async def test_export_report_no_results(mock_ctx, tmp_path):
         patch(
             "academic_hunter.interfaces.mcp.tools.export.get_project_root"
         ) as m_root,
+        patch(
+            "academic_hunter.interfaces.mcp.tools.export._load_latest_papers",
+            return_value=[],
+        ),
     ):
         hunter_instance = m_hunter.return_value
         type(hunter_instance).consolidated_results = PropertyMock(return_value={})

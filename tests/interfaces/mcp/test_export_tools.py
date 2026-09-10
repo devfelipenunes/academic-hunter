@@ -10,7 +10,11 @@ async def _export_test(mock_ctx, tmp_path, fmt, papers, expected_content_check=N
     from academic_hunter.interfaces.mcp.tools.export import export_report
 
     with patch("academic_hunter.interfaces.mcp.tools.export.AcademicHunter") as m_h, \
-         patch("academic_hunter.interfaces.mcp.tools.export.get_project_root") as m_root:
+         patch("academic_hunter.interfaces.mcp.tools.export.get_project_root") as m_root, \
+         patch(
+             "academic_hunter.interfaces.mcp.tools.export._load_latest_papers",
+             return_value=list(papers),
+         ):
         m_h.return_value.consolidated_results = {str(i): p for i, p in enumerate(papers)}
         m_root.return_value = tmp_path
         result = await export_report(mock_ctx, format=fmt)

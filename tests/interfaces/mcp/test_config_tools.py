@@ -28,6 +28,41 @@ async def test_read_config(mock_hunter_config, mock_ctx):
     mock_ctx.info.assert_called()
 
 
+async def test_read_config_never_returns_api_keys(mock_ctx, tmp_path):
+    """The config goes to the MCP client, so a credential in it would have leaked.
+
+    Uses a real ``HunterConfig`` rather than the mock: the property only means
+    something if the redaction actually runs.
+    """
+    from academic_hunter.core.infra.config import REDACTED, HunterConfig
+
+    secret = "s2k-do-not-leak-this"
+    path = tmp_path / "config.json"
+    path.write_text(
+        json.dumps(
+            {
+                "settings": {
+                    "start_year": 2021,
+                    "semantic_scholar_api_key": secret,
+                    "api_keys": {"semantic_scholar": secret},
+                },
+                "anchors": {},
+                "technical_strings": {},
+                "technical_weights": {},
+            }
+        )
+    )
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.configuration.get_config",
+        return_value=HunterConfig(config_path=str(path)),
+    ):
+        result = await read_config(mock_ctx)
+
+    assert secret not in result, "the API key reached the MCP client"
+    assert REDACTED in result, "the caller can still see that a key is configured"
+
+
 async def test_read_config_failure(mock_ctx):
     with patch(
         "academic_hunter.core.infra.config.HunterConfig"

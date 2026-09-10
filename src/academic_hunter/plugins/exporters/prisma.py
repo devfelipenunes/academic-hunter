@@ -156,4 +156,4 @@ graph TD
             f.write("## 4. Query Execution History\n\n")
             f.write(query_history_md + "\n")
 
-        print(f"📊 PRISMA Report: {prisma_file}")
+        logger.info("PRISMA Report: %s", prisma_file)

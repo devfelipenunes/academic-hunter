@@ -13,7 +13,7 @@ from typing import Optional
 from mcp.server.fastmcp import Context
 
 from academic_hunter import AcademicHunter
-from ._utils import get_project_root
+from ._utils import _load_latest_papers, get_project_root
 from ..exceptions import SearchError
 
 logger = logging.getLogger("academic_hunter.mcp.export")
@@ -37,20 +37,14 @@ async def export_report(
         hunter = AcademicHunter(output_dir=str(project_root / "results"))
         papers = list(hunter.consolidated_results.values())
 
-        # Fallback: load from latest CSV when no in-memory results
+        # Fallback: load from the latest run's CSV when nothing is in memory.
+        # A tool call always builds its own hunter, so this is the normal path,
+        # not an edge case — see `_load_latest_papers`.
         if not papers:
             await ctx.info("No in-memory results, trying latest CSV...")
-            results_dir = project_root / "results"
-            csv_files = sorted(
-                results_dir.glob("academic_dataset_*.csv"),
-                key=os.path.getctime,
-                reverse=True,
-            )
-            if csv_files:
-                import pandas as pd
-                df = pd.read_csv(csv_files[0])
-                papers = df.to_dict(orient="records")
-                await ctx.info(f"Loaded {len(papers)} papers from {csv_files[0].name}")
+            papers = _load_latest_papers()
+            if papers:
+                await ctx.info(f"Loaded {len(papers)} papers from the latest run")
 
         if not papers:
             await ctx.info("No search results to export")

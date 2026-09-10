@@ -18,7 +18,8 @@ async def get_config_resource() -> str:
 
     config = get_config()
     data = {
-        "settings": config.settings,
+        # Redacted: resources are read by the MCP client, same as `read_config`.
+        "settings": config.public_settings(),
         "anchors": config.anchors,
         "technical_strings": config.tech_strings,
         "technical_weights": config.tech_weights,

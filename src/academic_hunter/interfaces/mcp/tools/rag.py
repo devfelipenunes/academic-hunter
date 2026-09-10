@@ -10,7 +10,7 @@ from academic_hunter.core.nlp.reranker import rerank_texts
 from mcp.server.fastmcp import Context
 
 from ..exceptions import VectorStoreError
-from ._utils import _get_vector_store, _make_hunter
+from ._utils import _get_vector_store, _load_latest_papers, _make_hunter
 
 logger = logging.getLogger("academic_hunter.mcp.rag")
 
@@ -91,6 +91,13 @@ async def index_papers(ctx: Context = None) -> str:
     try:
         hunter = _make_hunter()
         papers = list(hunter.consolidated_results.values())
+
+        # The hunter here is always freshly built, so this is the normal path
+        # rather than a fallback: the run that produced the papers lives in the
+        # hunter owned by `run_search`, and nothing carries it across calls.
+        if not papers:
+            await ctx.info("No in-memory results, reading the latest run...")
+            papers = _load_latest_papers()
 
         if not papers:
             await ctx.info("No papers found to index")

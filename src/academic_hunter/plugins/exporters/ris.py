@@ -31,4 +31,4 @@ class RisExporter(BaseExporter):
                 abstract = str(row.get('Abstract', '')).replace('\n', ' ')
                 f.write(f"N2  - {abstract}\n")
                 f.write("ER  - \n\n")
-        print(f"📄 RIS Export: {ris_file}")
+        logger.info("RIS Export: %s", ris_file)

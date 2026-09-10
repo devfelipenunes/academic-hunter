@@ -72,9 +72,18 @@ async def test_index_papers(mock_hunter_rag, mock_vector_store, mock_ctx):
 
 
 async def test_index_papers_no_results(mock_hunter_rag, mock_ctx):
+    """Nothing in memory and nothing on disk.
+
+    The disk read is patched away: this test is about the message, and the real
+    `results/` directory has CSVs from previous runs.
+    """
     mock_hunter_rag.consolidated_results = {}
 
-    result = await index_papers(mock_ctx)
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.rag._load_latest_papers",
+        return_value=[],
+    ):
+        result = await index_papers(mock_ctx)
 
     assert "No papers found" in result
 

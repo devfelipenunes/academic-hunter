@@ -36,4 +36,4 @@ class MarkdownEliteExporter(BaseExporter):
             f.write(f"- **Excluded (Low Relevance Score):** {stats.get('excluded_technical_score', 0)}\n")
             f.write(f"- **Final Included:** {stats.get('included_final')}\n")
             
-        print(f"📝 Master Report: {report_file}")
+        logger.info("Master Report: %s", report_file)

@@ -414,6 +414,25 @@ class TestCosineHelper:
         result = s._cosine([1, 0], [1, 1])
         assert abs(result - 1 / math.sqrt(2)) < 1e-5
 
+    def test_anti_correlated_vectors_clamp_to_zero(self):
+        """A raw cosine goes negative here, which the contract forbids.
+
+        `evaluate` promises a 0-1 score and `verify_scoring.py` asserts it, but
+        the real reason it matters is downstream: the score feeds `sqrt(...)` in
+        the Weight-Bleeding transform, where a negative raises ValueError and
+        takes the run with it.
+        """
+        s = SemanticScreener()
+
+        assert s._cosine([1, 0], [-1, 0]) == 0.0
+        assert s._cosine([1, 1], [-1, -1]) == 0.0
+
+    def test_an_obtuse_angle_never_leaves_the_unit_range(self):
+        s = SemanticScreener()
+
+        for vector in ([1, -1], [-1, 0.2], [-0.3, -0.9]):
+            assert 0.0 <= s._cosine([1, 0], vector) <= 1.0
+
 
 if __name__ == "__main__":
     import pytest, sys

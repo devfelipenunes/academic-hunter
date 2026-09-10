@@ -73,6 +73,10 @@ def mock_hunter_config():
     ) as m:
         instance = m.return_value
         instance.settings = {"start_year": 2020, "limit_per_query": 100}
+        # `read_config` returns `public_settings()`, not `settings` — the raw one
+        # carries API keys. The real redaction is covered by
+        # `tests/core/test_config_secrets.py`; here it only has to be JSON-able.
+        instance.public_settings = MagicMock(return_value=dict(instance.settings))
         instance.anchors = {}
         instance.tech_strings = {}
         instance.tech_weights = {}

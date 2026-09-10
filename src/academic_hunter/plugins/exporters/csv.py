@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import List, Dict, Any
 from .base import BaseExporter, ExportContext
 
+logger = logging.getLogger("academic_hunter.exporters")
+
 
 class CsvExporter(BaseExporter):
     def export(self, context: ExportContext) -> None:
@@ -12,7 +14,7 @@ class CsvExporter(BaseExporter):
         output_dir = context.output_dir
 
         if not papers:
-            print("⚠️ No studies to export to CSV.")
+            logger.info("No studies to export to CSV.")
             return
             
         def get_db_count(source_str):
@@ -27,5 +29,5 @@ class CsvExporter(BaseExporter):
         run_dir = self._get_run_dir(timestamp, output_dir)
         csv_file = run_dir / f"academic_dataset_{timestamp}.csv"
         df.to_csv(csv_file, index=False, encoding='utf-8')
-        print(f"📊 Dataset: {csv_file}")
+        logger.info("Dataset: %s", csv_file)
 

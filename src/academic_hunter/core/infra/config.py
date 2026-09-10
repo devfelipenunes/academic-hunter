@@ -12,6 +12,11 @@ from typing import Dict, Any, List, Set, Optional
 
 from .history import ConfigHistory
 
+#: Placeholder shown wherever a credential must not be echoed. A fixed string
+#: rather than a per-key mask, so the output does not leak the key's length or
+#: prefix either.
+REDACTED = "***redacted***"
+
 
 class HunterConfig:
     """Handles JSON configuration loading, environment variables, pacing delays, and default fallback parameters.
@@ -181,6 +186,37 @@ class HunterConfig:
             "technical_strings": self.tech_strings,
             "technical_weights": self.tech_weights,
         }
+
+    #: Settings keys that hold credentials. They are read by the connectors
+    #: straight from `settings`, so they must stay in the live config — but they
+    #: must never be serialised back out to a caller.
+    SECRET_SETTINGS = ("semantic_scholar_api_key", "openalex_api_key", "core_api_key")
+
+    def public_settings(self) -> Dict[str, Any]:
+        """``settings`` with credentials masked, for anything that returns it.
+
+        ``read_config`` and the ``config/current`` resource hand this straight to
+        the MCP client, which puts it in the agent's context — and a credential
+        that reaches a conversation log has leaked. Nothing that *uses* the
+        config calls this: the connectors read the real values from ``settings``
+        directly, and ``save()`` writes ``settings`` unchanged.
+
+        A present key becomes a fixed placeholder rather than being dropped, so
+        the caller can still see that a credential is configured without seeing
+        which one.
+        """
+        redacted = dict(self.settings)
+        for key in self.SECRET_SETTINGS:
+            if redacted.get(key):
+                redacted[key] = REDACTED
+
+        nested = redacted.get("api_keys")
+        if isinstance(nested, dict):
+            redacted["api_keys"] = {
+                name: (REDACTED if value else "")
+                for name, value in nested.items()
+            }
+        return redacted
 
     def save(self):
         """Persist current config back to the JSON file."""

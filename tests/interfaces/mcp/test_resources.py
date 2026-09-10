@@ -30,6 +30,8 @@ async def test_get_config_resource_returns_config(mock_ctx):
     with patch("academic_hunter.core.get_config") as m_get_config:
         mock_cfg = MagicMock()
         mock_cfg.settings = config_data["settings"]
+        # The resource returns `public_settings()` (settings minus credentials).
+        mock_cfg.public_settings = MagicMock(return_value=config_data["settings"])
         mock_cfg.anchors = config_data["anchors"]
         mock_cfg.tech_strings = config_data["technical_strings"]
         mock_cfg.tech_weights = config_data["technical_weights"]
@@ -54,6 +56,7 @@ async def test_get_config_resource_format(mock_ctx):
     with patch("academic_hunter.core.get_config") as m:
         mock_cfg = MagicMock()
         mock_cfg.settings = {}
+        mock_cfg.public_settings = MagicMock(return_value={})
         mock_cfg.anchors = {}
         mock_cfg.tech_strings = {}
         mock_cfg.tech_weights = {}

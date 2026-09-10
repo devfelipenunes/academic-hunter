@@ -11,7 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml README.md ./
 COPY src/ src/
 
-RUN pip install --no-cache-dir -e ".[rag]"
+# `ml` is what the analysis tools actually need (sentence-transformers,
+# scikit-learn, umap-learn, bertopic). It used to install `.[rag]`, whose only
+# entry — chromadb — is already a base dependency, so the image shipped without
+# any of them and the tools degraded silently behind their fallbacks.
+RUN pip install --no-cache-dir -e ".[ml]"
 
 EXPOSE 8080
 

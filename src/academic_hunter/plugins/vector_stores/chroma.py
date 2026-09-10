@@ -15,6 +15,35 @@ from .base import BaseVectorStore
 logger = logging.getLogger("academic_hunter.vector_store")
 
 
+def _as_float(value: Any, default: float = 0.0) -> float:
+    """Coerce a metadata value to float.
+
+    ``paper.get("score", 0.0)`` looks like it guards against a missing value, but
+    it only defaults when the *key* is absent. A key that is present and null —
+    which is what reading a run back from CSV produces, since pandas turns an
+    empty cell into NaN — returns ``None``, and ``float(None)`` raises. Because
+    the upsert is one batch, a single such value discarded the whole index.
+    """
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return default
+    return default if result != result else result  # NaN != NaN
+
+
+def _as_int(value: Any, default: int = 0) -> int:
+    """Coerce a metadata value to int; see :func:`_as_float`."""
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _as_str(value: Any) -> str:
+    """Coerce a metadata value to str, mapping a missing one to "" not "None"."""
+    return "" if value is None else str(value)
+
+
 class ChromaVectorStore(BaseVectorStore):
     """ChromaDB-backed vector store for semantic paper search."""
 
@@ -81,14 +110,14 @@ class ChromaVectorStore(BaseVectorStore):
                 metadatas.append({
                     "title": title[:500],
                     "doi": doi,
-                    "year": str(paper.get("Year", "")),
-                    "source": str(paper.get("Source", "")),
-                    "score": float(paper.get("Relevance_Score", 0.0)),
-                    "citations": int(paper.get("Citations", 0)),
-                    "venue": str(paper.get("Venue", "")),
-                    "anchor_category": str(paper.get("Anchor_Category", "")),
-                    "tech_category": str(paper.get("Tech_Category", "")),
-                    "url": str(paper.get("URL", "")),
+                    "year": _as_str(paper.get("Year")),
+                    "source": _as_str(paper.get("Source")),
+                    "score": _as_float(paper.get("Relevance_Score")),
+                    "citations": _as_int(paper.get("Citations")),
+                    "venue": _as_str(paper.get("Venue")),
+                    "anchor_category": _as_str(paper.get("Anchor_Category")),
+                    "tech_category": _as_str(paper.get("Tech_Category")),
+                    "url": _as_str(paper.get("URL")),
                 })
                 ids.append(doc_id)
 

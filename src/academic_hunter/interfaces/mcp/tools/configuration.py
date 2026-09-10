@@ -21,7 +21,9 @@ async def read_config(ctx: Context) -> str:
     try:
         config = get_config()
         data = {
-            "settings": config.settings,
+            # Redacted: this goes to the MCP client, and a credential that
+            # reaches the agent's context has leaked.
+            "settings": config.public_settings(),
             "anchors": config.anchors,
             "technical_strings": config.tech_strings,
             "technical_weights": config.tech_weights,

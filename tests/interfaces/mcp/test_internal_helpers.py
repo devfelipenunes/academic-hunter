@@ -180,13 +180,36 @@ def test_get_project_root_fallback_cwd():
 
 
 def test_get_vector_store_disabled(mock_ctx):
-    """Returns None when initialization fails."""
+    """Returns None when the store cannot be built.
+
+    The failure is raised by ``ChromaVectorStore``, not by ``AcademicHunter``:
+    the store no longer builds a hunter to derive its path — that cost a whole
+    tool-call's worth of setup per call, and with the hunter mocked it produced
+    a MagicMock repr that ChromaDB turned into a real directory.
+    """
     from academic_hunter.interfaces.mcp.tools import _utils
 
-    with patch.object(_utils, "AcademicHunter") as m_h:
-        m_h.side_effect = Exception("No config")
+    with patch.object(_utils, "ChromaVectorStore") as m_store:
+        m_store.side_effect = Exception("chromadb unavailable")
         result = _utils._get_vector_store()
     assert result is None
+
+
+def test_get_vector_store_does_not_build_a_hunter():
+    """The path comes from the project root; no hunter is constructed."""
+    from pathlib import Path
+
+    from academic_hunter.interfaces.mcp.tools import _utils
+
+    with patch.object(_utils, "ChromaVectorStore") as m_store, \
+         patch.object(_utils, "AcademicHunter") as m_hunter, \
+         patch.object(_utils, "get_project_root", return_value=Path("/tmp/proj")):
+        _utils._get_vector_store()
+
+    m_hunter.assert_not_called()
+    assert m_store.call_args.kwargs["db_dir"] == str(
+        Path("/tmp/proj") / ".academic_hunter" / "chroma_db"
+    )
 
 
 # ── _utils: _make_hunter ─────────────────────────────────────────
