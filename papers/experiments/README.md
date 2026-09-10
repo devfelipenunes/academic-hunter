@@ -36,6 +36,25 @@ the embedding centroid and produces measurable ranking changes.
 
 Usage: `python weight_sensitivity.py`
 
+### `rerank_eval.py`
+
+Measures the **second-stage cross-encoder** against the judged collection:
+how many of the ranking's head documents it reorders, and what that buys.
+Holds the first stage fixed at BM25 (the shipped query-mode signal) and sweeps
+`top_n`, plus an oracle that reranks the whole pool as a ceiling.
+
+It is the measurement behind `settings.rerank` in the pipeline. Measured
+nDCG@10: `bm25` 0.6728 → `rerank@20` **0.7668** → oracle 0.7916, winning on both
+topics. Note the contrast with the bi-encoder embedding, which _lowers_ nDCG
+monotonically as its weight grows — the two are not interchangeable, and only
+the judged collection separates them.
+
+On the caution above: the cross-encoder measures relevance _to a query_, so it
+is the wrong tool when there is no query — which is why the pipeline stage
+requires `settings.ranking_query` and does nothing without one.
+
+Usage: `python rerank_eval.py [--top-n 5,10,20,30] [--no-oracle]`
+
 ## Results
 
 All outputs go to `results/`:
@@ -43,4 +62,5 @@ All outputs go to `results/`:
 - `results/ablation_results.json`
 - `results/cross_encoder_correlation.json`
 - `results/weight_sensitivity.csv`
+- `results/rerank_eval.json`
 - `results/tables/` — LaTeX tables for the paper
