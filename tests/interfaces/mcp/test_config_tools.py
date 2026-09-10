@@ -157,3 +157,47 @@ async def test_restore_config_by_id_failure(mock_hunter_config, mock_mcp_db, moc
     with pytest.raises(MCPToolError, match="DB crash"):
         await restore_config_by_id(1, mock_ctx)
     mock_ctx.error.assert_called()
+
+
+async def test_the_backup_does_not_store_credentials(mock_ctx, tmp_path):
+    """The history is plain text in SQLite; a config backup is not a key store."""
+    from academic_hunter.core.infra.config import REDACTED, HunterConfig
+
+    secret = "s2k-must-not-reach-the-db"
+    path = tmp_path / "config.json"
+    path.write_text(
+        json.dumps(
+            {
+                "settings": {
+                    "start_year": 2021,
+                    "semantic_scholar_api_key": secret,
+                    "api_keys": {"semantic_scholar": secret},
+                },
+                "anchors": {},
+                "technical_strings": {},
+                "technical_weights": {},
+            }
+        )
+    )
+    real_config = HunterConfig(config_path=str(path))
+
+    with (
+        patch(
+            "academic_hunter.interfaces.mcp.tools.configuration.get_config",
+            return_value=real_config,
+        ),
+        patch(
+            "academic_hunter.interfaces.mcp.tools.configuration.MCPDatabaseManager"
+        ) as m_db,
+    ):
+        m_db.return_value.save_config.return_value = None
+        await update_config(
+            SearchConfigUpdate(topic="T", settings={"start_year": 2022}), mock_ctx
+        )
+
+    saved = [call.kwargs["config_data"] for call in m_db.return_value.save_config.call_args_list]
+    assert saved, "nothing was backed up"
+    for snapshot in saved:
+        dumped = json.dumps(snapshot)
+        assert secret not in dumped, f"the key reached the SQLite history: {dumped}"
+        assert REDACTED in dumped, "the snapshot should still show a key is set"

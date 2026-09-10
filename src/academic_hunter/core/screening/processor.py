@@ -44,6 +44,16 @@ class PaperProcessor:
                 self.state.stats["duplicates_removed"] += 1
                 # Read under the same lock: the dict is mutated by other threads.
                 existing = self.state.consolidated_results.get(dedup_id)
+                # Claim the right to promote an excluded duplicate, in this same
+                # critical section. Validation happens outside the lock and is
+                # slow, so without the claim every thread holding the same
+                # duplicate passed it and wrote the same paper.
+                claim_promotion = (
+                    existing is None
+                    and dedup_id not in self.state.pending_promotions
+                )
+                if claim_promotion:
+                    self.state.pending_promotions.add(dedup_id)
             else:
                 self.state.seen_ids.add(dedup_id)
                 if doi_clean:
@@ -55,7 +65,7 @@ class PaperProcessor:
         if is_duplicate:
             if existing is not None:
                 self.resolver.resolve_existing_duplicate(existing, paper, anchor_cat, tech_cat, source)
-            else:
+            elif claim_promotion:
                 self.resolver.resolve_excluded_duplicate(paper, dedup_id, title, doi_clean, tech_cat, tech_list, source)
             return
 

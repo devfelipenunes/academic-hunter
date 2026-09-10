@@ -242,6 +242,16 @@ class SemanticScreener(BaseScreener):
                 self._embedding_function = _ZeroEmbedding(_DEFAULT_EMBED_DIM)
         return self._embedding_function
 
+    @property
+    def degraded(self) -> bool:
+        """True once the embedding fell back to zero vectors.
+
+        Every semantic score is 0.0 in that state, and the run still finishes —
+        so in embedding or hybrid mode it produces a full report whose numbers
+        look real. Callers that report results should say so.
+        """
+        return isinstance(self._embedding_function, _ZeroEmbedding)
+
 
 class _ZeroEmbedding:
     """Fallback embedding that returns zero vectors.

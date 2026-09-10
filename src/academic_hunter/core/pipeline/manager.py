@@ -141,6 +141,16 @@ class SearchPipeline:
         # Auto-export to Obsidian if configured
         self._auto_export_to_obsidian(timestamp)
 
+        # A run whose embedding silently fell back to zeros still finishes and
+        # still reports numbers; say so, because those numbers are not
+        # comparable to a run with a working model.
+        screener = getattr(self.hunter, "semantic_screener", None)
+        if screener is not None and getattr(screener, "degraded", False):
+            logger.warning(
+                "⚠️ Semantic screener ran in ZERO-VECTOR mode: every semantic "
+                "score is 0.0. Treat this run's scores as keyword-only."
+            )
+
         logger.info("💎 PIPELINE FINISHED!")
         logger.info("📊 PRISMA STATS:")
         logger.info(f"   - Identified: {self.hunter.stats['identified']}")

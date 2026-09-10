@@ -242,3 +242,86 @@ def test_cache_roundtrip_still_works(tmp_path):
 
     assert cache.get("k") == "v"
     assert cache.get("missing") is None
+
+
+def test_concurrent_promotion_of_an_excluded_duplicate_happens_once(config, scorer, monkeypatch):
+    """Many threads submitting a duplicate that was excluded must promote it once.
+
+    The new-paper path claims its identifiers inside the lock, but the
+    "previously excluded" path had no such claim: validation runs outside the
+    lock, so every thread holding the same duplicate passed it and wrote the
+    paper — counting the stats once per thread.
+
+    Reproduction window: validation is fast enough that threads rarely overlap
+    on their own, and the first version of this test passed against the buggy
+    code. The slow `validate_and_score` below widens the window on purpose, which
+    is what makes the assertion mean something.
+    """
+    import time
+
+    processor = _make_processor(config, scorer)
+
+    # First pass: no anchor term, so the paper is stored but excluded.
+    processor.process(
+        paper={
+            "Title": "A study of ledgers",
+            "Abstract": "",
+            "Year": "2024",
+            "Source": "First",
+            "Citations": 0,
+            "Type": "article",
+            "Venue": "V",
+            "URL": "http://example.com",
+        },
+        anchor_cat="cat", tech_cat="cat",
+        anchor_list=["blockchain"], tech_list=["latency"],
+    )
+    assert processor.state.consolidated_results == {}, "the paper should be excluded"
+
+    real_validate = processor.resolver.validator.validate_and_score
+
+    def slow_validate(*args, **kwargs):
+        time.sleep(0.02)  # the window the claim closes
+        return real_validate(*args, **kwargs)
+
+    monkeypatch.setattr(processor.resolver.validator, "validate_and_score", slow_validate)
+
+    promotions = []
+    real_resolve = processor.resolver.resolve_excluded_duplicate
+
+    def counting_resolve(*args, **kwargs):
+        promotions.append(1)
+        return real_resolve(*args, **kwargs)
+
+    monkeypatch.setattr(processor.resolver, "resolve_excluded_duplicate", counting_resolve)
+
+    threads_n = 12
+    barrier = threading.Barrier(threads_n)
+
+    def submit():
+        barrier.wait()  # line them up so they collide
+        processor.process(
+            paper={
+                "Title": "A study of ledgers",
+                "Abstract": "Blockchain latency and consensus.",
+                "Year": "2024",
+                "Source": "Later",
+                "Citations": 0,
+                "Type": "article",
+                "Venue": "V",
+                "URL": "http://example.com",
+            },
+            anchor_cat="cat", tech_cat="cat",
+            anchor_list=["blockchain"], tech_list=["latency"],
+        )
+
+    threads = [threading.Thread(target=submit) for _ in range(threads_n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(promotions) == 1, (
+        f"{len(promotions)} threads entered the promotion path for the same "
+        f"duplicate; only the one that claimed it under the lock may"
+    )

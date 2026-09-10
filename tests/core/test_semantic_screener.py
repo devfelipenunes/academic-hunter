@@ -541,3 +541,29 @@ class TestPaperEmbeddingCache:
 def keep_text(paper):
     """The cache key for a paper, matching SemanticScreener._extract_paper_text."""
     return f"{paper['Title']} {paper['Abstract']}".strip()
+
+
+class TestDegradedFlag:
+    """A zero-vector fallback must be visible to whoever reports the results."""
+
+    def test_false_while_the_embedding_works(self):
+        screener = SemanticScreener()
+        screener._embedding_function = object()
+
+        assert screener.degraded is False
+
+    def test_true_after_the_embedding_fails_to_load(self, monkeypatch):
+        from unittest.mock import MagicMock
+
+        screener = SemanticScreener()
+        monkeypatch.setattr(
+            "chromadb.utils.embedding_functions.DefaultEmbeddingFunction",
+            MagicMock(side_effect=RuntimeError("onnx unavailable")),
+        )
+
+        screener.embedding_function  # triggers the lazy load
+
+        assert screener.degraded is True, (
+            "every semantic score is now 0.0 and the run would still report "
+            "numbers as if the model had worked"
+        )

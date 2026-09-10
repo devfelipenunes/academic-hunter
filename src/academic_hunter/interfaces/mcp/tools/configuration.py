@@ -6,7 +6,7 @@ for logging and progress reporting.
 
 import json
 from mcp.server.fastmcp import Context
-from academic_hunter.core import get_config
+from academic_hunter.core import HunterConfig, get_config
 from ..schemas.config_schema import SearchConfigUpdate
 from ..memory.config_backup import MCPDatabaseManager
 from ..exceptions import ConfigError
@@ -54,10 +54,12 @@ async def update_config(config_update: SearchConfigUpdate, ctx: Context) -> str:
     try:
         config = get_config()
 
-        # 1. Backup current state
+        # 1. Backup current state. `public_settings` masks the credentials: the
+        # history lives in plain text in SQLite, and a config backup is not a
+        # credential store.
         db = MCPDatabaseManager()
         current_state = {
-            "settings": config.settings,
+            "settings": config.public_settings(),
             "anchors": config.anchors,
             "technical_strings": config.tech_strings,
             "technical_weights": config.tech_weights,
@@ -86,9 +88,9 @@ async def update_config(config_update: SearchConfigUpdate, ctx: Context) -> str:
 
         config.save()
 
-        # 3. Save final state
+        # 3. Save final state (masked, same as the "before" snapshot)
         new_state = {
-            "settings": config.settings,
+            "settings": config.public_settings(),
             "anchors": config.anchors,
             "technical_strings": config.tech_strings,
             "technical_weights": config.tech_weights,
@@ -145,7 +147,15 @@ async def restore_config_by_id(config_id: int, ctx: Context) -> str:
 
         config = get_config()
         if "settings" in config_data:
-            config.settings = config_data["settings"]
+            # A backup never carries credentials, so restore everything else and
+            # keep the live ones. Assigning the stored dict wholesale would put
+            # the redaction placeholder where the API key belongs.
+            restored = {
+                key: value
+                for key, value in config_data["settings"].items()
+                if key not in HunterConfig.SECRET_SETTINGS and key != "api_keys"
+            }
+            config.settings = {**config.settings, **restored}
         if "anchors" in config_data:
             config.anchors = config_data["anchors"]
         if "technical_strings" in config_data:

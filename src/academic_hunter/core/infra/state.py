@@ -23,6 +23,10 @@ class SearchState:
         self.query_history = []
         self.last_request_time = 0
         self.last_request_by_domain = {}
+        #: Slugs a thread has claimed the right to promote from "excluded" to
+        #: "included". Without the claim two threads resolving the same duplicate
+        #: both pass validation and both write it, counting the stats twice.
+        self.pending_promotions = set()
 
     def reset(self, connectors_keys: List[str]):
         self.stats = {
@@ -48,6 +52,7 @@ class SearchState:
         self.query_history.clear()
         self.last_request_time = 0
         self.last_request_by_domain.clear()
+        self.pending_promotions.clear()
 
     def track_exclusion(self, source: str, reason: str):
         """State mutation to track reasons for excluding papers by source."""
