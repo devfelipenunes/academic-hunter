@@ -1,5 +1,6 @@
 import re
 from typing import Dict, Any, List
+from urllib.parse import urlsplit
 
 class HunterFacadeMixin:
     """
@@ -134,7 +135,34 @@ class HunterFacadeMixin:
         return self.scorer.find_matching_terms(text, terms_list)
 
     def _make_request(self, url: str, params: Dict[str, Any] = None, timeout: int = 20, max_retries: int = 2) -> Any:
-        return self.connectors["OpenAlex"]._make_request(url, params, timeout, max_retries)
+        """Send a request through the connector that owns the URL's host.
+
+        Routing by host is a security concern, not just a tidiness one. Each
+        connector's ``get_headers()`` may attach its own credential — OpenAlex
+        sends ``Authorization: Bearer <key>``, Semantic Scholar sends
+        ``x-api-key``. This method used to dispatch every URL through the
+        OpenAlex connector regardless of destination, so the OpenAlex API key
+        travelled to whichever host the caller named: arXiv, Crossref, Semantic
+        Scholar. It only fires when a key is configured, which is why it went
+        unnoticed.
+
+        Pacing was never affected — ``BaseConnector._raw_request`` derives the
+        domain from the URL — so the damage was confined to the credentials.
+
+        Raises:
+            ValueError: If no configured connector owns the host. Refusing is
+                the point: the alternative is borrowing another source's
+                identity, which is what this method used to do.
+        """
+        host = urlsplit(url).netloc
+        for connector in self.connectors.values():
+            if getattr(connector, "domain", "") == host:
+                return connector._make_request(url, params, timeout, max_retries)
+
+        raise ValueError(
+            f"No connector owns host {host!r}; refusing to send the request "
+            f"under another source's credentials."
+        )
 
     def _track_exclusion(self, source: str, reason: str):
         with self.lock:

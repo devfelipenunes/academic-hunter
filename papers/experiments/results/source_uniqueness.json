@@ -1,0 +1,31 @@
+{
+  "description": "Per-source exclusive contribution and overlap in a multi-source run",
+  "source_csv": "results/run_20260727_152204/academic_dataset_20260727_152204.csv",
+  "total_papers": 1538,
+  "papers_from_single_source": 1430,
+  "papers_from_multiple_sources": 108,
+  "single_source_share": 0.9298,
+  "per_source_found": {
+    "OpenAlex": 685,
+    "Crossref": 582,
+    "ArXiv": 292,
+    "SemanticScholar": 90
+  },
+  "per_source_exclusive": {
+    "Crossref": 494,
+    "SemanticScholar": 76,
+    "ArXiv": 274,
+    "OpenAlex": 586
+  },
+  "multi_source_combination_counts": {
+    "Crossref+OpenAlex": 77,
+    "OpenAlex+SemanticScholar": 6,
+    "Crossref+OpenAlex+SemanticScholar": 2,
+    "Crossref+SemanticScholar": 5,
+    "ArXiv+OpenAlex": 13,
+    "ArXiv+Crossref+OpenAlex": 1,
+    "ArXiv+Crossref": 3,
+    "ArXiv+SemanticScholar": 1
+  },
+  "reference_point": "Third-party comparison reports ~40% uniqueness between single-source AI discovery tools (SciSpace, Consensus, Ai2 Paper Finder), all built on Semantic Scholar. Lower overlap here indicates genuine coverage gain."
+}

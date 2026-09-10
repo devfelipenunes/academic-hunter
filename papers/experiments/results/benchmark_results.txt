@@ -1,0 +1,78 @@
+WEIGHT-BLEEDING BENCHMARK RESULTS
+======================================================================
+
+Multi-model comparison: MiniLM-L6-v2, BGE-base-en-v1.5, GTE-small
+
+
+--- MiniLM (384d) ---
+Vanilla vs WB: ρ = 0.9152, Top-10: 10/10
+Vanilla vs Echo (2×): ρ = 0.9879, Top-10: 10/10
+Vanilla vs Echo (3×): ρ = 0.9879, Top-10: 10/10
+WB vs Echo (2×): ρ = 0.9273
+
+Per-paper scores:
+Paper                          Vanilla  WB       Echo_2x 
+------------------------------------------------------------
+Sentence-BERT: Sentence Embe       6.75     5.49     6.61
+Repetition Improves Language       7.46     5.90     7.44
+SGPT: GPT Sentence Embedding       7.22     5.38     6.98
+A Simple but Tough-to-Beat B       6.95     5.63     6.75
+Generative Representational        4.94     5.00     4.91
+LLM2Vec: Large Language Mode       5.48     5.11     5.28
+Blockchain Technology for Di       0.00     0.69     0.00
+Deep Learning for Natural La       5.59     5.07     5.27
+An open source machine learn       4.78     3.65     4.55
+Attention Is All You Need          4.01     5.05     3.73
+
+--- BGE-base (768d) ---
+Vanilla vs WB: ρ = 0.9515, Top-10: 10/10
+Vanilla vs Echo (2×): ρ = 0.9879, Top-10: 10/10
+Vanilla vs Echo (3×): ρ = 1.0000, Top-10: 10/10
+WB vs Echo (2×): ρ = 0.9273
+
+Per-paper scores:
+Paper                          Vanilla  WB       Echo_2x 
+------------------------------------------------------------
+Sentence-BERT: Sentence Embe       8.78     8.15     8.81
+Repetition Improves Language       9.02     8.10     9.01
+SGPT: GPT Sentence Embedding       8.78     7.97     8.83
+A Simple but Tough-to-Beat B       8.87     8.18     8.87
+Generative Representational        7.95     7.73     7.94
+LLM2Vec: Large Language Mode       8.22     7.86     8.20
+Blockchain Technology for Di       6.76     6.99     6.83
+Deep Learning for Natural La       8.28     7.91     8.29
+An open source machine learn       7.63     7.34     7.62
+Attention Is All You Need          6.42     7.10     6.40
+
+--- GTE-small (384d) ---
+Vanilla vs WB: ρ = 0.9394, Top-10: 10/10
+Vanilla vs Echo (2×): ρ = 1.0000, Top-10: 10/10
+Vanilla vs Echo (3×): ρ = 1.0000, Top-10: 10/10
+WB vs Echo (2×): ρ = 0.9394
+
+Per-paper scores:
+Paper                          Vanilla  WB       Echo_2x 
+------------------------------------------------------------
+Sentence-BERT: Sentence Embe       9.37     9.04     9.33
+Repetition Improves Language       9.48     9.05     9.50
+SGPT: GPT Sentence Embedding       9.48     9.07     9.42
+A Simple but Tough-to-Beat B       9.48     9.09     9.43
+Generative Representational        9.06     8.96     9.01
+LLM2Vec: Large Language Mode       9.14     9.00     9.15
+Blockchain Technology for Di       8.58     8.67     8.53
+Deep Learning for Natural La       9.23     8.96     9.16
+An open source machine learn       8.86     8.79     8.83
+Attention Is All You Need          8.79     8.92     8.74
+
+
+======================================================================
+SUMMARY
+======================================================================
+Metric               MiniLM     BGE-base   GTE-small 
+--------------------------------------------------
+Rho Wb                   0.9152     0.9515     0.9394
+Rho Echo                 0.9879     0.9879     1.0000
+Rho Echo3                0.9879     1.0000     1.0000
+Top10 Wb                10.0000    10.0000    10.0000
+Top10 Echo              10.0000    10.0000    10.0000
+Top10 Echo3             10.0000    10.0000    10.0000

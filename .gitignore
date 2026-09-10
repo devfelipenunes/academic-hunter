@@ -5,7 +5,11 @@ node_modules/
 
 # Runtime data
 .academic_hunter/
-results/
+# Anchored: an unanchored `results/` also matched papers/experiments/results/,
+# which holds the experiment artifacts the manuscripts cite. Those are small and
+# must travel with the repo — an artifact nobody can obtain is an artifact
+# nobody can check.
+/results/
 *.db
 
 # Build artifacts

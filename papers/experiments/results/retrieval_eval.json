@@ -1,0 +1,339 @@
+{
+  "qrels": "papers/evaluation/qrels_pilot_genre_analysis.json",
+  "pool": "embedded (58 documents)",
+  "pool_size": 58,
+  "ks": [
+    5,
+    10,
+    20
+  ],
+  "qrels_stats": {
+    "queries": 6,
+    "judgments": 348,
+    "relevant": 90,
+    "description": "Pilot judged collection over the 274-paper run of 2026-09-10 on genre analysis and rhetorical move structure in academic writing (EAP/ESP). Pool = top-30 by pipeline score UNION a seeded random sample of 30 (seed 20260910), so the candidate set spans the score range (3.3-17.8) instead of being truncated at the top — selecting the pool by the very score under test restricts its range and makes it look undiscriminating. Grades 0-2 assigned by reading title and abstract against the information need. Machine-assisted, single-annotator and preliminary: review before treating as authoritative."
+  },
+  "strategies": {
+    "exported_score (see note)": {
+      "n_queries": 6,
+      "n_judgments": 348,
+      "n_relevant": 90,
+      "mean": {
+        "ap": 0.36922738273659395,
+        "mrr": 0.2611111111111111,
+        "ndcg@10": 0.18497439350860456,
+        "ndcg@20": 0.3503646439703905,
+        "ndcg@5": 0.1455130223351428,
+        "precision@10": 0.2833333333333334,
+        "precision@20": 0.3666666666666667,
+        "precision@5": 0.26666666666666666,
+        "recall@10": 0.17503684055408195,
+        "recall@20": 0.4945181255526083,
+        "recall@5": 0.09395078101974653
+      },
+      "per_query": {
+        "intro_moves_cars": {
+          "ndcg@5": 0.24633007655908978,
+          "recall@5": 0.10344827586206896,
+          "precision@5": 0.6,
+          "ndcg@10": 0.3031192502991226,
+          "recall@10": 0.27586206896551724,
+          "precision@10": 0.8,
+          "ndcg@20": 0.48687367029026396,
+          "recall@20": 0.5517241379310345,
+          "precision@20": 0.8,
+          "mrr": 0.3333333333333333,
+          "ap": 0.7630697717635081
+        },
+        "disciplinary_variation": {
+          "ndcg@5": 0.04868944994756882,
+          "recall@5": 0.06666666666666667,
+          "precision@5": 0.2,
+          "ndcg@10": 0.034591137734059085,
+          "recall@10": 0.06666666666666667,
+          "precision@10": 0.1,
+          "ndcg@20": 0.2175053568850304,
+          "recall@20": 0.3333333333333333,
+          "precision@20": 0.25,
+          "mrr": 0.25,
+          "ap": 0.3036795627140455
+        },
+        "corpus_genre_pedagogy": {
+          "ndcg@5": 0.1695801026368081,
+          "recall@5": 0.06666666666666667,
+          "precision@5": 0.2,
+          "ndcg@10": 0.13449426451150218,
+          "recall@10": 0.06666666666666667,
+          "precision@10": 0.1,
+          "ndcg@20": 0.3608964919513504,
+          "recall@20": 0.4666666666666667,
+          "precision@20": 0.35,
+          "mrr": 0.3333333333333333,
+          "ap": 0.3209925672452749
+        },
+        "move_annotation_methodology": {
+          "ndcg@5": 0.1312050775123418,
+          "recall@5": 0.08333333333333333,
+          "precision@5": 0.2,
+          "ndcg@10": 0.19422032047157178,
+          "recall@10": 0.16666666666666666,
+          "precision@10": 0.2,
+          "ndcg@20": 0.22962709456694727,
+          "recall@20": 0.3333333333333333,
+          "precision@20": 0.2,
+          "mrr": 0.2,
+          "ap": 0.22942671653091215
+        },
+        "cars_l2_efl_contexts": {
+          "ndcg@5": 0.14606834984270647,
+          "recall@5": 0.07692307692307693,
+          "precision@5": 0.2,
+          "ndcg@10": 0.31729545655193053,
+          "recall@10": 0.3076923076923077,
+          "precision@10": 0.4,
+          "ndcg@20": 0.48455244077153964,
+          "recall@20": 0.6153846153846154,
+          "precision@20": 0.4,
+          "mrr": 0.25,
+          "ap": 0.3946382991013447
+        },
+        "abstract_rhetorical_conventions": {
+          "ndcg@5": 0.1312050775123418,
+          "recall@5": 0.16666666666666666,
+          "precision@5": 0.2,
+          "ndcg@10": 0.12612593148344123,
+          "recall@10": 0.16666666666666666,
+          "precision@10": 0.1,
+          "ndcg@20": 0.3227328093572117,
+          "recall@20": 0.6666666666666666,
+          "precision@20": 0.2,
+          "mrr": 0.2,
+          "ap": 0.2035573790644785
+        }
+      },
+      "judged_coverage": {
+        "intro_moves_cars": 1.0,
+        "disciplinary_variation": 1.0,
+        "corpus_genre_pedagogy": 1.0,
+        "move_annotation_methodology": 1.0,
+        "cars_l2_efl_contexts": 1.0,
+        "abstract_rhetorical_conventions": 1.0
+      },
+      "min_coverage": 1.0
+    },
+    "keyword": {
+      "n_queries": 6,
+      "n_judgments": 348,
+      "n_relevant": 90,
+      "mean": {
+        "ap": 0.5230957938546297,
+        "mrr": 0.8055555555555555,
+        "ndcg@10": 0.39521195210876403,
+        "ndcg@20": 0.5364269664317806,
+        "ndcg@5": 0.3302302548908132,
+        "precision@10": 0.45,
+        "precision@20": 0.4583333333333333,
+        "precision@5": 0.4666666666666666,
+        "recall@10": 0.3132404951370469,
+        "recall@20": 0.6085543766578249,
+        "recall@5": 0.16997494842322428
+      },
+      "per_query": {
+        "intro_moves_cars": {
+          "ndcg@5": 0.4759908431563517,
+          "recall@5": 0.1724137931034483,
+          "precision@5": 1.0,
+          "ndcg@10": 0.5741753062531283,
+          "recall@10": 0.3448275862068966,
+          "precision@10": 1.0,
+          "ndcg@20": 0.7304524993932061,
+          "recall@20": 0.6551724137931034,
+          "precision@20": 0.95,
+          "mrr": 1.0,
+          "ap": 0.9367583319860296
+        },
+        "disciplinary_variation": {
+          "ndcg@5": 0.0713287549115092,
+          "recall@5": 0.06666666666666667,
+          "precision@5": 0.2,
+          "ndcg@10": 0.2125174424132793,
+          "recall@10": 0.2,
+          "precision@10": 0.3,
+          "ndcg@20": 0.45966433506361615,
+          "recall@20": 0.6666666666666666,
+          "precision@20": 0.5,
+          "mrr": 0.5,
+          "ap": 0.42431072119926605
+        },
+        "corpus_genre_pedagogy": {
+          "ndcg@5": 0.2025950507216425,
+          "recall@5": 0.13333333333333333,
+          "precision@5": 0.4,
+          "ndcg@10": 0.23843359776822548,
+          "recall@10": 0.2,
+          "precision@10": 0.3,
+          "ndcg@20": 0.31408956869876814,
+          "recall@20": 0.4,
+          "precision@20": 0.3,
+          "mrr": 0.3333333333333333,
+          "ap": 0.355127486426091
+        },
+        "move_annotation_methodology": {
+          "ndcg@5": 0.11305340175787205,
+          "recall@5": 0.08333333333333333,
+          "precision@5": 0.2,
+          "ndcg@10": 0.2780610336933165,
+          "recall@10": 0.25,
+          "precision@10": 0.3,
+          "ndcg@20": 0.30664074407520403,
+          "recall@20": 0.4166666666666667,
+          "precision@20": 0.25,
+          "mrr": 1.0,
+          "ap": 0.3279053300983125
+        },
+        "cars_l2_efl_contexts": {
+          "ndcg@5": 0.7227265726449518,
+          "recall@5": 0.23076923076923078,
+          "precision@5": 0.6,
+          "ndcg@10": 0.5895700107729015,
+          "recall@10": 0.38461538461538464,
+          "precision@10": 0.5,
+          "ndcg@20": 0.8510140785028113,
+          "recall@20": 0.8461538461538461,
+          "precision@20": 0.55,
+          "mrr": 1.0,
+          "ap": 0.6553453905650858
+        },
+        "abstract_rhetorical_conventions": {
+          "ndcg@5": 0.3956869061525522,
+          "recall@5": 0.3333333333333333,
+          "precision@5": 0.4,
+          "ndcg@10": 0.4785143217517332,
+          "recall@10": 0.5,
+          "precision@10": 0.3,
+          "ndcg@20": 0.5567005728570774,
+          "recall@20": 0.6666666666666666,
+          "precision@20": 0.2,
+          "mrr": 1.0,
+          "ap": 0.439127502852993
+        }
+      },
+      "judged_coverage": {
+        "intro_moves_cars": 1.0,
+        "disciplinary_variation": 1.0,
+        "corpus_genre_pedagogy": 1.0,
+        "move_annotation_methodology": 1.0,
+        "cars_l2_efl_contexts": 1.0,
+        "abstract_rhetorical_conventions": 1.0
+      },
+      "min_coverage": 1.0
+    },
+    "citations_baseline": {
+      "n_queries": 6,
+      "n_judgments": 348,
+      "n_relevant": 90,
+      "mean": {
+        "ap": 0.2954670391016699,
+        "mrr": 0.5611111111111111,
+        "ndcg@10": 0.10844815934892416,
+        "ndcg@20": 0.21978020306912227,
+        "ndcg@5": 0.1490528423788074,
+        "precision@10": 0.10000000000000002,
+        "precision@20": 0.2333333333333333,
+        "precision@5": 0.20000000000000004,
+        "recall@10": 0.058716475095785446,
+        "recall@20": 0.2869584438549956,
+        "recall@5": 0.058716475095785446
+      },
+      "per_query": {
+        "intro_moves_cars": {
+          "ndcg@5": 0.4104889601851254,
+          "recall@5": 0.06896551724137931,
+          "precision@5": 0.4,
+          "ndcg@10": 0.2916295044483938,
+          "recall@10": 0.06896551724137931,
+          "precision@10": 0.2,
+          "ndcg@20": 0.40701076423997967,
+          "recall@20": 0.3448275862068966,
+          "precision@20": 0.5,
+          "mrr": 1.0,
+          "ap": 0.538581610492625
+        },
+        "disciplinary_variation": {
+          "ndcg@5": 0.3270396664923996,
+          "recall@5": 0.13333333333333333,
+          "precision@5": 0.4,
+          "ndcg@10": 0.23234343703454,
+          "recall@10": 0.13333333333333333,
+          "precision@10": 0.2,
+          "ndcg@20": 0.34217718416407533,
+          "recall@20": 0.3333333333333333,
+          "precision@20": 0.25,
+          "mrr": 1.0,
+          "ap": 0.38315299091612115
+        },
+        "corpus_genre_pedagogy": {
+          "ndcg@5": 0.11305340175787205,
+          "recall@5": 0.06666666666666667,
+          "precision@5": 0.2,
+          "ndcg@10": 0.08966284300766812,
+          "recall@10": 0.06666666666666667,
+          "precision@10": 0.1,
+          "ndcg@20": 0.2744887502667713,
+          "recall@20": 0.4666666666666667,
+          "precision@20": 0.35,
+          "mrr": 1.0,
+          "ap": 0.35997579189440054
+        },
+        "move_annotation_methodology": {
+          "ndcg@5": 0.04373502583744727,
+          "recall@5": 0.08333333333333333,
+          "precision@5": 0.2,
+          "ndcg@10": 0.03705317160294296,
+          "recall@10": 0.08333333333333333,
+          "precision@10": 0.1,
+          "ndcg@20": 0.18740701310121943,
+          "recall@20": 0.3333333333333333,
+          "precision@20": 0.2,
+          "mrr": 0.2,
+          "ap": 0.2247336318387542
+        },
+        "cars_l2_efl_contexts": {
+          "ndcg@5": 0.0,
+          "recall@5": 0.0,
+          "precision@5": 0.0,
+          "ndcg@10": 0.0,
+          "recall@10": 0.0,
+          "precision@10": 0.0,
+          "ndcg@20": 0.019491544085080664,
+          "recall@20": 0.07692307692307693,
+          "precision@20": 0.05,
+          "mrr": 0.08333333333333333,
+          "ap": 0.17171175982205394
+        },
+        "abstract_rhetorical_conventions": {
+          "ndcg@5": 0.0,
+          "recall@5": 0.0,
+          "precision@5": 0.0,
+          "ndcg@10": 0.0,
+          "recall@10": 0.0,
+          "precision@10": 0.0,
+          "ndcg@20": 0.08810596255760714,
+          "recall@20": 0.16666666666666666,
+          "precision@20": 0.05,
+          "mrr": 0.08333333333333333,
+          "ap": 0.09464644964606468
+        }
+      },
+      "judged_coverage": {
+        "intro_moves_cars": 1.0,
+        "disciplinary_variation": 1.0,
+        "corpus_genre_pedagogy": 1.0,
+        "move_annotation_methodology": 1.0,
+        "cars_l2_efl_contexts": 1.0,
+        "abstract_rhetorical_conventions": 1.0
+      },
+      "min_coverage": 1.0
+    }
+  }
+}

@@ -1,0 +1,59 @@
+[
+  {
+    "mode": "keyword",
+    "label": "Keyword-only (regex, no embedding)",
+    "elapsed_s": 110.4,
+    "identified": 1249,
+    "duplicates_removed": 260,
+    "excluded_year": 0,
+    "excluded_anchors": 544,
+    "excluded_score": 0,
+    "final_included": 150,
+    "top_5_scores": [
+      9.7,
+      8.0,
+      7.3,
+      7.2,
+      7.1
+    ],
+    "report": "results/RELATORIO_ELITE_20260910_101512.md"
+  },
+  {
+    "mode": "embedding",
+    "label": "Embedding-only (Weight-Bleeding, no regex)",
+    "elapsed_s": 210.5,
+    "identified": 1249,
+    "duplicates_removed": 260,
+    "excluded_year": 0,
+    "excluded_anchors": 544,
+    "excluded_score": 79,
+    "final_included": 150,
+    "top_5_scores": [
+      9.7,
+      8.0,
+      7.3,
+      7.2,
+      7.1
+    ],
+    "report": "results/RELATORIO_ELITE_20260910_101702.md"
+  },
+  {
+    "mode": "hybrid",
+    "label": "Hybrid (70% keyword + 30% embedding)",
+    "elapsed_s": 244.3,
+    "identified": 1305,
+    "duplicates_removed": 276,
+    "excluded_year": 0,
+    "excluded_anchors": 549,
+    "excluded_score": 8,
+    "final_included": 184,
+    "top_5_scores": [
+      9.7,
+      8.0,
+      7.3,
+      7.2,
+      7.2
+    ],
+    "report": "results/RELATORIO_ELITE_20260910_102033.md"
+  }
+]

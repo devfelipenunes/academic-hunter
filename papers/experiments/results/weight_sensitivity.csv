@@ -1,0 +1,81 @@
+weight,paper_index,paper,similarity,rank
+1,0,Blockchain Interoperability Frameworks: A Comparative Analysis of Cross-Chain So,0.8882,1
+1,1,"A Survey on Blockchain Interoperability: Past, Present, and Future Trends",0.7774,2
+1,5,"Blockchain-Based IoT Access Control System: Towards Security, Lightweight, and C",0.43,3
+1,7,Exploring Sybil and Double-Spending Risks in Blockchain Systems,0.4051,4
+1,4,A Low-Cost Cross-Border Payment System Based on Auditable Cryptocurrency,0.3946,5
+1,3,"ZeroTrustBlock: Enhancing Security, Privacy, and Interoperability",0.3833,6
+1,2,Blockchain-Powered Secure and Transparent Citizen Participation Framework,0.3593,7
+1,6,Self-sovereign identity for verifiable authorship consent,0.1173,8
+2,0,Blockchain Interoperability Frameworks: A Comparative Analysis of Cross-Chain So,0.8799,1
+2,1,"A Survey on Blockchain Interoperability: Past, Present, and Future Trends",0.7768,2
+2,5,"Blockchain-Based IoT Access Control System: Towards Security, Lightweight, and C",0.4417,3
+2,7,Exploring Sybil and Double-Spending Risks in Blockchain Systems,0.3985,4
+2,4,A Low-Cost Cross-Border Payment System Based on Auditable Cryptocurrency,0.3967,5
+2,3,"ZeroTrustBlock: Enhancing Security, Privacy, and Interoperability",0.3771,6
+2,2,Blockchain-Powered Secure and Transparent Citizen Participation Framework,0.3654,7
+2,6,Self-sovereign identity for verifiable authorship consent,0.1144,8
+3,0,Blockchain Interoperability Frameworks: A Comparative Analysis of Cross-Chain So,0.8661,1
+3,1,"A Survey on Blockchain Interoperability: Past, Present, and Future Trends",0.7558,2
+3,5,"Blockchain-Based IoT Access Control System: Towards Security, Lightweight, and C",0.4547,3
+3,4,A Low-Cost Cross-Border Payment System Based on Auditable Cryptocurrency,0.3956,4
+3,7,Exploring Sybil and Double-Spending Risks in Blockchain Systems,0.3862,5
+3,3,"ZeroTrustBlock: Enhancing Security, Privacy, and Interoperability",0.381,6
+3,2,Blockchain-Powered Secure and Transparent Citizen Participation Framework,0.3604,7
+3,6,Self-sovereign identity for verifiable authorship consent,0.112,8
+4,0,Blockchain Interoperability Frameworks: A Comparative Analysis of Cross-Chain So,0.8529,1
+4,1,"A Survey on Blockchain Interoperability: Past, Present, and Future Trends",0.744,2
+4,5,"Blockchain-Based IoT Access Control System: Towards Security, Lightweight, and C",0.4558,3
+4,4,A Low-Cost Cross-Border Payment System Based on Auditable Cryptocurrency,0.3928,4
+4,3,"ZeroTrustBlock: Enhancing Security, Privacy, and Interoperability",0.3778,5
+4,7,Exploring Sybil and Double-Spending Risks in Blockchain Systems,0.369,6
+4,2,Blockchain-Powered Secure and Transparent Citizen Participation Framework,0.3536,7
+4,6,Self-sovereign identity for verifiable authorship consent,0.1042,8
+5,0,Blockchain Interoperability Frameworks: A Comparative Analysis of Cross-Chain So,0.8413,1
+5,1,"A Survey on Blockchain Interoperability: Past, Present, and Future Trends",0.7291,2
+5,5,"Blockchain-Based IoT Access Control System: Towards Security, Lightweight, and C",0.46,3
+5,4,A Low-Cost Cross-Border Payment System Based on Auditable Cryptocurrency,0.3841,4
+5,3,"ZeroTrustBlock: Enhancing Security, Privacy, and Interoperability",0.365,5
+5,7,Exploring Sybil and Double-Spending Risks in Blockchain Systems,0.3648,6
+5,2,Blockchain-Powered Secure and Transparent Citizen Participation Framework,0.3499,7
+5,6,Self-sovereign identity for verifiable authorship consent,0.0991,8
+6,0,Blockchain Interoperability Frameworks: A Comparative Analysis of Cross-Chain So,0.8243,1
+6,1,"A Survey on Blockchain Interoperability: Past, Present, and Future Trends",0.7187,2
+6,5,"Blockchain-Based IoT Access Control System: Towards Security, Lightweight, and C",0.4523,3
+6,4,A Low-Cost Cross-Border Payment System Based on Auditable Cryptocurrency,0.3774,4
+6,3,"ZeroTrustBlock: Enhancing Security, Privacy, and Interoperability",0.3595,5
+6,7,Exploring Sybil and Double-Spending Risks in Blockchain Systems,0.357,6
+6,2,Blockchain-Powered Secure and Transparent Citizen Participation Framework,0.346,7
+6,6,Self-sovereign identity for verifiable authorship consent,0.0916,8
+7,0,Blockchain Interoperability Frameworks: A Comparative Analysis of Cross-Chain So,0.8087,1
+7,1,"A Survey on Blockchain Interoperability: Past, Present, and Future Trends",0.7005,2
+7,5,"Blockchain-Based IoT Access Control System: Towards Security, Lightweight, and C",0.4555,3
+7,4,A Low-Cost Cross-Border Payment System Based on Auditable Cryptocurrency,0.3744,4
+7,7,Exploring Sybil and Double-Spending Risks in Blockchain Systems,0.3544,5
+7,3,"ZeroTrustBlock: Enhancing Security, Privacy, and Interoperability",0.3541,6
+7,2,Blockchain-Powered Secure and Transparent Citizen Participation Framework,0.3414,7
+7,6,Self-sovereign identity for verifiable authorship consent,0.0849,8
+8,0,Blockchain Interoperability Frameworks: A Comparative Analysis of Cross-Chain So,0.7894,1
+8,1,"A Survey on Blockchain Interoperability: Past, Present, and Future Trends",0.6869,2
+8,5,"Blockchain-Based IoT Access Control System: Towards Security, Lightweight, and C",0.4442,3
+8,4,A Low-Cost Cross-Border Payment System Based on Auditable Cryptocurrency,0.3713,4
+8,7,Exploring Sybil and Double-Spending Risks in Blockchain Systems,0.346,5
+8,3,"ZeroTrustBlock: Enhancing Security, Privacy, and Interoperability",0.3445,6
+8,2,Blockchain-Powered Secure and Transparent Citizen Participation Framework,0.3367,7
+8,6,Self-sovereign identity for verifiable authorship consent,0.0796,8
+9,0,Blockchain Interoperability Frameworks: A Comparative Analysis of Cross-Chain So,0.7739,1
+9,1,"A Survey on Blockchain Interoperability: Past, Present, and Future Trends",0.6684,2
+9,5,"Blockchain-Based IoT Access Control System: Towards Security, Lightweight, and C",0.432,3
+9,4,A Low-Cost Cross-Border Payment System Based on Auditable Cryptocurrency,0.3617,4
+9,7,Exploring Sybil and Double-Spending Risks in Blockchain Systems,0.3414,5
+9,3,"ZeroTrustBlock: Enhancing Security, Privacy, and Interoperability",0.3295,6
+9,2,Blockchain-Powered Secure and Transparent Citizen Participation Framework,0.3277,7
+9,6,Self-sovereign identity for verifiable authorship consent,0.0731,8
+10,0,Blockchain Interoperability Frameworks: A Comparative Analysis of Cross-Chain So,0.7513,1
+10,1,"A Survey on Blockchain Interoperability: Past, Present, and Future Trends",0.6546,2
+10,5,"Blockchain-Based IoT Access Control System: Towards Security, Lightweight, and C",0.4187,3
+10,4,A Low-Cost Cross-Border Payment System Based on Auditable Cryptocurrency,0.3535,4
+10,7,Exploring Sybil and Double-Spending Risks in Blockchain Systems,0.332,5
+10,2,Blockchain-Powered Secure and Transparent Citizen Participation Framework,0.322,6
+10,3,"ZeroTrustBlock: Enhancing Security, Privacy, and Interoperability",0.3171,7
+10,6,Self-sovereign identity for verifiable authorship consent,0.0644,8

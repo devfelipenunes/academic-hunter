@@ -4,8 +4,29 @@
 Usage:
     python papers/experiments/run_ablation.py [--quick]
 
-Runs the same search configuration across 3 scoring modes and reports
-how many papers pass the relevance threshold in each mode.
+Runs the same search configuration across 3 scoring modes.
+
+**Read `excluded_score`, not `Final`.** The ablation mode acts at *ingest*: it
+decides which papers pass the inclusion threshold (`_hybrid_score` against
+`min_inclusion_score`). The reported `Relevance_Score` is written later by
+`RecomputeRanksStep`, which fuses the keyword and embedding scores — and both of
+those are computed the same way regardless of mode. The reported outcome is
+therefore **mode-independent by construction**, and so is `Final`, and so are
+`Top-1`/`Top-5`.
+
+That was not always true: ingest used to write `Relevance_Score` directly, so
+the mode did propagate. Once the two scores were separated (one writer each), the
+mode's effect became confined to `excluded_score` — the count of papers the
+ingest gate rejected.
+
+Measured on the 2026-09-10 regeneration, the modes with identical source data
+(keyword and embedding, both 1249 identified) produced `excluded_score` 0 and 79
+respectively, yet an identical `Final` of 150 and an identical exported set
+(Jaccard 1.000 in `overlap_analysis.py`). The residual spread in `Identified`
+between runs is the HTTP cache and live sources, not the scoring mode.
+
+A table reporting `Final` across modes is therefore measuring run-to-run source
+variation. This summary prints the mode-dependent quantity for that reason.
 """
 
 import json
@@ -115,12 +136,35 @@ def main():
     # Summary table
     print(f"\n\n{'='*60}")
     print(f"  ABLATION RESULTS SUMMARY")
-    print(f"{'='*60}")
-    print(f"{'Mode':<25} {'Identified':>10} {'Final':>8} {'Top-1':>8} {'Top-5':>20}")
-    print(f"{'-'*25} {'-'*10} {'-'*8} {'-'*8} {'-'*20}")
+    print(f"{'='*78}")
+    print(
+        f"{'Mode':<12} {'Identified':>10} {'Excl(anchors)':>14} "
+        f"{'Excl(score)':>12} {'Final':>7} {'Top-1':>7}"
+    )
+    print(f"{'-'*12} {'-'*10} {'-'*14} {'-'*12} {'-'*7} {'-'*7}")
     for r in results:
-        top5 = ", ".join(str(s) for s in r["top_5_scores"])
-        print(f"{r['mode']:<25} {r['identified']:>10} {r['final_included']:>8} {r['top_5_scores'][0]:>8} {top5:>20}")
+        print(
+            f"{r['mode']:<12} {r['identified']:>10} {r['excluded_anchors']:>14} "
+            f"{r['excluded_score']:>12} {r['final_included']:>7} "
+            f"{r['top_5_scores'][0]:>7}"
+        )
+
+    # The mode acts only on `excluded_score`; `Final` and the top scores are
+    # produced by a fusion that does not depend on the mode. Say so, so the
+    # table is not read as an ablation of the reported score.
+    excluded = [r["excluded_score"] for r in results]
+    finals = {r["final_included"] for r in results}
+    print()
+    if len(set(excluded)) == 1:
+        print("  Note: every mode rejected the same number of papers at ingest, so")
+        print("        this corpus shows no mode effect. Compare `Excl(score)`.")
+    else:
+        print(f"  Mode-dependent quantity is `Excl(score)`: {excluded}.")
+    if len(finals) == 1:
+        print(
+            f"  All modes report the same Final ({finals.pop()}) — expected, since the "
+            "reported\n  score is fused from signals that do not depend on the mode."
+        )
 
     # Save results. A --quick run covers only the first mode, so it must not
     # clobber the canonical 3-mode file — that is how the committed

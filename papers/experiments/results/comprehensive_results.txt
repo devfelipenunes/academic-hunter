@@ -1,0 +1,17 @@
+COMPREHENSIVE BENCHMARK RESULTS
+======================================================================
+
+SGPT vs WB: Vanilla vs SGPT ρ=1.0000, Vanilla vs WB ρ=0.8786
+SIF vs WB: Vanilla vs SIF ρ=0.7286, Vanilla vs WB ρ=0.8786
+
+N_base sweep:
+  N_base=  3  →  ρ=0.8786 vs vanilla
+  N_base=  5  →  ρ=0.9071 vs vanilla
+  N_base= 10  →  ρ=0.9250 vs vanilla
+  N_base= 20  →  ρ=0.9429 vs vanilla
+  N_base= 50  →  ρ=0.8893 vs vanilla
+
+BEIR subset results:
+  sentence embeddings for semantic textual: vanilla=5/5, wb=5/5
+  transformer attention mechanisms in NLP: vanilla=5/5, wb=5/5
+  term repetition in language model embedd: vanilla=5/5, wb=5/5

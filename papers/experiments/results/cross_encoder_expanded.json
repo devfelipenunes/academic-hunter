@@ -1,0 +1,165 @@
+{
+  "results": [
+    {
+      "query": "systematic literature review automation",
+      "paper": "Evaluation of Attention-Based LSTM and Bi-LSTM Networks For ",
+      "bi_encoder_vanilla": 0.6366,
+      "weight_bleeding": 0.5452,
+      "naive_repetition": 0.5815,
+      "cross_encoder": 6.971
+    },
+    {
+      "query": "cross-chain bridge security",
+      "paper": "Blockchain Cross-Chain Bridge Security: Challenges, Solution",
+      "bi_encoder_vanilla": 0.7615,
+      "weight_bleeding": 0.6942,
+      "naive_repetition": 0.7315,
+      "cross_encoder": 7.846
+    },
+    {
+      "query": "sentence embedding mean pooling",
+      "paper": "Extracting Sentence Embeddings from Pretrained Transformer M",
+      "bi_encoder_vanilla": 0.5298,
+      "weight_bleeding": 0.5372,
+      "naive_repetition": 0.5124,
+      "cross_encoder": 1.525
+    },
+    {
+      "query": "active learning screening",
+      "paper": "MSR63 Implementing Simple Active Learning Boosters",
+      "bi_encoder_vanilla": 0.6245,
+      "weight_bleeding": 0.6322,
+      "naive_repetition": 0.5639,
+      "cross_encoder": 1.4021
+    },
+    {
+      "query": "hybrid retrieval scoring",
+      "paper": "A Multi-Stage Hybrid Retrieval Framework for the Scientific ",
+      "bi_encoder_vanilla": 0.5683,
+      "weight_bleeding": 0.5518,
+      "naive_repetition": 0.5419,
+      "cross_encoder": 2.5449
+    },
+    {
+      "query": "term repetition embedding",
+      "paper": "Repetition Improves Language Model Embeddings",
+      "bi_encoder_vanilla": 0.7429,
+      "weight_bleeding": 0.6803,
+      "naive_repetition": 0.7278,
+      "cross_encoder": 3.9544
+    },
+    {
+      "query": "mean pooling transformer",
+      "paper": "Why Mean Pooling Works: Quantifying Second-Order Collapse in",
+      "bi_encoder_vanilla": 0.2367,
+      "weight_bleeding": 0.2666,
+      "naive_repetition": 0.2877,
+      "cross_encoder": 2.0278
+    },
+    {
+      "query": "contrastive learning sentence",
+      "paper": "ESimCSE: Enhanced Sample Building Method for Contrastive Lea",
+      "bi_encoder_vanilla": 0.6461,
+      "weight_bleeding": 0.6069,
+      "naive_repetition": 0.5786,
+      "cross_encoder": 0.5463
+    },
+    {
+      "query": "systematic review tool",
+      "paper": "SWARM-SLR AIssistant: A Unified Framework for Scalable Syste",
+      "bi_encoder_vanilla": 0.731,
+      "weight_bleeding": 0.731,
+      "naive_repetition": 0.6442,
+      "cross_encoder": 5.1542
+    },
+    {
+      "query": "smooth inverse frequency",
+      "paper": "A Critique of the Smooth Inverse Frequency Sentence Embeddin",
+      "bi_encoder_vanilla": 0.5616,
+      "weight_bleeding": 0.5518,
+      "naive_repetition": 0.5518,
+      "cross_encoder": 6.7038
+    },
+    {
+      "query": "generative ai transformer model",
+      "paper": "Generative AI Models and Their Potential Business Use Cases",
+      "bi_encoder_vanilla": 0.5617,
+      "weight_bleeding": 0.538,
+      "naive_repetition": 0.5296,
+      "cross_encoder": 4.5756
+    },
+    {
+      "query": "deep neural network training",
+      "paper": "A Study On The Restrictions Of Deep Learning",
+      "bi_encoder_vanilla": 0.5748,
+      "weight_bleeding": 0.5748,
+      "naive_repetition": 0.4343,
+      "cross_encoder": -9.692
+    },
+    {
+      "query": "artificial intelligence digital transformation",
+      "paper": "Artificial intelligence (AI) and machine learning in digital",
+      "bi_encoder_vanilla": 0.5245,
+      "weight_bleeding": 0.5245,
+      "naive_repetition": 0.4454,
+      "cross_encoder": 1.997
+    },
+    {
+      "query": "transformer attention mechanism",
+      "paper": "Basic Attention Head as a Building Block toward Understandin",
+      "bi_encoder_vanilla": 0.8016,
+      "weight_bleeding": 0.7218,
+      "naive_repetition": 0.7493,
+      "cross_encoder": 2.8089
+    },
+    {
+      "query": "large language model security",
+      "paper": "Securing Generative AI and Large Language Models (LLMs): A C",
+      "bi_encoder_vanilla": 0.6349,
+      "weight_bleeding": 0.5759,
+      "naive_repetition": 0.549,
+      "cross_encoder": 5.2985
+    },
+    {
+      "query": "sentence transformer embedding",
+      "paper": "Digital Record Classification Using SVM on Permissioned Bloc",
+      "bi_encoder_vanilla": 0.0321,
+      "weight_bleeding": 0.018,
+      "naive_repetition": 0.0135,
+      "cross_encoder": -11.3452
+    },
+    {
+      "query": "term repetition weighting",
+      "paper": "Home Automation for Disable Person Using Gesture Control and",
+      "bi_encoder_vanilla": -0.0394,
+      "weight_bleeding": -0.0362,
+      "naive_repetition": -0.0447,
+      "cross_encoder": -11.3997
+    },
+    {
+      "query": "bi encoder semantic search",
+      "paper": "Visualizing the Decision-Making Process of Categorization Mo",
+      "bi_encoder_vanilla": 0.1924,
+      "weight_bleeding": 0.1924,
+      "naive_repetition": 0.1461,
+      "cross_encoder": -11.3572
+    },
+    {
+      "query": "dense retrieval neural ir",
+      "paper": "Women\u2019s Perceptions of AI in Digital Marketing",
+      "bi_encoder_vanilla": 0.0689,
+      "weight_bleeding": 0.0689,
+      "naive_repetition": 0.0603,
+      "cross_encoder": -11.3124
+    },
+    {
+      "query": "systematic review screening",
+      "paper": "Fighting crime with Transformers: Empirical analysis of addr",
+      "bi_encoder_vanilla": -0.0215,
+      "weight_bleeding": -0.0215,
+      "naive_repetition": -0.0534,
+      "cross_encoder": -11.4292
+    }
+  ],
+  "method": "Spearman rank correlation"
+}
