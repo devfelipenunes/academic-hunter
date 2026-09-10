@@ -16,6 +16,8 @@ import hashlib
 import json
 import logging
 import sys
+import threading
+from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -25,6 +27,10 @@ from .base import BaseScreener
 logger = logging.getLogger("academic_hunter.semantic_screener")
 
 _DEFAULT_EMBED_DIM = 384
+
+#: Papers whose embeddings are kept. Bounded because a long run would otherwise
+#: hold every abstract it ever scored in memory.
+_PAPER_CACHE_MAX = 4096
 
 
 class SemanticScreener(BaseScreener):
@@ -51,7 +57,39 @@ class SemanticScreener(BaseScreener):
         self.model_name = model_name
         self._embedding_function: Optional[Any] = None
         self._cached_base: Dict[str, Dict[str, np.ndarray]] = {}
+        #: Paper text -> embedding. Bounded LRU; guarded by its own lock so a
+        #: threaded run cannot corrupt it.
+        self._paper_cache: "OrderedDict[str, np.ndarray]" = OrderedDict()
+        self._cache_lock = threading.Lock()
 
+    def _embed_paper(self, text: str) -> np.ndarray:
+        """Embed the paper text, reusing a previous result when it repeats.
+
+        The pipeline scores the same paper more than once — at validation, again
+        after a duplicate merge, and again by the rank step's backfill for any
+        paper whose component score was invalidated — and each call used to
+        re-encode the identical string. Measured cost on CPU is about 1.5 s per
+        document with an abstract, so the repeats are not a rounding error.
+
+        The embedding runs outside the lock: two threads racing on the same
+        unseen text would compute the same vector twice, which is harmless,
+        whereas holding the lock across a one-second encode would serialise the
+        whole run.
+        """
+        with self._cache_lock:
+            cached = self._paper_cache.get(text)
+            if cached is not None:
+                self._paper_cache.move_to_end(text)
+                return cached
+
+        vector = np.array(self.embedding_function([text])[0], dtype=np.float32)
+
+        with self._cache_lock:
+            self._paper_cache[text] = vector
+            self._paper_cache.move_to_end(text)
+            while len(self._paper_cache) > _PAPER_CACHE_MAX:
+                self._paper_cache.popitem(last=False)
+        return vector
 
     def evaluate(self, paper_data: Dict[str, Any], config: Dict[str, Any]) -> float:
         """Semantic relevance score (0-1) between paper and config terms.
@@ -66,7 +104,8 @@ class SemanticScreener(BaseScreener):
         the two are not equivalent in practice.
 
         Caches base + term embeddings across calls since they depend only on
-        the config (same for all papers in a run).
+        the config (same for all papers in a run), and paper embeddings keyed by
+        text — see :meth:`_embed_paper` for why the latter matters.
         """
         paper_text = self._extract_paper_text(paper_data)
         if not paper_text:
@@ -77,7 +116,7 @@ class SemanticScreener(BaseScreener):
             return 0.0
 
         v_ref = self._get_ref_centroid(base_parts, tech_weights)
-        v_paper = np.array(self.embedding_function([paper_text])[0], dtype=np.float32)
+        v_paper = self._embed_paper(paper_text)
 
         similarity = self._cosine(v_paper, v_ref)
         logger.debug(

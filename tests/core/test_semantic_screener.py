@@ -418,3 +418,107 @@ class TestCosineHelper:
 if __name__ == "__main__":
     import pytest, sys
     sys.exit(pytest.main([__file__, "-v", "--tb=short"]))
+
+
+# ===========================================================================
+# Paper embedding cache
+# ===========================================================================
+
+
+class TestPaperEmbeddingCache:
+    """The paper embedding is reused when the identical text is scored again.
+
+    The pipeline scores the same paper several times — validation, duplicate
+    merge, and the rank step's backfill — and each call used to re-encode the
+    identical string at roughly 1.5 s per abstract on CPU.
+    """
+
+    @pytest.fixture
+    def counting_screener(self, monkeypatch):
+        """A screener whose embedding function records every text it encodes."""
+        dim = 384
+        encoded: list = []
+
+        def fake_embed(texts):
+            encoded.extend(texts)
+            vectors = []
+            for _ in texts:
+                v = np.zeros(dim, dtype=np.float32)
+                v[0] = 1.0
+                vectors.append(v)
+            return vectors
+
+        monkeypatch.setattr(
+            SemanticScreener, "embedding_function",
+            property(lambda self: fake_embed),
+        )
+        screener = SemanticScreener()
+        screener.encoded = encoded
+        return screener
+
+    def test_same_paper_is_encoded_once(self, counting_screener, base_config, base_paper):
+        counting_screener.evaluate(base_paper, base_config)
+        after_first = list(counting_screener.encoded)
+
+        counting_screener.evaluate(base_paper, base_config)
+
+        assert counting_screener.encoded == after_first, (
+            "the identical paper text was encoded a second time"
+        )
+
+    def test_distinct_papers_are_each_encoded(self, counting_screener, base_config, base_paper):
+        other = {"Title": "A Different Paper", "Abstract": "Entirely other content."}
+
+        counting_screener.evaluate(base_paper, base_config)
+        counting_screener.evaluate(other, base_config)
+
+        assert len(counting_screener._paper_cache) == 2
+
+    def test_cache_hit_returns_the_same_score(self, counting_screener, base_config, base_paper):
+        """Reuse must not change the number — only the cost."""
+        first = counting_screener.evaluate(base_paper, base_config)
+        second = counting_screener.evaluate(base_paper, base_config)
+
+        assert first == pytest.approx(second)
+
+    def test_whitespace_variation_is_a_different_key(self, counting_screener, base_config):
+        """The key is the exact text, so near-duplicates are not conflated."""
+        a = {"Title": "T", "Abstract": "A"}
+        b = {"Title": "T ", "Abstract": " A"}
+
+        counting_screener.evaluate(a, base_config)
+        counting_screener.evaluate(b, base_config)
+
+        assert len(counting_screener._paper_cache) == 2
+
+    def test_cache_is_bounded(self, counting_screener, base_config, monkeypatch):
+        """A long run must not hold every abstract it ever scored."""
+        monkeypatch.setattr(
+            "academic_hunter.plugins.screeners.semantic._PAPER_CACHE_MAX", 3
+        )
+
+        for i in range(10):
+            counting_screener.evaluate(
+                {"Title": f"Paper {i}", "Abstract": "content"}, base_config
+            )
+
+        assert len(counting_screener._paper_cache) == 3
+
+    def test_eviction_drops_the_least_recently_used(self, counting_screener, base_config, monkeypatch):
+        """The bound is LRU, not arbitrary — repeated papers survive."""
+        monkeypatch.setattr(
+            "academic_hunter.plugins.screeners.semantic._PAPER_CACHE_MAX", 2
+        )
+        keep = {"Title": "Keep", "Abstract": "this one is reused"}
+
+        counting_screener.evaluate(keep, base_config)
+        counting_screener.evaluate({"Title": "B", "Abstract": "b"}, base_config)
+        counting_screener.evaluate(keep, base_config)          # refreshes `keep`
+        counting_screener.evaluate({"Title": "C", "Abstract": "c"}, base_config)
+
+        assert keep_text(keep) in counting_screener._paper_cache
+
+
+def keep_text(paper):
+    """The cache key for a paper, matching SemanticScreener._extract_paper_text."""
+    return f"{paper['Title']} {paper['Abstract']}".strip()
