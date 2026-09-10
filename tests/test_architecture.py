@@ -110,6 +110,7 @@ def test_ports_declare_no_plugin_dependency():
         "academic_hunter.core.ports.screener",
         "academic_hunter.core.ports.vector_store",
         "academic_hunter.core.ports.connector",
+        "academic_hunter.core.ports.fulltext",
     ],
 )
 def test_ports_are_importable(module):

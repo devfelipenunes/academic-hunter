@@ -11,8 +11,18 @@ narrow ``ConnectorPort`` protocol below.
 
 from .connector import ConnectorPort
 from .exporter import BaseExporter, ExportContext
+from .fulltext import (
+    ExtractedDocument,
+    FullTextConfigError,
+    FullTextError,
+    FullTextSourcePort,
+    FullTextTransientError,
+    NoOpenAccessVersion,
+    OpenAccessLocation,
+    TextExtractorPort,
+)
 from .screener import BaseScreener
-from .vector_store import BaseVectorStore
+from .vector_store import BaseVectorStore, ChunkStorePort
 
 __all__ = [
     "ConnectorPort",
@@ -20,4 +30,13 @@ __all__ = [
     "ExportContext",
     "BaseScreener",
     "BaseVectorStore",
+    "ChunkStorePort",
+    "ExtractedDocument",
+    "FullTextConfigError",
+    "FullTextError",
+    "FullTextSourcePort",
+    "FullTextTransientError",
+    "NoOpenAccessVersion",
+    "OpenAccessLocation",
+    "TextExtractorPort",
 ]
