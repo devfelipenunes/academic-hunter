@@ -6,6 +6,7 @@ for logging and progress reporting.
 
 import logging
 
+from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
 from ._utils import _get_vector_store
@@ -36,10 +37,11 @@ async def find_novel_papers(ctx: Context, top_k: int = 500, contamination: float
         return "Not enough papers for novelty detection."
 
     try:
-        from sentence_transformers import SentenceTransformer
         from sklearn.covariance import EllipticEnvelope
 
-        model = SentenceTransformer("all-MiniLM-L6-v2")
+        model = get_sentence_transformer()
+        if model is None:
+            raise ImportError("sentence-transformers")
         texts = [f"{p.get('title', '')} {p.get('abstract', '')}" for p in results]
         embeddings = model.encode(texts)
 

@@ -1,7 +1,9 @@
 """Tests for semantic dedup tool."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from academic_hunter.interfaces.mcp.tools.dedup import semantic_dedup
 
 
@@ -18,13 +20,16 @@ async def test_semantic_dedup(mock_ctx):
         store = MagicMock()
         store.query.return_value = mock_papers
         m_get.return_value = store
-        with patch("academic_hunter.interfaces.mcp.tools.dedup.SentenceTransformer") as m_st:
+        with patch("academic_hunter.interfaces.mcp.tools.dedup.get_sentence_transformer") as m_st:
             model = MagicMock()
             model.encode.return_value = mock_embeddings
             m_st.return_value = model
             result = await semantic_dedup(mock_ctx, threshold=0.8, min_group_size=2)
             assert "Duplicate" in result or "dedup" in result.lower()
             mock_ctx.info.assert_called()
+            # The embeddings must actually have been computed; without this the
+            # test still passes when the model is absent and the tool bails out.
+            model.encode.assert_called_once()
 
 
 async def test_semantic_dedup_no_store(mock_ctx):

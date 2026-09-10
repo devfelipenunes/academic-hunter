@@ -5,7 +5,9 @@ Provides visualize_landscape and topic_evolution tools.
 
 import json
 import logging
+
 from mcp.server.fastmcp import Context
+
 from ._utils import _get_vector_store
 
 logger = logging.getLogger("academic_hunter.mcp.visualization")
@@ -18,17 +20,15 @@ try:
 except ImportError:
     BERTopic = None
 
-# Module-level references for UMAP and SentenceTransformer so that
-# unittest.mock.patch can target them from the test suite.
+# Module-level reference for UMAP so that unittest.mock.patch can target it
+# from the test suite. SentenceTransformer is reached through the shared cache
+# instead; tests patch `visualization.get_sentence_transformer`.
 try:
     import umap
 except ImportError:
     umap = None
 
-try:
-    from sentence_transformers import SentenceTransformer
-except ImportError:
-    SentenceTransformer = None
+from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 
 
 async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int = 15) -> str:
@@ -58,7 +58,8 @@ async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int =
         await ctx.error("UMAP is not installed")
         return "Required library not installed: umap-learn. Install with: pip install umap-learn"
 
-    if SentenceTransformer is None:
+    model = get_sentence_transformer()
+    if model is None:
         await ctx.error("SentenceTransformer is not installed")
         return "Required library not installed: sentence-transformers"
 
@@ -66,7 +67,6 @@ async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int =
         import numpy as np
 
         texts = [f"{p.get('title','')} {p.get('abstract_preview','')}" for p in results]
-        model = SentenceTransformer("all-MiniLM-L6-v2")
         embeddings = model.encode(texts)
 
         reducer = umap.UMAP(n_neighbors=min(n_neighbors, len(results) - 1), min_dist=0.1, random_state=42)
@@ -124,7 +124,8 @@ async def topic_evolution(ctx: Context, top_k: int = 500) -> str:
             "Install it with: pip install bertopic umap-learn hdbscan"
         )
 
-    if SentenceTransformer is None:
+    model = get_sentence_transformer()
+    if model is None:
         await ctx.error("SentenceTransformer is not installed")
         return "Required library not installed: sentence-transformers"
 
@@ -141,7 +142,6 @@ async def topic_evolution(ctx: Context, top_k: int = 500) -> str:
             year = p.get("year", 0)
             years.append(int(year) if year else 0)
 
-        model = SentenceTransformer("all-MiniLM-L6-v2")
         topic_model = BERTopic(embedding_model=model, min_topic_size=3, verbose=False)
         topics, _ = topic_model.fit_transform(documents)
 

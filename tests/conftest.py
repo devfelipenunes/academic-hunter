@@ -1,10 +1,27 @@
 import json
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
+
 import pytest
 
 from academic_hunter import AcademicHunter
+from academic_hunter.core.nlp.model_cache import clear_model_cache
+
+
+@pytest.fixture(autouse=True)
+def _reset_model_cache():
+    """Drop cached ML models around every test.
+
+    ``core.nlp.model_cache`` holds models in module-level dicts. Without this, a
+    model loaded — or mocked — by one test would satisfy the next one, which
+    would then pass while never exercising the code it claims to. Autouse at the
+    root so the MCP suite and the core suite share one reset rather than each
+    growing its own.
+    """
+    clear_model_cache()
+    yield
+    clear_model_cache()
 
 
 @pytest.fixture

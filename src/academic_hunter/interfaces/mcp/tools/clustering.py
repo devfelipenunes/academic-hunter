@@ -5,7 +5,10 @@ and the tool function returns a graceful message when it is missing.
 """
 
 import logging
+
+from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
+
 from ._utils import _get_vector_store
 
 logger = logging.getLogger("academic_hunter.mcp.clustering")
@@ -83,9 +86,9 @@ async def cluster_papers(
 
     # ── Run BERTopic ────────────────────────────────────────────────────────
     try:
-        from sentence_transformers import SentenceTransformer
-
-        embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+        embedding_model = get_sentence_transformer()
+        if embedding_model is None:
+            raise ImportError("sentence-transformers")
         topic_model = BERTopic(
             embedding_model=embedding_model,
             min_topic_size=min_cluster_size,

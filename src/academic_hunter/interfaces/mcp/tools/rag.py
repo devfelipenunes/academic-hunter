@@ -5,10 +5,12 @@ for logging and progress reporting.
 """
 
 import logging
+
 from mcp.server.fastmcp import Context
 
-from ._utils import _get_vector_store, _make_hunter
+from ....core.nlp.model_cache import get_cross_encoder
 from ..exceptions import VectorStoreError
+from ._utils import _get_vector_store, _make_hunter
 
 logger = logging.getLogger("academic_hunter.mcp.rag")
 
@@ -289,20 +291,22 @@ async def rerank_search(ctx: Context, query: str, top_k: int = 20, rerank_k: int
         await ctx.info("No results found")
         return "No semantically relevant papers found."
 
-    # Optional cross-encoder re-ranking
-    try:
-        from sentence_transformers import CrossEncoder
-        ce = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", max_length=512)
-        pairs = [[query, f"{p.get('title','')} {p.get('abstract_preview','')}"] for p in results]
-        scores = ce.predict(pairs)
-        scored = list(zip(results, scores))
-        scored.sort(key=lambda x: x[1], reverse=True)
-        results = [r for r, _ in scored[:rerank_k]]
-        await ctx.info(f"Cross-encoder re-ranked {len(scored)} candidates")
-    except ImportError:
+    # Optional cross-encoder re-ranking. The model is cached by
+    # `core.nlp.model_cache`: loading it costs ~5.9 s on CPU, which this tool
+    # used to pay on every call before doing any work.
+    ce = get_cross_encoder()
+    if ce is None:
         await ctx.info("Cross-encoder not installed, using bi-encoder results")
-    except Exception as e:
-        await ctx.warning(f"Cross-encoder failed ({e}), using bi-encoder results")
+    else:
+        try:
+            pairs = [[query, f"{p.get('title','')} {p.get('abstract_preview','')}"] for p in results]
+            scores = ce.predict(pairs)
+            scored = list(zip(results, scores))
+            scored.sort(key=lambda x: x[1], reverse=True)
+            results = [r for r, _ in scored[:rerank_k]]
+            await ctx.info(f"Cross-encoder re-ranked {len(scored)} candidates")
+        except Exception as e:
+            await ctx.warning(f"Cross-encoder failed ({e}), using bi-encoder results")
 
     lines = [f"# Re-Ranked Search Results\n", f"**Query:** {query}\n",
              f"**Results:** {len(results)}\n", "---\n"]

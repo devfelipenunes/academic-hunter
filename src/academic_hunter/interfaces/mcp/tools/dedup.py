@@ -6,17 +6,11 @@ Uses MiniLM embeddings to find near-duplicate papers.
 import logging
 
 import numpy as np
+
+from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
 from ._utils import _get_vector_store
-
-try:
-    from sentence_transformers import SentenceTransformer
-
-    SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    SentenceTransformer = None
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 logger = logging.getLogger("academic_hunter.mcp.dedup")
 
@@ -46,13 +40,14 @@ async def semantic_dedup(ctx: Context, threshold: float = 0.85, min_group_size: 
         await ctx.info("Too few papers for dedup")
         return "Not enough papers for deduplication."
 
-    # Compute embeddings for all papers
-    if SentenceTransformer is None:
+    # Compute embeddings for all papers. The model is shared and cached —
+    # loading MiniLM takes seconds and this tool used to pay it on every call.
+    model = get_sentence_transformer()
+    if model is None:
         await ctx.error("sentence-transformers not installed")
         return "Error: sentence-transformers not installed."
 
     try:
-        model = SentenceTransformer("all-MiniLM-L6-v2")
         texts = [f"{p.get('title', '')} {p.get('abstract_preview', '')}" for p in results]
         embeddings = model.encode(texts)
     except Exception as e:

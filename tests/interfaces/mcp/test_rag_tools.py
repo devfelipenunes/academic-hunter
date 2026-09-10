@@ -3,17 +3,18 @@
 Uses mock_ctx from conftest and patches ChromaVectorStore / AcademicHunter.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-from academic_hunter.interfaces.mcp.tools.rag import (
-    semantic_search,
-    index_papers,
-    vector_store_stats,
-    ask_papers,
-    answer_question,
-)
-from academic_hunter.interfaces.mcp.exceptions import MCPToolError
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from academic_hunter.interfaces.mcp.exceptions import MCPToolError
+from academic_hunter.interfaces.mcp.tools.rag import (
+    answer_question,
+    ask_papers,
+    index_papers,
+    semantic_search,
+    vector_store_stats,
+)
 
 # ── semantic_search ───────────────────────────────────────────────────────────
 
@@ -205,7 +206,16 @@ async def test_answer_question_store_unavailable(mock_ctx):
 
 
 async def test_rerank_search_basic(mock_vector_store, mock_ctx):
-    """Returns re-ranked search results."""
+    """Returns re-ranked search results.
+
+    The patch targets ``sentence_transformers.CrossEncoder`` — the package
+    attribute — because the production code does ``from sentence_transformers
+    import CrossEncoder``. Patching ``sentence_transformers.cross_encoder``
+    instead leaves the package attribute bound to the real class, so the mock is
+    never consulted: the test then loads the real model and passes either way.
+    That is what this test used to do; the two assertions below are what make it
+    fail when the reranker is not wired up.
+    """
     from academic_hunter.interfaces.mcp.tools.rag import rerank_search
 
     mock_vector_store.query.return_value = [
@@ -213,7 +223,7 @@ async def test_rerank_search_basic(mock_vector_store, mock_ctx):
         {"title": "Paper B", "semantic_relevance": 0.87},
     ]
 
-    with patch("sentence_transformers.cross_encoder.CrossEncoder") as m_ce:
+    with patch("sentence_transformers.CrossEncoder") as m_ce:
         instance = MagicMock()
         instance.predict.return_value = [0.9, 0.8]
         m_ce.return_value = instance
@@ -222,6 +232,35 @@ async def test_rerank_search_basic(mock_vector_store, mock_ctx):
         assert "Re-Ranked" in result
         assert "Paper A" in result
         mock_ctx.info.assert_called()
+        # Proof the cross-encoder actually ran: without these the test still
+        # passes when the model is absent and the tool silently falls back.
+        m_ce.assert_called_once()
+        instance.predict.assert_called_once()
+
+
+async def test_rerank_search_reuses_the_cached_model(mock_vector_store, mock_ctx):
+    """Two searches load the cross-encoder once, not once per call.
+
+    Loading the model costs ~5.9 s on CPU and used to be paid on every call.
+    The regression this pins: with the model constructed inline in
+    ``rerank_search``, ``m_ce`` is called twice.
+    """
+    from academic_hunter.interfaces.mcp.tools.rag import rerank_search
+
+    mock_vector_store.query.return_value = [{"title": "Paper A", "semantic_relevance": 0.9}]
+
+    with patch("sentence_transformers.CrossEncoder") as m_ce:
+        instance = MagicMock()
+        instance.predict.return_value = [0.9]
+        m_ce.return_value = instance
+
+        await rerank_search(mock_ctx, "first", top_k=10, rerank_k=5)
+        await rerank_search(mock_ctx, "second", top_k=10, rerank_k=5)
+
+        assert m_ce.call_count == 1, (
+            f"the model was constructed {m_ce.call_count} times; it must be cached"
+        )
+        assert instance.predict.call_count == 2, "both searches must actually rerank"
 
 
 async def test_rerank_search_no_results(mock_vector_store, mock_ctx):

@@ -7,11 +7,10 @@ All patching uses the module-level names in visualization.py so that
 """
 
 import json
-import numpy as np
 from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pytest
-
 
 # ── visualize_landscape tests ──────────────────────────────────────────────────
 
@@ -35,7 +34,7 @@ async def test_visualize_landscape(mock_ctx):
             m_umap.UMAP.return_value.fit_transform.return_value = mock_embeddings
 
             with patch(
-                "academic_hunter.interfaces.mcp.tools.visualization.SentenceTransformer"
+                "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer"
             ) as m_st:
                 model = MagicMock()
                 model.encode.return_value = mock_embeddings
@@ -118,8 +117,8 @@ async def test_visualize_landscape_import_error(mock_ctx):
             MagicMock(),
         ):
             with patch(
-                "academic_hunter.interfaces.mcp.tools.visualization.SentenceTransformer",
-                None,
+                "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer",
+                MagicMock(return_value=None),
             ):
                 from academic_hunter.interfaces.mcp.tools.visualization import (
                     visualize_landscape,
@@ -158,7 +157,7 @@ async def test_topic_evolution(mock_ctx):
             m_bt.return_value = model
 
             with patch(
-                "academic_hunter.interfaces.mcp.tools.visualization.SentenceTransformer"
+                "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer"
             ) as m_st:
                 st_model = MagicMock()
                 st_model.encode.return_value = [[0.1], [0.2], [0.3], [0.4], [0.5]]
@@ -253,7 +252,7 @@ async def test_topic_evolution_no_year(mock_ctx):
             m_bt.return_value = model
 
             with patch(
-                "academic_hunter.interfaces.mcp.tools.visualization.SentenceTransformer"
+                "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer"
             ) as m_st:
                 st_model = MagicMock()
                 st_model.encode.return_value = [[0.1], [0.2], [0.3], [0.4], [0.5]]

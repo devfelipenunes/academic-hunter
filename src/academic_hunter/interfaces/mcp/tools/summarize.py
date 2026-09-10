@@ -7,9 +7,10 @@ for logging and progress reporting.
 import logging
 import re
 
+from academic_hunter import AcademicHunter
+from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
-from academic_hunter import AcademicHunter
 from ..validation import validate_doi
 
 logger = logging.getLogger("academic_hunter.mcp.summarize")
@@ -47,7 +48,6 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
     num_sentences = min(num_sentences, 8)
 
     try:
-        from sentence_transformers import SentenceTransformer
         import numpy as np
 
         # Split into sentences
@@ -60,8 +60,12 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
             await ctx.info("Abstract has fewer sentences than requested")
             return f"# Abstract Summary\n\n{abstract}"
 
-        # Embed sentences
-        model = SentenceTransformer("all-MiniLM-L6-v2")
+        # Embed sentences. The model comes from the shared cache — loading
+        # MiniLM takes seconds and this tool used to pay it on every call.
+        # Raising ImportError keeps the existing handler's message intact.
+        model = get_sentence_transformer()
+        if model is None:
+            raise ImportError("sentence-transformers")
         emb = model.encode(sentences)
 
         # Centroid
