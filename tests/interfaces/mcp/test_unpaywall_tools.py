@@ -1,4 +1,10 @@
-"""Tests for Unpaywall tool."""
+"""Tests for Unpaywall tool.
+
+The HTTP call was extracted to ``plugins/fulltext/unpaywall.py`` so the pipeline
+can reach it without importing the interface layer, which moves where the mock
+has to point. The assertions are unchanged: they pin the tool's output format,
+which is the behaviour worth protecting.
+"""
 
 from unittest.mock import MagicMock, patch
 
@@ -20,7 +26,7 @@ async def test_find_open_access_oa(mock_ctx):
             "version": "publishedVersion",
         },
     }
-    with patch("academic_hunter.interfaces.mcp.tools.unpaywall.requests.get") as m_get:
+    with patch("academic_hunter.plugins.fulltext.unpaywall.requests.get") as m_get:
         resp = MagicMock()
         resp.status_code = 200
         resp.json.return_value = mock_response
@@ -33,7 +39,7 @@ async def test_find_open_access_oa(mock_ctx):
 
 async def test_find_open_access_closed(mock_ctx):
     """Returns OA status for a closed-access paper."""
-    with patch("academic_hunter.interfaces.mcp.tools.unpaywall.requests.get") as m_get:
+    with patch("academic_hunter.plugins.fulltext.unpaywall.requests.get") as m_get:
         resp = MagicMock()
         resp.status_code = 200
         resp.json.return_value = {"is_oa": False, "oa_status": "closed"}
@@ -44,7 +50,7 @@ async def test_find_open_access_closed(mock_ctx):
 
 async def test_find_open_access_error(mock_ctx):
     """Handles API errors gracefully."""
-    with patch("academic_hunter.interfaces.mcp.tools.unpaywall.requests.get") as m_get:
+    with patch("academic_hunter.plugins.fulltext.unpaywall.requests.get") as m_get:
         m_get.side_effect = Exception("API error")
         with pytest.raises(MCPToolError):
             await find_open_access(mock_ctx, "10.1234/test")

@@ -33,6 +33,9 @@ dependencies = [
 
 [project.optional-dependencies]
 rag = ["chromadb>=1.5.0"]
+fulltext = [
+    "pypdf>=4.0.0",
+]
 ml = [
     "sentence-transformers>=2.2.0",
     "scikit-learn>=1.0.0",

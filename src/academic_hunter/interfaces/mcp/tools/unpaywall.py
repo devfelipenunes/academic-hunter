@@ -3,19 +3,27 @@
 Unpaywall (https://api.unpaywall.org/v2/) indexes open-access versions of
 paywalled papers using DOIs.  An email address is recommended for higher
 rate limits but not strictly required.
+
+The HTTP call lives in ``plugins/fulltext/unpaywall.py`` so the pipeline can use
+it without importing this layer; this tool keeps the presentation concerns.
 """
 
 import logging
 
 import asyncio
-import requests
+
 from mcp.server.fastmcp import Context
 
+from academic_hunter.core.ports.fulltext import (
+    FullTextConfigError,
+    FullTextTransientError,
+    NoOpenAccessVersion,
+)
+from academic_hunter.plugins.fulltext.unpaywall import fetch_record
 from ..exceptions import DiscoveryError
 from ..validation import validate_doi, validate_email
 
 logger = logging.getLogger("academic_hunter.mcp.unpaywall")
-UNPAYWALL_API = "https://api.unpaywall.org/v2"
 
 
 async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com") -> str:
@@ -33,14 +41,8 @@ async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com"
         doi = validate_doi(doi)
         if email:
             email = validate_email(email)
-        params = {"email": email}
-        url = f"{UNPAYWALL_API}/{doi}"
-        resp = await asyncio.to_thread(requests.get, url, params=params, timeout=10)
-        if resp.status_code == 422:
-            await ctx.warning("Unpaywall requires a valid email")
-            return "Unpaywall requires a valid email. Pass email='your@email.com'."
-        resp.raise_for_status()
-        data = resp.json()
+
+        data = await asyncio.to_thread(fetch_record, doi, email)
 
         is_oa = data.get("is_oa", False)
         oa_status = data.get("oa_status", "closed")
@@ -69,10 +71,17 @@ async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com"
         await ctx.info(f"OA status for {doi}: {oa_status}")
         return "\n".join(lines)
 
-    except ValueError as e:
-        raise DiscoveryError(str(e))
-    except requests.RequestException as e:
+    except FullTextConfigError:
+        # Unpaywall refuses an unusable contact address with HTTP 422.
+        await ctx.warning("Unpaywall requires a valid email")
+        return "Unpaywall requires a valid email. Pass email='your@email.com'."
+    except NoOpenAccessVersion:
+        await ctx.info(f"Unpaywall has no record for {doi}")
+        return f"# Open Access Status: {doi}\n\n**OA:** ❌ No\n**Status:** not found\n"
+    except FullTextTransientError as e:
         await ctx.error(f"Unpaywall API error: {e}")
+        raise DiscoveryError(str(e))
+    except ValueError as e:
         raise DiscoveryError(str(e))
     except Exception as e:
         await ctx.error(f"Failed to find OA version: {e}")
