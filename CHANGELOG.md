@@ -35,6 +35,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cache LRU do embedding do paper no `SemanticScreener`. O mesmo texto era
   re-embedado a cada chamada, e o pipeline pontua o mesmo paper mais de uma vez
   — cerca de 1,5 s por documento com abstract. Medido: 1500 ms → 209 ms.
+- **Cache compartilhado de modelos** (`core/nlp/model_cache.py`): os sete call
+  sites que construíam o próprio modelo a cada chamada — `summarize`, `dedup`,
+  `clustering`, `novelty`, `visualization` (duas vezes) e o `CrossEncoder` do
+  `rag.py` — passam a compartilhar uma instância por processo. Carregar o
+  cross-encoder custa **5,9 s** em CPU, e era pago em toda invocação antes de
+  qualquer trabalho. O import de `sentence-transformers` continua lazy (extra
+  `ml` opcional) e uma falha de carga **não** é cacheada, para instalar o extra
+  passar a funcionar sem reiniciar o servidor.
+- **Reranking por cross-encoder, opt-in** (`settings.rerank`): estágio de
+  segundo nível sobre o topo do ranking, dentro do `RecomputeRanksStep` para que
+  `Relevance_Score` siga com um único escritor. Desligado por padrão. Medido na
+  coleção julgada (nDCG@10, 108 documentos, 11 consultas): `bm25` 0,6728 →
+  `rerank@20` **0,7668** → oráculo do pool inteiro 0,7916; nDCG@5 0,6459 →
+  0,8007; MRR 0,9394 → 1,0000. Ganha **nos dois tópicos** (+0,1544 e +0,0436), e
+  o top-20 já captura 97% do teto. É o oposto do embedding — que _piora_ o BM25
+  monotonicamente — e a diferença só apareceu por medir. Script e artefato:
+  `papers/experiments/rerank_eval.py` → `results/rerank_eval.json`.
+- `settings.rerank` documentado em `config.example.json` (`enabled`, `model`,
+  `top_n`, `max_length`). Exige `settings.ranking_query`: sem consulta não há par
+  (query, documento) para o cross-encoder ler, e o estágio avisa e não atua.
 
 ### Changed
 
