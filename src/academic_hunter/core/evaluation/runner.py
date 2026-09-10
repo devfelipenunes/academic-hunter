@@ -1,7 +1,8 @@
 """Score a ranked result set against a judged collection."""
 
+import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Sequence
+from typing import Any, Callable, Dict, List, Mapping, Sequence, Tuple
 
 from .metrics import DEFAULT_KS, evaluate_ranking, mean_metrics
 from .qrels import Qrels, pooled_documents, relevance_map
@@ -139,3 +140,72 @@ def unjudged_in_pool(qrels: Qrels, pool: Sequence[str]) -> set:
     means most retrieved documents will be unjudged.
     """
     return set(pool) - pooled_documents(qrels)
+
+
+@dataclass
+class Timing:
+    """Wall-clock cost of producing a ranking.
+
+    Reported alongside the metrics because a quality gain that costs two orders
+    of magnitude more is not a gain in the same sense. ``papers/tool-mapping.md``
+    lists the absence of comparative performance figures as a gap in the
+    project's own positioning, and this is the measurable half of it.
+    """
+
+    #: Query id -> seconds spent ranking that query's candidate set.
+    per_query: Dict[str, float] = field(default_factory=dict)
+    #: Query id -> candidate-set size, so a per-document cost can be derived.
+    pool_size: Dict[str, int] = field(default_factory=dict)
+
+    @property
+    def total_seconds(self) -> float:
+        return sum(self.per_query.values())
+
+    @property
+    def total_documents(self) -> int:
+        """Documents scored across all queries — a (query, document) pair count."""
+        return sum(self.pool_size.values())
+
+    @property
+    def seconds_per_document(self) -> float:
+        """Cost per scored pair — the figure that generalises across corpora.
+
+        Total seconds alone would flatter a strategy that was simply given
+        fewer documents; this is the per-unit cost.
+        """
+        total = self.total_documents
+        return self.total_seconds / total if total else 0.0
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "total_seconds": round(self.total_seconds, 4),
+            "total_documents": self.total_documents,
+            "seconds_per_document": round(self.seconds_per_document, 8),
+            "per_query": {k: round(v, 4) for k, v in sorted(self.per_query.items())},
+        }
+
+
+def build_rankings_timed(
+    corpus: Sequence[Any],
+    queries: Mapping[str, str],
+    scorer: Callable[[Any, str], float],
+    doc_id: Callable[[Any], str],
+    top_k: int = 100,
+) -> Tuple[Dict[str, List[str]], Timing]:
+    """``build_rankings`` plus the wall-clock cost of each query.
+
+    The timer wraps only the scoring loop, so it measures the retriever and not
+    the harness around it.
+    """
+    rankings: Dict[str, List[str]] = {}
+    timing = Timing()
+
+    for query_id, text in queries.items():
+        started = time.perf_counter()
+        scored = [(scorer(doc, text), doc_id(doc)) for doc in corpus]
+        scored.sort(key=lambda pair: pair[0], reverse=True)
+        timing.per_query[query_id] = time.perf_counter() - started
+        timing.pool_size[query_id] = len(corpus)
+        rankings[query_id] = [d for _, d in scored[:top_k]]
+
+    return rankings, timing

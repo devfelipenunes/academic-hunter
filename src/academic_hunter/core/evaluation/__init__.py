@@ -24,7 +24,15 @@ from .metrics import (
     reciprocal_rank,
 )
 from .qrels import Judgment, Qrels, QrelsError, documents_for, load_qrels, topics
-from .runner import EvaluationReport, Ranking, build_rankings, evaluate_run, unjudged_in_pool
+from .runner import (
+    EvaluationReport,
+    Ranking,
+    Timing,
+    build_rankings,
+    build_rankings_timed,
+    evaluate_run,
+    unjudged_in_pool,
+)
 
 __all__ = [
     # metrics
@@ -48,5 +56,7 @@ __all__ = [
     "EvaluationReport",
     "evaluate_run",
     "build_rankings",
+    "build_rankings_timed",
+    "Timing",
     "unjudged_in_pool",
 ]

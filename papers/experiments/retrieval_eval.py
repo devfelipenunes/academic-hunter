@@ -36,7 +36,8 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from academic_hunter.core.evaluation import (
-    build_rankings,
+    Timing,
+    build_rankings_timed,
     documents_for,
     evaluate_run,
     load_qrels,
@@ -228,16 +229,24 @@ def main() -> int:
         """
         doc_ids = [d for d in documents_for(qrels, qid) if d in documents]
         corpus = [documents[d] for d in doc_ids]
-        ranked = build_rankings(
+        ranked, timing = build_rankings_timed(
             corpus, {qid: queries[qid]}, scorer=scorer,
             doc_id=lambda d: d["_doc_id"], top_k=len(corpus),
         )
-        return ranked[qid]
+        return ranked[qid], timing
 
-    reports = {}
+    reports: dict = {}
+    timings: dict = {}
     for name, scorer in scorers.items():
-        rankings = {qid: rank_for(scorer, qid) for qid in queries}
+        rankings = {}
+        timing = Timing()
+        for qid in queries:
+            ranking, one = rank_for(scorer, qid)
+            rankings[qid] = ranking
+            timing.per_query[qid] = one.per_query[qid]
+            timing.pool_size[qid] = one.pool_size[qid]
         reports[name] = evaluate_run(qrels, rankings, ks=KS)
+        timings[name] = timing
 
     # ── comparison table ────────────────────────────────────────────────────
     metric_cols = [f"ndcg@{k}" for k in KS] + ["mrr", "ap"]
@@ -251,6 +260,16 @@ def main() -> int:
             value = report.mean.get(col)
             row += f"{value:>10.4f}" if value is not None else f"{'n/a':>10}"
         print(row)
+
+    # ── cost ────────────────────────────────────────────────────────────────
+    # Quality and cost belong side by side: a gain that costs two orders of
+    # magnitude more is not a gain in the same sense.
+    print()
+    print(f"  {'strategy':<22}{'total s':>10}{'ms / doc':>12}{'docs scored':>13}")
+    print("  " + "-" * 55)
+    for name, timing in timings.items():
+        print(f"  {name:<22}{timing.total_seconds:>10.2f}"
+              f"{timing.seconds_per_document * 1000:>12.3f}{timing.total_documents:>13}")
 
     print()
     print("  note: 'exported_score' is the run's own Relevance_Score. Its ranks")
@@ -304,6 +323,7 @@ def main() -> int:
                 "ks": list(KS),
                 "qrels_stats": stats,
                 "strategies": {name: report.as_dict() for name, report in reports.items()},
+                "timing": {name: t.as_dict() for name, t in timings.items()},
             },
             indent=2,
             ensure_ascii=False,
