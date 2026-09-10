@@ -24,21 +24,27 @@ def _make_hunter_with_results(results_dict):
 
 
 def test_vector_store_lazy_init():
-    """vector_store property initializes ChromaDB on first access."""
+    """vector_store builds the store once via the injected factory, then caches it.
+
+    The property used to import ``ChromaVectorStore`` itself; it now asks
+    ``hunter.vector_store_factory``, which the composition root supplies.
+    """
     from academic_hunter.core.pipeline.manager import SearchPipeline
 
     hunter = MagicMock()
     hunter.output_dir.parent = MagicMock()
+    mock_store = MagicMock()
+    hunter.vector_store_factory = MagicMock(return_value=mock_store)
     pipeline = SearchPipeline(hunter)
     assert pipeline._vector_store is None
 
-    with patch("academic_hunter.plugins.vector_stores.ChromaVectorStore") as m_cs:
-        mock_store = MagicMock()
-        m_cs.return_value = mock_store
-        store = pipeline.vector_store
+    store = pipeline.vector_store
 
     assert store == mock_store
     assert pipeline._vector_store == mock_store
+    # Cached: a second access must not rebuild it.
+    assert pipeline.vector_store == mock_store
+    assert hunter.vector_store_factory.call_count == 1
 
 
 def test_vector_store_lazy_init_failure():
@@ -47,10 +53,9 @@ def test_vector_store_lazy_init_failure():
 
     hunter = MagicMock()
     hunter.output_dir.parent = MagicMock()
+    hunter.vector_store_factory = MagicMock(side_effect=Exception("Import failed"))
     pipeline = SearchPipeline(hunter)
-    with patch("academic_hunter.plugins.vector_stores.ChromaVectorStore") as m_cs:
-        m_cs.side_effect = Exception("Import failed")
-        store = pipeline.vector_store
+    store = pipeline.vector_store
 
     assert store is None
     assert pipeline._vector_store is None
@@ -111,12 +116,25 @@ def test_recompute_ranks_no_results():
 
 
 def test_recompute_ranks_single_paper():
-    """_recompute_ranks skips when fewer than 2 papers."""
+    """A single-paper collection still gets a score, at the top of the scale.
+
+    There is no distribution to rank against, but that paper is trivially the
+    top of its own collection. It used to be skipped outright, leaving
+    Relevance_Score at its 0.0 default — which the downstream threshold filter
+    then read as "irrelevant" and dropped, silently emptying any run that
+    deduplicated down to one paper.
+    """
     from academic_hunter.core.pipeline.manager import SearchPipeline
 
-    hunter = _make_hunter_with_results({"p1": {}})
+    hunter = _make_hunter_with_results({"p1": {"Title": "Only paper"}})
+    hunter.settings = {"min_relevance_score": 5.0}
+    hunter.semantic_screener = None
+    hunter.scorer.calculate_score.return_value = 3.0
+
     pipeline = SearchPipeline(hunter)
     pipeline._recompute_ranks()  # should not raise
+
+    assert hunter.consolidated_results["p1"]["Relevance_Score"] == 10.0
 
 
 def test_recompute_ranks_two_papers():

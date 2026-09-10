@@ -144,12 +144,12 @@ class HunterFacadeMixin:
         self.config.load()
 
     def fetch_abstract_by_doi(self, doi: str) -> str:
-        from ..pipeline import AbstractEnricher
-        return AbstractEnricher(self.connectors, self.state, self.scorer, self.lock).fetch_abstract_by_doi(doi)
+        from ..core.pipeline import AbstractEnricher
+        return AbstractEnricher(self.connectors, self.state, self.lock).fetch_abstract_by_doi(doi)
 
     def enrich_missing_abstracts(self):
-        from ..pipeline import AbstractEnricher
-        AbstractEnricher(self.connectors, self.state, self.scorer, self.lock).enrich()
+        from ..core.pipeline import AbstractEnricher
+        AbstractEnricher(self.connectors, self.state, self.lock).enrich()
 
     def _process_paper(self, paper: Dict, anchor_cat: str, tech_cat: str, anchor_list: List[str], tech_list: List[str]):
         self.processor.process(paper, anchor_cat, tech_cat, anchor_list, tech_list)
@@ -162,7 +162,7 @@ class HunterFacadeMixin:
 
 # Helper decorator to bind fetch facades dynamically on the Mixin
 def _register_facades():
-    from ...plugins.connectors import CONNECTORS as _CONNECTORS
+    from ..plugins.connectors import CONNECTORS as _CONNECTORS
     for name, connector_cls in _CONNECTORS.items():
         suffix = getattr(connector_cls, 'fetch_suffix', name.lower().replace(" ", "_"))
         def _create_facade(s=suffix, n=name):

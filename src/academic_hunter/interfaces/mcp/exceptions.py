@@ -59,3 +59,17 @@ class ObsidianError(MCPToolError):
 
     def __init__(self, message: str, details: dict | None = None):
         super().__init__(message, code="OBSIDIAN_ERROR", details=details)
+
+
+class WritingError(MCPToolError):
+    """Article outline / drafting errors."""
+
+    def __init__(self, message: str, details: dict | None = None):
+        super().__init__(message, code="WRITING_ERROR", details=details)
+
+
+class CitationError(MCPToolError):
+    """Citation verification errors."""
+
+    def __init__(self, message: str, details: dict | None = None):
+        super().__init__(message, code="CITATION_ERROR", details=details)

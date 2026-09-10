@@ -82,12 +82,22 @@ class TestDedupBug(unittest.TestCase):
 
         # Verification
         print(f"Stats: {self.hunter.stats}")
-        
-        # After _recompute_ranks() in run(), both papers pass the percentile-based
-        # threshold (geometric mean of rank_kw × rank_sem × 10). Both are included.
-        self.assertEqual(self.hunter.stats["included_final"], 2,
-                         "Both papers pass after percentile re-ranking")
-        self.assertEqual(self.hunter.stats["excluded_score"], 0, "No paper excluded after re-ranking")
+
+        # The two versions are the same paper (duplicates_removed == 1), so the
+        # collection holds exactly one. The promotion worked: that paper is
+        # present and passes the threshold.
+        #
+        # `included_final` is derived from the final collection by
+        # RecomputeRanksStep, so it counts papers rather than ingest events. It
+        # used to report 2 here — the excluded-then-merged duplicate was counted
+        # alongside the paper it merged into, so the stat exceeded the number of
+        # papers that actually existed.
+        self.assertEqual(len(self.hunter.consolidated_results), 1,
+                         "The duplicate merge leaves exactly one paper")
+        self.assertEqual(self.hunter.stats["included_final"], 1,
+                         "The promoted paper is counted once, not once per source")
+        self.assertEqual(self.hunter.stats["excluded_score"], 0,
+                         "No paper excluded after percentile re-ranking")
 
     def test_promotion_from_anchor_mismatch(self):
         """

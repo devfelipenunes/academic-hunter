@@ -1,15 +1,20 @@
 import os
-import sqlite3
+from .sqlite_conn import connect
 
 class SQLiteCache:
-    """Thread-safe persistent request caching using SQLite3."""
+    """Thread-safe persistent request caching using SQLite3.
+
+    Connections go through ``sqlite_conn.connect`` so that WAL journalling and
+    a busy timeout are applied — without them this cache is not in fact safe
+    for the concurrent access its callers make.
+    """
     def __init__(self, db_path="results/request_cache.db"):
         self.db_path = db_path
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_db()
-        
+
     def _init_db(self):
-        with sqlite3.connect(self.db_path) as conn:
+        with connect(self.db_path) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS cache (
                     key TEXT PRIMARY KEY,
@@ -18,22 +23,22 @@ class SQLiteCache:
                 )
             """)
             conn.commit()
-            
+
     def get(self, key: str) -> str:
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT value FROM cache WHERE key = ?", (key,))
                 row = cursor.fetchone()
                 return row[0] if row else None
         except Exception:
             return None
-            
+
     def set(self, key: str, value: str):
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with connect(self.db_path) as conn:
                 conn.execute(
-                    "INSERT OR REPLACE INTO cache (key, value, timestamp) VALUES (?, ?, CURRENT_TIMESTAMP)", 
+                    "INSERT OR REPLACE INTO cache (key, value, timestamp) VALUES (?, ?, CURRENT_TIMESTAMP)",
                     (key, value)
                 )
                 conn.commit()

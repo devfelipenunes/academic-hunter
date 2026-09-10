@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 from typing import List, Dict, Any
@@ -28,6 +29,30 @@ class PrismaExporter(BaseExporter):
         
         run_dir = self._get_run_dir(timestamp, output_dir)
         prisma_file = run_dir / f"FLUXO_PRISMA_{timestamp}.md"
+
+        # Machine-readable companion to the PRISMA markdown. The markdown is for
+        # humans; downstream consumers (article outline generation, reproducibility
+        # audits) need the same numbers without parsing prose out of a report.
+        stats_file = run_dir / f"run_stats_{timestamp}.json"
+        stats_file.write_text(json.dumps({
+            "timestamp": timestamp,
+            "identified": stats.get("identified", {}),
+            "duplicates_removed": duplicates,
+            "excluded_year": excluded_year,
+            "excluded_anchors": excluded_anchors,
+            "excluded_technical_score": excluded_tech,
+            "included_final": final,
+            "exclusions_by_source": stats.get("exclusions_by_source", {}),
+            "settings": {
+                "start_year": settings.get("start_year"),
+                "min_relevance_score": settings.get("min_relevance_score"),
+                "limit_per_query": settings.get("limit_per_query"),
+            },
+            "anchors": sorted(anchors) if isinstance(anchors, dict) else anchors,
+            "technical_domains": (
+                sorted(tech_strings) if isinstance(tech_strings, dict) else tech_strings
+            ),
+        }, indent=2, ensure_ascii=False))
         
         sources_mermaid = "\n".join([f"        S{i}[{source}: {count}]:::identification" for i, (source, count) in enumerate(stats.get("identified", {}).items())])
         sources_links = "\n".join([f"        S{i} --> A" for i in range(len(stats.get("identified", {})))])

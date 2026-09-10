@@ -37,8 +37,8 @@ class PaperResolver:
     def resolve_existing_duplicate(self, existing: Any, paper: Dict[str, Any], anchor_cat: str, tech_cat: str, source: str) -> None:
         """Merges metadata and updates score/stats for an existing duplicate in results (thread-safe)."""
         with self.lock:
-            min_score = self.config.settings.get('min_relevance_score', 5.0)
-            old_score = existing.get("Relevance_Score", 0.0)
+            min_score = self.config.min_inclusion_score()
+            old_score = existing.get("_hybrid_score", 0.0)
             
             # Prefer the abstract that has a higher length or yields a better relevance score
             old_abs = existing.get('Abstract', '')
@@ -60,19 +60,20 @@ class PaperResolver:
             else:
                 existing.merge(paper, anchor_cat, tech_cat)
             
-            # Recalculate score after merging metadata (respects ablation mode)
+            # Recalculate the inclusion score after merging metadata (respects
+            # ablation mode). Written to `_hybrid_score`, never to
+            # `Relevance_Score` — the latter is owned solely by
+            # RecomputeRanksStep, which overwrites it with the rank-normalised
+            # score across the finished collection. Writing an inclusion score
+            # there put two scales behind one key.
             new_score = self.validator.compute_hybrid_score(existing)
-            existing["Relevance_Score"] = new_score
+            existing["_hybrid_score"] = new_score
             # Store raw scores for rank normalization
             if "_kw_score" not in existing:
                 existing["_kw_score"] = self.scorer.calculate_score(
                     existing.get("Title", ""), existing.get("Abstract", ""), existing.get("Citations", 0))
             if "_sem_score" not in existing and self.semantic_screener is not None:
-                sem_config = {
-                    "anchors": self.config.anchors,
-                    "technical_strings": self.config.tech_strings,
-                    "technical_weights": self.config.tech_weights,
-                }
+                sem_config = self.config.screener_config()
                 existing["_sem_score"] = round(
                     self.semantic_screener.evaluate(existing, sem_config), 4)
             
@@ -95,7 +96,7 @@ class PaperResolver:
         if not passed:
             return
 
-        min_score = self.config.settings.get('min_relevance_score', 5.0)
+        min_score = self.config.min_inclusion_score()
         paper_metadata = Paper({
             "Title": title,
             "Abstract": paper.get('Abstract', ''),
@@ -110,10 +111,14 @@ class PaperResolver:
             "Anchor_Terms": anchor_terms,
             "Tech_Category": tech_cat,
             "Tech_Terms": tech_terms,
-            "Relevance_Score": relevance_score,
-            "_kw_score": paper.get("_kw_score", 0.0),
-            "_sem_score": paper.get("_sem_score", 0.0),
         })
+        # `Paper.__init__` populates only the fields declared in FIELD_SCHEMA, so
+        # diagnostic keys must be assigned after construction — passing them to
+        # the constructor silently drops them. `Relevance_Score` is intentionally
+        # left unset: RecomputeRanksStep is its only writer.
+        paper_metadata["_hybrid_score"] = relevance_score
+        paper_metadata["_kw_score"] = paper.get("_kw_score", 0.0)
+        paper_metadata["_sem_score"] = paper.get("_sem_score", 0.0)
         
         with self.lock:
             self.state.consolidated_results[dedup_id] = paper_metadata
@@ -134,25 +139,23 @@ class PaperResolver:
         """Registers a new unique paper, filtering and scoring it, and updating stats (thread-safe)."""
         passed, reason, anchor_cat, anchor_terms, relevance_score, tech_terms = self.validator.validate_and_score(paper, title, tech_list)
         if not passed:
-            self.state.track_exclusion(source, reason)
+            # track_exclusion mutates `exclusions_by_source`, so it belongs
+            # inside the lock with the rest of the stats it updates.
             with self.lock:
+                self.state.track_exclusion(source, reason)
                 if reason == "year":
                     self.state.stats["excluded_year"] += 1
                 elif reason == "anchor":
                     self.state.stats["excluded_anchors"] += 1
             return
 
-        min_score = self.config.settings.get('min_relevance_score', 5.0)
+        min_score = self.config.min_inclusion_score()
 
         # Compute raw keyword and semantic scores for rank normalization
         kw_score = self.scorer.calculate_score(title, paper.get('Abstract', ''), paper.get('Citations', 0))
         sem_score = 0.0
         if self.semantic_screener is not None:
-            sem_config = {
-                "anchors": self.config.anchors,
-                "technical_strings": self.config.tech_strings,
-                "technical_weights": self.config.tech_weights,
-            }
+            sem_config = self.config.screener_config()
             sem_score = self.semantic_screener.evaluate(paper, sem_config)
             sem_score = round(sem_score, 4)  # keep precision for rank comparison
 
@@ -170,10 +173,16 @@ class PaperResolver:
             "Anchor_Terms": anchor_terms,
             "Tech_Category": tech_cat,
             "Tech_Terms": tech_terms,
-            "Relevance_Score": relevance_score,
-            "_kw_score": kw_score,
-            "_sem_score": sem_score,
         })
+        # `Paper.__init__` populates only the fields declared in FIELD_SCHEMA, so
+        # diagnostic keys must be assigned after construction — passing them to
+        # the constructor silently drops them (which is what made
+        # RecomputeRanksStep's recomputation fallback load-bearing rather than
+        # defensive). `Relevance_Score` is intentionally left unset:
+        # RecomputeRanksStep is its only writer.
+        paper_metadata["_hybrid_score"] = relevance_score
+        paper_metadata["_kw_score"] = kw_score
+        paper_metadata["_sem_score"] = sem_score
 
         with self.lock:
             self.state.consolidated_results[dedup_id] = paper_metadata

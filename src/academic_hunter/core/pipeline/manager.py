@@ -16,13 +16,20 @@ class SearchPipeline:
 
     @property
     def vector_store(self):
-        """Lazy-init ChromaDB vector store for RAG."""
+        """Lazy-init the vector store for RAG.
+
+        The concrete store comes from ``hunter.vector_store_factory``, which the
+        composition root supplies. This module used to import ``ChromaVectorStore``
+        directly, coupling the domain to one adapter.
+        """
         if self._vector_store is None:
+            factory = getattr(self.hunter, "vector_store_factory", None)
+            if factory is None:
+                logger.info("No vector store factory configured, skipping RAG indexing.")
+                return None
             try:
-                from ...plugins.vector_stores import ChromaVectorStore
-                self._vector_store = ChromaVectorStore(
-                    db_dir=str(self.hunter.output_dir.parent / ".academic_hunter" / "chroma_db")
-                )
+                db_dir = self.hunter.output_dir.parent / ".academic_hunter" / "chroma_db"
+                self._vector_store = factory(db_dir)
             except Exception as e:
                 logger.warning(f"Could not initialize vector store: {e}")
                 self._vector_store = None
@@ -103,13 +110,19 @@ class SearchPipeline:
         for t in threads:
             t.join()
 
-        # Rank-based scoring: recompute scores using percentil normalization
-        self._recompute_ranks()
-
         elapsed = round(time.time() - self.hunter.last_request_time, 2)
         logger.info(f"⏱️ Mining completed in {elapsed} seconds.")
 
+        # Enrich BEFORE scoring. Enrichment supplies missing abstracts, and the
+        # score must be computed over the final text. Running it afterwards
+        # overwrote Relevance_Score with a raw keyword value, putting two
+        # different scales in the same collection while both were compared
+        # against the same min_relevance_score threshold — so enriched papers
+        # systematically outranked the rest.
         self.hunter.enrich_missing_abstracts()
+
+        # Rank-based scoring: recompute scores using percentil normalization
+        self._recompute_ranks()
 
         self.hunter.export_results(timestamp)
         self.hunter.generate_prisma_report(timestamp)

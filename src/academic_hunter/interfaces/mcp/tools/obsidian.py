@@ -1,8 +1,8 @@
 """MCP tool to export research reports directly to the user's Obsidian vault."""
 
-from datetime import date
 from pathlib import Path
 from academic_hunter.core import get_config
+from academic_hunter.plugins.exporters.obsidian import write_obsidian_note
 from ..exceptions import ObsidianError
 from mcp.server.fastmcp import Context
 
@@ -34,40 +34,13 @@ async def export_to_obsidian(topic: str, content: str, tags: list = None, ctx: C
                 "Please add 'obsidian_vault_path' in the 'settings' key of your config.json."
             )
 
-        vault = Path(obsidian_path)
-        if not vault.exists():
+        if not Path(obsidian_path).exists():
             await ctx.error(f"Obsidian vault path does not exist: {obsidian_path}")
             return f"Error: Obsidian path does not exist ({obsidian_path})."
 
-        # Determine target folder based on content type
-        today = date.today().isoformat()
-        tags_list = tags or ["academic-hunter", "research"]
-        safe_title = "".join(c if c.isalnum() else "_" for c in topic)[:60]
-        filename = f"{today}_{safe_title}.md"
-
-        # Build frontmatter following Obsidian Standard
-        tag_lines = "\n".join(f"  - {t}" for t in tags_list)
-        frontmatter = f"""---
-title: "{topic}"
-created: {today}
-tags:
-{tag_lines}
-type: source
-status: permanente
-links:
-  - "[[Academic-Research-MOC]]"
-aliases:
-  - "{safe_title}"
----
-"""
-
-        # Save into Academic_Hunter folder
-        target_dir = vault / "Academic_Hunter"
-        target_dir.mkdir(parents=True, exist_ok=True)
-        filepath = target_dir / filename
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(frontmatter + "\n" + content)
+        filepath = write_obsidian_note(
+            vault_path=obsidian_path, topic=topic, content=content, tags=tags
+        )
 
         await ctx.info(f"Report exported to {filepath}")
         return f"✅ Report exported to Obsidian: {filepath}"

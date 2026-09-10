@@ -38,7 +38,13 @@ class SemanticScreener(BaseScreener):
 
     where N_base is the number of base terms (anchors + technical_strings),
     W_i is each term's weight, and v_term_i is the embedding of term i.
-    This is mathematically identical to mean pooling over repeated tokens.
+
+    This approximates the effect of mean pooling over repeated tokens, but is
+    not equivalent to it: ``v_base`` is a single embedding of the concatenated
+    base vocabulary while ``N_base`` counts individual terms, and token
+    truncation in the encoder breaks the correspondence further. Empirically
+    the two formulations yield divergent rankings (Spearman rho = -0.2242 on
+    the probe set in ``papers/experiments/cross_encoder_val.py``).
     """
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
@@ -55,8 +61,9 @@ class SemanticScreener(BaseScreener):
 
             v_ref = (v_base * N + sum(W_i * v_i)) / (N + sum(W_i))
 
-        This is mathematically equivalent to mean pooling over repeated tokens,
-        but avoids creating artificially repetitive input strings.
+        This approximates mean pooling over repeated tokens without creating
+        artificially repetitive input strings; see the class docstring for why
+        the two are not equivalent in practice.
 
         Caches base + term embeddings across calls since they depend only on
         the config (same for all papers in a run).

@@ -19,8 +19,11 @@ class ConfigSnapshot:
 class ConfigHistory:
     """Manages a rolling history of config snapshots.
 
-    Thread-safe for read operations. Each ``push()`` stores the current config
-    state so it can be restored later via ``restore()``.
+    This is a record only — ``push()`` stores snapshots and ``list_history()``
+    exposes them. Restoring is handled by the MCP ``restore_config_by_id`` tool,
+    which reads the SQLite backup written by ``MCPDatabaseManager``; a
+    ``restore(snapshot_id)`` method used to live here and returned ``True``
+    without restoring anything, which is worse than not having it.
     """
 
     _history: List[ConfigSnapshot] = []
@@ -47,18 +50,6 @@ class ConfigHistory:
             }
             for i, snap in enumerate(cls._history)
         ]
-
-    @classmethod
-    def restore(cls, snapshot_id: int) -> bool:
-        """Check if a snapshot is available for restore.
-
-        Args:
-            snapshot_id: Index into the history list.
-
-        Returns:
-            True if the snapshot exists, False otherwise.
-        """
-        return 0 <= snapshot_id < len(cls._history)
 
     @classmethod
     def clear(cls) -> None:

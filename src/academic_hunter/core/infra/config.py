@@ -23,7 +23,15 @@ class HunterConfig:
     - Type-validated accessors for all config sections
     """
 
-    def __init__(self, config_path: str = 'config.json'):
+    def __init__(self, config_path: str = 'config.json',
+                 pacing_defaults: Optional[Dict[str, float]] = None):
+        """
+        Args:
+            config_path: Path to the JSON configuration file.
+            pacing_defaults: Domain-to-delay mapping derived from the connector
+                set by the composition root. Defaults to empty, so a config built
+                without it simply has no pacing entries.
+        """
         self.config_path = Path(config_path)
         if not self.config_path.exists():
             # Fallback for MCP servers running from different CWDs
@@ -44,15 +52,10 @@ class HunterConfig:
         self.keyword_only_terms: List[str] = []
         self.keyword_only_category: str = ""
         self.blocked_sources: Set[str] = set()
-        self.pacing_delays: Dict[str, float] = {}
-
-        # Populate pacing delays dynamically from connector plugins registry
-        from ...plugins.connectors import CONNECTORS as _CONNECTORS
-        for name, connector_cls in _CONNECTORS.items():
-            domain = getattr(connector_cls, 'domain', '')
-            delay = getattr(connector_cls, 'default_delay', 1.5)
-            if domain:
-                self.pacing_delays[domain] = delay
+        # Pacing defaults are supplied by the composition root, which is the only
+        # layer that knows the connector set. This used to be read from the
+        # plugin registry here, which made the domain depend on its adapters.
+        self.pacing_delays: Dict[str, float] = dict(pacing_defaults or {})
 
         # Initial load
         self.load()
@@ -140,6 +143,45 @@ class HunterConfig:
         """Store a config snapshot for undo/restore functionality."""
         ConfigHistory.push(snapshot_data)
 
+    def min_inclusion_score(self) -> float:
+        """Threshold for the mode-dependent **inclusion** score (``_hybrid_score``).
+
+        This is deliberately not the same setting as ``min_relevance_score``.
+        The two scores live on different scales:
+
+        - ``_hybrid_score`` — computed at ingest by
+          ``AcademicScorer.compute_hybrid_score``. Its scale depends on the
+          ablation mode: keyword mode yields the raw regex score (unbounded),
+          embedding mode yields ``sqrt(cosine) * 10`` in [0, 10], hybrid adds
+          ``kw * 0.3`` on top of that. Used to decide *whether a paper enters*.
+        - ``Relevance_Score`` — written once, after the whole run, by
+          ``RecomputeRanksStep``. Rank-normalised to [0, 10] and therefore
+          independent of the ablation mode. Used for ordering and reporting.
+
+        Comparing one constant against both scales is what made enriched papers
+        systematically outrank the rest, and what made the ablation modes
+        incomparable. Falls back to ``min_relevance_score`` so existing
+        configurations keep their behaviour.
+        """
+        return float(
+            self.settings.get(
+                "min_inclusion_score", self.settings.get("min_relevance_score", 5.0)
+            )
+        )
+
+    def screener_config(self) -> Dict[str, Any]:
+        """Payload the semantic screener expects.
+
+        Single source of truth for this dict shape. It used to be rebuilt inline
+        in five places (validators, resolvers, pipeline steps), so a field added
+        here could be silently missing everywhere else.
+        """
+        return {
+            "anchors": self.anchors,
+            "technical_strings": self.tech_strings,
+            "technical_weights": self.tech_weights,
+        }
+
     def save(self):
         """Persist current config back to the JSON file."""
         config = {
@@ -178,8 +220,3 @@ class HunterConfig:
     def get_history(cls) -> List[Dict[str, Any]]:
         """Get config change history for MCP tool display."""
         return ConfigHistory.list_history()
-
-    @classmethod
-    def restore_snapshot(cls, snapshot_id: int) -> bool:
-        """Restore config to a previous snapshot."""
-        return ConfigHistory.restore(snapshot_id)

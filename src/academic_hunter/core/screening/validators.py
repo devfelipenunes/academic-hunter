@@ -46,11 +46,7 @@ class PaperValidator:
         mode = ablation.get('mode', 'hybrid')
 
         if self.semantic_screener is not None and mode != 'keyword':
-            sem_config = {
-                "anchors": self.config.anchors,
-                "technical_strings": self.config.tech_strings,
-                "technical_weights": self.config.tech_weights,
-            }
+            sem_config = self.config.screener_config()
             semantic_score = self.semantic_screener.evaluate(paper, sem_config)
             paper["_sem_score"] = round(semantic_score, 4)
         else:
@@ -88,11 +84,7 @@ class PaperValidator:
         # Compute semantic score if available
         semantic_score = 0.0
         if self.semantic_screener is not None and mode != 'keyword':
-            sem_config = {
-                "anchors": self.config.anchors,
-                "technical_strings": self.config.tech_strings,
-                "technical_weights": self.config.tech_weights,
-            }
+            sem_config = self.config.screener_config()
             semantic_score = self.semantic_screener.evaluate(paper, sem_config)
             paper["_sem_score"] = round(semantic_score, 4)
 

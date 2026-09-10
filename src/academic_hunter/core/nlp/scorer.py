@@ -64,10 +64,21 @@ class AcademicScorer:
         ablation_mode: str = "hybrid",
         score_precision: int = 1,
     ) -> float:
-        """Compute final relevance score respecting ablation mode.
+        """Compute the inclusion score for a paper, respecting the ablation mode.
 
-        This is the single source of truth for hybrid scoring. All callers
-        (Validator, Pipeline) should use this instead of duplicating the math.
+        Two distinct scores exist in this pipeline, with different roles:
+
+        - **Inclusion score** (this function). Decides whether a paper passes
+          the relevance threshold when it is first processed. This is where the
+          ablation mode (keyword / embedding / hybrid) takes effect.
+        - **Reported score** (``RecomputeRanksStep`` in ``core/pipeline/steps.py``).
+          Rank-normalised to [0, 10] and written to ``Relevance_Score`` once the
+          run completes, across the whole collection. This is what appears in
+          exports, PRISMA reports and the final threshold filter.
+
+        Changing this function changes *which papers are included*, not how they
+        are ranked. Do not duplicate this math elsewhere — callers should route
+        through here and the pipeline will re-rank afterwards.
 
         Args:
             title: Paper title.
@@ -84,14 +95,19 @@ class AcademicScorer:
         kw_score = self.calculate_score(title, abstract, citations)
 
         if has_semantic and ablation_mode != "keyword":
+            # Cosine similarity is signed: an anti-correlated pair yields a
+            # negative value, and math.sqrt raises ValueError on it. A negative
+            # cosine means "no semantic relevance", so clamp to 0 rather than
+            # letting one bad pair abort the run.
+            sem = semantic_score if semantic_score > 0.0 else 0.0
             if ablation_mode == "embedding":
                 return round(
-                    math.sqrt(semantic_score) * 10.0,
+                    math.sqrt(sem) * 10.0,
                     score_precision,
                 )
             # Fused: sqrt(WB) as base, keyword as bonus
             return round(
-                (math.sqrt(semantic_score) * 10.0) + (kw_score * 0.3),
+                (math.sqrt(sem) * 10.0) + (kw_score * 0.3),
                 score_precision,
             )
         # Keyword-only or no semantic: use regex score as-is

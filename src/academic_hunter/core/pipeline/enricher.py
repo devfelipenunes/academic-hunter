@@ -4,17 +4,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Any, List
 from ..models import Paper
 from ..infra import SearchState
-from ..nlp import AcademicScorer
 
 logger = logging.getLogger("academic_hunter")
 
 
 class AbstractEnricher:
     """Enriches papers that qualify but have empty abstracts by querying their DOI via registered connector APIs."""
-    def __init__(self, connectors: Dict[str, Any], state: SearchState, scorer: AcademicScorer, lock: threading.RLock):
+    def __init__(self, connectors: Dict[str, Any], state: SearchState, lock: threading.RLock):
         self.connectors = connectors
         self.state = state
-        self.scorer = scorer
         self.lock = lock
 
     def fetch_abstract_by_doi(self, doi: str) -> str:
@@ -69,10 +67,18 @@ class AbstractEnricher:
                     if abstract:
                         with self.lock:
                             paper["Abstract"] = abstract
-                            old_score = paper.get("Relevance_Score", 0.0)
-                            new_score = self.scorer.calculate_score(paper.get("Title", ""), abstract, paper.get("Citations", 0))
-                            paper["Relevance_Score"] = new_score
-                            logger.info(f"Enriched '{paper.get('Title')[:40]}...'. Score: {old_score} -> {new_score}")
+                            # Deliberately does NOT write Relevance_Score. Scoring
+                            # is owned by the pipeline (validate_and_score, then
+                            # RecomputeRanksStep); writing a raw keyword score
+                            # here mixed scales within one collection.
+                            # Invalidate the cached component scores instead, so
+                            # the scoring step recomputes them over the now
+                            # complete text — the validator had scored this paper
+                            # against an empty abstract.
+                            paper["_kw_score"] = None
+                            paper["_sem_score"] = None
+                            paper["_abstract_enriched"] = True
+                            logger.info(f"Enriched '{paper.get('Title')[:40]}...'")
                             enriched_count += 1
                 except Exception as e:
                     logger.error(f"Enrichment error: {e}")
