@@ -46,7 +46,7 @@ from academic_hunter.core.evaluation import (
 )
 from academic_hunter.core.evaluation.qrels import doc_id_for
 from academic_hunter.core.infra import HunterConfig
-from academic_hunter.core.nlp import AcademicScorer
+from academic_hunter.core.nlp import AcademicScorer, BM25
 
 RESULTS_DIR = Path(__file__).parent / "results"
 DEFAULT_QRELS = ROOT / "papers" / "evaluation" / "qrels_pilot_genre_analysis.json"
@@ -135,7 +135,11 @@ def load_documents(qrels_path: Path) -> tuple[dict, str]:
 
 
 def build_scorers(config: HunterConfig, with_embedding: bool) -> dict:
-    """Return name -> ``scorer(document, query_text) -> float``.
+    """Return name -> ``factory(corpus) -> scorer(document, query) -> float``.
+
+    The indirection exists for BM25: IDF and the average document length are
+    properties of the candidate set, so it cannot be written as a per-document
+    function. Everything else ignores the corpus.
 
     All scorers except the embedding one are deterministic and offline.
     """
@@ -166,10 +170,35 @@ def build_scorers(config: HunterConfig, with_embedding: bool) -> dict:
         """A deliberately naive baseline: most-cited first."""
         return float(doc.get("Citations") or 0)
 
+    def corpus_independent(scorer):
+        """Lift a per-document function into the factory shape."""
+        return lambda _corpus: scorer
+
+    def bm25(corpus):
+        """BM25 over the candidate set — the pipeline's only query-aware signal.
+
+        Scores are computed once per query and looked up per document, rather
+        than rebuilding the index inside the scoring loop.
+        """
+        index = BM25([
+            f"{d.get('Title', '')} {d.get('Abstract', '')}" for d in corpus
+        ])
+        cache: dict = {}
+
+        def scorer(doc, query):
+            if query not in cache:
+                cache[query] = {
+                    d["_doc_id"]: s for d, s in zip(corpus, index.score(query))
+                }
+            return cache[query].get(doc["_doc_id"], 0.0)
+
+        return scorer
+
     scorers = {
-        "exported_score (see note)": reported,
-        "keyword": keyword,
-        "citations_baseline": citations,
+        "exported_score (see note)": corpus_independent(reported),
+        "keyword": corpus_independent(keyword),
+        "citations_baseline": corpus_independent(citations),
+        "bm25": bm25,
     }
 
     if with_embedding:
@@ -182,7 +211,7 @@ def build_scorers(config: HunterConfig, with_embedding: bool) -> dict:
             """Weight-Bleeding centroid similarity."""
             return screener.evaluate(doc, sem_config)
 
-        scorers["embedding"] = embedding
+        scorers["embedding"] = corpus_independent(embedding)
 
     return scorers
 
@@ -220,7 +249,7 @@ def main() -> int:
               f"{len(documents_for(qrels, qids[0]))} documentos")
     print()
 
-    def rank_for(scorer, qid):
+    def rank_for(scorer_factory, qid):
         """Rank the documents this query was judged over, not the union.
 
         A query from one topic must not be scored against another topic's
@@ -230,18 +259,18 @@ def main() -> int:
         doc_ids = [d for d in documents_for(qrels, qid) if d in documents]
         corpus = [documents[d] for d in doc_ids]
         ranked, timing = build_rankings_timed(
-            corpus, {qid: queries[qid]}, scorer=scorer,
+            corpus, {qid: queries[qid]}, scorer=scorer_factory(corpus),
             doc_id=lambda d: d["_doc_id"], top_k=len(corpus),
         )
         return ranked[qid], timing
 
     reports: dict = {}
     timings: dict = {}
-    for name, scorer in scorers.items():
+    for name, scorer_factory in scorers.items():
         rankings = {}
         timing = Timing()
         for qid in queries:
-            ranking, one = rank_for(scorer, qid)
+            ranking, one = rank_for(scorer_factory, qid)
             rankings[qid] = ranking
             timing.per_query[qid] = one.per_query[qid]
             timing.pool_size[qid] = one.pool_size[qid]

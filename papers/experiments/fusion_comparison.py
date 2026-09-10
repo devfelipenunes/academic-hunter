@@ -50,7 +50,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from academic_hunter.core.evaluation import documents_for, evaluate_run, load_qrels, mean_metrics, topics
 from academic_hunter.core.infra import HunterConfig
-from academic_hunter.core.nlp import AcademicScorer, fuse_scores
+from academic_hunter.core.nlp import AcademicScorer, BM25, fuse_scores
 
 RESULTS_DIR = Path(__file__).parent / "results"
 DEFAULT_QRELS = ROOT / "papers" / "evaluation" / "qrels_pilot_genre_analysis.json"
@@ -124,16 +124,14 @@ def main() -> int:
     screener = SemanticScreener()
     sem_config = config.screener_config()
 
-    import math
-
     by_topic = topics(qrels)
+    queries = {qid: j.text for qid, j in qrels.queries.items()}
 
-    def fusions_for(corpus):
-        """Every candidate rule, computed over one topic's candidate set.
+    def base_signals(corpus):
+        """The query-independent signals: keyword weights and the embedding.
 
-        Ranks and min-max normalisation are relative to the candidate set, so
-        they must be computed per pool — fusing across two topics would rank a
-        document against documents it is never competing with.
+        Computed once per topic. The embedding costs about 1.5 s per document,
+        so recomputing it per query would dominate the run.
         """
         kw = [
             scorer.calculate_score(
@@ -142,21 +140,45 @@ def main() -> int:
             for d in corpus
         ]
         sem = [screener.evaluate(d, sem_config) for d in corpus]
-        citations = [float(d.get("Citations") or 0) for d in corpus]
+        return {
+            "kw": kw,
+            "sem": sem,
+            "citations": [float(d.get("Citations") or 0) for d in corpus],
+        }
 
+    def rules_for(base, bm25_scores, corpus):
+        """Every candidate rule, over one query's scores for one topic's pool.
+
+        BM25 is query-conditional, so the rules that involve it differ per
+        query — which is the whole point of adding it. The query-independent
+        rules simply come out identical for every query in the topic.
+        """
+        kw, sem = base["kw"], base["sem"]
         r_kw, r_sem = percentile_ranks(kw), percentile_ranks(sem)
         p_kw, p_sem = position_ranks(kw), position_ranks(sem)
         n_kw, n_sem = minmax(kw), minmax(sem)
+        n_bm = minmax(bm25_scores)
 
-        return {
+        rules = {
             "keyword_only": kw,
             "embedding_only": sem,
-            "citations_baseline": citations,
+            "bm25_only": bm25_scores,
+            "citations_baseline": base["citations"],
             # ── the rules the pipeline actually ships, via the shared function.
             #    Reimplementing them here would let the experiment drift from
             #    the code and quietly stop measuring it. ──
             "shipped (weighted_norm)": fuse_scores(kw, sem),
             "shipped (rank_geometric)": fuse_scores(kw, sem, strategy="rank_geometric"),
+            # ── lexical + dense: the fusion the roadmap asked for (item 2.3),
+            #    now with BM25 as the sparse signal instead of the regex score ──
+            "bm25+emb 70/30": fuse_scores(n_bm, n_sem, strategy="weighted_norm",
+                                          weights={"keyword": 0.7, "embedding": 0.3}),
+            "bm25+emb 50/50": fuse_scores(n_bm, n_sem, strategy="weighted_norm",
+                                          weights={"keyword": 0.5, "embedding": 0.5}),
+            "bm25+emb 90/10": fuse_scores(n_bm, n_sem, strategy="weighted_norm",
+                                          weights={"keyword": 0.9, "embedding": 0.1}),
+            "bm25+kw 50/50": fuse_scores(n_bm, n_kw, strategy="weighted_norm",
+                                         weights={"keyword": 0.5, "embedding": 0.5}),
             # ── alternatives that are not shipped, for comparison ──
             "arith_rank": [(a + b) / 2.0 * 10.0 for a, b in zip(r_kw, r_sem)],
             "min_rank": [min(a, b) * 10.0 for a, b in zip(r_kw, r_sem)],
@@ -167,13 +189,7 @@ def main() -> int:
             ],
             "weighted_norm_50_50": [0.5 * a + 0.5 * b for a, b in zip(n_kw, n_sem)],
         }
-
-    # topic -> (doc_ids, fusion name -> scores)
-    per_topic = {}
-    for topic, qids in by_topic.items():
-        doc_ids = [d for d in documents_for(qrels, qids[0]) if d in documents]
-        corpus = [documents[d] for d in doc_ids]
-        per_topic[topic] = (doc_ids, fusions_for(corpus))
+        return rules
 
     stats = qrels.stats()
     print("=" * 78)
@@ -181,21 +197,31 @@ def main() -> int:
     print("=" * 78)
     print(f"  documents: {len(documents)} judged | queries: {stats['queries']} | "
           f"judgments: {stats['judgments']} | relevant: {stats['relevant']}")
-    for topic, (doc_ids, _) in per_topic.items():
-        print(f"    {topic or '(sem tópico)':<24} pool de {len(doc_ids)} documentos")
+    for topic, qids in by_topic.items():
+        print(f"    {topic or '(sem tópico)':<24} pool de "
+              f"{len([d for d in documents_for(qrels, qids[0]) if d in documents])} documentos")
     print()
 
-    fusion_names = list(next(iter(per_topic.values()))[1])
-    reports = {}
-    for name in fusion_names:
-        rankings = {}
-        for topic, qids in by_topic.items():
-            doc_ids, scores = per_topic[topic]
-            order = sorted(range(len(doc_ids)), key=lambda i: -scores[name][i])
-            ranking = [doc_ids[i] for i in order]
-            for qid in qids:
-                rankings[qid] = ranking
-        reports[name] = evaluate_run(qrels, rankings, ks=KS)
+    # rule -> {query id -> rankings}
+    rankings_by_rule: dict = {}
+    for topic, qids in by_topic.items():
+        doc_ids = [d for d in documents_for(qrels, qids[0]) if d in documents]
+        corpus = [documents[d] for d in doc_ids]
+        base = base_signals(corpus)
+        index = BM25([
+            f"{d.get('Title', '')} {d.get('Abstract', '')}" for d in corpus
+        ])
+
+        for qid in qids:
+            rules = rules_for(base, index.score(queries[qid]), corpus)
+            for rule, scores in rules.items():
+                order = sorted(range(len(doc_ids)), key=lambda i: -scores[i])
+                rankings_by_rule.setdefault(rule, {})[qid] = [doc_ids[i] for i in order]
+
+    reports = {
+        rule: evaluate_run(qrels, rankings, ks=KS)
+        for rule, rankings in rankings_by_rule.items()
+    }
 
     cols = [f"ndcg@{k}" for k in KS] + ["mrr", "ap"]
     header = f"  {'fusion':<22}" + "".join(f"{c:>10}" for c in cols)
@@ -224,7 +250,7 @@ def main() -> int:
             {
                 "qrels": str(qrels_path.relative_to(ROOT)),
                 "document_count": len(documents),
-                "pools": {topic: len(ids) for topic, (ids, _) in per_topic.items()},
+                "topics": list(by_topic),
                 "ks": list(KS),
                 "rrf_k": args.rrf_k,
                 "results": {name: r.as_dict() for name, r in reports.items()},
