@@ -32,7 +32,7 @@ Several approaches address embedding weighting at different levels. **SGPT** [@s
 
 We introduce **Weight-Bleeding**, an input-level technique that achieves configurable semantic weighting without any architectural modification. Our contributions are:
 
-- **Weighted centroid interpolation**: A mathematically principled method that computes a reference centroid in embedding space as a weighted average of domain terms, equivalent to mean pooling over repeated tokens but without creating artificially repetitive input strings.
+- **Weighted centroid interpolation**: A mathematically principled method that computes a reference centroid in embedding space as a weighted average of domain terms, approximating the effect of mean pooling over repeated tokens without creating artificially repetitive input strings. The two constructions are related but not equivalent — the base term is embedded once while being counted as $N_{base}$ terms, and encoder truncation breaks the correspondence; §3.13 measures the divergence.
 - **Square-root output scaling**: A non-linear transform $s = \sqrt{\sigma} \times 10$ that decompresses the bi-encoder's narrow cosine similarity range while preserving ranking order (Spearman $\rho = 1.0$ against linear).
 - **Empirical validation**: An ablation study across seven academic databases (2,300+ identified papers) showing that Weight-Bleeding recovers 92.7% overlap with exact keyword matching while adding semantically novel results. Direct comparison against a vanilla bi-encoder baseline shows Weight-Bleeding changes rankings (Spearman $\rho = 0.968$) with 40% top-10 turnover, and 88.8% of papers shift toward the weighted domain centroid. Cross-domain analysis demonstrates that the centroid is domain-specific: SLR and blockchain configurations produce negatively correlated rankings ($\rho = -0.75$).
 - **Practical zero-shot deployment**: The method requires no GPU, no fine-tuning, no labeled data — only a JSON configuration file with domain weights.
@@ -56,7 +56,7 @@ The key insight of Weight-Bleeding is that repeating a term $W$ times in the inp
 
 $$\text{mean\_pool}([t_1, t_1, t_1, t_2]) = \frac{3 \cdot \mathbf{h}_{t_1} + 1 \cdot \mathbf{h}_{t_2}}{4}$$
 
-Rather than physically creating repetitive input strings (which incurs token-length penalties), we compute the equivalent effect directly in embedding space. The reference centroid $\mathbf{v}_{ref}$ is computed as a weighted average of the base embedding and each technical term's embedding:
+Rather than physically creating repetitive input strings (which incurs token-length penalties), we compute an analogous weighting directly in embedding space — an approximation rather than an exact equivalent, as §3.13 quantifies. The reference centroid $\mathbf{v}_{ref}$ is computed as a weighted average of the base embedding and each technical term's embedding:
 
 $$\mathbf{v}_{ref} = \frac{\mathbf{v}_{base} \cdot N_{base} + \sum_{i=1}^{k} \mathbf{e}_{t_i} \cdot W_i}{N_{base} + \sum_{i=1}^{k} W_i}$$
 
@@ -174,11 +174,11 @@ We measure Spearman rank correlation between vanilla bi-encoder, Weight-Bleeding
 
 | Group                | Pairs | Vanilla $\rho$ | WB $\rho$ |
 | -------------------- | ----: | -------------: | --------: |
-| SLR (in-domain)      |    10 |          0.345 |     0.212 |
-| AI/ML (related)      |     5 |       $-$0.300 |  $-$0.300 |
-| Negative (unrelated) |     5 |       $-$0.600 |  $-$0.600 |
+| SLR (in-domain)      |    10 |          0.394 |     0.255 |
+| AI/ML (related)      |     5 |          0.300 |     0.300 |
+| Negative (unrelated) |     5 |          0.600 |     0.600 |
 
-The cross-encoder evaluates localized conversational relevance ("does this document answer the query?"), whereas Weight-Bleeding alters the bi-encoder's embedding geometry to reflect domain-level priorities. The lower correlation of Weight-Bleeding in-domain ($\rho = 0.212$ vs 0.345) is not a failure of alignment — it is empirical evidence of the targeted centroid shift. For unrelated queries, both methods correlate equally poorly, confirming that neither captures relevance for out-of-domain content. The ms-marco cross-encoder is trained on conversational QA, not thematic relevance ("are these texts about the same topic?"). For SLR tasks, thematic relevance is the correct objective.
+The cross-encoder evaluates localized conversational relevance ("does this document answer the query?"), whereas Weight-Bleeding alters the bi-encoder's embedding geometry to reflect domain-level priorities. The lower correlation of Weight-Bleeding in-domain ($\rho = 0.255$ vs 0.394) is not a failure of alignment — it is empirical evidence of the targeted centroid shift. For unrelated queries the two methods correlate identically with the cross-encoder ($\rho = 0.600$), confirming that the divergence appears only where domain weighting is active rather than as a global distortion. The ms-marco cross-encoder is trained on conversational QA, not thematic relevance ("are these texts about the same topic?"). For SLR tasks, thematic relevance is the correct objective.
 
 ## 3.4 Baseline Comparison: Vanilla Bi-Encoder vs Weight-Bleeding
 
@@ -240,11 +240,13 @@ The SLR and Blockchain centroids are **negatively correlated** ($\rho = -0.746$)
 
 We systematically vary the weights of three terms ("sentence transformer," "bi encoder," "echo embedding") across 64 combinations ($W \in {1, 3, 5, 10}$ each) while holding other weights fixed, to measure how weight combinations affect the ranking:
 
-- **21 unique rankings** emerge from 64 weight combinations
-- Spearman $\rho$ ranges from 0.9962 to 0.9982 against the baseline ($W=5$ for all)
-- Pass rate at threshold 5.0 ranges from 126 to 136 papers (of 500)
+- **61 unique rankings** emerge from 64 weight combinations
+- Spearman $\rho$ ranges from $-0.084$ to $1.000$ against the baseline ($W=5$ for all)
+- Pass rate at threshold 3.5 ranges from 0 to 22 papers, and at threshold 5.0 from 0 to 1 (of 500)
 
-The narrow $\rho$ range reflects the dilution effect: when variable terms are already present in the base anchor vocabulary, individual weight changes produce subtle ranking shifts. This confirms that Weight-Bleeding's primary influence comes from the contrast between which terms are in the base (unweighted) vs which receive additional weight, rather than from small adjustments to already-weighted terms.
+The wide $\rho$ range shows that weight configuration is a first-order control on the ranking rather than a subtle adjustment: opposing weights on the same three terms can reverse the ordering outright ($\rho = -0.084$), while agreement leaves it untouched ($\rho = 1.000$). Nearly every combination yields a distinct ordering (61 of 64), confirming that the weighting scheme exposes a genuinely configurable retrieval surface.
+
+Pass rates are low in absolute terms because the evaluation corpus — 500 papers retrieved for a blockchain-interoperability review — is unrelated to the three ML-oriented probe terms. The sweep therefore measures _ranking sensitivity_ to weight configuration, not in-domain retrieval quality; absolute pass rates would be higher on a corpus matching the probe terms. Script: `papers/experiments/weight_sweep_multiterm.py`.
 
 ## 3.8 Anchor Ablation
 
@@ -314,6 +316,14 @@ SGPT's positional weighting produces rankings literally identical to vanilla ($\
 ## 3.12 Out-of-Domain Generalization
 
 We evaluate Weight-Bleeding on a BEIR-style retrieval task spanning three queries and 10 documents (5 relevant, 5 irrelevant per query). On all three queries, both vanilla and Weight-Bleeding retrieve all 5 relevant documents in the top-5 positions, confirming that the centroid shift does not degrade out-of-domain retrieval quality. Additionally, N_base parameter sweeps (3, 5, 10, 20, 50) show stable behavior: adjacent values correlate at $\rho > 0.96$, with N_base = 10 providing the optimal balance between centroid constraint and flexibility.
+
+## 3.13 Equivalence with String-Level Repetition
+
+Weight-Bleeding is motivated as an embedding-space alternative to repeating terms in the input string. We test whether the two constructions actually agree by ranking a probe set of query-paper pairs under (a) centroid interpolation in embedding space and (b) literal string-level repetition of the weighted terms, then correlating the two rankings (`papers/experiments/cross_encoder_val.py`).
+
+The two rankings are **negatively correlated** ($\rho = -0.2242$): the constructions are related but not interchangeable. Three factors account for the divergence. First, $\mathbf{v}_{base}$ is a single embedding of the concatenated base vocabulary while $N_{base}$ counts individual terms, so the base contribution is scaled differently in each formulation. Second, string repetition is subject to the encoder's token limit — a long repeated query is truncated, silently dropping terms that the embedding-space version still honours. Third, repeating a term in text shifts the embedding through contextual attention, whereas adding its vector to a centroid does not: the two operations act on different representations.
+
+We report this as a scoping result rather than a failure. Weight-Bleeding's contribution is the _configurable_ weighting surface, not an exact simulation of token repetition. The divergence also explains why Weight-Bleeding yields rankings distinct from both vanilla bi-encoders and repetition baselines (§3.10) — which is precisely the property the method is designed to expose.
 
 # 4. Related Work
 

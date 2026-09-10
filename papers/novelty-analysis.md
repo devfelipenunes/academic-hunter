@@ -12,7 +12,7 @@ Academic Hunter é o **único** sistema que combina **cinco inovações** em uma
 
 1. **Weight-Bleeding** — único método de ponderação semântica configurável em bi-encoders por input-level term repetition (sem GPU, sem labels, sem modificar pooling)
 2. **Agentic SLR Configuration** — único sistema onde um agente de IA descobre autonomamente o vocabulário do domínio (`quick_topic_discovery`), constrói a configuração de busca com pesos semânticos (`update_config`), e executa o pipeline completo — sem intervenção humana no `config.json`
-3. **MCP Server + 16 fontes + pipeline SLR completo** — único MCP server que oferece pipeline SLR end-to-end (busca → scoring → clustering → sumarização → export) com cobertura de 16 bases
+3. **MCP Server + pipeline SLR completo** — único MCP server que oferece pipeline SLR end-to-end (busca → scoring → clustering → sumarização → export), com 7 bases consultadas em paralelo e 15 acessíveis no total
 4. **12 análises com modelo único de 22MB** — clustering, detecção de novidade, sumarização, landscape, dedup, tudo com all-MiniLM-L6-v2
 5. **Pipeline SLR autônomo (sem LLM)** — busca multi-fonte + scoring + clustering + PRISMA funcionam sem chamar nenhum LLM, diferentemente de concorrentes 2025-2026 que dependem de GPT/Claude/Gemini
 
@@ -94,9 +94,9 @@ A busca revelou uma nova categoria emergente em 2025-2026: **MCP servers especia
 | **lit-mcp** (gauravfs-14)        | 2025      | arXiv + DBLP                | ❌ Search + summaries only         | ❌                      | ❌ (API-based)      |
 | **Consensus MCP**                | 2025      | Consensus (220M papers)     | ❌ Search + read list only         | ❌ (LLM-based)          | ❌ (paywall)        |
 | **mcp-sequential-research**      | 2025      | N/A                         | ✅ Plan → search → report          | ✅ Prior art clustering | ❌                  |
-| **Academic Hunter MCP**          | 2025-2026 | **16 fontes**               | ✅ **Pipeline completo**           | ✅ **Weight-Bleeding**  | ✅ **CPU-only**     |
+| **Academic Hunter MCP**          | 2025-2026 | **7 paralelas (15 total)**  | ✅ **Pipeline completo**           | ✅ **Weight-Bleeding**  | ✅ **CPU-only**     |
 
-**Análise:** AH é o único MCP server que oferece **pipeline SLR completo** (busca → scoring → clustering → sumarização → export) com **Weight-Bleeding** (sem LLM) e **16 fontes**. Os demais focam em sub-etapas (snowballing, PDF sumarização, search-only) ou dependem de LLMs externos.
+**Análise:** AH é o único MCP server que oferece **pipeline SLR completo** (busca → scoring → clustering → sumarização → export) com **Weight-Bleeding** (sem LLM) e **7 fontes consultadas em paralelo** (15 acessíveis no total). Os demais focam em sub-etapas (snowballing, PDF sumarização, search-only) ou dependem de LLMs externos.
 
 #### Categoria E: Ferramentas SLR com IA Generativa (2025-2026)
 
@@ -325,7 +325,7 @@ Uma nova geração de ferramentas SLR surgiu entre 2025-2026 usando LLMs como n�
 | √σ output scaling                     | **Técnica**      | Transformação monotônica que resolve compressão do cosine range      | Exclusões: 109→6, Overlap: 47.8%→92.7%            |
 | Agentic SLR Configuration             | **Arquitetural** | Agente descobre jargões, constrói config com pesos, executa pipeline | Nenhum concorrente faz ciclo discovery→config→run |
 | MCP Server para SLR                   | **Arquitetural** | Primeira exposição de pipeline SLR via MCP (35+ ferramentas)         | 0 concorrentes SLR com MCP completo               |
-| Pipeline multi-fonte (16 APIs)        | **Técnica**      | Maior cobertura entre ferramentas SLR                                | Concorrentes: 1-3 fontes                          |
+| Pipeline multi-fonte (7 em paralelo)  | **Técnica**      | Maior cobertura entre ferramentas SLR                                | Concorrentes: 1-3 fontes                          |
 | 12 análises com modelo único          | **Eficiência**   | Um modelo de 22MB substitui múltiplos modelos                        | Nenhum concorrente faz isso                       |
 | Auto-export Obsidian                  | **DX**           | Integração direta com Second Brain                                   | Diferencial para pesquisadores                    |
 
@@ -357,8 +357,8 @@ JARVIS Research OS (`kaneko-ai/jarvis-ml-pipeline`, v2.0.0, Mar 2026, MIT) é o 
 | **Orquestração** | LangGraph (6 agentes com retry loops)             | Pipeline linear + MCP (35+ tools orquestradas por agente externo) | **JARVIS**: autônomo integrado; **AH**: flexível, qualquer LLM |
 | **Vector store** | ChromaDB + LightRAG (grafo de entidades)          | ChromaDB                                                          | **JARVIS**: graph RAG; **AH**: mais simples                    |
 | **MCP**          | 15 tools                                          | **35+ tools**                                                     | **AH**: 2.3× mais ferramentas                                  |
-| **Fontes**       | 5 (PubMed, S2, OpenAlex, arXiv, Crossref)         | **16 fontes**                                                     | **AH**: 3.2× mais fontes                                       |
-| **Dashboard**    | Streamlit + Agent-Web (Express SPA)               | CLI + MCP                                                         | Diferentes públicos                                            |
+| **Fontes**       | 5 (PubMed, S2, OpenAlex, arXiv, Crossref)         | **7 em paralelo (15 no total)**                                   | **AH**: 1.4× no pipeline (3× no total)                         |
+| **Dashboard**    | Streamlit + Agent-Web (Express SPA)               | MCP (stdio/SSE)                                                   | Diferentes públicos                                            |
 | **Sistema**      | Windows 11 (Linux/macOS: untested)                | Linux, macOS, Windows                                             | **AH**: multi-plataforma                                       |
 
 #### Funcionalidades: JARVIS Tem, AH Não Tem
@@ -379,7 +379,7 @@ JARVIS Research OS (`kaneko-ai/jarvis-ml-pipeline`, v2.0.0, Mar 2026, MIT) é o 
 | **Weight-Bleeding** (scoring semântico configurável) | Método **original** — JARVIS usa LLM genérico para scoring                                                                     |
 | **Agentic SLR Configuration**                        | AH descobre jargões via `quick_topic_discovery` e constrói config autonomamente — JARVIS exige search terms manuais do usuário |
 | **100% offline** (sem API key)                       | JARVIS **requer** Gemini API — sem internet não funciona                                                                       |
-| **16 fontes** acadêmicas                             | 3.2× mais fontes que JARVIS (5)                                                                                                |
+| **7 fontes** em paralelo (15 no total)               | 1.4× no pipeline (3× no total) vs JARVIS (5)                                                                                   |
 | **35+ MCP tools**                                    | 2.3× mais ferramentas que JARVIS (15)                                                                                          |
 | **Clustering BERTopic**                              | Agrupamento temático automático — JARVIS não tem                                                                               |
 | **Detecção de novidade** (EllipticEnvelope)          | Identifica papers outliers — JARVIS não tem                                                                                    |
@@ -431,7 +431,7 @@ JARVIS é **posterior** ao Academic Hunter. Não havia ferramenta similar quando
 
 3. **12 análises com modelo único (22MB)** é a demonstração mais eficiente de versatilidade de embedding em ferramentas SLR. Nenhum concorrente chega perto.
 
-4. **16 fontes simultâneas** é a maior cobertura de busca acadêmica em qualquer ferramenta SLR aberta ou fechada.
+4. **7 fontes consultadas em paralelo** (15 acessíveis no total) é a maior cobertura de busca acadêmica em qualquer ferramenta SLR aberta ou fechada.
 
 ### Posicionamento na Literatura
 
@@ -439,7 +439,7 @@ Academic Hunter ocupa posição **híbrida única** na taxonomia Agentic RAG (Mi
 
 - **Como ferramenta standalone**: pipeline SLR autônomo que executa revisão sistemática completa sem LLM
 - **Como MCP Tool Server**: backbone de retrieval controlado para ecossistemas agentivos (padrão Queen-Bee)
-- **Como platforma de pesquisa**: 12 análises, 16 fontes, exportação multi-formato
+- **Como plataforma de pesquisa**: 12 análises, 7 fontes em paralelo, exportação multi-formato
 
 Nenhum trabalho de 2025-2026 combina **SLR + Weight-Bleeding + MCP**.
 

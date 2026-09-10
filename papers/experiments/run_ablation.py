@@ -85,6 +85,25 @@ def main():
     print("  Comparing keyword vs embedding vs hybrid scoring")
     print("=" * 60)
 
+    # Record which configuration produced these numbers. The script reads the
+    # live config.json, so a run against a different topic yields entirely
+    # different counts — without this, results are not attributable to a corpus.
+    # The SHA-256 covers the whole file (anchors, technical_strings, weights,
+    # settings), which is more reliable than enumerating known fields.
+    import hashlib
+
+    _cfg = HunterConfig()
+    _cfg_path = Path("config.json")
+    config_fingerprint = {
+        "config_sha256": (
+            hashlib.sha256(_cfg_path.read_bytes()).hexdigest() if _cfg_path.exists() else None
+        ),
+        "anchors": sorted(_cfg.anchors.keys()),
+        "limit_per_query": _cfg.settings.get("limit_per_query"),
+        "start_year": _cfg.settings.get("start_year"),
+        "min_relevance_score": _cfg.settings.get("min_relevance_score"),
+    }
+
     results = []
     for mode, label in MODES:
         result = run_mode(mode, label)
@@ -103,10 +122,22 @@ def main():
         top5 = ", ".join(str(s) for s in r["top_5_scores"])
         print(f"{r['mode']:<25} {r['identified']:>10} {r['final_included']:>8} {r['top_5_scores'][0]:>8} {top5:>20}")
 
-    # Save results
-    out = RESULTS_DIR / "ablation_results.json"
+    # Save results. A --quick run covers only the first mode, so it must not
+    # clobber the canonical 3-mode file — that is how the committed
+    # ablation_results.json ended up containing keyword-mode data only, while
+    # the paper reported all three modes.
+    out = RESULTS_DIR / ("ablation_results_quick.json" if quick else "ablation_results.json")
     out.write_text(json.dumps(results, indent=2, ensure_ascii=False))
     print(f"\n✅ Results saved to {out}")
+
+    # Sidecar metadata: results stay a bare list (overlap_analysis.py and
+    # validate_innovation_claims.py iterate over it directly), but the run must
+    # be attributable to a corpus — the same script on a different config.json
+    # produces entirely different counts.
+    meta = RESULTS_DIR / "ablation_run_metadata.json"
+    meta.write_text(json.dumps(config_fingerprint, indent=2, ensure_ascii=False))
+    print(f"✅ Config fingerprint saved to {meta}")
+    print(f"   anchors: {config_fingerprint['anchors']}")
 
     # LaTeX table
     if len(results) == 3:
