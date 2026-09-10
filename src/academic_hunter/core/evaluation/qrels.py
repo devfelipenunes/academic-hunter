@@ -24,7 +24,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 #: Grades at or above this are "relevant"; anything below is not.
 RELEVANT_THRESHOLD = 1
@@ -41,6 +41,15 @@ class Judgment:
     query_id: str
     text: str
     grades: Dict[str, int] = field(default_factory=dict)
+    #: Informational grouping, e.g. ``genre_analysis``. Lets a report show
+    #: per-topic means instead of one number over unrelated corpora.
+    topic: str = ""
+    #: The documents this query was judged over. Rankings are built within a
+    #: pool, so a query from one topic is never scored against another topic's
+    #: documents — those are unjudged for it, and counting them as irrelevant
+    #: would penalise a ranker for a pool it was never given. Empty means "the
+    #: whole judged collection", which is what single-topic files want.
+    pool: List[str] = field(default_factory=list)
 
     @property
     def relevant_ids(self) -> list:
@@ -151,9 +160,39 @@ def load_qrels(path: Union[str, Path]) -> Qrels:
             query_id=str(query_id),
             text=str(entry.get("text", "")),
             grades=grades,
+            topic=str(entry.get("topic", "")),
+            pool=[str(d) for d in (entry.get("pool") or [])],
         )
 
     return qrels
+
+
+def documents_for(qrels: Qrels, query_id: str) -> List[str]:
+    """The documents to rank for one query.
+
+    Returns the query's declared pool, or — when it declares none — every
+    document that carries a judgment anywhere in the collection, sorted for
+    deterministic ordering. The fallback keeps single-topic files (which have no
+    pools) working exactly as before.
+    """
+    if query_id not in qrels.queries:
+        raise QrelsError(f"unknown query id: {query_id}")
+
+    pool = qrels.queries[query_id].pool
+    if pool:
+        return list(pool)
+    return sorted(pooled_documents(qrels))
+
+
+def topics(qrels: Qrels) -> Dict[str, List[str]]:
+    """Query ids grouped by their ``topic``, in first-seen order.
+
+    Queries without a topic land under ``""``.
+    """
+    grouped: Dict[str, List[str]] = {}
+    for query_id, judgment in qrels.queries.items():
+        grouped.setdefault(judgment.topic, []).append(query_id)
+    return grouped
 
 
 def save_qrels(qrels: Qrels, path: Union[str, Path]) -> Path:
@@ -164,6 +203,10 @@ def save_qrels(qrels: Qrels, path: Union[str, Path]) -> Path:
         "queries": {
             qid: {
                 "text": j.text,
+                # Omitted when unset, so single-topic files keep their old shape
+                # and a diff stays readable.
+                **({"topic": j.topic} if j.topic else {}),
+                **({"pool": list(j.pool)} if j.pool else {}),
                 "judgments": dict(sorted(j.grades.items())),
             }
             for qid, j in sorted(qrels.queries.items())

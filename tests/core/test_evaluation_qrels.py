@@ -11,7 +11,7 @@ from academic_hunter.core.evaluation import (
     evaluate_run,
     load_qrels,
 )
-from academic_hunter.core.evaluation.qrels import doc_id_for, save_qrels
+from academic_hunter.core.evaluation.qrels import documents_for, doc_id_for, save_qrels, topics
 from academic_hunter.core.evaluation.runner import build_rankings, unjudged_in_pool
 
 VALID = {
@@ -240,3 +240,70 @@ def test_unjudged_in_pool_lists_unjudged_documents():
     qrels = _qrels()
 
     assert unjudged_in_pool(qrels, ["a", "c", "zzz"]) == {"zzz"}
+
+
+# ── per-query pools and topics ──────────────────────────────────────────────
+
+
+def test_pool_and_topic_round_trip(tmp_path):
+    """Both fields survive a save/load cycle."""
+    payload = {
+        "queries": {
+            "q1": {"text": "t", "topic": "alpha", "pool": ["d1", "d2"],
+                   "judgments": {"d1": 2, "d2": 0}},
+        }
+    }
+    qrels = load_qrels(_write(tmp_path, payload))
+    reloaded = load_qrels(save_qrels(qrels, tmp_path / "out.json"))
+
+    assert reloaded["q1"].topic == "alpha"
+    assert reloaded["q1"].pool == ["d1", "d2"]
+
+
+def test_absent_pool_defaults_to_empty(tmp_path):
+    """Single-topic files predate pools and must keep working."""
+    payload = {"queries": {"q1": {"text": "t", "judgments": {"d1": 2}}}}
+
+    qrels = load_qrels(_write(tmp_path, payload))
+
+    assert qrels["q1"].pool == []
+    assert qrels["q1"].topic == ""
+
+
+def test_documents_for_returns_the_declared_pool():
+    qrels = Qrels(queries={
+        "q1": Judgment("q1", "t", {"a": 1, "b": 1}, pool=["a", "b", "c"]),
+    })
+
+    assert documents_for(qrels, "q1") == ["a", "b", "c"]
+
+
+def test_documents_for_falls_back_to_every_judged_document():
+    """No pool declared means the whole judged collection, sorted for stability."""
+    qrels = Qrels(queries={
+        "q1": Judgment("q1", "t", {"b": 1}),
+        "q2": Judgment("q2", "t", {"a": 1, "c": 0}),
+    })
+
+    assert documents_for(qrels, "q1") == ["a", "b", "c"]
+
+
+def test_documents_for_unknown_query_raises():
+    with pytest.raises(QrelsError, match="unknown query"):
+        documents_for(_qrels(), "nope")
+
+
+def test_topics_groups_queries_in_first_seen_order():
+    qrels = Qrels(queries={
+        "a1": Judgment("a1", "t", {}, topic="alpha"),
+        "b1": Judgment("b1", "t", {}, topic="beta"),
+        "a2": Judgment("a2", "t", {}, topic="alpha"),
+    })
+
+    assert topics(qrels) == {"alpha": ["a1", "a2"], "beta": ["b1"]}
+
+
+def test_topics_puts_untagged_queries_under_empty_string():
+    qrels = Qrels(queries={"q1": Judgment("q1", "t", {})})
+
+    assert topics(qrels) == {"": ["q1"]}

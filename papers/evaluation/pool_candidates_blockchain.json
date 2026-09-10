@@ -1,0 +1,456 @@
+{
+  "source_csv": "results/run_20260727_152204/academic_dataset_20260727_152204.csv",
+  "selection": "top-25-by-score UNION random-25(seed=20260910)",
+  "documents": {
+    "doi:10.1109/access.2025.3606194": {
+      "title": "Blockchain and Chainlink Oracle Integration in EHR: Ensuring Real-Time Data Integrity and Interoperability With Ethereum, Hyperledger Fabric, and IPFS Storage",
+      "doi": "10.1109/access.2025.3606194",
+      "abstract": "Healthcare systems face challenges in ensuring robust security, achieving scalable operations, and maintaining optimal efficiency, mainly attributable to the inherent constraints of conventional centralized architectural frameworks. These traditional systems have limitations that compromise healthcare delivery, affecting patient care quality, data integrity, and operational effectiveness. This research proposes a hybrid blockchain framework that integrates Hyperledger Fabric, Ethereum, and the Interplanetary File System (IPFS) to enable secure, scalable, and interoperable healthcare data management. Testing with simulated healthcare data across three institutional nodes demonstrated a significant 64% reduction in data retrieval time compared to traditional systems while maintaining exceptional 99.8% uptime reliability. Chainlink oracles serve as sophisticated bridges for cross-chain communication, securely transmitting data between blockchain networks while preserving complete data integrity. The framework ensures HIPAA and GDPR compliance through advanced AES-256 encryption protocols, immutable audit trails, and patient-controlled access mechanisms. The implementation results conclusively demonstrate that the hybrid model improves data security and interoperability while reducing operational costs by approximately 37% compared to current centralized solutions. This research establishes the transformative potential of hybrid blockchain frameworks in revolutionizing healthcare data environments by providing technically viable and economically efficient solutions to manage sensitive medical information.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "8",
+      "pipeline_relevance_score": "29.7"
+    },
+    "doi:10.56975/ijedr.v14i1.304683": {
+      "title": "A Permissioned Blockchain-Based Secure DNS Governance System Using Hyperledger Fabric",
+      "doi": "10.56975/ijedr.v14i1.304683",
+      "abstract": "The Domain Name System (DNS) is a foundational component of internet infrastructure, mapping human-readable domain names to machine-routable IP addresses. However, traditional DNS management models rely heavily on centralized administrative control, making them vulnerable to unauthorized updates, spoofing attacks, and insufficient audit transparency. A compromised administrative account can result in unilateral, undetected malicious routing changes. To address these limitations, this paper proposes a permissioned blockchain-based DNS governance platform engineered using Hyperledger Fabric 2.2. The system introduces a multi-organization governance framework in which critical DNS operations—such as domain onboarding, IP modifications, and malicious domain blacklisting - are executed through structured, on-chain smart contracts. Each domain record transitions through a strictly controlled lifecycle (PENDING, ACTIVE, BLACKLISTED) and requires a mathematical consensus of at least two independent organizations to authorize network changes. Implemented via a three-tier architecture comprising a Go-based chaincode layer, a Node.js REST API integrated with external threat intelligence, and a React.js frontend, the platform provides immutable auditability and real-time observability via Server-Sent Events (SSE). Experimental deployment demonstrates that the proposed system effectively eliminates the Single Point of Failure (SPOF) in DNS management, ensuring tamper-resistant record integrity and strengthening cross-organizational trust.",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "29.2"
+    },
+    "doi:10.56726/irjmets81948": {
+      "title": "Blockchain-Based Digital Identity for e-Governance in Rural India",
+      "doi": "10.56726/irjmets81948",
+      "abstract": "Access to reliable digital identity is a cornerstone for inclusive development and public service delivery.In rural India, where infrastructure, digital literacy, and trust in digital platforms remain limited, centralized identity systems often fail to provide transparency, security, and accessibility.This research proposes a decentralized, blockchain-powered digital identity framework specifically designed for rural Indian populations.The system aims to provide tamper-proof, self-sovereign identity credentials while ensuring interoperability with existing government services such as Aadhaar, MNREGA, and PM-Kisan.The proposed model utilizes permissioned blockchain architecture (e.g., Hyperledger Fabric) to guarantee secure data sharing between citizens, government agencies, and service providers.This framework enhances data privacy, reduces identity fraud, and empowers individuals with control over their personal data, fostering inclusive and transparent egovernance.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "28.0"
+    },
+    "doi:10.69490/jcsdf8820260212": {
+      "title": "Tamper-Proof Compliance Framework Using Hyperledger Fabric for Secure and Auditable Log Management",
+      "doi": "10.69490/jcsdf8820260212",
+      "abstract": "Guaranteeing compliance with regulations in enterprise security log management is an important challenge since legacy systems do not have immutability, auditability, and real-time verification.In this paper, a Tamper-Proof Compliance Framework based on Hyperledger Fabric, a permissioned blockchain, is introduced to securely harvest, verify, and store security logs from various SIEM (Security Information and Event Management) systems.The architecture combines JWT authentication, digital signatures, and Role-Based Access Control (RBAC) for guaranteeing log authenticity, integrity, and restricted access.All registered organizations work within a reserved Hyperledger Fabric channel, isolating data and independently validating compliance.Automated verification of compliance is achieved through the application of smart contracts (chaincode) that compare logs with most significant controls from GDPR, PCI DSS, and NIST CSF in order to have a dynamic compliance scoring system evaluating real-time adherence and issuing alerts for failures.Through decentralized architecture, this is improved in terms of security, openness, and regulatory compliance enforcement, ensuring a scalable and tamper-resistant compliance solution for contemporary enterprises.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "27.5"
+    },
+    "doi:10.17148/ijarcce.2023.125258": {
+      "title": "Integrating Public Reported Evidence Collection, Public Court Records Archive And Realizing Secure And Decentralized Case Document Management Using IPFS And Hyperledger Fabric Blockchain: An Implementation Study",
+      "doi": "10.17148/ijarcce.2023.125258",
+      "abstract": "Cloud and Blockchain-enabled case document management system that combines InterPlanetary File System (IPFS) and Hyperledger Fabric blockchain. The system aims to provide secure, transparent, and decentralized storage and management of case documents, while ensuring the privacy and confidentiality of the documents. The system further implements evidence collection from the public and providing public access to the court records.",
+      "year": "2023",
+      "source": "Crossref",
+      "citations": "3",
+      "pipeline_relevance_score": "26.9"
+    },
+    "doi:10.36719/2663-4619/116/39-41": {
+      "title": "Digital Transformation and Digital Government. E-Government in Azerbaijan",
+      "doi": "10.36719/2663-4619/116/39-41",
+      "abstract": "In general, government is an extremely complex system to execute with precision and perfection.As a result, continuous efforts to reform and improve governance through legal frameworks and innovation are inevitable.In today's context, digital transformation should be recognized as a crucial element of true democracy and transparency.Enabled by advanced technological communication tools, digital transformation fosters active citizen participation, enhances the realization of human rights and freedoms, and diminishes bureaucratic barriers.Nevertheless, it also introduces new challenges and legal risks for both individuals and institutions.This study examines the dual nature of digital transformation in governance-its democratic potential and its legal implications.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "26.2"
+    },
+    "doi:10.1080/09540962.2025.2597949": {
+      "title": "New development: E-government, eco-innovation, and public policies—shaping transparency, accountability, and corruption control in the EU",
+      "doi": "10.1080/09540962.2025.2597949",
+      "abstract": "IMPACTThis article illustrates how e-government, eco-innovation, and public policies impact transparency, accountability, and the control of corruption within the EU. E-government has a consistent impact on governance, while eco-innovation has strong but time-bound effects; public policies enhance accountability when they are relatively recent. The study's implications are significant for public sector accountants, auditors, policy-makers and developers who both influence, and are influenced by, digital transformation in the public sector.",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "7",
+      "pipeline_relevance_score": "25.4"
+    },
+    "doi:10.7176/ppar/16-2-05": {
+      "title": "E-Government Public Policy Design in Realizing Transparency and Accountability of Government",
+      "doi": "10.7176/ppar/16-2-05",
+      "abstract": "Advances in information technology have created broad opportunities for improving bureaucracy and public services. The public can participate directly in the processes of planning, implementation, and supervision of public policies. This can be addressed through a digital technology-based governance system known as Electronic Government (e-government). E-government is more than merely a website on the internet; it encompasses broader functions, including processes and structures that facilitate electronic interactions between the government and the public. As autonomous regions, district and municipal governments in Gorontalo Province have implemented public e-governance policies. Ideally, these policies should have generated positive impacts on governmental transparency and accountability. This study focuses on the design of public e-governance policies in realizing transparency and accountability, with two sub-focuses: (1) the evaluation and development of e-governance dimensions, and (2) the main aspects of e-governance policy. The complexity of the concept and implementation of e-governance requires the use of a qualitative approach. The results of this study are expected to contribute to district and municipal governments in Gorontalo Province in enhancing the effectiveness of public e-governance policies in achieving transparency and accountability. Keywords: E-government, Technology, Bureaucracy. DOI: 10.7176/PPAR/16-2-05 Publication date: May 30 th 2026",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "24.5"
+    },
+    "doi:10.1080/09540962.2026.2614325": {
+      "title": "Debate: The efficiency-accountability dilemma—transparency challenges in digital government AI governance",
+      "doi": "10.1080/09540962.2026.2614325",
+      "abstract": "Currently, governments at all levels are promoting digital transformation, positioning artificial intelligence (AI) as a potent instrument for enhancing public service efficiency. This represents a...",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "1",
+      "pipeline_relevance_score": "23.6"
+    },
+    "doi:10.12720/jait.16.12.1758-1779": {
+      "title": "SLR-GPoA: A Smart Land Registry System Using Blockchain and Geographic Proof of Authority",
+      "doi": "10.12720/jait.16.12.1758-1779",
+      "abstract": "The modernization of land registry systems is essential for enhancing transparency, reducing fraud, and driving socio-economic progress.Traditional land administration approaches-whether manual or semidigital-often suffer from inefficiencies, centralization, and a lack of scalability.This paper introduces a Geographic Proof of Authority (GPoA) based framework for land governance, conceptualized as a Distributed Intelligent System (DIS).Built on a permissioned blockchain architecture, the model integrates geographically aware validator selection, parallel trust-weighted validation, and smart contracts to automate key operations such as ownership transfer and dispute resolution.A prototype implementation using Hyperledger Fabric demonstrated notable improvements in validation accuracy, transaction efficiency, and fault tolerance when compared to conventional approaches.These results affirm the potential of GPoA as a legally-aligned, context-aware, and scalable consensus model for modernizing land registry systems.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "23.2"
+    },
+    "doi:10.5120/ijca2021921294": {
+      "title": "CopyrightChain: Permissioned Blockchain-based Collaboration and Design Right using Hyperledger Composer and IPFS",
+      "doi": "10.5120/ijca2021921294",
+      "abstract": "Information technologies, which have developed in every field in recent years, bring various problems in digital environments. The increase in digital records has increased the importance given to digital identity information in terms of data security and data source. With digital identity, information such as where and when data is shared can be obtained. Data that can be easily reproduced in digital environment puts copyright holders in a difficult situation. This article outlines how copyrights can be secured digitally and executed in a transparent manner. For this purpose, the furniture sector, which is one of the sectors where personalized products increase, has been examined as an example. Reaching customer demands in customized production and ensuring manufacturer-customer integration can be achieved by overcoming various difficulties. For this purpose, blockchain-based in this article proposed to bring together the actors in the manufacturing sector and the customer. In addition, it was emphasized how to secure the copyright of products designed by the customer or other actors. It is known that the data obtained during the protection of copyrights becomes cumbersome over time. For this purpose, it is aimed to increase the speed by using an external database. A distributed database, IPFS, was used for this.",
+      "year": "2021",
+      "source": "Crossref",
+      "citations": "2",
+      "pipeline_relevance_score": "23.2"
+    },
+    "doi:10.1007/s44282-026-00446-y": {
+      "title": "Blockchain applications for enhancing transparency and accountability in digital governance in developing countries",
+      "doi": "10.1007/s44282-026-00446-y",
+      "abstract": "This study systematically reviews the application of blockchain technology to enhance transparency and accountability in digital governance within developing countries. Following the PRISMA guidelines, we analyze 38 peer-reviewed studies published between 2016 and 2025. The findings reveal that blockchain is primarily applied in land administration, public procurement, identity management, voting systems, and welfare distribution. While the technology offers benefits such as immutability, traceability, and automated verification, implementation remains constrained by infrastructural limitations, regulatory uncertainty, and institutional readiness. Based on this synthesis, the study proposes an integrative analytical framework that links technological capabilities with institutional governance conditions to guide future research and policy development.",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "23.0"
+    },
+    "doi:10.1504/ijics.2023.131094": {
+      "title": "Performance driven Hyperledger Fabric-based blockchain framework for mass e-voting in India",
+      "doi": "10.1504/ijics.2023.131094",
+      "abstract": "The Indian voting infrastructure of today currently has a high cost per voter and low voter turnout. Several other countries have tried to tackle these issues by providing a way for voters to vote online, and the most promising and trustworthy solutions come in the form of blockchain-backed voting. But most current blockchain voting systems do not provide a verifiable secret ballot and use computationally expensive Byzantine fault tolerant proof of work algorithms that are often slow at appending new transactions/votes. To address the issues, we propose a performance driven Hyperledger Fabric-based voting framework that can sustain over 200 votes/sec with a reasonable end user latency. This effort introduces a multitude of solutions to the current age dilemma of voting, both offline and online with unique features including cost effective deployments, instantaneous vote counting, cast as intended verifiability and an observable and auditable architecture.",
+      "year": "2023",
+      "source": "Crossref",
+      "citations": "2",
+      "pipeline_relevance_score": "23.0"
+    },
+    "doi:10.7753/ijsea1409.1008": {
+      "title": "Enhancing Access to Service Delivery through Information Transparency: A RAG Based AI-Powered Conversational Chatbot for Algorithmic Transparency and Regulatory Compliance in Digital Governance",
+      "doi": "10.7753/ijsea1409.1008",
+      "abstract": "Digital governance increasingly relies on artificial intelligence (AI) to deliver citizen services efficiently, yet concerns around algorithmic opacity, regulatory compliance, and equitable access persist.Service delivery mechanisms are often hindered by limited transparency, fragmented communication channels, and inadequate trust between citizens and governing institutions.To address these challenges, retrieval-augmented generation (RAG) architectures integrated with conversational AI offer a pathway to enhance accessibility and accountability in digital governance frameworks.RAG-based chatbots combine knowledge retrieval with generative reasoning, enabling real-time, context-aware responses grounded in authoritative data sources.Unlike traditional rule-based systems, these chatbots not only provide accurate information but also justify their outputs through transparent citation of underlying documents.This ensures interpretability and aligns decision support with legal and regulatory requirements.By embedding transparency into the conversational process, citizens gain clearer insight into how information is processed and delivered, which strengthens trust in digital governance platforms.Furthermore, such chatbots streamline compliance monitoring by dynamically crossreferencing policies, regulations, and service protocols.They can guide users through complex procedures such as licensing, benefits application, or regulatory reporting while ensuring adherence to mandated standards.The approach fosters inclusive service delivery by bridging gaps in literacy, digital skills, and accessibility through natural language interaction.This article examines how RAGpowered conversational systems can operationalize algorithmic transparency, improve compliance assurance, and strengthen citizen engagement.It positions AI-enabled information transparency as a cornerstone for enhancing trust, accountability, and inclusivity in the next generation of digital governance ecosystems.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "22.5"
+    },
+    "doi:10.1016/j.tele.2026.102418": {
+      "title": "Digital public management reform: assessing the impact of e-government initiatives on administrative transparency",
+      "doi": "10.1016/j.tele.2026.102418",
+      "abstract": "• Digital Transformation in Governance: Examines the role of e-government initiatives in enhancing transparency and citizen trust in public administration. • Quantitative Analysis: Uses structured surveys from 320 citizens to assess perceptions of digital services and their impact on transparency. • Key Drivers Identified: Finds that information accessibility (β = 0.454) and digital adoption (β = 0.443) are the most significant factors driving transparency. • Strong Impact on Trust: Demonstrates that e-government initiatives positively influence citizen trust, with a correlation of r = 0.824 and adjusted R 2 = 0.76. • Actionable Insights for Governments: Offers evidence-based guidance for designing more accountable, citizen-centric digital public management systems. • Policy Relevance: Provides valuable insights for policymakers seeking to reduce corruption and enhance service delivery through digital tools. Digital transformation has become a defining pillar of modern public administration, with governments increasingly adopting e-government initiatives to enhance service delivery and citizen engagement. However, the improvement in administrative transparency these initiatives achieve remains insufficiently understood. This study addresses this gap by developing an integrated framework to assess how e-government initiatives enhance administrative transparency, quantitatively linking digital adoption, service efficiency and information accessibility to reductions in corruption and improvements in citizen trust, thereby providing evidence-based guidance for designing accountable public management systems. Data were collected from 320 citizens using structured surveys and analyzed descriptively to summarize key perceptions of digital service usage. Pearson correlation analysis was then employed to examine the strength and direction of relationships between e-government adoption. Similarly, regression modelling was applied to assess the overall predictive influence of digital public management reform factors on transparency and citizen trust in government processes. Findings show e government initiatives strongly boost transparency and trust, with r = 0.824 and adjusted R 2 = 0.76. These results highlight that information accessibility ( β = 0.454) and digital adoption ( β = 0.443) are the most influential drivers of transparency, offering actionable insights for governments seeking to design more accountable and citizen-centric digital ecosystems.",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "21.2"
+    },
+    "doi:10.56334/sei/8.11.14": {
+      "title": "Administrative Responsibility for Digital Technical Failures in the Era of Government Digitization: Challenges of Digital Governance and Accountability",
+      "doi": "10.56334/sei/8.11.14",
+      "abstract": "The world is witnessing a widespread digital transformation that has led to an increasing reliance on digital technology in various fields, including public administration and government institutions.Transformation is no longer just an option, but rather a strategic necessity to enhance efficiency and transparency and achieve sustainable development goals.Digital governance represents a new management framework based on exploiting modern technology to organize administrative processes and provide public services electronically, which contributes to improving citizens' lives and increasing their satisfaction with government performance.Our current study aims to shed light on government digitization, its most important principles, the digital technical failures that can occur, and their main causes, concluding with an examination of the administration's responsibility for these digital technical failures.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "21.2"
+    },
+    "doi:10.18280/isi.300121": {
+      "title": "The Future of E-Health: Blockchain Solutions with Hyperledger Fabric and IPFS",
+      "doi": "10.18280/isi.300121",
+      "abstract": "The electronic representation of a patient's medical information is called an electronic health record, or EHR.Normally, these records are kept on cloud-based or central servers.Blockchain technology is a new technology used to solve security and privacy problems of EHR data in a decentralized way.Hence, they are accessible to authorized health providers for better management of patient care.Building secure e-health systems with public blockchains such as Ethereum faces several problems.The main issue is that these blockchains are permissionless; everybody can join in and obtain access to the data, which becomes a cause of significant privacy concerns.This research proposes a private and decentralized e-healthcare system using Hyperledger Fabric and the Interplanetary File System (IPFS) for securely and effectively storing and retrieving EHRs.Privacy and security are guaranteed with Hyperledger Fabric in ensuring that only authorized parties can access sensitive medical information.The system is further enhanced to include decentralized storage based on IPFS for the storage of medical images and files that cannot be directly stored in the blockchain.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "20.0"
+    },
+    "doi:10.21552/edpl/2022/1/7": {
+      "title": "When GDPR-Principles Blind Each Other: Accountability, Not Transparency, at the Heart of Algorithmic Governance",
+      "doi": "10.21552/edpl/2022/1/7",
+      "abstract": "Transparency has been at the centre of the debate on algorithmic governance. However, when the GDPR was adopted in 2016, the legislator preferred to establish accountability as the core of the Regulation's principles, rather than transparency. Unfortunately, accountability does not yet seem to be playing the role it was assigned in the data protection ecosystem, at least when it comes to algorithmic decision-making. To turn this scenario around, we propose a reflective exercise in which we look at the concept of accountability and how it was introduced in the GDPR. By emphasising on the human element in algorithmic decision-making, we find a systematic and process-oriented accountability present in the GDPR. Following arguments already made in the literature, we hold that this kind of accountability is well suited for algorithmic governance. Moreover, we argue that it could be strengthened by the Commission's proposal for a Regulation on Artificial Intelligence.",
+      "year": "2022",
+      "source": "Crossref",
+      "citations": "8",
+      "pipeline_relevance_score": "19.7"
+    },
+    "doi:10.71435/685960": {
+      "title": "Evaluation OF Digital Governance Implementation in the Public Sector: A Study OF the Effectiveness OF the Smart Governance Program in Makassar City",
+      "doi": "10.71435/685960",
+      "abstract": "Purpose: This study aims to evaluate the implementation and effectiveness of digital governance within the Smart Governance Program in Makassar City, Indonesia. It seeks to understand how digital systems reshape public administration, bureaucratic behavior, and citizen engagement in a developing urban context. The research does not merely measure performance outcomes but explores how governance principles such as transparency, efficiency, accountability, and participation are enacted and negotiated in daily administrative practice. Subjects and Methods: The study employs a qualitative evaluative design involving twenty participants, including local government officials, technical staff, and citizens who interact with digital service platforms. Data were gathered through semi-structured interviews, document analysis, and participant observation. The analysis followed an interpretative thematic approach using Miles and Huberman’s interactive model, emphasizing the interrelation between institutional structures, technological adaptation, and user experience. Results: Findings reveal that while the Smart Governance Program has improved accessibility and introduced innovative digital services, it remains hindered by fragmented infrastructure, uneven bureaucratic adaptation, and limited citizen responsiveness. The coexistence of manual and digital systems reflects a transitional bureaucracy, and participation mechanisms often function symbolically rather than substantively. Trust and inclusivity emerge as pivotal factors in shaping the success of digital governance. Conclusions: Smart Governance in Makassar represents both progress and paradox. Its success depends not only on technological infrastructure but on institutional alignment, cultural readiness, and relational trust between government and citizens. Digital transformation must therefore be understood as a continuous process of learning, adaptation, and human-centered reform.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "19.5"
+    },
+    "doi:10.1080/07366981.2026.2662526": {
+      "title": "ClearGive: A governance-driven blockchain framework for enhancing transparency, auditability, and regulatory compliance in digital philanthropy",
+      "doi": "10.1080/07366981.2026.2662526",
+      "abstract": "This paper discusses some of the recurring problems in digital philanthropy, such as low levels of transparency, low auditability, and inconsistent regulatory compliance. Current donation systems – centralized and blockchain-based – do not provide a good balance of privacy of the donors, compliance factors, and verifiable audit trails. To address these drawbacks, the paper introduces a permissioned blockchain-based governance system, called ClearGive, created to increase accountability in charitable ecosystems. ClearGive uses four main control mechanisms namely: (i) anomaly detection to detect potentially fraudulent transactions, (ii) cryptographic pseudonymization to protect the identity of donors, (iii) deterministic policy engine to make sure that the regulations are followed like the FCRA 2010 and the IT Act 2000, and (iv) multi-tier verification system, which involves attestation by independent auditors. In terms of governance, the structure supports validation of compliance in real-time, audit trails that are immutable, and transparent reporting. Its architecture enables it to manage high transaction throughput and low latency, and this is appropriate in a resource-constrained environment of nonprofit. The results indicate that compliance and audit controls embedded in blockchain systems can greatly improve the level of trust, decrease the risk of fraud, and the level of adherence to regulations. The piece offers a practical guideline to policymakers, auditors, and nonprofit organizations on how to enhance governance in digital donation systems.",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "19.5"
+    },
+    "doi:10.53819/81018102t2450": {
+      "title": "Comparing Public Procurement Transparency Mechanisms Between EU Member States",
+      "doi": "10.53819/81018102t2450",
+      "abstract": "This article examined the transparency mechanisms in public procurement across European Union (EU) member states, focusing on their implementation, effectiveness, and challenges. Public procurement transparency, essential for reducing corruption and fostering fair competition, was found to vary significantly among member states due to differences in digital infrastructure, regulatory compliance, and local administrative capacities. Case studies from Germany, France, Poland, and Hungary illustrated these variations, with countries like Germany and Denmark demonstrating robust digital procurement systems that enabled open access to procurement data and improved accountability. In contrast, countries such as Poland and Hungary faced ongoing challenges with regional disparities and limited enforcement, impacting their ability to maintain transparency consistently. The analysis revealed that successful transparency mechanisms generally included accessible e-procurement platforms, public disclosure requirements, and strong regulatory oversight. Policy recommendations were suggested to promote harmonized transparency standards across the EU, emphasizing the need for technical support, capacity-building at regional levels, and a balanced approach to transparency and data protection. Overall, while transparency mechanisms have strengthened public procurement outcomes within the EU, disparities in their implementation highlighted the need for continued EU guidance and support to achieve uniform standards across member states. Keywords: Public procurement, Transparency, EU member states, Policy recommendations",
+      "year": "2024",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "18.8"
+    },
+    "doi:10.71435/685958": {
+      "title": "Digitalization in Strengthening Good Governance: A Case Study OF E-Government Implementation in Local Government in Makassar City",
+      "doi": "10.71435/685958",
+      "abstract": "Purpose: This study aimed to examine how digitalization contributes to strengthening good governance through the implementation of e-government in Makassar City. It explored how digital systems foster transparency, accountability, citizen participation, and administrative efficiency within a local governance context. Subjects and Methods: Using a qualitative case study approach, data were collected from twenty purposively selected participants, including local government officials, IT officers, civil society representatives, and citizens. The study employed in-depth interviews, field observations, and document analysis. Data were analyzed thematically to identify patterns and interpret how e-government platforms such as SIPAKATAU, SIPAKALEBBI, and SIPAKARUNG influence governance practices. Results: Findings revealed that digitalization has enhanced information accessibility, improved procedural accountability, and promoted more inclusive forms of civic interaction. Transparency and efficiency increased notably through digital platforms that reduced bureaucratic layers and service delays. However, disparities in digital access, limited literacy, and uneven institutional capacity constrained full participation and sustained implementation. Training initiatives improved staff competence but adaptation remained gradual and dependent on leadership commitment. Conclusions: Digitalization has redefined governance culture in Makassar by embedding transparency and accountability into daily administrative practice. While it does not automatically ensure good governance, it creates an enabling environment where ethical leadership, inclusivity, and institutional learning determine success. Sustainable digital governance requires continued investment in human capacity, equitable access, and participatory mechanisms that transform technology into a genuine instrument of democratic accountability.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "18.0"
+    },
+    "doi:10.1016/j.procs.2024.03.261": {
+      "title": "A Comprehensive Performance Analysis of a Hyperledger Fabric-powered Blockchain Network for Cross-Border Fund Transfers",
+      "doi": "10.1016/j.procs.2024.03.261",
+      "abstract": "Ample acceptance of Blockchain Technology in today's business world has increased number of use cases tremendously beyond cryptocurrencies for which it was originally developed. Hyperledger Fabric, as an enterprise-grade permissioned Blockchain platform, offers a secure and scalable infrastructure for diverse applications, including financial services. Since performance evaluation of the platform play major role in acceptability of the technology for various applications, in this research article we are presenting a comprehensive performance analysis of the Hyperledger Fabric Blockchain platform with the help of standard benchmarking tool-Hyperledger Caliper for Cross-Border Fund Transfer (CBFT) application and results are validated using existing queuing theory based theoretical model for Hyperledger Fabric. The primary objective of this study is to evaluate the most popular Blockchain platform's performance under various workloads and network conditions. By capturing the interactions between network participants and consensus mechanisms, we have presented latency analysis along with the insights into the platform's scalability and efficiency. This research contributes to a deeper understanding of Blockchain technology and aids in the design of more efficient and robust Blockchain-based applications.",
+      "year": "2024",
+      "source": "Crossref",
+      "citations": "10",
+      "pipeline_relevance_score": "18.0"
+    },
+    "doi:10.5750/ijme.v1i1.1392": {
+      "title": "Hybrid Digital Certificate Management System with QR Code and IoT Integrated on Hyperledger Fabric Blockchain",
+      "doi": "10.5750/ijme.v1i1.1392",
+      "abstract": "In contemporary society, management of physical documents such as educational certificates, identity proofs, vehicle registrations, and marriage certificates is an integral part of daily life. However, in present online world, there is a pressing need for digital transformation and the management of these documents. One significant challenge associated with this transformation is the susceptibility of original documents to replication or duplication. This vulner- ability is particularly concerning in the case of educational certificates, where fraud is prevalent. Fraudulent activities in the education sector can influence the proliferation of counterfeit educational and skill certificates, posing serious risks to society. For instance, individuals holding fraudulent degrees in professions such as engineering, medicine, law, and pharmacy may lack genuine competence, thereby posing substantial societal harm. To address the issue of certificate oversight and deter forgery, various approaches have been employed. Traditional methods typically involve the use of centralized databases or web servers for certificate storage, which introduces vulnerabilities because they represent single points of failure that leads to forgery and information loss. An optimal solution lies in the adoption of a Blockchain system that leverages a decentralized database structure to enhance data storage capacity and security. Blockchain technology has demonstrated disruptive potential and in- novative capabilities across multiple sectors because of its decentralized, transparent, and secure attributes. Its impact spans various domains, including banking, supply chain management, healthcare, education, and finance. Notably, in the education sector, Blockchain technology holds promise in enhancing security, transparency, and efficiency across different educational processes. In this study, we explore existing Blockchain oriented certificate management systems, critically analyze their limitations, and propose a novel hybrid educational certificate management model. The proposed model integrates Hyperledger Fabric, IoT, and 2D Barcode to develop a robust and secure framework for managing educational certificates.",
+      "year": "2024",
+      "source": "Crossref",
+      "citations": "1",
+      "pipeline_relevance_score": "17.3"
+    },
+    "doi:10.1109/mvt.2026.3689253": {
+      "title": "Hyperledger Fabric and Ethereum for Emergency Response Vehicular Networks under DDOS Attacks: A Performance Analysis",
+      "doi": "10.1109/mvt.2026.3689253",
+      "abstract": "In emergency response vehicular networks (ERVNs), where each second might dictate a life-or-death outcome, the performance of underlying communication systems is critical. Blockchain technology is a promising backbone for authenticating emergency response vehicles (ERVs) at smart traffic signal intersections. However, the decentralized nature of blockchain networks makes them vulnerable to distributed denial of service (DDoS) attacks. A DDoS attack can compromise safetycritical functions by overwhelming the network with fake authentication requests. Therefore, this article presents a comparative performance analysis of two well-known blockchain technologies, namely Ethereum (permissionless) and Hyperledger Fabric (HLF, permissioned), under DDoS-based network congestion. We clarify that this article does not propose any DDoS detection or mitigation mechanisms; rather, we evaluate the ability of the abovedescribed blockchains to maintain service for legitimate transactions under DDoS attacks. We design three DDoS attack scenarios that simulate realistic threats to ERVNs and benchmark throughput and latency using Hyperledger Caliper. Our results show that HLF, because of its architecture, achieves up to 2.7 times higher throughput and lower latency compared to Ethereum. This finding provides an important insight: A permissioned blockchain offers better performance under DDoS attacks, making it a more reliable communication system for safety-critical transportation systems.",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "17.0"
+    },
+    "doi:10.1134/s1063779626701029": {
+      "title": "Blockchain Message Broker: Secure Data Transfer with a Two-Layer Hyperledger Fabric Platform",
+      "doi": "10.1134/s1063779626701029",
+      "abstract": "Abstract Data transfer between organizations over untrusted public networks is associated with risks of data loss, corruption, and unauthorized access. To address this problem, we present a message broker prototype based on Hyperledger Fabric using a two-layer architecture: PBFT partitions for data transfer and Raft topics for system management. Only metadata is stored in the blockchain, while messages are placed in external storages. This approach provides higher fault tolerance and scalability compared to existing traditional and blockchain-based solutions.",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "16.0"
+    },
+    "doi:10.1109/ecce57851.2023.10101496": {
+      "title": "Securing E-Passport Management Using Private-Permissioned Blockchain and IPFS",
+      "doi": "10.1109/ecce57851.2023.10101496",
+      "abstract": "To travel globally, a passport is the only official travel document that authenticates the holder's identity and citizenship which is provided by the government. Digital passports provide adamant verification through documentation that tangibly marks the passport owner using biometric techniques because it holds an electronic chip into the passport, also known as an e-passport. The biometric method uses a combination of RFID and fingerprint scanning technology. Notwithstanding, RFID chips have numerous security threats as the information confidentiality can easily be hacked and it is not entirely hassle-free. To get rid of these challenges as a potential remedy, in this paper we propose Hyperledger to secure e-passport management, which in contrast to the public blockchain, is an open-source private blockchain with strong security. When compared to the standard blockchain development framework, the legitimacy of transactions in a private blockchain powered by Hyperledger is substantially distinct, which is enable more effective and quicker transactions while maintaining essential security features. The InterPlanetary File System (IPFS), which has diverse security measures like access control features, non-modifiable data, and immutable history records, and this private ledger have both been used to safeguard private passport information and biometric data.",
+      "year": "2023",
+      "source": "SemanticScholar",
+      "citations": "3",
+      "pipeline_relevance_score": "9.0"
+    },
+    "doi:10.5923/j.computer.20251506.05": {
+      "title": "Privacy-Aware Data Taxonomy for Data Governance: A Multi-Dimensional Framework Bridging Classification and Regulatory Compliance",
+      "doi": "10.5923/j.computer.20251506.05",
+      "abstract": "Effective data governance and privacy protection depend on a clear understanding of what data an organization holds and how it is organized. Existing data governance taxonomies, such as Al-Ruithe et al.’s cloud versus non-cloud taxonomy, focus on governance structures (roles, processes, technologies) but provide limited guidance on how to classify data objects themselves in a privacy-aware way. At the same time, many enterprises rely on simple sensitivity labels (public, internal, confidential) that are too coarse to support modern regulatory requirements under the GDPR, CCPA/CPRA, the EU AI Act, and India’s Digital Personal Data Protection Act (DPDPA). This paper proposes the Privacy-Aware Data Taxonomy for Governance (PADT-G), a multi-dimensional taxonomy that combines business domain and entity, identifiability, sensitivity, regulatory obligations, and lifecycle and usage context. Building on prior taxonomic work in data governance, we derive design principles, define PADT-G’s dimensions, and illustrate its application to a regulated analytics environment. We also show how PADT-G directly drives governance controls such as data ownership, lawful basis, access management, retention, data protection impact assessment (DPIA) triggers, and AI training data selection. The contribution of this work is to bridge business-oriented data taxonomies and privacy regulation, offering a practical, data-centric framework for operationalizing privacy by design in enterprise data governance.",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "8.8"
+    },
+    "doi:10.3390/blockchains3010003": {
+      "title": "Blockchain-Assisted Self-Sovereign Identities on Education: A Survey",
+      "doi": "10.3390/blockchains3010003",
+      "abstract": "The education sector has witnessed a significant shift towards digitising student records, with relevant data now stored in centralized data repositories. While traditional identity management solutions in education are functional, they often face various challenges, including data privacy concerns, limited portability, and reliability challenges. As the volume of student data continues to grow, inadequate data management practices have led to several problems. These include students losing control and empowerment over their educational information, increased vulnerability to potential data breaches and unauthorized access, a lack of transparency and accountability, data silos and inconsistencies, and administrative inefficiencies. To address these limitations, the implementation of a blockchain-assisted self-sovereign identity (Ba-SSI) concept in the education system presents a viable solution. Self-sovereign identity (SSI) represents a paradigm shift from traditional centralized identity systems, allowing individuals to maintain full control of their identity data without relying on centralized authorities. By leveraging the decentralized nature, SSI frameworks can ensure security, interoperability, and scalability, thereby improving user-centric identity management. This survey paper explores the potential of Ba-SSI within the context of education. It thoroughly reviews the current state of digital identity management in education, highlighting the limitations of conventional systems and the emerging role of blockchain technology in addressing these challenges. The paper discusses the fundamental principles of blockchain technology and how it can be utilized to enhance security, interoperability, and scalability in identity management. Additionally, it examines the insights and benefits of this approach for the education system. Finally, the paper concludes by addressing the issues, challenges, benefits, and future research directions in this domain, underscoring the potential of Ba-SSI solutions to revolutionize the management and empowerment of student data within the education sector.",
+      "year": "2025",
+      "source": "OpenAlex",
+      "citations": "18",
+      "pipeline_relevance_score": "8.8"
+    },
+    "title:privateblockchainbasedprocurementandassetmanagementsystemwithqrcode": {
+      "title": "Private Blockchain-based Procurement and Asset Management System with QR Code",
+      "doi": "",
+      "abstract": "The developed system aims to incorporate a private blockchain technology in the procurement process for the supply office. The procurement process includes the canvassing, purchasing, delivery and inspection of items, inventory, and disposal. The blockchain-based system includes a distributed ledger technology, peer-to-peer network, Proof-of-Authority consensus mechanism, and SHA3-512 cryptographic hash function algorithm. This will ensure trust and proper accountability to the custodian of the property while safeguarding sensitive information in the procurement records. The extreme prototyping model will be used as software development life cycle. It is mostly used for web-based applications and has an increased user involvement. The prototype version of the system allows the users get a better understanding of the system being developed. It also reduces the time and cost, has quicker user feedback, missing and difficult functions can be recognized, and confusing processes can be addressed on an early stage. The implementation of a private blockchain technology has an increased privacy, enhanced security, improved efficiency, and reduced complexity over traditional blockchain network. The use of SHA3-512 as cryptographic hash function algorithm is much faster than its predecessors when cryptography is handled by hardware components. Furthermore, it is not vulnerable to length extension attacks making it reliable in terms of security of data. The study recommends the use of private blockchain-based technology with the procurement and asset management system in the supply office. The procurement records will be protected against tampering using this technology. This will promote trust and confidence of the stakeholders. The implementation of blockchain technology in developing a system served as advancement and innovation in terms of securing data.",
+      "year": "2024",
+      "source": "ArXiv",
+      "citations": "0",
+      "pipeline_relevance_score": "8.5"
+    },
+    "doi:10.1155/2023/6025789": {
+      "title": "Self-Sovereign Identity for Consented and Content-Based Access to Medical Records Using Blockchain",
+      "doi": "10.1155/2023/6025789",
+      "abstract": "Electronic Health Records (EHRs) and Medical Data are classified as personal data in every privacy law, meaning that any related service that includes processing such data must come with full security, confidentiality, privacy and accountability. Solutions for health data management, as in storing it, sharing and processing it, are emerging quickly and were significantly boosted by the Covid-19 pandemic that created a need to move things online. EHRs makes a crucial part of digital identity data, and the same digital identity trends -- as in self sovereign identity powered by decentralized ledger technologies like Blockchain, are being researched or implemented in contexts managing digital interactions between health facilities, patients and health professionals. In this paper, we propose a blockchain-based solution enabling secure exchange of EHRs between different parties powered by a self-sovereign identity (SSI) wallet and decentralized identifiers. We also make use of a consortium IPFS network for off-chain storage and attribute-based encryption (ABE) to ensure data confidentiality and integrity. Through our solution, we grant users full control over their medical data, and enable them to securely share it in total confidentiality over secure communication channels between user wallets using encryption. We also use DIDs for better user privacy and limit any possible correlations or identification by using pairwise DIDs. Overall, combining this set of technologies guarantees secure exchange of EHRs, secure storage and management along with by-design features inherited from the technological stack.",
+      "year": "2023",
+      "source": "ArXiv, OpenAlex",
+      "citations": "10",
+      "pipeline_relevance_score": "8.4"
+    },
+    "title:optimalresourceutilizationinhyperledgerfabricacomprehensivespnbasedperformanceevaluationparadigm": {
+      "title": "Optimal Resource Utilization in Hyperledger Fabric: A Comprehensive SPN-Based Performance Evaluation Paradigm",
+      "doi": "",
+      "abstract": "Hyperledger Fabric stands as a leading framework for permissioned blockchain systems, ensuring data security and auditability for enterprise applications. As applications on this platform grow, understanding its complex configuration concerning various blockchain parameters becomes vital. These configurations significantly affect the system's performance and cost. In this research, we introduce a Stochastic Petri Net (SPN) model to analyze Hyperledger Fabric's performance, considering variations in blockchain parameters, computational resources, and transaction rates. We provide case studies to validate the utility of our model, aiding blockchain administrators in determining optimal configurations for their applications. A key observation from our model highlights the block size's role in system response time. We noted an increased mean response time, between 1 to 25 seconds, due to variations in transaction arrival rates.",
+      "year": "2025",
+      "source": "ArXiv",
+      "citations": "0",
+      "pipeline_relevance_score": "7.9"
+    },
+    "doi:10.9734/ajrcos/2023/v16i3353": {
+      "title": "Blockchain for Combating Pharmaceutical Drug Counterfeiting and Cold Chain Distribution",
+      "doi": "10.9734/ajrcos/2023/v16i3353",
+      "abstract": "In recent years, pharmaceutical drug traceability systems have been developed as critical tools for improving the digital supply chain's transparency and visibility. Blockchain-based drug traceability proposes a promising solution to create a distributed shared data platform for an irreversible, trustworthy, reliable, and transparent system. This article provides a thorough analysis and summary of the current state of drug traceability distribution research on the blockchain platform by using Hyperledger febric and Hyperledger Besu methodologies. Blockchain based platform, Hyperledger Fabric and Besu meets essential needs for drug traceability such as privacy, dependability, transparency, security, authorization, authentication, and scalability. The Hyperledger Fabric blockchain platform executes drug transactions proficiently and securely in the supply chains within a distributed network of stakeholders. This fabric-enabled private, permissioned distributed network comprising various pharmaceutical stakeholder groups aids in the efficient and secure execution of medication in supply chain transactions. This study also examines the impact of blockchain technology in the healthcare system while exhibiting how some features of this disruptive technology have the potential to transform existing cold chain and drug traceability processes. Blockchain technology embraces significant benefits in the processes of pharmaceutical drug serialization, protecting IoT devices, and ensuring temper-proof transaction sharing. Blockchain is also a potential solution to make use of IoT-enabled vehicles and warehouses for cold chain transportation by using smart sensors to capture critical temperature data. Blockchain-enabled IoT sensors in the cold chain ensure the secure transportation of drugs to pharmaceutical stakeholders in the supply chain network.",
+      "year": "2023",
+      "source": "OpenAlex, SemanticScholar",
+      "citations": "26",
+      "pipeline_relevance_score": "7.8"
+    },
+    "doi:10.35741/issn.0258-2724.56.4.48": {
+      "title": "E-GOVERNMENT ORGANIZATIONAL GOVERNANCE, POLICY COMMUNICATION AND DIGITALIZATION OF LAND OWNERSHIP IDENTITY (NETNOGRAPHIC STUDY ON THE ISSUANCE OF ELECTRONIC LAND CERTIFICATES)",
+      "doi": "10.35741/issn.0258-2724.56.4.48",
+      "abstract": "<jats:p>The purpose of the research is to obtain an empirical picture of the factors that cause difficulties in implementing public policies based on identity digitalization in e-certificates. The research is based on e-government theory, identity digitization, and policy communication. Netnography research methods were used in a constructive/interpretive paradigm. Data collection was carried out through the ATR Public Group on Facebook on February 24, 2021, March 6 &amp; 8, 2021. Data were analyzed using thematic analysis and netnography models in five steps: defining research questions, selecting and identifying communities, collecting data, analyzing, and reporting. Data verification is supported by theoretical triangulation to obtain better credibility. The research findings cover three aspects. First, the public believes that agrarian reform is considered incomplete. This opinion is characterized by a variety of unresolved land issues. Second, electronic land certificates, which are the entrance to digital identity-based e-government governance, are very risky. Third, the crucial aspect is that the government is considered unskilled in choosing the model of communication channels for the public. Consequently, there are pros and cons to the e-certificate policy, which resulted in the state’s failure to execute the electronic land certificate rule. The novelty of this research is in applying netnography design that is relatively new in qualitative research and focuses on the virtual community study. Netnography has a strong and prospective contemporary relevance, especially in the world impacted by the Covid-19 pandemic. This research recommends the state to carefully consider the public’s response when issuing information technology-based regulations.</jats:p>",
+      "year": "2021",
+      "source": "Crossref",
+      "citations": "1",
+      "pipeline_relevance_score": "7.7"
+    },
+    "doi:10.5267/j.ijdns.2024.7.009": {
+      "title": "Can digital transformation improve the transparency and accountability of Indonesian public governance?",
+      "doi": "10.5267/j.ijdns.2024.7.009",
+      "abstract": "<jats:p>The development of information technology is currently growing rapidly, affecting all aspects of life. There are various benefits obtained from advances in information technology, one of which is the ease of communicating and accessing information. This transformation is an opportunity to increase accessibility in various sectors, such as government, health, education, social, economic and other sectors. This research aims to analyze the relationship between digital transformation and public accountability, digital transformation with public transparency and transparency with public accountability. The research uses quantitative methods to test the relationship between variables. The respondents of this research were 478 government public service office employees who were determined using a simple random sampling method. Research data analysis uses structural equation modelling (SEM) partial least squares (PLS) with research data analysis tools using SmartPLS 3.0 software. Based on the results of data analysis, it is concluded that digital transformation had a positive and significant relationship to public accountability, digital transformation had a positive and significant relationship to public transparency and transparency had a positive and significant relationship to public accountability. The process of digital transformation in public administration greatly influences how public services are delivered and how government functions. Leveraging digital technology is an opportunity to increase accessibility in various fields such as government, health, education, economics, social and politics. Public administration can increase transparency, efficiency, public participation and data-based decision-making. Organizations pursuing digital transformation must be flexible, innovative and able to adapt quickly. Several important benefits of transparency include preventing corruption, making it easier to identify weaknesses and strengths of a policy, and increasing accountability in the delivery of public services by government agencies. In addition, a transparent attitude will increase trust in government institutions to decide on certain policies, as well as being able to encourage a conducive investment climate and increase business certainty.</jats:p>",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "2",
+      "pipeline_relevance_score": "6.9"
+    },
+    "title:atutorialontheinteroperabilityofselfsovereignidentities": {
+      "title": "A Tutorial on the Interoperability of Self-sovereign Identities",
+      "doi": "",
+      "abstract": "Self-sovereign identity is the latest digital identity paradigm that allows users, organizations, and things to manage identity in a decentralized fashion without any central authority controlling the process of issuing identities and verifying assertions. Following this paradigm, implementations have emerged in recent years, with some having different underlying technologies. These technological differences often create interoperability problems between software that interact with each other from different implementations. Although a common problem, there is no common understanding of self-sovereign identity interoperability. In the context of this tutorial, we create a definition of interoperability of self-sovereign identities to enable a common understanding. Moreover, due to the decentralized nature, interoperability of self-sovereign identities depends on multiple components, such as ones responsible for establishing trust or enabling secure communication between entities without centralized authorities. To understand those components and their dependencies, we also present a reference model that maps the required components and considerations that build up a self-sovereign identity implementation. The reference model helps address the question of how to achieve interoperability between different implementations.",
+      "year": "2022",
+      "source": "ArXiv",
+      "citations": "0",
+      "pipeline_relevance_score": "6.9"
+    },
+    "doi:10.54914/jtt.v9i2.751": {
+      "title": "Smart Buildings menggunakan Hyperledger Fabric Blockchain untuk Manajemen Transaksi dan Pemodelan 3D",
+      "doi": "10.54914/jtt.v9i2.751",
+      "abstract": "<jats:p>Pembangunan rumah atau renovasi rumah harus mempertimbangkan banyak faktor yang kompleks. Hal ini dikarenakan akan ada kesalahan/human-error terjadi. Dampak dari itu akan menimbulkan kerugian pada jasa arsitek dan menghilangkan kepercayaan customer yang tidak puas. Salah satu masalah yang lain adalah customer yang menggunakan pihak perantara atau pihak ketiga dalam proses pembangunan/renovasi rumah, sehingga mengakibatkan pembengkakan dana. Hal ini dikarenakan proses pembangunan/renovasi rumah tidak sesuai dengan keinginan customer. Penelitian ini memanfaatkan suatu teknologi hyperledger fabric blockchain dan smart building yang digunakan untuk mengelola manajemen arsitek dan konsumen tanpa perantara. Teknologi ini dapat mengelola manajemen pembangunan/renovasi rumah melalui informasi denah rumah 3 dimensi, anggaran dana awal rumah, informasi harga bahan bangunan, dan kebutuhan material setiap harinya. Tujuan dari penelitian ini untuk memantau proses pembangunan rumah/ renovasi tanpa pihak ketiga. Penelitian ini menggunakan Metode Pengembangan Multimedia Development Life Cycle (MDLC) untuk membuat aplikasinya. Sedangkan untuk penerapan teknologi blockchain menggunakan Software Hyperledger Fabric. Dengan adanya penelitian ini diharapkan dapat meningkatkan kepercayaan dan dapat menguntungkan kedua belah pihak antara customer dan developer. Dari hasil penelitian ini menghasilkan sebuah sistem manajemen transaksi dan pemodelan 3D arsitek. Hasil pengujian data block number 65 – 66 tercatat setiap transaksi memiliki waktu proses dari 02:32:47 sampai 02:32:50, dengan begitu transaksi ini membutuhkan waktu 3 detik. Sedangkan hasil pengujian White Box sistem ini dapat berjalan sesuai dengan alur program dan dapat memenuhi kebutuhan pengguna.</jats:p>",
+      "year": "2023",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "6.1"
+    },
+    "doi:10.22214/ijraset.2026.82258": {
+      "title": "Privacy-Preserving Blockchain Framework for Academic Records Using Off-Chain Storage",
+      "doi": "10.22214/ijraset.2026.82258",
+      "abstract": "<jats:p>The process of the fast digitalization of academic record systems has brought forth important issues addressed to the sphere of data security, privacy, and efficiency of verification.Someoftheweaknessesof traditional centralized systems are breach of data, unauthorized access and poor verification systems. A decentralized and immutable blockchain-based solution is an adequate solution to manage academic records securely, but it contradicts the privacylegislation,likeGDPR,becauseofits transparentnature.Thisstudyadvocatesa privacy-sensitive blockchain architecturethat combines off-chain storage facilities to containscalabilityandprivacyproblems.The framework provides cryptographic hash of academiccredentialsthatarestoredon-chain and other real data are stored in secure off-chainstores.Thepaperassessesthepresented model with respect to the security, scalability, and compliance and proves that transparency and privacy can be balanced well using hybrid blockchain architectures. The results indicate that blockchain may be usedwithoff-chainstorageto createaviable and scalable approach to contemporary academic systems.</jats:p>",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "6.0"
+    },
+    "title:themissinglinkidentifyingdigitalintermediariesinegovernment": {
+      "title": "The Missing Link: Identifying Digital Intermediaries in E-Government",
+      "doi": "",
+      "abstract": "The digitalization of public administration has advanced significantly on a global scale. Many governments now view digital platforms as essential for improving the delivery of public services and fostering direct communication between citizens and public institutions. However, this view overlooks the role played by digital intermediaries significantly shape the provision of e-government services. Using Chile as a case study, we analyze these intermediaries through a national survey on digitalization, we find five types of intermediaries: family members, peers, political figures, bureaucrats, and community leaders. The first two classes comprise close intermediaries, while the latter three comprise hierarchical intermediaries. Our findings suggest that all these intermediaries are a critical but underexplored element in the digitalization of public administration.",
+      "year": "2025",
+      "source": "ArXiv",
+      "citations": "0",
+      "pipeline_relevance_score": "6.0"
+    },
+    "title:anadaptiveneurofuzzyblockchainaiframeworkforsecureandintelligentfintechtransactions": {
+      "title": "An Adaptive Neuro-Fuzzy Blockchain-AI Framework for Secure and Intelligent FinTech Transactions",
+      "doi": "",
+      "abstract": "Financial systems have a growing reliance on computer-based and distributed systems, making FinTech systems vulnerable to advanced and quickly emerging cyber-criminal threats. Traditional security systems and fixed machine learning systems cannot identify more intricate fraud schemes whilst also addressing real-time performance and trust demands. This paper presented an Adaptive Neuro-Fuzzy Blockchain-AI Framework (ANFB-AI) to achieve security in FinTech transactions by detecting threats using intelligent and decentralized algorithms. The framework combines both an immutable, transparent and tamper resistant layer of a permissioned blockchain to maintain the immutability, transparency and resistance to tampering of transactions, and an adaptive neuro-fuzzy learning model to learn the presence of uncertainty and behavioural drift in fraud activities. An explicit mathematical model is created to explain the transaction integrity, adaptive threat classification, and unified risk based decision-making. The proposed framework uses Proof-of-Authority consensus to overcome low-latency validation of transactions and scalable real-time financial services. Massive simulations are performed in normal, moderate, and high-fraud conditions with the use of realistic financial and cryptocurrency transactions. The experimental evidence proves that ANFB-AI is always more accurate and precise than recent state-of-the-art algorithms and costs much less in terms of transaction confirmation time, propagation delay of blocks and end-to end latency. ANFB-AI performance supports the appropriateness of adaptive neuro-fuzzy intelligence to blockchain-based FinTech security.",
+      "year": "2026",
+      "source": "ArXiv",
+      "citations": "0",
+      "pipeline_relevance_score": "5.7"
+    },
+    "doi:10.3390/technologies13090412": {
+      "title": "Redefining Transactions, Trust, and Transparency in the Energy Market from Blockchain-Driven Technology",
+      "doi": "10.3390/technologies13090412",
+      "abstract": "Rapid depletion of fossil fuel reserves forces the global energy sector to transition to sustainable energy sources. Specifically, distributed energy markets have emerged in the renewable energy sector in recent years, partly because blockchain technology is becoming a successful way to promote secure and transparent transactions. Using its decentralized structure, transparency, and even pseudonymity, blockchain is increasingly adopted worldwide for large-scale energy trading, peer-to-peer exchanges, project financing, supply chain management, and asset tracking. The research comprehensively analyzes blockchain applications across multiple fields related to energy, bibliographically evaluating their transformative potential. In addition, the study explores the architecture of various blockchain systems, assesses critical security and privacy challenges, and discusses how blockchain can enhance operational efficiency, transparency, and reliability in the energy sector. The paper’s findings provide a roadmap for future developments and the strategic adoption of blockchain technologies in the evolving energy landscape for an effective energy transition.",
+      "year": "2025",
+      "source": "OpenAlex",
+      "citations": "6",
+      "pipeline_relevance_score": "4.9"
+    },
+    "doi:10.1093/isr/viaa097": {
+      "title": "Connecting International Relations and Public Administration: Toward A Joint Research Agenda for the Study of International Bureaucracy",
+      "doi": "10.1093/isr/viaa097",
+      "abstract": "Abstract The recent debate on administrative bodies in international organizations has brought forward multiple theoretical perspectives, analytical frameworks, and methodological approaches. Despite these efforts to advance knowledge on these actors, the research program on international public administrations (IPAs) has missed out on two important opportunities: reflection on scholarship in international relations (IR) and public administration and synergies between these disciplinary perspectives. Against this backdrop, the essay is a discussion of the literature on IPAs in IR and public administration. We found influence, authority, and autonomy of international bureaucracies have been widely addressed and helped to better understand the agency of such non-state actors in global policy-making. Less attention has been given to the crucial macro-level context of politics for administrative bodies, despite the importance in IR and public administration scholarship. We propose a focus on agency and politics as future avenues for a comprehensive, joint research agenda for international bureaucracies.",
+      "year": "2021",
+      "source": "OpenAlex",
+      "citations": "71",
+      "pipeline_relevance_score": "4.7"
+    },
+    "doi:10.1016/j.bcra.2026.100530": {
+      "title": "Integrating Improved GA-PBFT Consensus with Blockchain Technology for Comprehensive and Trustworthy Multi-Stage Traceability of Agricultural Supply Chains",
+      "doi": "10.1016/j.bcra.2026.100530",
+      "abstract": "",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "4.5"
+    },
+    "doi:10.1016/j.giq.2021.101664": {
+      "title": "Digital transformation toward AI-augmented public administration: The perception of government employees and the willingness to use AI in government",
+      "doi": "10.1016/j.giq.2021.101664",
+      "abstract": "",
+      "year": "2022",
+      "source": "Crossref, OpenAlex",
+      "citations": "276",
+      "pipeline_relevance_score": "4.2"
+    },
+    "doi:10.59075/d14vjy02": {
+      "title": "The Impact of Good Governance on Public Policy Effectiveness in Pakistan: An Analysis of Transparency, Accountability, and Public Service Delivery",
+      "doi": "10.59075/d14vjy02",
+      "abstract": "<jats:p>Good governance plays a vital role in enhancing public policy effectiveness by promoting transparency, accountability, and efficient public service delivery, particularly in developing countries such as Pakistan where governance challenges continue to affect institutional performance. This study aimed to examine the impact of transparency, accountability, and public service delivery on public policy effectiveness in Pakistan. A quantitative cross-sectional research design was employed, and primary data were collected through a structured questionnaire from 329 employees working in local government, education, health, and municipal departments using a convenience sampling technique. The collected data were analyzed using SPSS version 26 through descriptive statistics, Pearson correlation, multiple regression, and independent samples t-test. The findings revealed that transparency had a strong positive relationship with public policy effectiveness (r = 0.756, p &lt; 0.01), accountability significantly predicted public policy effectiveness (R² = 0.629, p &lt; 0.001), and respondents reporting higher levels of public service delivery also reported significantly greater public policy effectiveness (t = 11.36, p &lt; 0.001). The study concludes that strengthening governance through enhanced transparency, effective accountability mechanisms, and improved public service delivery significantly contributes to better policy implementation and institutional performance. These findings provide practical evidence for policymakers and public administrators to design governance reforms that improve the effectiveness and sustainability of public policies in Pakistan.</jats:p>",
+      "year": "2026",
+      "source": "Crossref",
+      "citations": "0",
+      "pipeline_relevance_score": "3.8"
+    },
+    "doi:10.1111/rego.12614": {
+      "title": "Trust platforms: The digitalization of corporate governance and the transformation of trust in polycentric space",
+      "doi": "10.1111/rego.12614",
+      "abstract": "<jats:title>Abstract</jats:title> <jats:p>This contribution considers the revolution in the concept and practice of trust in corporate governance that first moved from trust in “people” to trust in “compliance,” setting the stage for the digitization of trust measures and the digitalization of compliance. Part One examines the fundamental challenge, one that arises from the near simultaneous shift in cultural expectations about trust from trust in character to trust in measurement, and then the rise of cultures of data driven systems of compliance and accountability. Part Two then considers the transformation brought by challenge responses in the form of three closely interlinked impulses: digitization, digitalization of compliance‐accountability regimes, and the emergence of platforms as spaces for trust interactions among stakeholders. Part Three then examines the current shape of these iterative dialectics, including connections between platforms and polycentric trust governance, and the detachment of trust from the entity that is its subject.</jats:p>",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "7",
+      "pipeline_relevance_score": "3.5"
+    },
+    "doi:10.2298/csis250310062t": {
+      "title": "Digital transformation in public accounting and finance management: A clusters literature review",
+      "doi": "10.2298/csis250310062t",
+      "abstract": "This study investigates the literary corpus on the role and potential of digital transformation in public accounting and finance management. A total of 890 research papers was extracted from Scopus and Web of Science for bibliometric analysis, to investigate publishing trends, productive countries, and keyword analysis around the topic, and 24 relevant research publications, divided into two clusters, were selected for an in-depth analysis. The findings demonstrate that technologies have significantly transformed accounting and public finance by automating processes to reduce errors and save time, increasing transparency and accountability, preventing fraud with analytical tools, improving budget planning and monitoring, and integrating systems for a comprehensive financial view.",
+      "year": "2025",
+      "source": "OpenAlex",
+      "citations": "2",
+      "pipeline_relevance_score": "3.3"
+    },
+    "doi:10.1016/j.future.2022.10.002": {
+      "title": "An advanced Internet-of-Drones System with Blockchain for improving quality of service of Search and Rescue: A feasibility study",
+      "doi": "10.1016/j.future.2022.10.002",
+      "abstract": "Drone-based systems supporting Search and Rescue (SAR) missions help expeditiously improve the possibility of discovering the missing victims. Nonetheless, the current drone-based systems have some limitations, such as the need for humans in control of large-scale drones, drone’s energy inefficiency, repercussion of quality of service (QoS) from abnormalities events, shortages of automaticity and real-time interactions, deficiency of swift decisions from artificial intelligence-based SAR, and underestimation of security issues in SAR systems. Therefore, developing a more advanced drone-based system is necessary to overcome these limitations. However, it is challenging to achieve the target due to trade-off relationships of technologies and strict requirements of time-critical SAR. This paper studies the feasibility of an Internet-of-Drones (IoD) system using blockchain and artificial intelligence at the edge to overcome limitations and improve SAR QoS. An advanced IoD system architecture from drones to a back-end system and end-users terminals has been proposed. Furthermore, advanced edge services and artificial intelligence at the edge have been presented for automatically searching for missing persons. In addition, computation offloading approaches have been provided to improve the energy efficiency of drones and reduce system latency. Last but not least, public and private blockchain, including Ethereum and Hyperledger Fabric, for providing secure and decentralized healthcare platform has been investigated and analyzed to enable real-time interaction between healthcare entities and improves healthcare services. The results show that the proposed system helps overcome the limitations and improve the SAR QoS. Besides, the proposed system satisfies the security requirements, including confidentiality, integrity, authentication, authorization, access control, privacy, trust, transparency, availability, automaticity, and tolerance.",
+      "year": "2022",
+      "source": "OpenAlex",
+      "citations": "47",
+      "pipeline_relevance_score": "3.2"
+    },
+    "doi:10.3389/fbloc.2025.1707911": {
+      "title": "A hybrid blockchain and smart contract framework for resilient IoT security in smart homes",
+      "doi": "10.3389/fbloc.2025.1707911",
+      "abstract": "<jats:p>The rapid growth of IoT devices in smart home environments has introduced significant challenges in ensuring secure, scalable, and efficient communication among heterogeneous devices. Centralized architectures suffer from a single point of failure, while blockchain-only solutions face high latency, limiting their use in real-time control. To address these issues, we propose a multi-layered decentralized framework that combines a consortium blockchain, a trusted off-chain coordinator, group-based zero-knowledge proofs (ZKPs), and a two-tiered access control policy (ACP) architecture. The consortium blockchain provides an immutable ledger for device identities and foundational, coarse-grained ACP enforcement through smart contracts, ensuring tamper-proof trust. For privacy-preserving mutual authentication, a group-based ZKP protocol enables collective device authorization without revealing sensitive keys. The off-chain coordinator complements this by enforcing dynamic security mechanisms, including fine-grained ACPv2 checks—such as rate limits, time-of-day restrictions, and device telemetry—in addition to anomaly detection for behavioral risk assessment. This proposed hybrid structure achieves both immutability and high efficiency over traditional methods. A performance evaluation highlighted the framework’s efficiency by demonstrating that the core ZKP verification for a 500-device group can be completed in just 190 ms. The framework drastically reduces on-chain costs, with critical access control policy transactions consuming only 82,748 gas—a reduction of over 90% compared to benchmarked on-chain systems. The complete end-to-end workflow, from user request to secure session establishment, has a latency bound of approximately 3s. Formal security verification with the BAN and AVISPA tools validates resilience against common attacks, including man-in-the-middle, replay, and impersonation, while static analysis using the Slither framework confirms the absence of critical vulnerabilities in the smart contract code. By combining an immutable on-chain foundation with intelligent, dynamic off-chain enforcement, our proposed framework provides a uniquely resilient, scalable, and adaptive security solution for modern smart home systems.</jats:p>",
+      "year": "2025",
+      "source": "Crossref",
+      "citations": "2",
+      "pipeline_relevance_score": "3.2"
+    },
+    "doi:10.1016/j.cose.2023.103376": {
+      "title": "User-centric security analysis of MitID: The Danish passwordless digital identity solution",
+      "doi": "10.1016/j.cose.2023.103376",
+      "abstract": "MitID is the new electronic identification (eID) solution in Denmark. It provides access to many online services, including online banking, insurance, taxes, and health information. In this paper, we analyze the security of the new solution from the user experience perspective concerning Denial of Service (DoS), Social Engineering (SocEng), and other possible attacks that can be mounted without special privileges or obtaining unauthorized access. Our analysis shows that, even though the solution is of paramount importance to the Danish online infrastructure, the analyzed version did not adequately defend against simple attacks targeting specific users. With simple automated scripts, we were able to prevent a targeted user from authenticating for a period of 9 days; and show how an attacker can collect information to mount convincing SocEng attacks aiming at identity theft. Our findings were disclosed to the affected parties in December 2021, and since then, the solution has been updated two times. The first update in January 2022 rendered the SocEng attacks ineffective. However, due to the inherent design trade-offs, targeted DoS attacks were still unmitigated. The second update was in June 2023 and appears to address all of our findings.",
+      "year": "2023",
+      "source": "OpenAlex",
+      "citations": "9",
+      "pipeline_relevance_score": "3.0"
+    }
+  }
+}

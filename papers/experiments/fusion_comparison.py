@@ -48,7 +48,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from academic_hunter.core.evaluation import evaluate_run, load_qrels
+from academic_hunter.core.evaluation import documents_for, evaluate_run, load_qrels, mean_metrics, topics
 from academic_hunter.core.infra import HunterConfig
 from academic_hunter.core.nlp import AcademicScorer, fuse_scores
 
@@ -57,11 +57,11 @@ DEFAULT_QRELS = ROOT / "papers" / "evaluation" / "qrels_pilot_genre_analysis.jso
 KS = (5, 10, 20)
 
 
-def load_pool(qrels_path: Path) -> list:
-    """Documents embedded in the qrels, in the shape the scorers expect."""
+def load_documents(qrels_path: Path) -> dict:
+    """Every judged document, keyed by id, in the shape the scorers expect."""
     payload = json.loads(qrels_path.read_text(encoding="utf-8"))
-    return [
-        {
+    return {
+        doc_id: {
             "_doc_id": doc_id,
             "Title": doc.get("title", ""),
             "Abstract": doc.get("abstract", ""),
@@ -69,7 +69,7 @@ def load_pool(qrels_path: Path) -> list:
             "Relevance_Score": doc.get("pipeline_relevance_score"),
         }
         for doc_id, doc in payload["documents"].items()
-    ]
+    }
 
 
 def percentile_ranks(values: list) -> list:
@@ -111,7 +111,7 @@ def main() -> int:
 
     qrels_path = Path(args.qrels)
     qrels = load_qrels(qrels_path)
-    pool = load_pool(qrels_path)
+    documents = load_documents(qrels_path)
 
     config = HunterConfig()
     scorer = AcademicScorer(
@@ -124,62 +124,77 @@ def main() -> int:
     screener = SemanticScreener()
     sem_config = config.screener_config()
 
-    kw = [
-        scorer.calculate_score(
-            d.get("Title", ""), d.get("Abstract", ""), int(d.get("Citations") or 0)
-        )
-        for d in pool
-    ]
-    sem = [screener.evaluate(d, sem_config) for d in pool]
-    citations = [float(d.get("Citations") or 0) for d in pool]
-
-    r_kw = percentile_ranks(kw)
-    r_sem = percentile_ranks(sem)
-    p_kw = position_ranks(kw)
-    p_sem = position_ranks(sem)
-    n_kw = minmax(kw)
-    n_sem = minmax(sem)
-
     import math
 
-    fusions = {
-        "keyword_only": kw,
-        "embedding_only": sem,
-        "citations_baseline": citations,
-        # ── the rules the pipeline actually ships, via the shared function.
-        #    Reimplementing them here would let the experiment drift from the
-        #    code and quietly stop measuring it. ──
-        "shipped (weighted_norm)": fuse_scores(kw, sem),
-        "shipped (rank_geometric)": fuse_scores(kw, sem, strategy="rank_geometric"),
-        # ── alternatives that are not shipped, for comparison ──
-        "arith_rank": [(a + b) / 2.0 * 10.0 for a, b in zip(r_kw, r_sem)],
-        "min_rank": [min(a, b) * 10.0 for a, b in zip(r_kw, r_sem)],
-        "max_rank": [max(a, b) * 10.0 for a, b in zip(r_kw, r_sem)],
-        f"rrf_{args.rrf_k}": [
-            1.0 / (args.rrf_k + a) + 1.0 / (args.rrf_k + b)
-            for a, b in zip(p_kw, p_sem)
-        ],
-        "weighted_norm_50_50": [
-            0.5 * a + 0.5 * b for a, b in zip(n_kw, n_sem)
-        ],
-    }
+    by_topic = topics(qrels)
 
-    doc_ids = [d["_doc_id"] for d in pool]
-    queries = {qid: j.text for qid, j in qrels.queries.items()}
+    def fusions_for(corpus):
+        """Every candidate rule, computed over one topic's candidate set.
 
+        Ranks and min-max normalisation are relative to the candidate set, so
+        they must be computed per pool — fusing across two topics would rank a
+        document against documents it is never competing with.
+        """
+        kw = [
+            scorer.calculate_score(
+                d.get("Title", ""), d.get("Abstract", ""), int(d.get("Citations") or 0)
+            )
+            for d in corpus
+        ]
+        sem = [screener.evaluate(d, sem_config) for d in corpus]
+        citations = [float(d.get("Citations") or 0) for d in corpus]
+
+        r_kw, r_sem = percentile_ranks(kw), percentile_ranks(sem)
+        p_kw, p_sem = position_ranks(kw), position_ranks(sem)
+        n_kw, n_sem = minmax(kw), minmax(sem)
+
+        return {
+            "keyword_only": kw,
+            "embedding_only": sem,
+            "citations_baseline": citations,
+            # ── the rules the pipeline actually ships, via the shared function.
+            #    Reimplementing them here would let the experiment drift from
+            #    the code and quietly stop measuring it. ──
+            "shipped (weighted_norm)": fuse_scores(kw, sem),
+            "shipped (rank_geometric)": fuse_scores(kw, sem, strategy="rank_geometric"),
+            # ── alternatives that are not shipped, for comparison ──
+            "arith_rank": [(a + b) / 2.0 * 10.0 for a, b in zip(r_kw, r_sem)],
+            "min_rank": [min(a, b) * 10.0 for a, b in zip(r_kw, r_sem)],
+            "max_rank": [max(a, b) * 10.0 for a, b in zip(r_kw, r_sem)],
+            f"rrf_{args.rrf_k}": [
+                1.0 / (args.rrf_k + a) + 1.0 / (args.rrf_k + b)
+                for a, b in zip(p_kw, p_sem)
+            ],
+            "weighted_norm_50_50": [0.5 * a + 0.5 * b for a, b in zip(n_kw, n_sem)],
+        }
+
+    # topic -> (doc_ids, fusion name -> scores)
+    per_topic = {}
+    for topic, qids in by_topic.items():
+        doc_ids = [d for d in documents_for(qrels, qids[0]) if d in documents]
+        corpus = [documents[d] for d in doc_ids]
+        per_topic[topic] = (doc_ids, fusions_for(corpus))
+
+    stats = qrels.stats()
     print("=" * 78)
     print("  Fusion comparison — same signals, different combination rules")
     print("=" * 78)
-    stats = qrels.stats()
-    print(f"  pool: {len(pool)} judged documents | queries: {stats['queries']} | "
+    print(f"  documents: {len(documents)} judged | queries: {stats['queries']} | "
           f"judgments: {stats['judgments']} | relevant: {stats['relevant']}")
+    for topic, (doc_ids, _) in per_topic.items():
+        print(f"    {topic or '(sem tópico)':<24} pool de {len(doc_ids)} documentos")
     print()
 
+    fusion_names = list(next(iter(per_topic.values()))[1])
     reports = {}
-    for name, scores in fusions.items():
-        order = sorted(range(len(pool)), key=lambda i: -scores[i])
-        ranking = [doc_ids[i] for i in order]
-        rankings = {qid: ranking for qid in queries}
+    for name in fusion_names:
+        rankings = {}
+        for topic, qids in by_topic.items():
+            doc_ids, scores = per_topic[topic]
+            order = sorted(range(len(doc_ids)), key=lambda i: -scores[name][i])
+            ranking = [doc_ids[i] for i in order]
+            for qid in qids:
+                rankings[qid] = ranking
         reports[name] = evaluate_run(qrels, rankings, ks=KS)
 
     cols = [f"ndcg@{k}" for k in KS] + ["mrr", "ap"]
@@ -208,7 +223,8 @@ def main() -> int:
         json.dumps(
             {
                 "qrels": str(qrels_path.relative_to(ROOT)),
-                "pool_size": len(pool),
+                "document_count": len(documents),
+                "pools": {topic: len(ids) for topic, (ids, _) in per_topic.items()},
                 "ks": list(KS),
                 "rrf_k": args.rrf_k,
                 "results": {name: r.as_dict() for name, r in reports.items()},

@@ -23,7 +23,7 @@ from .metrics import (
     recall_at_k,
     reciprocal_rank,
 )
-from .qrels import Judgment, Qrels, QrelsError, load_qrels
+from .qrels import Judgment, Qrels, QrelsError, documents_for, load_qrels, topics
 from .runner import EvaluationReport, Ranking, build_rankings, evaluate_run, unjudged_in_pool
 
 __all__ = [
@@ -41,6 +41,8 @@ __all__ = [
     "Qrels",
     "QrelsError",
     "load_qrels",
+    "documents_for",
+    "topics",
     # runner
     "Ranking",
     "EvaluationReport",

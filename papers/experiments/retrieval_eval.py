@@ -35,7 +35,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from academic_hunter.core.evaluation import build_rankings, evaluate_run, load_qrels
+from academic_hunter.core.evaluation import (
+    build_rankings,
+    documents_for,
+    evaluate_run,
+    load_qrels,
+    mean_metrics,
+    topics,
+)
 from academic_hunter.core.evaluation.qrels import doc_id_for
 from academic_hunter.core.infra import HunterConfig
 from academic_hunter.core.nlp import AcademicScorer
@@ -45,8 +52,8 @@ DEFAULT_QRELS = ROOT / "papers" / "evaluation" / "qrels_pilot_genre_analysis.jso
 KS = (5, 10, 20)
 
 
-def load_pool(qrels_path: Path) -> tuple[list, str]:
-    """Load the judged pool.
+def load_documents(qrels_path: Path) -> tuple[dict, str]:
+    """Load every judged document, keyed by its id.
 
     Prefers the documents embedded in the qrels file. The corpus lives under
     ``results/``, which is git-ignored, so a qrels that only recorded a CSV path
@@ -54,37 +61,39 @@ def load_pool(qrels_path: Path) -> tuple[list, str]:
     own documents. The CSV path is kept as provenance and as a fallback for
     extending the collection locally.
 
-    Every returned document carries ``_doc_id``, and only judged documents are
-    returned: the pool is defined by the judgments, so all candidates are
-    judged and the metrics compare rankers rather than pool coverage.
+    Each record carries ``_doc_id``. Which of them a given query is ranked over
+    is decided per query by ``core.evaluation.documents_for``.
     """
     payload = json.loads(qrels_path.read_text(encoding="utf-8"))
     judged = {
         doc_id for query in payload["queries"].values() for doc_id in query["judgments"]
     }
 
+    def shape(doc_id: str, doc: dict) -> dict:
+        return {
+            "_doc_id": doc_id,
+            "Title": doc.get("title", ""),
+            "Abstract": doc.get("abstract", ""),
+            "Year": doc.get("year"),
+            "Source": doc.get("source"),
+            "Citations": doc.get("citations"),
+            "Relevance_Score": doc.get("pipeline_relevance_score"),
+        }
+
     embedded = payload.get("documents")
     if embedded:
-        pool = [
-            {
-                "_doc_id": doc_id,
-                "Title": doc.get("title", ""),
-                "Abstract": doc.get("abstract", ""),
-                "Year": doc.get("year"),
-                "Source": doc.get("source"),
-                "Citations": doc.get("citations"),
-                "Relevance_Score": doc.get("pipeline_relevance_score"),
-            }
+        documents = {
+            doc_id: shape(doc_id, doc)
             for doc_id, doc in embedded.items()
             if doc_id in judged
-        ]
-        missing = judged - {d["_doc_id"] for d in pool}
+        }
+        missing = judged - set(documents)
         if missing:
             raise SystemExit(
                 f"{len(missing)} judged document(s) have no embedded entry, e.g. "
                 f"{sorted(missing)[:2]}. The judgments and the documents have diverged."
             )
-        return pool, f"embedded ({len(pool)} documents)"
+        return documents, f"embedded ({len(documents)} documents)"
 
     source_csv = payload.get("provenance", {}).get("source_csv")
     if not source_csv:
@@ -101,21 +110,27 @@ def load_pool(qrels_path: Path) -> tuple[list, str]:
         )
 
     rows = list(csv.DictReader(open(csv_path, encoding="utf-8", errors="replace")))
-    pool = []
+    documents = {}
     for r in rows:
         doc_id = doc_id_for(r.get("Title", ""), r.get("DOI", ""))
         if doc_id in judged:
-            r["_doc_id"] = doc_id
-            pool.append(r)
+            documents[doc_id] = shape(doc_id, {
+                "title": r.get("Title", ""),
+                "abstract": r.get("Abstract", ""),
+                "year": r.get("Year"),
+                "source": r.get("Source"),
+                "citations": r.get("Citations"),
+                "pipeline_relevance_score": r.get("Relevance_Score"),
+            })
 
-    missing = judged - {d["_doc_id"] for d in pool}
+    missing = judged - set(documents)
     if missing:
         raise SystemExit(
             f"{len(missing)} judged document(s) are not in {source_csv}, e.g. "
             f"{sorted(missing)[:2]}. The pool and the judgments have diverged."
         )
 
-    return pool, str(csv_path.relative_to(ROOT))
+    return documents, str(csv_path.relative_to(ROOT))
 
 
 def build_scorers(config: HunterConfig, with_embedding: bool) -> dict:
@@ -182,33 +197,47 @@ def main() -> int:
 
     qrels_path = Path(args.qrels)
     qrels = load_qrels(qrels_path)
-    pool, csv_label = load_pool(qrels_path)
+    documents, doc_label = load_documents(qrels_path)
 
     config = HunterConfig()
     scorers = build_scorers(config, args.with_embedding)
 
     queries = {qid: j.text for qid, j in qrels.queries.items()}
+    by_topic = topics(qrels)
 
-    print("=" * 72)
+    print("=" * 78)
     print("  Retrieval evaluation")
-    print("=" * 72)
+    print("=" * 78)
     stats = qrels.stats()
     print(f"  qrels      : {qrels_path.relative_to(ROOT)}")
-    print(f"  pool       : {csv_label}")
-    print(f"  pool size  : {len(pool)} judged documents")
+    print(f"  documents  : {len(documents)} judged")
     print(f"  queries    : {stats['queries']}   judgments: {stats['judgments']}   "
           f"relevant: {stats['relevant']}")
+    for topic, qids in by_topic.items():
+        label = topic or "(sem tópico)"
+        print(f"    {label:<24} {len(qids)} consultas, pool de "
+              f"{len(documents_for(qrels, qids[0]))} documentos")
     print()
+
+    def rank_for(scorer, qid):
+        """Rank the documents this query was judged over, not the union.
+
+        A query from one topic must not be scored against another topic's
+        documents: those carry no judgment for it, and counting them as
+        irrelevant would penalise the ranker for a pool it was never given.
+        """
+        doc_ids = [d for d in documents_for(qrels, qid) if d in documents]
+        corpus = [documents[d] for d in doc_ids]
+        ranked = build_rankings(
+            corpus, {qid: queries[qid]}, scorer=scorer,
+            doc_id=lambda d: d["_doc_id"], top_k=len(corpus),
+        )
+        return ranked[qid]
 
     reports = {}
     for name, scorer in scorers.items():
-        rankings = build_rankings(
-            pool, queries, scorer=scorer,
-            doc_id=lambda d: d["_doc_id"],
-            top_k=len(pool),
-        )
-        report = evaluate_run(qrels, rankings, ks=KS)
-        reports[name] = report
+        rankings = {qid: rank_for(scorer, qid) for qid in queries}
+        reports[name] = evaluate_run(qrels, rankings, ks=KS)
 
     # ── comparison table ────────────────────────────────────────────────────
     metric_cols = [f"ndcg@{k}" for k in KS] + ["mrr", "ap"]
@@ -238,6 +267,24 @@ def main() -> int:
     print(f"  min judged coverage: {min(r.min_coverage for r in reports.values()):.2f} "
           f"(every pool document is judged, so this should be 1.00)")
 
+    # ── per-topic breakdown ─────────────────────────────────────────────────
+    # A single mean over two unrelated corpora hides which one a strategy is
+    # actually good at. Report both, so a change that helps one topic and
+    # wrecks the other cannot pass as an improvement.
+    print()
+    print("  nDCG@10 by topic, per strategy:")
+    topic_names = [t or "(sem tópico)" for t in by_topic]
+    header = f"  {'strategy':<22}" + "".join(f"{t[:20]:>22}" for t in topic_names)
+    print(header)
+    print("  " + "-" * (len(header) - 2))
+    for name, report in reports.items():
+        row = f"  {name:<22}"
+        for topic, qids in by_topic.items():
+            subset = [report.per_query[q] for q in qids if q in report.per_query]
+            value = mean_metrics(subset).get("ndcg@10") if subset else None
+            row += f"{value:>22.4f}" if value is not None else f"{'n/a':>22}"
+        print(row)
+
     # ── per-query detail for the best strategy ──────────────────────────────
     print()
     print(f"  Per-query detail ({best[0]}):")
@@ -252,8 +299,8 @@ def main() -> int:
         json.dumps(
             {
                 "qrels": str(qrels_path.relative_to(ROOT)),
-                "pool": csv_label,
-                "pool_size": len(pool),
+                "documents": doc_label,
+                "document_count": len(documents),
                 "ks": list(KS),
                 "qrels_stats": stats,
                 "strategies": {name: report.as_dict() for name, report in reports.items()},
