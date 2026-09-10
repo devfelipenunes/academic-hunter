@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Full-text: download, extração e retrieval por trecho.** Até aqui todo o
+  pipeline operava sobre título + abstract, que trunca método e resultado — a
+  maior lacuna funcional do projeto. Agora `settings.fulltext.enabled` (default
+  **`false`**) liga um passo que, para os papers que passaram do limiar, resolve
+  a versão em acesso aberto no Unpaywall, baixa o PDF, extrai o texto com
+  `pypdf` (extra opcional `fulltext`), fatia em chunks e indexa numa coleção
+  separada `paper_chunks`.
+  - **Chunk de 180 palavras com 40 de sobreposição, e o número não é ajustável
+    por gosto:** o MiniLM do ChromaDB trunca em 256 word-pieces (~190 palavras),
+    então um chunk maior ficaria parcialmente invisível para o retriever sem
+    nada reportar. Nunca atravessa fronteira de seção, e `references`/`appendix`
+    ficam de fora.
+  - **Coleção separada, não um campo `doc_type`:** o ChromaDB não tem `$exists`,
+    e nenhum documento indexado por runs anteriores tem essa chave — filtrar por
+    ela esvaziaria o `semantic_search` de todo o acervo legado.
+  - **Status por paper** (`_full_text_status`), com agregados no `stats` e no
+    PRISMA: metodologia de SLR exige reportar quantos full texts não foram
+    obtidos, e "não há cópia em acesso aberto" é um achado diferente de "o
+    download falhou".
+  - **O passo nunca levanta** e é sequencial, com orçamento de papers e de tempo.
+    PDFs ficam em `.academic_hunter/fulltext/`, o que torna a segunda execução
+    offline.
+  - `pypdf` e não PyMuPDF: o segundo é AGPL-3.0 e o projeto é MIT.
+
 - **Fronteiras hexagonais explícitas**: `core/ports/` passa a declarar os contratos
   (`BaseExporter`/`ExportContext`, `BaseScreener`, `BaseVectorStore`, `ConnectorPort`), e a
   camada `app/` concentra a composição. `core` não importa mais `plugins`, `interfaces` nem

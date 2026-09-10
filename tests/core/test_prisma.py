@@ -58,6 +58,7 @@ class TestAcademicRigor(unittest.TestCase):
             "excluded_technical_score": 0,
             "included_final": 0,
             "reranked": 0,
+            "full_text": {},
             "exclusions_by_source": {}
         }
         self.assertEqual(self.hunter.stats, expected_stats)

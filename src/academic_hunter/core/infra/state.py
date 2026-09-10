@@ -13,6 +13,9 @@ class SearchState:
             "excluded_technical_score": 0,
             "included_final": 0,
             "reranked": 0,
+            #: Status -> count for the full-text step, which is opt-in and may
+            #: not have run at all. Filled by `IngestFullTextStep`.
+            "full_text": {},
             "exclusions_by_source": {}
         }
         self.consolidated_results = {}  # Key: Title-Slug or DOI
@@ -38,6 +41,7 @@ class SearchState:
             "excluded_technical_score": 0,
             "included_final": 0,
             "reranked": 0,
+            "full_text": {},
             "exclusions_by_source": {}
         }
         self.consolidated_results = {}

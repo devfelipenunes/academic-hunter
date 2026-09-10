@@ -188,6 +188,114 @@ class ChromaVectorStore(BaseVectorStore):
             logger.error(f"ChromaDB query failed: {e}")
             return []
 
+    # ── chunk retrieval (the ChunkStorePort capability) ─────────────────────
+    #
+    # A separate collection rather than a `doc_type` field on `papers`: ChromaDB
+    # has no `$exists` operator, and every document indexed by earlier runs
+    # lacks that key, so filtering on it would empty `semantic_search` for the
+    # whole back catalogue until a full reindex.
+
+    def index_chunks(
+        self, chunks: List[Dict[str, Any]], collection_name: str = "paper_chunks"
+    ) -> bool:
+        """Embed and store document fragments. Returns True on success."""
+        if not chunks:
+            return True
+
+        try:
+            collection = self._get_or_create_collection(collection_name)
+            documents, metadatas, ids = [], [], []
+
+            for chunk in chunks:
+                text = str(chunk.get("text") or "").strip()
+                chunk_id = str(chunk.get("chunk_id") or "")
+                if not text or not chunk_id:
+                    continue
+                documents.append(text)
+                metadatas.append({
+                    "parent_id": _as_str(chunk.get("parent_id")),
+                    "section": _as_str(chunk.get("section")),
+                    "index": _as_int(chunk.get("index")),
+                    "start": _as_int(chunk.get("start")),
+                    "end": _as_int(chunk.get("end")),
+                })
+                ids.append(chunk_id)
+
+            if not documents:
+                logger.warning("No indexable chunks after filtering.")
+                return True
+
+            collection.upsert(documents=documents, metadatas=metadatas, ids=ids)
+            logger.info(
+                "Indexed %d chunks into '%s'.", len(documents), collection_name
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Chunk indexing failed: {e}")
+            return False
+
+    def query_chunks(
+        self, prompt: str, top_k: int = 10, collection_name: str = "paper_chunks"
+    ) -> List[Dict[str, Any]]:
+        """Return the chunks most similar to ``prompt``, with their metadata."""
+        try:
+            collection = self.client.get_collection(collection_name)
+            count = collection.count()
+            if count == 0:
+                return []
+
+            results = collection.query(
+                query_texts=[prompt],
+                n_results=min(top_k, count),
+                include=["documents", "metadatas", "distances"],
+            )
+
+            out = []
+            for i, chunk_id in enumerate(results["ids"][0] if results["ids"] else []):
+                metadata = results["metadatas"][0][i] if results["metadatas"] else {}
+                distance = results["distances"][0][i] if results["distances"] else 0.0
+                out.append({
+                    "chunk_id": chunk_id,
+                    "parent_id": metadata.get("parent_id", ""),
+                    "section": metadata.get("section", ""),
+                    "index": metadata.get("index", 0),
+                    "start": metadata.get("start", 0),
+                    "end": metadata.get("end", 0),
+                    "text": results["documents"][0][i] if results["documents"] else "",
+                    "relevance": round(
+                        max(0.0, min(1.0, (1.414 - distance) / 1.414)), 4
+                    ),
+                })
+            return out
+
+        except Exception as e:
+            logger.error(f"Chunk query failed: {e}")
+            return []
+
+    def has_chunks(self, parent_id: str, collection_name: str = "paper_chunks") -> bool:
+        """Whether any chunk of ``parent_id`` is already indexed."""
+        try:
+            collection = self.client.get_collection(collection_name)
+            found = collection.get(where={"parent_id": parent_id}, limit=1)
+            return bool(found.get("ids"))
+        except Exception:
+            # A missing collection simply has no chunks.
+            return False
+
+    def delete_chunks(self, parent_id: str, collection_name: str = "paper_chunks") -> int:
+        """Remove every chunk of ``parent_id``; returns how many were removed."""
+        try:
+            collection = self.client.get_collection(collection_name)
+            found = collection.get(where={"parent_id": parent_id})
+            ids = found.get("ids") or []
+            if ids:
+                collection.delete(ids=ids)
+            return len(ids)
+        except Exception as e:
+            logger.error(f"Chunk deletion failed: {e}")
+            return 0
+
     def list_collections(self) -> List[str]:
         """List all available collections."""
         try:

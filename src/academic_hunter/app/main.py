@@ -1,3 +1,4 @@
+import logging
 import threading
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -6,6 +7,8 @@ from ..core.infra import SQLiteCache, HunterConfig, SearchState
 from ..core.nlp import AcademicScorer
 from .facades import HunterFacadeMixin
 from .exporters import HunterExporterMixin
+
+logger = logging.getLogger("academic_hunter.app")
 
 
 class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
@@ -25,7 +28,8 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
                  semantic_screener: Any = None,
                  exporters: Optional[list] = None,
                  vector_store_factory: Any = None,
-                 obsidian_export: Any = None):
+                 obsidian_export: Any = None,
+                 full_text_fetcher: Any = None):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
 
@@ -111,11 +115,48 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
 
             self.obsidian_export = _obsidian_export
 
+        # Full text — injected callable, adapters as default. Whether it runs at
+        # all is `settings.fulltext.enabled`, which the step checks; building it
+        # here only means the capability exists.
+        if full_text_fetcher is not None:
+            self.full_text_fetcher = full_text_fetcher
+        else:
+            self.full_text_fetcher = self._build_full_text_fetcher()
+
         from ..core.screening import PaperProcessor
         self.processor = PaperProcessor(self.state, self.scorer, self.config, self.connectors, self.lock, self.semantic_screener)
 
         from ..core.pipeline import SearchPipeline
         self.pipeline = SearchPipeline(self)
+
+    def _build_full_text_fetcher(self):
+        """Compose locate → download → extract into a single callable.
+
+        Returns ``None`` when the pieces cannot be built — no contact e-mail, or
+        an address Unpaywall would refuse. The step reads ``None`` as "not
+        wired" and skips, which is the outcome of the feature being off.
+        """
+        from ..core.ports.fulltext import FullTextConfigError
+        from ..plugins.fulltext.cache import CachedFullTextSource, PdfCache
+        from ..plugins.fulltext.pdf import PdfExtractor
+        from ..plugins.fulltext.unpaywall import UnpaywallSource
+
+        try:
+            source = UnpaywallSource(self.config.fulltext_config()["email"])
+        except FullTextConfigError as e:
+            logger.info("Full-text fetching unavailable: %s", e)
+            return None
+
+        cached = CachedFullTextSource(
+            source,
+            PdfCache(Path(self.output_dir).parent / ".academic_hunter" / "fulltext"),
+        )
+        extractor = PdfExtractor()
+
+        def fetch(doi: str) -> Any:
+            return extractor.extract(cached.download(cached.locate(doi)))
+
+        return fetch
 
     @staticmethod
     def _resolve_connector_classes(connectors: Optional[Dict[str, Any]]) -> Dict[str, Any]:

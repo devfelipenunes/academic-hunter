@@ -39,6 +39,12 @@
       "model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
       "top_n": 20,
       "max_length": 512
+    },
+    "fulltext": {
+      "enabled": false,
+      "email": "",
+      "max_papers": 200,
+      "time_budget_seconds": 900
     }
   },
   "anchors": {

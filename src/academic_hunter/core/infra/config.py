@@ -17,6 +17,11 @@ from .history import ConfigHistory
 #: prefix either.
 REDACTED = "***redacted***"
 
+#: Full-text fetching is sequential and polite, so it is bounded in both
+#: dimensions: how many papers to try, and how long to keep trying.
+DEFAULT_FULLTEXT_MAX_PAPERS = 200
+DEFAULT_FULLTEXT_TIME_BUDGET = 900
+
 
 class HunterConfig:
     """Handles JSON configuration loading, environment variables, pacing delays, and default fallback parameters.
@@ -214,6 +219,35 @@ class HunterConfig:
                 for name, value in nested.items()
             }
         return redacted
+
+    def fulltext_config(self) -> Dict[str, Any]:
+        """Payload the full-text step expects.
+
+        Single source of truth for this dict shape, like :meth:`screener_config`.
+        Defaults to *off*: fetching full text means dozens of network calls and
+        tens of megabytes of PDFs, which is not something a run should start
+        doing because it was upgraded.
+        """
+        raw = self.settings.get("fulltext")
+        cfg = raw if isinstance(raw, dict) else {}
+
+        def _positive_int(value: Any, default: int) -> int:
+            try:
+                parsed = int(value)
+            except (TypeError, ValueError):
+                return default
+            return parsed if parsed > 0 else default
+
+        # An unusable address makes every single request fail, so it is better
+        # to fall back to the one the user already configured for the APIs.
+        return {
+            "enabled": cfg.get("enabled", False) is True,
+            "email": str(cfg.get("email") or self.settings.get("user_email") or ""),
+            "max_papers": _positive_int(cfg.get("max_papers"), DEFAULT_FULLTEXT_MAX_PAPERS),
+            "time_budget_seconds": _positive_int(
+                cfg.get("time_budget_seconds"), DEFAULT_FULLTEXT_TIME_BUDGET
+            ),
+        }
 
     def save(self):
         """Persist current config back to the JSON file."""

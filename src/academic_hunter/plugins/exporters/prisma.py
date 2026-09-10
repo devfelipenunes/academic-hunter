@@ -42,6 +42,10 @@ class PrismaExporter(BaseExporter):
             "excluded_anchors": excluded_anchors,
             "excluded_technical_score": excluded_tech,
             "included_final": final,
+            # Empty when the opt-in full-text step did not run. SLR methodology
+            # requires reporting how many full texts were not obtained, and why
+            # — a count that is absent is different from one that is zero.
+            "full_text": stats.get("full_text", {}),
             "exclusions_by_source": stats.get("exclusions_by_source", {}),
             "settings": {
                 "start_year": settings.get("start_year"),
@@ -143,7 +147,20 @@ graph TD
             f.write(f"- **Excluded (No Industry Anchors):** {excluded_anchors}\n")
             f.write(f"- **Excluded (Low Relevance Score):** {excluded_tech}\n")
             f.write(f"- **Final Included:** {final}\n\n")
-            
+
+            # Only present when the opt-in step ran. SLR methodology requires
+            # saying how many full texts were *not* obtained, and "no OA copy"
+            # and "the download broke" are different findings.
+            full_text = stats.get("full_text") or {}
+            if full_text:
+                f.write("### Full Text Retrieval\n\n")
+                f.write(f"- **Obtained:** {full_text.get('obtained', 0)}\n")
+                for status, count in sorted(full_text.items()):
+                    if status == "obtained" or not count:
+                        continue
+                    f.write(f"- **Not obtained — {status}:** {count}\n")
+                f.write("\n")
+
             f.write(exclusion_table + "\n")
             
             f.write("## 2. Visual Flow (Mermaid)\n\n")

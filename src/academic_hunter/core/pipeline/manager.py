@@ -2,7 +2,12 @@ import logging
 import threading
 import time
 
-from .steps import AutoExportObsidianStep, IndexResultsStep, RecomputeRanksStep
+from .steps import (
+    AutoExportObsidianStep,
+    IndexResultsStep,
+    IngestFullTextStep,
+    RecomputeRanksStep,
+)
 
 logger = logging.getLogger("academic_hunter")
 
@@ -47,6 +52,14 @@ class SearchPipeline:
         Delegates to RecomputeRanksStep for implementation.
         """
         RecomputeRanksStep(self.hunter).run()
+
+    def _ingest_full_text(self):
+        """Fetch and index full text for the qualified papers.
+
+        Opt-in (`settings.fulltext.enabled`) and a no-op when it is off, which
+        is the default. Delegates to IngestFullTextStep.
+        """
+        IngestFullTextStep(self.hunter).run()
 
     def _api_worker(self, source_name: str, fetch_func=None, limit_per_source: int = 100):
         connector = self.hunter.connectors.get(source_name)
@@ -133,7 +146,16 @@ class SearchPipeline:
 
         self.hunter.consolidated_results = final_qualifiers
 
+        # Full text, opt-in and off by default. Here — after the threshold
+        # filter, before the index — so the downloads are spent on the papers
+        # that qualified rather than on everything identified.
+        self._ingest_full_text()
+
         self.hunter.export_results(timestamp)
+        # Regenerated: the report above was written before this step could know
+        # how many full texts were obtained, and SLR methodology requires that
+        # number. Same reason `export_results` is called twice.
+        self.hunter.generate_prisma_report(timestamp)
 
         # Auto-index for RAG
         self._index_results()
