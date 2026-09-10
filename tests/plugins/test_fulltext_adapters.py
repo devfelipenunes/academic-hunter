@@ -79,6 +79,52 @@ def test_locate_returns_the_best_pdf_location():
     assert location.license == "cc-by"
 
 
+def test_locate_prefers_a_location_that_names_a_pdf():
+    """`best_oa_location` is Unpaywall's pick for reliability, and it is often
+    the publisher landing page with a null `url_for_pdf` — while another entry
+    in the same record does name one.
+
+    Measured against the live API: using only `best` turned "there is a PDF in
+    the repository" into "download failed".
+    """
+    payload = {
+        "is_oa": True,
+        "best_oa_location": {
+            "url": "https://publisher.example/landing",
+            "url_for_pdf": None,
+            "host_type": "publisher",
+        },
+        "oa_locations": [
+            {"url": "https://publisher.example/landing", "url_for_pdf": None},
+            {
+                "url": "https://repo.example/a",
+                "url_for_pdf": "https://repo.example/a.pdf",
+                "host_type": "repository",
+                "license": "cc-by",
+            },
+        ],
+    }
+    with patch(API, return_value=response(200, payload)):
+        location = UnpaywallSource("a@b.c").locate("10.1/x")
+
+    assert location.url == "https://repo.example/a.pdf"
+    assert location.host == "repository"
+    assert location.license == "cc-by"
+
+
+def test_locate_falls_back_to_a_landing_url_when_no_pdf_is_named():
+    """Some records genuinely offer no direct PDF; the download checks the bytes."""
+    payload = {
+        "is_oa": True,
+        "best_oa_location": {"url": "https://publisher.example/landing"},
+        "oa_locations": [{"url": "https://publisher.example/landing"}],
+    }
+    with patch(API, return_value=response(200, payload)):
+        assert UnpaywallSource("a@b.c").locate("10.1/x").url == (
+            "https://publisher.example/landing"
+        )
+
+
 def test_locate_falls_back_to_the_landing_url():
     payload = {"is_oa": True, "best_oa_location": {"url": "https://example.org/landing"}}
     with patch(API, return_value=response(200, payload)):

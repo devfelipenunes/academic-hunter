@@ -49,7 +49,26 @@ Rode `git log --oneline main..feat/finalizar-ah` para a lista.
 
 Em ordem de execução sugerida.
 
-### 1. Full-text (Parte 3 do plano) — o maior bloco, não começou
+### 1. Full-text (Parte 3 do plano) — **núcleo feito**, faltam as tools e a avaliação
+
+As fases A, B e C estão implementadas e commitadas: portas, chunker, adaptadores
+(Unpaywall, pypdf, cache) e o `IngestFullTextStep`, tudo opt-in e desligado por
+padrão. **Falta a fase D** (as tools MCP `fulltext_status`, `index_fulltext`,
+`chunk_search`) **e a fase E** (avaliação na coleção julgada).
+
+Validado ponta a ponta contra a API real: um DOI do PLOS baixou 255 KB, extraiu
+38 mil caracteres e produziu 8 chunks com seção. E a validação achou um defeito
+que os testes não pegariam: o adaptador usava só o `best_oa_location`, que o
+Unpaywall escolhe por _confiabilidade_ e que costuma ser a landing page da
+editora, com `url_for_pdf` nulo — enquanto **outro** local do mesmo registro
+nomeia o PDF. Agora ele prefere o primeiro local que nomeie um PDF, e só cai para
+a landing page se nenhum nomear.
+
+**Limitação conhecida, medida:** há registros em que _nenhum_ local tem
+`url_for_pdf` (o caso do `10.1371/journal.pone.0000308`, que só oferece DOI
+resolver e páginas do PMC). Nesses, o download busca a URL e recusa os bytes por
+não começarem com `%PDF-` — o comportamento que o plano já previa e que conta
+como `download_failed`. Um adaptador para PMC (`/pdf/`) recuperaria parte deles.
 
 O desenho completo está na **Parte 3 do arquivo de plano**. Resumo do que não
 pode ser re-derivado:

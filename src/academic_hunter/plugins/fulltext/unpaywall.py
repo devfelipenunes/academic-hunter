@@ -87,16 +87,34 @@ class UnpaywallSource:
         if not record.get("is_oa"):
             raise NoOpenAccessVersion(doi)
 
+        # `best_oa_location` is Unpaywall's pick for *reliability*, and it is
+        # frequently the publisher's landing page with a null `url_for_pdf` —
+        # while another location in the same record does name a PDF. Using only
+        # the best one turns "there is a PDF in PMC" into "download failed".
         best = record.get("best_oa_location") or {}
-        url = best.get("url_for_pdf") or best.get("url")
-        if not url:
-            raise NoOpenAccessVersion(doi)
+        locations = [best] + [
+            loc for loc in (record.get("oa_locations") or []) if loc is not best
+        ]
 
+        for location in locations:
+            if location.get("url_for_pdf"):
+                return self._as_location(location, pdf=True)
+
+        # No location names a PDF directly. A landing page still sometimes
+        # serves one, and the download checks the magic bytes either way.
+        for location in locations:
+            if location.get("url"):
+                return self._as_location(location, pdf=False)
+
+        raise NoOpenAccessVersion(doi)
+
+    @staticmethod
+    def _as_location(location: Dict[str, Any], *, pdf: bool) -> OpenAccessLocation:
         return OpenAccessLocation(
-            url=url,
-            host=str(best.get("host_type") or ""),
-            version=str(best.get("version") or ""),
-            license=str(best.get("license") or ""),
+            url=str(location["url_for_pdf"] if pdf else location["url"]),
+            host=str(location.get("host_type") or ""),
+            version=str(location.get("version") or ""),
+            license=str(location.get("license") or ""),
         )
 
     def download(
