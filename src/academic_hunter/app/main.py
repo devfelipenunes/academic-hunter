@@ -130,33 +130,37 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
         self.pipeline = SearchPipeline(self)
 
     def _build_full_text_fetcher(self):
-        """Compose locate → download → extract into a single callable.
+        """Compose the full-text sources into one callable: DOI in, document out.
 
-        Returns ``None`` when the pieces cannot be built — no contact e-mail, or
-        an address Unpaywall would refuse. The step reads ``None`` as "not
-        wired" and skips, which is the outcome of the feature being off.
+        Unpaywall goes first — it is the index of where open copies live — and
+        Europe PMC follows, because Unpaywall frequently knows a paper is open
+        while naming no PDF, and Europe PMC serves those as JATS XML.
+
+        Without a usable contact e-mail the Unpaywall leg is dropped rather than
+        the whole feature: Europe PMC needs no address, so full text still works.
         """
         from ..core.ports.fulltext import FullTextConfigError
         from ..plugins.fulltext.cache import CachedFullTextSource, PdfCache
+        from ..plugins.fulltext.europepmc import EuropePmcSource
         from ..plugins.fulltext.pdf import PdfExtractor
+        from ..plugins.fulltext.sources import ChainFullTextSource, UnpaywallPdfSource
         from ..plugins.fulltext.unpaywall import UnpaywallSource
 
+        sources = [EuropePmcSource()]
+
         try:
-            source = UnpaywallSource(self.config.fulltext_config()["email"])
+            pdf_source = CachedFullTextSource(
+                UnpaywallSource(self.config.fulltext_config()["email"]),
+                PdfCache(
+                    Path(self.output_dir).parent / ".academic_hunter" / "fulltext"
+                ),
+            )
         except FullTextConfigError as e:
-            logger.info("Full-text fetching unavailable: %s", e)
-            return None
+            logger.info("Unpaywall unavailable (%s); using Europe PMC only.", e)
+        else:
+            sources.insert(0, UnpaywallPdfSource(pdf_source, PdfExtractor()))
 
-        cached = CachedFullTextSource(
-            source,
-            PdfCache(Path(self.output_dir).parent / ".academic_hunter" / "fulltext"),
-        )
-        extractor = PdfExtractor()
-
-        def fetch(doi: str) -> Any:
-            return extractor.extract(cached.download(cached.locate(doi)))
-
-        return fetch
+        return ChainFullTextSource(sources)
 
     @staticmethod
     def _resolve_connector_classes(connectors: Optional[Dict[str, Any]]) -> Dict[str, Any]:

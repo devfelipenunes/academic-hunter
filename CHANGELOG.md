@@ -31,6 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **O passo nunca levanta** e é sequencial, com orçamento de papers e de tempo.
     PDFs ficam em `.academic_hunter/fulltext/`, o que torna a segunda execução
     offline.
+  - **Duas fontes encadeadas.** Unpaywall primeiro — é o índice de onde vivem as
+    cópias abertas — e **Europe PMC** depois. O segundo entrou por medição: o
+    Unpaywall com frequência sabe que um artigo é aberto sem nomear PDF, e o
+    PMC _web_ responde 200 com HTML a qualquer cliente que não seja navegador,
+    então raspar `/pdf/` de lá não recupera nada. A API REST do Europe PMC serve
+    os mesmos artigos em **JATS XML** — e o XML já vem seccionado, que é o que o
+    chunker teria de adivinhar. Um erro de configuração numa fonte não
+    interrompe a outra: o Europe PMC não usa e-mail, então o full-text funciona
+    até sem endereço de contato.
   - `pypdf` e não PyMuPDF: o segundo é AGPL-3.0 e o projeto é MIT.
 
 - **Fronteiras hexagonais explícitas**: `core/ports/` passa a declarar os contratos

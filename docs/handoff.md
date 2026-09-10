@@ -56,19 +56,30 @@ As fases A, B e C estão implementadas e commitadas: portas, chunker, adaptadore
 padrão. **Falta a fase D** (as tools MCP `fulltext_status`, `index_fulltext`,
 `chunk_search`) **e a fase E** (avaliação na coleção julgada).
 
-Validado ponta a ponta contra a API real: um DOI do PLOS baixou 255 KB, extraiu
-38 mil caracteres e produziu 8 chunks com seção. E a validação achou um defeito
-que os testes não pegariam: o adaptador usava só o `best_oa_location`, que o
-Unpaywall escolhe por _confiabilidade_ e que costuma ser a landing page da
-editora, com `url_for_pdf` nulo — enquanto **outro** local do mesmo registro
-nomeia o PDF. Agora ele prefere o primeiro local que nomeie um PDF, e só cai para
-a landing page se nenhum nomear.
+Validado ponta a ponta contra as APIs reais. Dois defeitos apareceram ali e em
+nenhum teste:
 
-**Limitação conhecida, medida:** há registros em que _nenhum_ local tem
-`url_for_pdf` (o caso do `10.1371/journal.pone.0000308`, que só oferece DOI
-resolver e páginas do PMC). Nesses, o download busca a URL e recusa os bytes por
-não começarem com `%PDF-` — o comportamento que o plano já previa e que conta
-como `download_failed`. Um adaptador para PMC (`/pdf/`) recuperaria parte deles.
+- O adaptador usava só o `best_oa_location`, que o Unpaywall escolhe por
+  _confiabilidade_ e que costuma ser a landing page da editora, com
+  `url_for_pdf` nulo — enquanto **outro** local do mesmo registro nomeia o PDF.
+  Agora prefere o primeiro local que nomeie um PDF, caindo para a landing page só
+  quando nenhum nomeia.
+- **E a suposição que este documento trazia estava errada.** Ele dizia que "um
+  adaptador para PMC (`/pdf/`) recuperaria" os registros sem `url_for_pdf`.
+  Medido: `pmc.ncbi.nlm.nih.gov/…/pdf/` responde **200 com HTML** a qualquer
+  cliente que não seja navegador, então raspar PDF do PMC não recupera nada. O
+  que funciona é o **Europe PMC**, cuja API REST serve os mesmos artigos em
+  **JATS XML** — melhor que PDF, porque o XML já vem seccionado, que é
+  justamente o que o chunker teria de adivinhar.
+
+  Com ele, o `10.1371/journal.pone.0000308` — antes `download_failed` — passou a
+  render 21.979 caracteres e 23 chunks com as seções `abstract`, `introduction`,
+  `method`, `results` e `discussion` corretas.
+
+As fontes são encadeadas: Unpaywall primeiro, Europe PMC depois. Um erro de
+configuração numa **não** interrompe a outra — elas não compartilham
+configuração, e o Europe PMC não usa e-mail — de modo que o full-text funciona
+até sem endereço de contato configurado.
 
 O desenho completo está na **Parte 3 do arquivo de plano**. Resumo do que não
 pode ser re-derivado:
