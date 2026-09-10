@@ -36,3 +36,5 @@ __pycache__/
 # User config (has API keys)
 config.json
 /config.json
+config*.json
+!config.example.json
