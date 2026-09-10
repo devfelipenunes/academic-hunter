@@ -11,10 +11,13 @@ sessão nova; os detalhes de cada item estão nos commits e no plano.
 
 |              |                                                                                         |
 | ------------ | --------------------------------------------------------------------------------------- |
-| Branch       | `feat/finalizar-ah` — **15 commits à frente de `main`**, que segue intacta em `ffbbc47` |
-| Testes       | **662 passando** (`./venv/bin/python -m pytest tests/ -q`) — mais 2 da flaky do MCP     |
+| Branch       | `feat/finalizar-ah` — **31 commits à frente de `main`**, que segue intacta em `ffbbc47` |
+| Testes       | **806 passando** (`./venv/bin/python -m pytest tests/ -q`) — mais 2 da flaky do MCP     |
 | Working tree | limpo                                                                                   |
 | Plano        | `/l/disk0/fnunes/.claude/plans/cozy-purring-hejlsberg.md`                               |
+
+**Nada foi enviado ao GitHub.** A branch nunca teve upstream; `main` e
+`feat/weight-bleeding` são as únicas no remoto.
 
 O objetivo acordado é **deixar a aplicação completa e funcionando perfeitamente**,
 antes de voltar aos papers. LLM/SLM **só como experimento**, nunca no pipeline.
@@ -40,6 +43,20 @@ Cross-encoder (item 2 abaixo) também fechado: `core/nlp/model_cache.py` cacheia
 os modelos que sete call sites recriavam a cada chamada, e
 `core/nlp/reranker.py` + `RecomputeRanksStep._apply_rerank` implementam o estágio
 opt-in de reranking. Medido — e ele **ganha**, ao contrário do embedding.
+
+**Full-text com o núcleo pronto** (item 1): portas, chunker, adaptadores
+(Unpaywall, Europe PMC, pypdf, cache) e `IngestFullTextStep`, opt-in e desligado
+por padrão. Faltam as tools MCP e a avaliação.
+
+**E uma auditoria de código inteira**, que não estava no plano e acabou sendo a
+maior parte do trabalho: ~15 defeitos reais corrigidos, cada um com teste que
+verifica ter falhado no código anterior. Os de maior gravidade: a **chave do
+Semantic Scholar sendo devolvida ao cliente MCP** em toda chamada de
+`read_config`; `print()` escrevendo **no canal JSON-RPC** (o transporte é stdio,
+onde stdout é o protocolo); `export_report` e `index_papers` **nunca
+funcionando**; o **CI vermelho** por falta de `pytest-asyncio` (188 testes async
+não rodavam); e o **event loop do servidor bloqueado** por minutos durante um
+`run_search`.
 
 Rode `git log --oneline main..feat/finalizar-ah` para a lista.
 
@@ -110,10 +127,18 @@ pode ser re-derivado:
   — o que mediria o conjunto de candidatos, não o retriever. Commitar um
   `fulltext_coverage.json` e comparar só no subconjunto com respaldo de chunk.
 
-### 2. Cross-encoder no pipeline (item 2.1 do roadmap) — **FEITO**
+### 2. Defeitos menores da auditoria, ainda em aberto
 
-Concluído: cache compartilhado de modelos, estágio opt-in de reranking e a
-medição. Ver "O que já está feito" e os achados abaixo.
+A auditoria achou ~40 itens e ~15 foram corrigidos. Estes ficaram, todos
+pequenos e independentes entre si: backoff ausente em erros 5xx dos conectores
+(hoje insistem sem esperar), `blocked_sources` que nunca é limpo dentro de um
+run, `BibTeX`/`RIS`/Obsidian sem escape de caracteres (um `}` no título quebra o
+registro), escrita não-atômica do `run_stats_*.json`, o cache SQLite engolindo
+exceção sem log, e chaves de `identified` incoerentes entre o `reset` e o que os
+conectores gravam.
+
+Nenhum corrompe resultado; são robustez. O caminho é um item por commit, com
+teste que falhe antes.
 
 ### 3. Ensemble de embeddings (item 2.2)
 
@@ -250,20 +275,53 @@ registrar porque são da mesma família — código que afirma uma coisa e faz o
   conta o que **mudou** e os diagnósticos registram o que o cross-encoder **disse**
   — dois fatos distintos, ambos verdadeiros.
 
+**O PMC não entrega PDF a cliente que não seja navegador.** Medido:
+`pmc.ncbi.nlm.nih.gov/…/pdf/` responde **200 com HTML**. Qualquer plano de
+"raspar o PDF do PMC" não funciona. O que funciona é a API do **Europe PMC**
+(`/europepmc/webservices/rest/{pmcid}/fullTextXML`), que serve os mesmos artigos
+em JATS XML — e é melhor que PDF, porque o XML já traz as seções marcadas, que é
+justamente o que o chunker teria de adivinhar por heurística de cabeçalho.
+Este documento afirmava o contrário antes de a medição ser feita.
+
+**O `best_oa_location` do Unpaywall não é o lugar de onde baixar.** Ele é a
+escolha por _confiabilidade_, e com frequência é a landing page da editora com
+`url_for_pdf` nulo — enquanto **outro** local do mesmo registro nomeia o PDF.
+Usar só o "melhor" transformava "há um PDF no repositório" em "o download
+falhou". Vale para qualquer consumidor da API do Unpaywall.
+
+**Medir `AcademicHunter()` exige cuidado, e eu errei duas vezes.** A primeira
+medição deu 7,7 ms (com um config mínimo) e a segunda 1 ms (contaminada por cache
+de um warmup). O valor real, com o config do projeto e sem cache, é **169 ms** —
+vinte vezes o primeiro número. A conclusão que eu havia tirado disso ("não vale
+corrigir") estava errada. Aquecimento e config de teste são as duas formas
+fáceis de medir a coisa errada aqui.
+
+**Bytecode obsoleto faz um teste de regressão mentir.** Ao reverter uma correção
+para conferir que o teste a pega, o `.pyc` fica com o mesmo mtime (mesmo segundo)
+do `.py` restaurado e o Python segue usando a versão compilada — o experimento
+então dá verde com o código defeituoso. **Limpe `__pycache__` antes de cada
+reversão**, ou o resultado não significa nada.
+
 ---
 
 ## Decisões já tomadas (não reabrir sem motivo)
 
-| Decisão             | Escolha                                                           |
-| ------------------- | ----------------------------------------------------------------- |
-| CLI                 | Removido; o MCP é a única interface                               |
-| LLM/SLM             | Só como experimento, nunca no pipeline                            |
-| Fase 3 (pesquisa)   | Fora do escopo                                                    |
-| Anotação da coleção | Eu rotulo, o autor do projeto revisa — **revisão ainda pendente** |
-| Versão da release   | 3.0.0                                                             |
-| Biblioteca de PDF   | `pypdf` (o PyMuPDF do roadmap é AGPL)                             |
-| Reranking           | Opt-in por `settings.rerank`, **desligado por padrão**            |
-| Reranking sem query | Não atua: o cross-encoder pontua o par (query, documento)         |
+| Decisão             | Escolha                                                            |
+| ------------------- | ------------------------------------------------------------------ |
+| CLI                 | Removido; o MCP é a única interface                                |
+| LLM/SLM             | Só como experimento, nunca no pipeline                             |
+| Fase 3 (pesquisa)   | Fora do escopo                                                     |
+| Anotação da coleção | Eu rotulo, o autor do projeto revisa — **revisão ainda pendente**  |
+| Versão da release   | 3.0.0                                                              |
+| Biblioteca de PDF   | `pypdf` (o PyMuPDF do roadmap é AGPL)                              |
+| Reranking           | Opt-in por `settings.rerank`, **desligado por padrão**             |
+| Reranking sem query | Não atua: o cross-encoder pontua o par (query, documento)          |
+| Full-text           | Opt-in por `settings.fulltext.enabled`, **desligado por padrão**   |
+| Biblioteca de PDF   | `pypdf` no extra `fulltext` (o PyMuPDF do roadmap é AGPL)          |
+| Chunk               | 180 palavras com 40 de sobreposição — imposto pelo MiniLM (256 wp) |
+| Coleção de chunks   | `paper_chunks`, separada (o ChromaDB não tem `$exists`)            |
+| OCR                 | Não: tesseract não é dependência e quebraria o custo zero          |
+| Fontes de full-text | Unpaywall → Europe PMC, encadeadas                                 |
 
 ---
 
@@ -272,8 +330,12 @@ registrar porque são da mesma família — código que afirma uma coisa e faz o
 1. **Revisar os 598 julgamentos** da coleção. São meus, por leitura de título e
    abstract, de anotador único, sem medida de concordância. As conclusões só valem
    na medida em que as etiquetas valem, e o README da avaliação registra isso.
-2. **Rotacionar a chave do Semantic Scholar.** A chave vazada no histórico do git
-   continua comprometida: os `refs/pull/*` do GitHub não são removíveis por push.
+2. ~~**Rotacionar a chave do Semantic Scholar.**~~ **Revogado por medição:** a
+   auditoria buscou o valor em todos os blobs (`git rev-list --all`) e **a chave
+   nunca esteve no histórico**. Os `config.json` antigos tinham `""`, e o único
+   achado é uma chave falsa de teste. O que existia de verdade era outro
+   vazamento — `read_config` devolvendo a chave ao cliente MCP — e esse está
+   corrigido.
 3. **Revisar os papers** — adiado por decisão. A Tabela 2 do paper de conferência
    e o parágrafo de ablation do JOSS precisam de atenção (ver achados acima).
 4. **Decidir se liga o reranking.** A medição recomenda: ganha nos dois tópicos,
@@ -282,3 +344,9 @@ registrar porque são da mesma família — código que afirma uma coisa e faz o
    faria a instalação mínima falhar em silêncio. Ligar é uma linha no
    `config.json` local: `"rerank": {"enabled": true}`, junto de um
    `ranking_query` — sem query o estágio avisa e não atua.
+5. **Decidir se liga o full-text,** e num run de verdade. O núcleo está pronto e
+   testado, mas **ninguém o rodou de ponta a ponta pelo pipeline** — o que foi
+   validado foi o caminho DOI→PDF→texto→chunks, não o passo dentro de um run.
+   `settings.fulltext.enabled: true` e um `email` (ou nem isso: o Europe PMC
+   dispensa). Requer o extra `fulltext` (`pip install academic-hunter[fulltext]`),
+   que **não** está no venv por padrão.
