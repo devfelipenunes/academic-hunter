@@ -5,7 +5,7 @@ Este tutorial guia você por uma Revisão Sistemática da Literatura completa us
 ## O que você vai aprender
 
 1. Instalar o Academic Hunter
-2. Fazer uma SLR completa no modo interativo
+2. Fazer uma SLR completa conversando com um agente de IA
 3. Explorar os resultados com análises automáticas
 4. Exportar para seu formato preferido
 
@@ -27,55 +27,26 @@ pip install -e .
 pip install -e ".[ml]"
 ```
 
-## 2. Modo Interativo (recomendado)
+## 2. Uso via MCP (recomendado)
 
-O modo mais fácil de usar o Academic Hunter. Você só precisa dizer o tópico:
+O Academic Hunter é um **servidor MCP** — a forma de usá-lo é conectá-lo a um agente de IA:
 
 ```bash
-academic-hunter interactive
+academic-mcp          # stdio
+academic-mcp -t sse   # HTTP/SSE, para acesso remoto
 ```
 
-O programa vai guiar você por todo o processo:
+Conectado, basta pedir em linguagem natural:
 
-```
-🧪 Academic Hunter — Modo Interativo
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> "Rode uma revisão sistemática sobre Central Bank Digital Currencies and Financial Stability"
 
-📌 Qual o tópico da sua revisão?
-> Central Bank Digital Currencies and Financial Stability
+O agente orquestra as tools: `quick_topic_discovery` descobre o jargão da área,
+`update_config` monta a configuração, `run_search` executa a busca, e
+`cluster_papers`, `find_novel_papers` e `visualize_landscape` analisam o resultado.
 
-🔍 Descobrindo jargões sobre 'Central Bank Digital Currencies...'...
-✅ 12 termos encontrados automaticamente
+## 3. Configuração Manual
 
-📋 Configuração sugerida:
-    Core_Concepts:
-      · digital currencies (peso: 5.0)
-      · financial stability (peso: 5.0)
-      · central bank (peso: 5.0)
-      ...
-    Context:
-      · monetary policy (peso: 2.0)
-      ...
-
-Aceitar configuração e iniciar busca? [S/n] S
-
-🔍 Buscando em 16 fontes acadêmicas...
-✅ 733 papers encontrados
-📦 Papers indexados no ChromaDB
-
-📊 ANÁLISES
-  1. Ver ranking completo dos papers
-  2. Agrupar por tema (clusters)
-  3. Detectar papers inovadores (outliers)
-  4. Ver evolução temporal
-  5. Mapa da pesquisa (2D)
-  6. Exportar resultados
-  7. Encerrar
-```
-
-## 3. Busca Manual (sem modo interativo)
-
-Se preferir configurar manualmente, edite o arquivo `config.json`:
+Para controle fino, edite o arquivo `config.json`:
 
 ```json
 {
@@ -98,11 +69,7 @@ Se preferir configurar manualmente, edite o arquivo `config.json`:
 }
 ```
 
-Depois execute:
-
-```bash
-academic-hunter run
-```
+Depois, execute a busca pelo agente conectado — tool `run_search`.
 
 ## 4. Análises Avançadas (via MCP)
 
@@ -145,9 +112,9 @@ O Claude vai:
 
 ## 6. Exportação
 
-```bash
-# Pelo CLI interativo: menu → opção 6
-# Pelo MCP:
+Pelo MCP:
+
+```
 export_report(format="csv")
 export_report(format="bibtex")
 export_report(format="ris")

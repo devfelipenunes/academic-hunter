@@ -105,4 +105,4 @@ if __name__ == "__main__":
     setup_venv()
     setup_config()
     install_mcp_claude()
-    print("\n✨ Installation Complete! You can now run `academic-hunter` or use the tools inside Claude Desktop.")
+    print("\n✨ Installation Complete! The Academic Hunter tools are now available inside Claude Desktop.")

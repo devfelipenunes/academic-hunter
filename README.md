@@ -10,22 +10,26 @@
 [![MCP Ready](https://img.shields.io/badge/Protocol-MCP_Ready-orange.svg)](https://modelcontextprotocol.io/)
 </div>
 
-Academic Hunter is an open-source Systematic Literature Review (SLR) tool that combines **multi-source search** (16 academic databases), **semantic relevance scoring** (Weight-Bleeding), **topic clustering** (BERTopic), **novelty detection**, **extractive summarization**, and a **Model Context Protocol (MCP) server** — all running locally on CPU, with zero API costs.
+Academic Hunter is an open-source Systematic Literature Review (SLR) tool that combines **multi-source search** (7 databases searched in parallel, 15 accessible in total), **semantic relevance scoring** (Weight-Bleeding), **topic clustering** (BERTopic), **novelty detection**, **extractive summarization**, and a **Model Context Protocol (MCP) server** — all running locally on CPU, with zero API costs.
 
 ---
 
 ## 🚀 Quickstart: Primeira SLR em 1 minuto
 
+O Academic Hunter é um **servidor MCP**: conecte-o a um agente de IA e peça a revisão em linguagem natural.
+
 ```bash
 # Instale
 pip install git+https://github.com/devfelipenunes/academic-hunter.git
 
-# Modo interativo — só diga o tópico
-academic-hunter interactive
-
-# Ou inicie o servidor MCP para agentes de IA
+# Inicie o servidor MCP (stdio)
 academic-mcp
+
+# Ou em modo HTTP (SSE) para acesso remoto
+academic-mcp -t sse --host 0.0.0.0 --port 8080
 ```
+
+Conectado ao agente, basta pedir — _"rode uma revisão sistemática sobre X"_ — e ele orquestra as tools (`run_search`, `semantic_search`, `cluster_papers`).
 
 ## 📖 Tutorial Completo
 
@@ -37,7 +41,7 @@ Veja o [tutorial passo a passo](docs/tutorial.md) — 10 minutos para fazer sua 
 
 ### 🔍 Busca Multi-Fonte
 
-Conecta-se a **16 fontes acadêmicas simultaneamente**: arXiv, Crossref, Semantic Scholar, OpenAlex, CORE, DBLP, DOAJ, Europe PMC, OpenCitations, Unpaywall, Lens.org, OpenAIRE, ClinicalTrials.gov, bioRxiv, medRxiv, DataCite.
+O pipeline consulta **7 fontes acadêmicas em paralelo**: arXiv, Crossref, Semantic Scholar, OpenAlex, CORE, DBLP e DOAJ — com deduplicação entre todas. Outras 8 ficam disponíveis sob demanda pelas tools MCP: Europe PMC, OpenCitations, Unpaywall, Lens.org, OpenAIRE, bioRxiv, medRxiv e DataCite.
 
 ### 🧠 Weight-Bleeding Scoring
 
@@ -80,13 +84,10 @@ CSV, BibTeX, RIS, JSON, Markdown, PRISMA — e exportação direta para **Obsidi
 
 ## 🔧 Comandos
 
-| Comando                       | Descrição                                        |
-| ----------------------------- | ------------------------------------------------ |
-| `academic-hunter interactive` | Modo interativo guiado (não precisa editar JSON) |
-| `academic-hunter run`         | Executa o pipeline com a configuração atual      |
-| `academic-hunter benchmark`   | Benchmark de 3 modos de scoring                  |
-| `academic-mcp`                | Inicia o servidor MCP (stdio)                    |
-| `academic-mcp -t sse`         | Inicia o servidor MCP em modo HTTP               |
+| Comando               | Descrição                          |
+| --------------------- | ---------------------------------- |
+| `academic-mcp`        | Inicia o servidor MCP (stdio)      |
+| `academic-mcp -t sse` | Inicia o servidor MCP em modo HTTP |
 
 ---
 
@@ -114,7 +115,7 @@ CSV, BibTeX, RIS, JSON, Markdown, PRISMA — e exportação direta para **Obsidi
 ├─────────────────────────────────────────────────────────────┤
 │ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐│
 │ │  Search  │ │  NLP     │ │  MCP     │ │  Exporters       ││
-│ │  16 APIs │ │  Scorer  │ │  Tools   │ │  CSV/Bib/RIS/MD  ││
+│ │  7 APIs  │ │  Scorer  │ │  Tools   │ │  CSV/Bib/RIS/MD  ││
 │ └──────────┘ └──────────┘ └──────────┘ └──────────────────┘│
 └─────────────────────────────────────────────────────────────┘
 ```

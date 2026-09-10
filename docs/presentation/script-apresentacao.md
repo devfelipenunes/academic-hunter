@@ -51,7 +51,7 @@
 > "Antes de eu mostrar as funcionalidades, quero que vocês tenham na cabeça o fluxo completo. São 4 etapas:
 >
 > **1. Configurar** — você só diz o tópico. O sistema descobre os jargões automaticamente.
-> **2. Buscar** — 16 bases acadêmicas em paralelo. Milhares de artigos em minutos.
+> **2. Buscar** — 7 bases acadêmicas em paralelo (15 no total). Milhares de artigos em minutos.
 > **3. Analisar** — 12 análises automáticas usando IA. É aqui que a mágica acontece.
 > **4. Exportar** — CSV, BibTeX, RIS, JSON, Markdown, Obsidian. O formato que você precisar.
 >
@@ -112,9 +112,11 @@
 
 > "Mas o Academic Hunter não é só integração com IA. A base dele é sólida.
 >
-> **16 fontes acadêmicas simultâneas.** É a maior cobertura entre ferramentas SLR. A gente conecta:
+> **7 fontes acadêmicas em paralelo** — uma das maiores coberturas entre ferramentas SLR. O pipeline consulta automaticamente:
 >
-> Bases tradicionais como arXiv, Crossref, Europe PMC. APIs inteligentes como Semantic Scholar e OpenAlex. Preprints como bioRxiv e medRxiv. Dados de citação com OpenCitations — 2 bilhões de links. Acesso aberto com Unpaywall. Patentes com Lens.org. Grants com OpenAIRE — 3.7 milhões de projetos financiados. E mais.
+> Bases tradicionais como arXiv, Crossref e DOAJ. APIs inteligentes como Semantic Scholar, OpenAlex, CORE e DBLP.
+>
+> Outras 8 ficam disponíveis sob demanda pelas tools MCP: Europe PMC, OpenCitations (2 bilhões de links de citação), Unpaywall (acesso aberto), Lens.org (patentes), OpenAIRE (3.7 milhões de projetos financiados), bioRxiv, medRxiv e DataCite.
 >
 > Tudo em paralelo, com limite de taxa inteligente pra não sobrecarregar as APIs."
 
@@ -352,7 +354,7 @@
 
 > "Como o Academic Hunter se compara?
 >
-> **16 fontes de dados** — contra 1 das concorrentes.
+> **7 fontes em paralelo** (15 no total) — contra 1 das concorrentes.
 > **Scoring semântico, clusters, detecção de novidade, mapa da pesquisa** — ninguém mais tem.
 > **API para agentes de IA via MCP** — único.
 > **Custo:** zero. ASReview é grátis mas limitado. Rayyan e Covidence custam caro.

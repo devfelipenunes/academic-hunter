@@ -48,7 +48,6 @@ dev = [
 all = ["academic-hunter[ml]"]
 
 [project.scripts]
-academic-hunter = "academic_hunter.cli:main"
 academic-mcp = "academic_hunter.interfaces.mcp.server:run_mcp_server"
 
 [project.urls]
