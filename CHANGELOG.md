@@ -16,15 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Avaliação de retrieval** (`core/evaluation/`): nDCG@k, recall@k, precision@k, MRR, MAP,
   formato de coleção julgada (_qrels_) com validação estrita, e um runner que reporta a
   cobertura julgada para que uma métrica que mede o qrels, e não o retriever, apareça como
-  tal. Acompanha uma coleção piloto de 58 documentos avaliados em `papers/evaluation/`.
+  tal. Acompanha uma coleção julgada de 108 documentos em dois tópicos, em `papers/evaluation/`.
 - **Camada de escrita** (`core/writing/`): templates de artigo, convenções de estilo, geração
   determinística de outline e verificadores de citação e de número. Exposta por quatro tools
   MCP (`outline_paper`, `paper_context`, `verify_citations`, `verify_numbers`).
 - **Injeção de dependências** no `AcademicHunter`: `exporters`, `vector_store_factory`,
   `obsidian_export` e `semantic_screener` passam a ser injetáveis.
 - `CITATION.cff`.
-
-### Added
 - **BM25** (`core/nlp/bm25.py`) e **ranking por consulta**: definir
   `settings.ranking_query` troca o sinal esparso da contagem de termos do domínio
   por BM25 sobre essa consulta. É o primeiro sinal do pipeline condicionado à
