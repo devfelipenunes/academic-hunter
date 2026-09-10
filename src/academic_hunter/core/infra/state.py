@@ -3,7 +3,7 @@ from typing import List
 
 class SearchState:
     """Manages active search statistics, deduplication sets, and consolidated output tables."""
-    def __init__(self, connectors_keys: List[str] = None):
+    def __init__(self):
         self.stats = {
             "identified": {},
             "duplicates_removed": 0,
@@ -41,9 +41,13 @@ class SearchState:
         self.seen_dois = set()
         self.doi_to_slug = {}
         self.raw_scores = {}
-        self.query_history = []
+        # Cleared, not rebound: the connectors are constructed once with these
+        # very objects as arguments, so assigning a fresh list would leave them
+        # appending to the old one. That silently emptied the PRISMA "Search
+        # Queries History" section of every run, and never reset the pacing.
+        self.query_history.clear()
         self.last_request_time = 0
-        self.last_request_by_domain = {}
+        self.last_request_by_domain.clear()
 
     def track_exclusion(self, source: str, reason: str):
         """State mutation to track reasons for excluding papers by source."""

@@ -25,8 +25,8 @@ class CrossrefConnector(BaseConnector):
                 abstract_text = data.get('message', {}).get('abstract', '')
                 if abstract_text:
                     return re.sub(r'<[^>]+>', '', abstract_text).strip()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Crossref abstract lookup failed for %s: %s", doi, e)
         return ""
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:

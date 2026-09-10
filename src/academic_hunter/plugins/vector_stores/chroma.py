@@ -18,11 +18,9 @@ logger = logging.getLogger("academic_hunter.vector_store")
 def _as_float(value: Any, default: float = 0.0) -> float:
     """Coerce a metadata value to float.
 
-    ``paper.get("score", 0.0)`` looks like it guards against a missing value, but
-    it only defaults when the *key* is absent. A key that is present and null —
-    which is what reading a run back from CSV produces, since pandas turns an
-    empty cell into NaN — returns ``None``, and ``float(None)`` raises. Because
-    the upsert is one batch, a single such value discarded the whole index.
+    ``paper.get("score", 0.0)`` only defaults when the *key* is missing; a key
+    that is present and null returns ``None`` and ``float(None)`` raises. The
+    upsert is one batch, so a single such value discards the whole index.
     """
     try:
         result = float(value)
@@ -40,7 +38,7 @@ def _as_int(value: Any, default: int = 0) -> int:
 
 
 def _as_str(value: Any) -> str:
-    """Coerce a metadata value to str, mapping a missing one to "" not "None"."""
+    """Coerce to str, mapping a missing value to "" rather than "None"."""
     return "" if value is None else str(value)
 
 

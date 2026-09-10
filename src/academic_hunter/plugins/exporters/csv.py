@@ -6,6 +6,20 @@ from .base import BaseExporter, ExportContext
 
 logger = logging.getLogger("academic_hunter.exporters")
 
+_FORMULA_PREFIXES = ("=", "+", "-", "@")
+
+
+def _neutralise(value: Any) -> Any:
+    """Defuse a cell a spreadsheet would evaluate as a formula.
+
+    A title or abstract starting with ``=``, ``+``, ``-`` or ``@`` runs as a
+    formula when the file is opened in Excel or LibreOffice. These fields come
+    from third-party APIs, so the content is not ours to trust.
+    """
+    if isinstance(value, str) and value.startswith(_FORMULA_PREFIXES):
+        return "'" + value
+    return value
+
 
 class CsvExporter(BaseExporter):
     def export(self, context: ExportContext) -> None:
@@ -23,7 +37,10 @@ class CsvExporter(BaseExporter):
             
         df = pd.DataFrame(papers)
         df['Database_Count'] = df['Source'].apply(get_db_count)
-        
+
+        for column in df.columns:
+            df[column] = df[column].map(_neutralise)
+
         df = df.sort_values(by='Relevance_Score', ascending=False)
         
         run_dir = self._get_run_dir(timestamp, output_dir)

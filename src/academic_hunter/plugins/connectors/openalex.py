@@ -34,8 +34,8 @@ class OpenAlexConnector(BaseConnector):
             data = self._make_request(url, params={"mailto": email}, timeout=10)
             if data:
                 return self._decode_openalex_abstract(data.get('abstract_inverted_index', {}))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("OpenAlex abstract lookup failed for %s: %s", doi, e)
         return ""
 
     def _decode_openalex_abstract(self, inverted_index) -> str:

@@ -1,34 +1,18 @@
 #!/usr/bin/env python3
 """Measure the cross-encoder reranker against the judged collection.
 
-Companion to ``retrieval_eval.py``, which compares *first-stage* rankers. This
-one holds the first stage fixed (BM25, the shipped query-mode signal) and varies
-the second: how many of the ranking's head documents the cross-encoder gets to
-reorder.
+Holds the first stage fixed (BM25, the shipped query-mode signal) and varies the
+second: how many of the ranking's head documents the cross-encoder reorders.
+Companion to ``retrieval_eval.py``, which compares first-stage rankers.
 
-It calls the shipped code rather than a paraphrase of it
--------------------------------------------------------
-The first stage is ``fuse_scores`` — the function the pipeline calls — and the
-reordering is ``rerank_scores``, the rule ``_apply_rerank`` applies. An
-experiment that reimplements either is free to drift from the product, and then
-the number stops describing what ships. This is the same argument
-``core/nlp/fusion.py`` makes for keeping the fusion a pure function.
+Calls the shipped ``fuse_scores`` and ``rerank_scores`` rather than paraphrasing
+them — a reimplementation drifts from the product and the number stops
+describing what ships.
 
-The pool is not chosen by the metric under test
------------------------------------------------
-Each query is ranked over the **judged pool only** — the documents carrying a
-grade, as ``documents_for`` returns them. The cross-encoder reorders *within*
-that pool; it never selects it. Taking "the top-N by BM25" is candidate
-selection for reranking, which is what the pipeline does, and is not the same as
-choosing which documents get judged. The qrels pool was built as
-``top-30-by-score UNION random-30(seed=20260910)`` for that reason, and
-``tests/test_evaluation_collection.py`` pins the property.
-
-The oracle is the ceiling
--------------------------
-``ce_oracle`` reranks the whole pool, so it is what the cross-encoder could
-achieve with unlimited budget. If the oracle does not beat BM25, no ``top_n``
-will. ``top_n=20`` reaching ~97% of it is what makes a small head sufficient.
+Ranks over the judged pool only, and never selects it: "the top-N by BM25" is
+candidate selection for reranking, which is what the pipeline does, not a choice
+of which documents get judged. ``ce_oracle`` reranks the whole pool and is the
+ceiling no ``top_n`` can beat.
 
 Usage:
     python papers/experiments/rerank_eval.py
@@ -158,9 +142,9 @@ def main() -> int:
         for n in top_ns:
             head = order[:n]
             ce_order = sorted(head, key=lambda d: (-by_id[d], d))
-            # The shipped rule, over the shipped first-stage scores: it
-            # redistributes the head's band, so the final order is a sort of the
-            # result rather than a splice of the cross-encoder's order.
+            # The shipped rule over the shipped first-stage scores: it
+            # redistributes the head's band, so the order comes from sorting the
+            # result, not from splicing the cross-encoder's order in.
             reranked = rerank_scores(first_stage, [index_of[d] for d in ce_order])
             rows[n][query_id] = rank_by(pool, reranked)
 
@@ -195,9 +179,8 @@ def main() -> int:
           f"{per_pair:>12.1f}{timing.total_documents:>9}")
     print()
 
-    # A mean over two unrelated corpora hides which one was helped, and a gain
-    # that lifts one topic while wrecking the other is not a gain. Every topic
-    # here has an entry in every report, so a missing value is a bug, not a gap.
+    # A mean over two unrelated corpora hides which one was helped, and lifting
+    # one while wrecking the other is not a gain.
     print("  nDCG@10 by topic")
     by_topic = {}
     for topic, query_ids in topics(qrels).items():

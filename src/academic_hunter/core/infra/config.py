@@ -195,15 +195,12 @@ class HunterConfig:
     def public_settings(self) -> Dict[str, Any]:
         """``settings`` with credentials masked, for anything that returns it.
 
-        ``read_config`` and the ``config/current`` resource hand this straight to
-        the MCP client, which puts it in the agent's context — and a credential
-        that reaches a conversation log has leaked. Nothing that *uses* the
-        config calls this: the connectors read the real values from ``settings``
-        directly, and ``save()`` writes ``settings`` unchanged.
+        Whatever this feeds goes to the MCP client, whose context is a
+        conversation log. Nothing that *uses* the config calls it — the
+        connectors read the real values from ``settings``.
 
-        A present key becomes a fixed placeholder rather than being dropped, so
-        the caller can still see that a credential is configured without seeing
-        which one.
+        A present key becomes a fixed placeholder rather than disappearing, so
+        the caller can see that a credential exists without seeing it.
         """
         redacted = dict(self.settings)
         for key in self.SECRET_SETTINGS:

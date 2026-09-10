@@ -52,19 +52,23 @@ class BaseConnector:
         return "N/A"
 
     def _apply_pacing(self, domain: str) -> None:
-        """Waits the required pacing delay for a domain (thread-safe)."""
+        """Waits the required pacing delay for a domain (thread-safe).
+
+        The slot is claimed *before* sleeping — the map holds the instant this
+        thread intends to fire, not the one it last fired at. Reading the
+        timestamp under the lock, sleeping outside it and writing afterwards let
+        two threads compute the same wait and issue simultaneously, which is
+        exactly what the per-domain delay exists to prevent.
+        """
         with self.lock:
             delay = self.pacing_delays.get(domain, self.default_delay)
-            last_time = self.last_request_by_domain.get(domain, 0.0)
-            elapsed = time.time() - last_time
-            wait_time = delay - elapsed
+            now = time.time()
+            wait_time = max(0.0, delay - (now - self.last_request_by_domain.get(domain, 0.0)))
+            self.last_request_by_domain[domain] = now + wait_time
 
-        # Sleep outside the lock so we don't block other threads
+        # The sleep stays outside the lock so it does not block other domains.
         if wait_time > 0:
             time.sleep(wait_time)
-
-        with self.lock:
-            self.last_request_by_domain[domain] = time.time()
 
     def _raw_request(self, url: str, params: Dict[str, Any] = None, timeout: int = 20, max_retries: int = 2) -> Optional[requests.Response]:
         """

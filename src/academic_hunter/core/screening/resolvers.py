@@ -35,19 +35,39 @@ class PaperResolver:
         return "N/A"
 
     def resolve_existing_duplicate(self, existing: Any, paper: Dict[str, Any], anchor_cat: str, tech_cat: str, source: str) -> None:
-        """Merges metadata and updates score/stats for an existing duplicate in results (thread-safe)."""
+        """Merges metadata and updates score/stats for an existing duplicate in results (thread-safe).
+
+        The abstract choice and the embedding happen *before* the lock. The
+        screener call is the most expensive step in the ingest, and this lock is
+        the global one shared by every connector thread — holding it across a
+        model call serialised the whole run.
+        """
+        old_abs = existing.get('Abstract', '')
+        new_abs = paper.get('Abstract', '')
+        chosen_abs = old_abs
+        if new_abs and new_abs != old_abs:
+            # Prefer the longer abstract, or the one that scores better.
+            title = existing.get('Title', '')
+            citations = existing.get('Citations', 0)
+            if (self.scorer.calculate_score(title, new_abs, citations)
+                    > self.scorer.calculate_score(title, old_abs, citations)
+                    or len(new_abs) > len(old_abs)):
+                chosen_abs = new_abs
+
+        sem_score = None
+        if self.semantic_screener is not None:
+            mode = self.config.settings.get('ablation', {}).get('mode', 'hybrid')
+            if mode != 'keyword':
+                probe = {**dict(existing), "Abstract": chosen_abs}
+                sem_score = round(
+                    self.semantic_screener.evaluate(probe, self.config.screener_config()), 4)
+
         with self.lock:
             min_score = self.config.min_inclusion_score()
             old_score = existing.get("_hybrid_score", 0.0)
-            
-            # Prefer the abstract that has a higher length or yields a better relevance score
-            old_abs = existing.get('Abstract', '')
-            new_abs = paper.get('Abstract', '')
-            if new_abs and new_abs != old_abs:
-                old_abs_score = self.scorer.calculate_score(existing.get('Title', ''), old_abs, existing.get('Citations', 0))
-                new_abs_score = self.scorer.calculate_score(existing.get('Title', ''), new_abs, existing.get('Citations', 0))
-                if new_abs_score > old_abs_score or len(new_abs) > len(old_abs):
-                    existing['Abstract'] = new_abs
+
+            if chosen_abs != old_abs:
+                existing['Abstract'] = chosen_abs
 
             # Ensure Peer_Reviewed is populated in the new paper dictionary if missing
             if "Peer_Reviewed" not in paper:
@@ -59,7 +79,10 @@ class PaperResolver:
                 existing.update(p)
             else:
                 existing.merge(paper, anchor_cat, tech_cat)
-            
+
+            if sem_score is not None:
+                existing["_sem_score"] = sem_score
+
             # Recalculate the inclusion score after merging metadata (respects
             # ablation mode). Written to `_hybrid_score`, never to
             # `Relevance_Score` — the latter is owned solely by
@@ -72,11 +95,7 @@ class PaperResolver:
             if "_kw_score" not in existing:
                 existing["_kw_score"] = self.scorer.calculate_score(
                     existing.get("Title", ""), existing.get("Abstract", ""), existing.get("Citations", 0))
-            if "_sem_score" not in existing and self.semantic_screener is not None:
-                sem_config = self.config.screener_config()
-                existing["_sem_score"] = round(
-                    self.semantic_screener.evaluate(existing, sem_config), 4)
-            
+
             # Correct the stats if the paper is now promoted
             if old_score < min_score and new_score >= min_score:
                 self.state.stats["included_final"] += 1
@@ -84,7 +103,7 @@ class PaperResolver:
                     self.state.stats["excluded_score"] -= 1
                 if self.state.stats["excluded_technical_score"] > 0:
                     self.state.stats["excluded_technical_score"] -= 1
-                
+
                 source_orig = existing.get('Source', source).split(', ')[0]
                 if "exclusions_by_source" in self.state.stats and source_orig in self.state.stats["exclusions_by_source"]:
                     if self.state.stats["exclusions_by_source"][source_orig]["score"] > 0:

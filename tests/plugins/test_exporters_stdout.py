@@ -1,14 +1,8 @@
 """Exporters must never write to stdout.
 
-The MCP server's default transport is stdio, and there **stdout is the JSON-RPC
-channel**: a ``print()`` in an exporter injects plain text into the middle of the
-protocol stream and corrupts the client's framing. Each of these exporters used
-to print its output path, so every ``run_search`` polluted the transport.
-
-The property is pinned rather than trusted, because it is invisible in every
-other kind of test — the exporters worked correctly, they just wrote to the
-wrong stream. Progress belongs in the logger (stderr); stdout belongs to the
-protocol.
+Over stdio — the default transport — stdout **is** the JSON-RPC channel, so a
+``print()`` corrupts the client's framing. Invisible to any other kind of test:
+the exporters worked, they just wrote to the wrong stream.
 """
 
 import contextlib
@@ -104,6 +98,29 @@ def test_exporter_still_produces_its_file(exporter_cls, tmp_path):
 
     produced = list(tmp_path.iterdir())
     assert produced, f"{exporter_cls.__name__} produced no file"
+
+
+def test_a_formula_in_a_field_is_neutralised(tmp_path):
+    """A title from a third-party API is not ours to trust.
+
+    Opened in Excel or LibreOffice, `=...` in a cell is evaluated.
+    """
+    context = make_context(tmp_path)
+    context.papers = [
+        {
+            "Title": '=HYPERLINK("http://evil.example","click")',
+            "Abstract": "+1+1",
+            "Source": "OpenAlex",
+            "Year": "2024",
+            "Relevance_Score": 5.0,
+        }
+    ]
+
+    CsvExporter().export(context)
+
+    written = next(tmp_path.glob("*.csv")).read_text()
+    assert '"\'' in written or "'=" in written, f"not neutralised: {written!r}"
+    assert ",=HYPERLINK" not in written
 
 
 def test_an_empty_run_does_not_print_either(tmp_path):

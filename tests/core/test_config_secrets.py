@@ -1,9 +1,7 @@
 """Credentials must never be serialised back to a caller.
 
-``read_config`` and the ``config/current`` resource hand the config to the MCP
-client, which puts it in the agent's context — and a key that reaches a
-conversation log has leaked. The live ``settings`` still has to carry the real
-values, because the connectors read them straight from there.
+The live ``settings`` still carries the real values — the connectors read them
+from there — so the masking has to happen on the way out, not in the config.
 """
 
 import json

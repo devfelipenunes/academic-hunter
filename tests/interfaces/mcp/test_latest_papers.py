@@ -1,9 +1,7 @@
 """Reading a finished run back off disk.
 
-Every MCP tool call builds its own ``AcademicHunter``, whose
-``consolidated_results`` is always empty — so "load the latest run" is the
-*normal* path for `export_report` and `index_papers`, not a fallback. It was
-broken in two independent ways, and each has a test here.
+Not a fallback: every tool call builds its own hunter, whose results are empty.
+Was broken in two independent ways, one test each.
 """
 
 from unittest.mock import patch

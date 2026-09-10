@@ -31,12 +31,8 @@ def get_project_root() -> Path:
 def _get_vector_store():
     """Initialize and return a ChromaVectorStore instance.
 
-    The database path is derived from the project root directly. It used to be
-    read off ``AcademicHunter(...).output_dir.parent``, which built a whole
-    hunter — config parse, SQLite cache, eight connectors, semantic screener —
-    on every tool call just to compute a path. With the hunter mocked in tests
-    the path string became a MagicMock repr, and ChromaDB duly created a
-    directory named after it in the repository.
+    The path comes from the project root, not from an ``AcademicHunter``: that
+    built a whole hunter per call just to compute a path.
     """
     try:
         db_dir = str(get_project_root() / ".academic_hunter" / "chroma_db")
@@ -54,16 +50,9 @@ def _make_hunter() -> AcademicHunter:
 def _load_latest_papers() -> list:
     """Papers from the most recent run, read back from disk.
 
-    Every MCP tool call builds its own ``AcademicHunter``, whose
-    ``consolidated_results`` is always empty — the run that produced the papers
-    lives in the hunter owned by that ``run_search`` call, and nothing carries it
-    across. So a tool that wants "the papers" has to read them back, and this is
-    that read: the newest ``academic_dataset_*.csv`` under ``results/``.
-
-    Recursive on purpose — ``CsvExporter`` writes inside a per-run directory
-    (``run_<ts>/``), so a non-recursive glob finds nothing. That mismatch is why
-    ``export_report`` and ``index_papers`` both used to answer "no results" right
-    after a successful search.
+    A tool call always builds its own ``AcademicHunter``, whose results are
+    empty, so this is the normal way to reach "the papers", not a fallback.
+    Recursive because the exporter writes into a per-run subdirectory.
     """
     results_dir = get_project_root() / "results"
     csv_files = sorted(
@@ -77,10 +66,8 @@ def _load_latest_papers() -> list:
         import pandas as pd
 
         frame = pd.read_csv(csv_files[0])
-        # pandas turns an empty cell into NaN, and NaN is a *float*: it is
-        # truthy-checked as present, stringifies to "nan", and makes Chroma
-        # reject the batch ("Expected ID to be a str, got nan"). Callers expect
-        # the missing value, so hand them None.
+        # pandas makes an empty cell NaN — a float that stringifies to "nan" and
+        # makes Chroma reject the batch. Callers expect the missing value.
         cleaned = frame.astype(object).where(frame.notna(), None)
         return cleaned.to_dict(orient="records")
     except Exception as e:

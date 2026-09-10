@@ -22,8 +22,8 @@ class DoajConnector(BaseConnector):
             data = self._make_request(url, timeout=10)
             if data and data.get('results'):
                 return data['results'][0].get('bibjson', {}).get('abstract', '')
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("DOAJ abstract lookup failed: %s", e)
         return ""
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:

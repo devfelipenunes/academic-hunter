@@ -81,19 +81,26 @@ class PaperValidator:
         kw_score = self.scorer.calculate_score(title, abstract, citations)
         paper["_kw_score"] = kw_score
 
-        # Compute semantic score if available
+        # Compute semantic score if available, reusing one already on the paper:
+        # embedding is the most expensive step here, and a caller may have done
+        # it before taking the lock precisely to avoid holding it.
+        has_semantic = self.semantic_screener is not None and mode != 'keyword'
         semantic_score = 0.0
-        if self.semantic_screener is not None and mode != 'keyword':
-            sem_config = self.config.screener_config()
-            semantic_score = self.semantic_screener.evaluate(paper, sem_config)
-            paper["_sem_score"] = round(semantic_score, 4)
+        if has_semantic:
+            cached = paper.get("_sem_score")
+            if cached is not None:
+                semantic_score = float(cached)
+            else:
+                sem_config = self.config.screener_config()
+                semantic_score = self.semantic_screener.evaluate(paper, sem_config)
+                paper["_sem_score"] = round(semantic_score, 4)
 
         return self.scorer.compute_hybrid_score(
             title=title,
             abstract=abstract,
             citations=citations,
             semantic_score=semantic_score,
-            has_semantic=self.semantic_screener is not None and mode != 'keyword',
+            has_semantic=has_semantic,
             ablation_mode=mode,
             score_precision=int(self.config.settings.get('score_precision', 1)),
         )

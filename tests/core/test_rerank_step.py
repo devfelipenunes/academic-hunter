@@ -1,14 +1,8 @@
 """Tests for the opt-in cross-encoder rerank stage inside ``RecomputeRanksStep``.
 
-The stage lives inside that step rather than in a step of its own so that
-``Relevance_Score`` keeps a single writer (see the class docstring and
-``test_score_contract.py``). It is off by default, and every failure path must
-leave the fused ranking exactly as it was — an optional enhancement that breaks
-a run is worse than one that is absent.
-
-The baseline used for comparison is a run *without* ``settings.rerank``, which
-is both the honest control and the cheap one: the stubbed cross-encoder is
-never reached, so no test here loads a real model.
+The baseline is a run *without* ``settings.rerank`` — the honest control, and
+the cheap one: the stubbed cross-encoder is never reached, so nothing here loads
+a real model.
 """
 
 import logging

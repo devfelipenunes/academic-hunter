@@ -102,7 +102,7 @@ def test_positive_cosine_is_unchanged_by_the_clamp(scorer):
 
 
 def _make_processor(config, scorer):
-    state = SearchState(["Mock"])
+    state = SearchState()
     return PaperProcessor(
         state=state,
         scorer=scorer,

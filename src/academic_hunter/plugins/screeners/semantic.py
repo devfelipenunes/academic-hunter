@@ -217,13 +217,8 @@ class SemanticScreener(BaseScreener):
     def _cosine(self, a: np.ndarray, b: np.ndarray) -> float:
         """Cosine similarity between two vectors, clamped to ``[0, 1]``.
 
-        Returns 0.0 if either vector is zero.
-
-        The clamp is not cosmetic. ``evaluate`` documents a 0-1 score and
-        ``papers/experiments/verify_scoring.py`` asserts that range, but a raw
-        cosine goes negative for weakly correlated vectors — and the score feeds
-        ``sqrt(...)`` in the scorer's Weight-Bleeding transform, where a negative
-        raises ``ValueError`` and aborts the run.
+        A raw cosine goes negative for weakly correlated vectors, and this score
+        feeds ``sqrt(...)`` downstream, where a negative raises ``ValueError``.
         """
         norm_a = np.linalg.norm(a)
         norm_b = np.linalg.norm(b)

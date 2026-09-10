@@ -19,11 +19,8 @@ logger = logging.getLogger("academic_hunter.pipeline")
 def _score_decimals(settings: Dict[str, Any]) -> int:
     """Decimal places ``Relevance_Score`` is written with.
 
-    ``settings.score_precision`` exists, is honoured in ``core/nlp/scorer.py``
-    and in the screening validators, and was hardcoded to 1 here. The rerank
-    made the disagreement load-bearing: ``rerank_scores`` builds its lattice at
-    this precision, and a lattice finer than the written value would be rounded
-    away, taking the order with it.
+    The rerank needs this exact number: its lattice is built at the written
+    precision, and a finer one would be rounded away along with the order.
     """
     try:
         decimals = int(settings.get("score_precision", 1))
@@ -84,14 +81,9 @@ class RecomputeRanksStep(PipelineStep):
     other — the property the rank-geometric rule lacked.
 
     **An optional second stage** (``settings.rerank``, off by default) reorders
-    the head of that ranking with a cross-encoder, which reads ``(query,
-    document)`` as a pair and is markedly more accurate than either first-stage
-    signal. It lives here rather than in a step of its own because of the rule
-    below: a separate step would either break the single-writer invariant or
-    have to hand its scores back. It requires ``settings.ranking_query``, since
-    without a query there is no pair to score. See
-    :mod:`academic_hunter.core.nlp.reranker` and
-    ``papers/experiments/rerank_eval.py`` for what it measures.
+    the head with a cross-encoder. It lives here rather than in a step of its own
+    because of the rule below — a separate step would break the single-writer
+    invariant or have to hand its scores back.
 
     This step is the **sole writer** of ``Relevance_Score``. Ingest records the
     ablation-dependent inclusion score under ``_hybrid_score`` instead, so that
@@ -205,32 +197,17 @@ class RecomputeRanksStep(PipelineStep):
     ) -> List[float]:
         """Rerank the head of the ranking with a cross-encoder. Never raises.
 
-        A second stage over the top ``settings.rerank.top_n`` documents. The
-        cross-encoder reads ``(query, document)`` as a pair, which the
-        first-stage signals cannot do — BM25 matches terms, the embedding
-        compares against a domain centroid — and it is far more accurate for it.
-        At ~214 ms per pair on CPU it can afford to look at a head, not a
-        corpus, which is what bounds ``top_n``.
-
-        Measured on the judged collection, nDCG@10 goes 0.6728 → 0.7668 at
-        ``top_n=20``, winning on both topics; the oracle rerank of the whole
-        pool reaches 0.7916, so the head captures 97% of the ceiling. Contrast
-        the bi-encoder embedding, which *lowers* nDCG as its weight grows — the
-        two signals are not interchangeable and only measurement separates them.
-
-        Returns scores with only the reranked head redistributed; see
+        Only the head is redistributed; see
         :func:`~academic_hunter.core.nlp.reranker.rerank_scores` for the rule.
-        Every failure path returns ``final_scores`` untouched: an optional
+        Every failure path leaves ``final_scores`` untouched — an optional
         enhancement that breaks a run is worse than one that is absent.
         """
         cfg = rerank_config(self.hunter.settings)
         if not cfg["enabled"]:
             return final_scores
 
-        # The cross-encoder scores a (query, document) pair, so without a query
-        # there is no pair to score. BM25 at least matches terms against a
-        # domain vocabulary; this model has nothing to read. Configuring the
-        # rerank without a query is inert, not fatal.
+        # Without a query there is no (query, document) pair to score. Inert,
+        # not fatal.
         if not ranking_query:
             logger.warning(
                 "settings.rerank.enabled is true but settings.ranking_query is "
@@ -245,9 +222,8 @@ class RecomputeRanksStep(PipelineStep):
             return final_scores
 
         head = sorted(range(n), key=lambda i: (-final_scores[i], i))[:top_n]
-        # `corpus_texts` is the very list the BM25 index above was built on, so
-        # both query-aware signals read the same text by construction rather
-        # than by two f-strings that happen to match.
+        # The very list the BM25 index was built on, so both query-aware signals
+        # read the same text by construction.
         texts = [corpus_texts[i] for i in head]
 
         try:
@@ -268,8 +244,8 @@ class RecomputeRanksStep(PipelineStep):
             return final_scores
 
         if any(not math.isfinite(s) for s in scores):
-            # A NaN compares false against everything, so it would sort to an
-            # arbitrary position and scramble the head without saying so.
+            # A NaN compares false against everything and would sort to an
+            # arbitrary position.
             logger.warning(
                 "Cross-encoder returned a non-finite score; keeping the fused ranking."
             )
@@ -281,14 +257,10 @@ class RecomputeRanksStep(PipelineStep):
 
         reranked = rerank_scores(final_scores, list(rank), decimals=decimals)
 
-        # Two facts, deliberately kept apart: what the cross-encoder *said*
-        # (every scored candidate gets its position and raw score) and what it
-        # *changed* (how many scores actually moved). They differ because the
-        # lattice abstains when the candidates' band is too narrow to hold them
-        # all at distinct scores — and because a candidate already sitting at
-        # the band's top keeps its score. Only the second is honest to report as
-        # "reranked"; reporting the first would claim an order the exported
-        # score does not carry.
+        # Diagnostics record what the cross-encoder said; the counter records
+        # what actually moved. They differ whenever the lattice abstains or a
+        # candidate already sat at the band's top, and only the second is honest
+        # to call "reranked".
         moved = sum(1 for i in rank if reranked[i] != final_scores[i])
         for index in rank:
             paper = papers_list[index]
