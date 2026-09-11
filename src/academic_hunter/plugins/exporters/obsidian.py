@@ -11,6 +11,16 @@ from pathlib import Path
 from typing import List, Optional
 
 
+def yaml_quoted(value: str) -> str:
+    """A double-quoted YAML scalar that cannot end itself early.
+
+    A quote or a line break in the topic otherwise costs the note its whole
+    frontmatter — which is what makes it findable — and Obsidian says nothing.
+    """
+    text = " ".join(str(value or "").split())
+    return text.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def write_obsidian_note(
     vault_path: str,
     topic: str,
@@ -42,7 +52,7 @@ def write_obsidian_note(
 
     tag_lines = "\n".join(f"  - {t}" for t in tags_list)
     frontmatter = f"""---
-title: "{topic}"
+title: "{yaml_quoted(topic)}"
 created: {today}
 tags:
 {tag_lines}

@@ -29,13 +29,19 @@ class SQLiteCache:
             conn.commit()
 
     def get(self, key: str) -> str:
+        """The cached value, or None — which is also what a broken cache returns.
+
+        Both are None by contract, so the failure is logged rather than swallowed:
+        a cache answering None to everything just looks like a slow run.
+        """
         try:
             with connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT value FROM cache WHERE key = ?", (key,))
                 row = cursor.fetchone()
                 return row[0] if row else None
-        except Exception:
+        except Exception as e:
+            logger.warning("Cache read error (treating as a miss): %s", e)
             return None
 
     def set(self, key: str, value: str):

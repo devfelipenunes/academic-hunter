@@ -7,6 +7,24 @@ from .base import BaseExporter, ExportContext
 logger = logging.getLogger("academic_hunter.exporters")
 
 
+def write_json_atomically(path: Path, payload: Any) -> None:
+    """Write through a sibling temp file, then rename.
+
+    Other tools read these numbers back; written in place, the file exists and is
+    half a document for a moment, and a reader landing in that window gets a
+    parse error from a file that is fine a millisecond later.
+    """
+    temporary = path.with_suffix(path.suffix + ".part")
+    try:
+        temporary.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        temporary.replace(path)
+    except OSError:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
 class PrismaExporter(BaseExporter):
     is_prisma = True
 
@@ -34,7 +52,7 @@ class PrismaExporter(BaseExporter):
         # humans; downstream consumers (article outline generation, reproducibility
         # audits) need the same numbers without parsing prose out of a report.
         stats_file = run_dir / f"run_stats_{timestamp}.json"
-        stats_file.write_text(json.dumps({
+        write_json_atomically(stats_file, {
             "timestamp": timestamp,
             "identified": stats.get("identified", {}),
             "duplicates_removed": duplicates,
@@ -56,8 +74,8 @@ class PrismaExporter(BaseExporter):
             "technical_domains": (
                 sorted(tech_strings) if isinstance(tech_strings, dict) else tech_strings
             ),
-        }, indent=2, ensure_ascii=False))
-        
+        })
+
         sources_mermaid = "\n".join([f"        S{i}[{source}: {count}]:::identification" for i, (source, count) in enumerate(stats.get("identified", {}).items())])
         sources_links = "\n".join([f"        S{i} --> A" for i in range(len(stats.get("identified", {})))])
 
