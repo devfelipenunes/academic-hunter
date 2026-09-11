@@ -1,0 +1,585 @@
+{
+  "qrels": "papers/evaluation/qrels_pilot_genre_analysis.json",
+  "collection": "paper_chunks_eval",
+  "document_count": 108,
+  "indexed_documents": 19,
+  "chunks": 737,
+  "ks": [
+    5,
+    10,
+    20
+  ],
+  "calls": "core.fulltext.ingest.ingest_full_text (the pipeline step's loop), core.nlp.fusion.fuse_scores, core.evaluation",
+  "strategies": {
+    "paper_level (bm25)": {
+      "n_queries": 5,
+      "n_judgments": 598,
+      "n_relevant": 140,
+      "mean": {
+        "ap": 0.26535652038593216,
+        "mrr": 0.8,
+        "ndcg@10": 0.48010600343791426,
+        "ndcg@20": 0.461609889140658,
+        "ndcg@5": 0.5090912966696693,
+        "precision@10": 0.36,
+        "precision@20": 0.19,
+        "precision@5": 0.52,
+        "recall@10": 0.38169934640522873,
+        "recall@20": 0.3934640522875817,
+        "recall@5": 0.29594771241830065
+      },
+      "per_query": {
+        "permissioned_blockchain_platform": {
+          "ndcg@5": 0.7330409974680543,
+          "recall@5": 0.23529411764705882,
+          "precision@5": 0.8,
+          "ndcg@10": 0.6153115948235217,
+          "recall@10": 0.35294117647058826,
+          "precision@10": 0.6,
+          "ndcg@20": 0.5228310233372403,
+          "recall@20": 0.4117647058823529,
+          "precision@20": 0.35,
+          "mrr": 1.0,
+          "ap": 0.31946778711484597
+        },
+        "self_sovereign_identity": {
+          "ndcg@5": 0.5087403079104242,
+          "recall@5": 0.2222222222222222,
+          "precision@5": 0.4,
+          "ndcg@10": 0.39026949598133626,
+          "recall@10": 0.2222222222222222,
+          "precision@10": 0.2,
+          "ndcg@20": 0.39026949598133626,
+          "recall@20": 0.2222222222222222,
+          "precision@20": 0.1,
+          "mrr": 1.0,
+          "ap": 0.18518518518518517
+        },
+        "blockchain_governance_transparency": {
+          "ndcg@5": 0.34519134224686937,
+          "recall@5": 0.2,
+          "precision@5": 0.4,
+          "ndcg@10": 0.43638338948502753,
+          "recall@10": 0.4,
+          "precision@10": 0.4,
+          "ndcg@20": 0.43638338948502753,
+          "recall@20": 0.4,
+          "precision@20": 0.2,
+          "mrr": 0.5,
+          "ap": 0.16749999999999998
+        },
+        "blockchain_performance_consensus": {
+          "ndcg@5": 0.2409088575483173,
+          "recall@5": 0.2222222222222222,
+          "precision@5": 0.4,
+          "ndcg@10": 0.24099055872500452,
+          "recall@10": 0.3333333333333333,
+          "precision@10": 0.3,
+          "ndcg@20": 0.24099055872500452,
+          "recall@20": 0.3333333333333333,
+          "precision@20": 0.15,
+          "mrr": 0.5,
+          "ap": 0.17129629629629628
+        },
+        "ipfs_offchain_storage": {
+          "ndcg@5": 0.7175749781746814,
+          "recall@5": 0.6,
+          "precision@5": 0.6,
+          "ndcg@10": 0.7175749781746814,
+          "recall@10": 0.6,
+          "precision@10": 0.3,
+          "ndcg@20": 0.7175749781746814,
+          "recall@20": 0.6,
+          "precision@20": 0.15,
+          "mrr": 1.0,
+          "ap": 0.4833333333333333
+        }
+      },
+      "judged_coverage": {
+        "permissioned_blockchain_platform": 1.0,
+        "self_sovereign_identity": 1.0,
+        "blockchain_governance_transparency": 1.0,
+        "blockchain_performance_consensus": 1.0,
+        "ipfs_offchain_storage": 1.0
+      },
+      "min_coverage": 1.0
+    },
+    "chunk_level (max, all)": {
+      "n_queries": 5,
+      "n_judgments": 598,
+      "n_relevant": 140,
+      "mean": {
+        "ap": 0.3407908496732026,
+        "mrr": 0.9,
+        "ndcg@10": 0.5564746713258331,
+        "ndcg@20": 0.5328504479092913,
+        "ndcg@5": 0.6346062204561573,
+        "precision@10": 0.38,
+        "precision@20": 0.19,
+        "precision@5": 0.6,
+        "recall@10": 0.3934640522875817,
+        "recall@20": 0.3934640522875817,
+        "recall@5": 0.32771241830065356
+      },
+      "per_query": {
+        "permissioned_blockchain_platform": {
+          "ndcg@5": 0.9026211001048624,
+          "recall@5": 0.29411764705882354,
+          "precision@5": 1.0,
+          "ndcg@10": 0.6732004852728524,
+          "recall@10": 0.4117647058823529,
+          "precision@10": 0.7,
+          "ndcg@20": 0.5550793681901435,
+          "recall@20": 0.4117647058823529,
+          "precision@20": 0.35,
+          "mrr": 1.0,
+          "ap": 0.37450980392156863
+        },
+        "self_sovereign_identity": {
+          "ndcg@5": 0.5531464700081438,
+          "recall@5": 0.2222222222222222,
+          "precision@5": 0.4,
+          "ndcg@10": 0.42433475527153175,
+          "recall@10": 0.2222222222222222,
+          "precision@10": 0.2,
+          "ndcg@20": 0.42433475527153175,
+          "recall@20": 0.2222222222222222,
+          "precision@20": 0.1,
+          "mrr": 1.0,
+          "ap": 0.2222222222222222
+        },
+        "blockchain_governance_transparency": {
+          "ndcg@5": 0.5147714448836774,
+          "recall@5": 0.3,
+          "precision@5": 0.6,
+          "ndcg@10": 0.5040817456955833,
+          "recall@10": 0.4,
+          "precision@10": 0.4,
+          "ndcg@20": 0.5040817456955833,
+          "recall@20": 0.4,
+          "precision@20": 0.2,
+          "mrr": 0.5,
+          "ap": 0.24333333333333332
+        },
+        "blockchain_performance_consensus": {
+          "ndcg@5": 0.4104889601851254,
+          "recall@5": 0.2222222222222222,
+          "precision@5": 0.4,
+          "ndcg@10": 0.3887532432902204,
+          "recall@10": 0.3333333333333333,
+          "precision@10": 0.3,
+          "ndcg@20": 0.3887532432902204,
+          "recall@20": 0.3333333333333333,
+          "precision@20": 0.15,
+          "mrr": 1.0,
+          "ap": 0.2638888888888889
+        },
+        "ipfs_offchain_storage": {
+          "ndcg@5": 0.7920031270989775,
+          "recall@5": 0.6,
+          "precision@5": 0.6,
+          "ndcg@10": 0.7920031270989775,
+          "recall@10": 0.6,
+          "precision@10": 0.3,
+          "ndcg@20": 0.7920031270989775,
+          "recall@20": 0.6,
+          "precision@20": 0.15,
+          "mrr": 1.0,
+          "ap": 0.6
+        }
+      },
+      "judged_coverage": {
+        "permissioned_blockchain_platform": 1.0,
+        "self_sovereign_identity": 1.0,
+        "blockchain_governance_transparency": 1.0,
+        "blockchain_performance_consensus": 1.0,
+        "ipfs_offchain_storage": 1.0
+      },
+      "min_coverage": 1.0
+    },
+    "chunk_level (mean_top3)": {
+      "n_queries": 5,
+      "n_judgments": 598,
+      "n_relevant": 140,
+      "mean": {
+        "ap": 0.3426230936819172,
+        "mrr": 1.0,
+        "ndcg@10": 0.5728649283269478,
+        "ndcg@20": 0.5489035664660458,
+        "ndcg@5": 0.6789948049505063,
+        "precision@10": 0.38,
+        "precision@20": 0.19,
+        "precision@5": 0.64,
+        "recall@10": 0.3934640522875817,
+        "recall@20": 0.3934640522875817,
+        "recall@5": 0.3477124183006536
+      },
+      "per_query": {
+        "permissioned_blockchain_platform": {
+          "ndcg@5": 0.9125299483251057,
+          "recall@5": 0.29411764705882354,
+          "precision@5": 1.0,
+          "ndcg@10": 0.6828076482405272,
+          "recall@10": 0.4117647058823529,
+          "precision@10": 0.7,
+          "ndcg@20": 0.5630008389360169,
+          "recall@20": 0.4117647058823529,
+          "precision@20": 0.35,
+          "mrr": 1.0,
+          "ap": 0.37941176470588234
+        },
+        "self_sovereign_identity": {
+          "ndcg@5": 0.5087403079104242,
+          "recall@5": 0.2222222222222222,
+          "precision@5": 0.4,
+          "ndcg@10": 0.39026949598133626,
+          "recall@10": 0.2222222222222222,
+          "precision@10": 0.2,
+          "ndcg@20": 0.39026949598133626,
+          "recall@20": 0.2222222222222222,
+          "precision@20": 0.1,
+          "mrr": 1.0,
+          "ap": 0.18518518518518517
+        },
+        "blockchain_governance_transparency": {
+          "ndcg@5": 0.7860137352654726,
+          "recall@5": 0.4,
+          "precision@5": 0.8,
+          "ndcg@10": 0.6233888149417983,
+          "recall@10": 0.4,
+          "precision@10": 0.4,
+          "ndcg@20": 0.6233888149417983,
+          "recall@20": 0.4,
+          "precision@20": 0.2,
+          "mrr": 1.0,
+          "ap": 0.32166666666666666
+        },
+        "blockchain_performance_consensus": {
+          "ndcg@5": 0.3956869061525522,
+          "recall@5": 0.2222222222222222,
+          "precision@5": 0.4,
+          "ndcg@10": 0.37585555537209986,
+          "recall@10": 0.3333333333333333,
+          "precision@10": 0.3,
+          "ndcg@20": 0.37585555537209986,
+          "recall@20": 0.3333333333333333,
+          "precision@20": 0.15,
+          "mrr": 1.0,
+          "ap": 0.22685185185185183
+        },
+        "ipfs_offchain_storage": {
+          "ndcg@5": 0.7920031270989775,
+          "recall@5": 0.6,
+          "precision@5": 0.6,
+          "ndcg@10": 0.7920031270989775,
+          "recall@10": 0.6,
+          "precision@10": 0.3,
+          "ndcg@20": 0.7920031270989775,
+          "recall@20": 0.6,
+          "precision@20": 0.15,
+          "mrr": 1.0,
+          "ap": 0.6
+        }
+      },
+      "judged_coverage": {
+        "permissioned_blockchain_platform": 1.0,
+        "self_sovereign_identity": 1.0,
+        "blockchain_governance_transparency": 1.0,
+        "blockchain_performance_consensus": 1.0,
+        "ipfs_offchain_storage": 1.0
+      },
+      "min_coverage": 1.0
+    },
+    "chunk_level@50 (max)": {
+      "n_queries": 5,
+      "n_judgments": 598,
+      "n_relevant": 140,
+      "mean": {
+        "ap": 0.3407908496732026,
+        "mrr": 0.9,
+        "ndcg@10": 0.5564746713258331,
+        "ndcg@20": 0.5328504479092913,
+        "ndcg@5": 0.6346062204561573,
+        "precision@10": 0.38,
+        "precision@20": 0.19,
+        "precision@5": 0.6,
+        "recall@10": 0.3934640522875817,
+        "recall@20": 0.3934640522875817,
+        "recall@5": 0.32771241830065356
+      },
+      "per_query": {
+        "permissioned_blockchain_platform": {
+          "ndcg@5": 0.9026211001048624,
+          "recall@5": 0.29411764705882354,
+          "precision@5": 1.0,
+          "ndcg@10": 0.6732004852728524,
+          "recall@10": 0.4117647058823529,
+          "precision@10": 0.7,
+          "ndcg@20": 0.5550793681901435,
+          "recall@20": 0.4117647058823529,
+          "precision@20": 0.35,
+          "mrr": 1.0,
+          "ap": 0.37450980392156863
+        },
+        "self_sovereign_identity": {
+          "ndcg@5": 0.5531464700081438,
+          "recall@5": 0.2222222222222222,
+          "precision@5": 0.4,
+          "ndcg@10": 0.42433475527153175,
+          "recall@10": 0.2222222222222222,
+          "precision@10": 0.2,
+          "ndcg@20": 0.42433475527153175,
+          "recall@20": 0.2222222222222222,
+          "precision@20": 0.1,
+          "mrr": 1.0,
+          "ap": 0.2222222222222222
+        },
+        "blockchain_governance_transparency": {
+          "ndcg@5": 0.5147714448836774,
+          "recall@5": 0.3,
+          "precision@5": 0.6,
+          "ndcg@10": 0.5040817456955833,
+          "recall@10": 0.4,
+          "precision@10": 0.4,
+          "ndcg@20": 0.5040817456955833,
+          "recall@20": 0.4,
+          "precision@20": 0.2,
+          "mrr": 0.5,
+          "ap": 0.24333333333333332
+        },
+        "blockchain_performance_consensus": {
+          "ndcg@5": 0.4104889601851254,
+          "recall@5": 0.2222222222222222,
+          "precision@5": 0.4,
+          "ndcg@10": 0.3887532432902204,
+          "recall@10": 0.3333333333333333,
+          "precision@10": 0.3,
+          "ndcg@20": 0.3887532432902204,
+          "recall@20": 0.3333333333333333,
+          "precision@20": 0.15,
+          "mrr": 1.0,
+          "ap": 0.2638888888888889
+        },
+        "ipfs_offchain_storage": {
+          "ndcg@5": 0.7920031270989775,
+          "recall@5": 0.6,
+          "precision@5": 0.6,
+          "ndcg@10": 0.7920031270989775,
+          "recall@10": 0.6,
+          "precision@10": 0.3,
+          "ndcg@20": 0.7920031270989775,
+          "recall@20": 0.6,
+          "precision@20": 0.15,
+          "mrr": 1.0,
+          "ap": 0.6
+        }
+      },
+      "judged_coverage": {
+        "permissioned_blockchain_platform": 1.0,
+        "self_sovereign_identity": 1.0,
+        "blockchain_governance_transparency": 1.0,
+        "blockchain_performance_consensus": 1.0,
+        "ipfs_offchain_storage": 1.0
+      },
+      "min_coverage": 1.0
+    },
+    "hybrid (bm25 + chunk, 50/50)": {
+      "n_queries": 5,
+      "n_judgments": 598,
+      "n_relevant": 140,
+      "mean": {
+        "ap": 0.3161967009025833,
+        "mrr": 0.8,
+        "ndcg@10": 0.5239735926400135,
+        "ndcg@20": 0.5004745736634953,
+        "ndcg@5": 0.5581736451455573,
+        "precision@10": 0.38,
+        "precision@20": 0.19,
+        "precision@5": 0.5599999999999999,
+        "recall@10": 0.3934640522875817,
+        "recall@20": 0.3934640522875817,
+        "recall@5": 0.31816993464052284
+      },
+      "per_query": {
+        "permissioned_blockchain_platform": {
+          "ndcg@5": 0.7714160225925206,
+          "recall@5": 0.23529411764705882,
+          "precision@5": 0.8,
+          "ndcg@10": 0.669632635092295,
+          "recall@10": 0.4117647058823529,
+          "precision@10": 0.7,
+          "ndcg@20": 0.5521375402097043,
+          "recall@20": 0.4117647058823529,
+          "precision@20": 0.35,
+          "mrr": 1.0,
+          "ap": 0.3696078431372549
+        },
+        "self_sovereign_identity": {
+          "ndcg@5": 0.5531464700081438,
+          "recall@5": 0.2222222222222222,
+          "precision@5": 0.4,
+          "ndcg@10": 0.42433475527153175,
+          "recall@10": 0.2222222222222222,
+          "precision@10": 0.2,
+          "ndcg@20": 0.42433475527153175,
+          "recall@20": 0.2222222222222222,
+          "precision@20": 0.1,
+          "mrr": 1.0,
+          "ap": 0.2222222222222222
+        },
+        "blockchain_governance_transparency": {
+          "ndcg@5": 0.3600546145772341,
+          "recall@5": 0.2,
+          "precision@5": 0.4,
+          "ndcg@10": 0.4600791963435701,
+          "recall@10": 0.4,
+          "precision@10": 0.4,
+          "ndcg@20": 0.4600791963435701,
+          "recall@20": 0.4,
+          "precision@20": 0.2,
+          "mrr": 0.5,
+          "ap": 0.19285714285714287
+        },
+        "blockchain_performance_consensus": {
+          "ndcg@5": 0.31424799145091087,
+          "recall@5": 0.3333333333333333,
+          "precision@5": 0.6,
+          "ndcg@10": 0.2738182493936931,
+          "recall@10": 0.3333333333333333,
+          "precision@10": 0.3,
+          "ndcg@20": 0.2738182493936931,
+          "recall@20": 0.3333333333333333,
+          "precision@20": 0.15,
+          "mrr": 0.5,
+          "ap": 0.1962962962962963
+        },
+        "ipfs_offchain_storage": {
+          "ndcg@5": 0.7920031270989775,
+          "recall@5": 0.6,
+          "precision@5": 0.6,
+          "ndcg@10": 0.7920031270989775,
+          "recall@10": 0.6,
+          "precision@10": 0.3,
+          "ndcg@20": 0.7920031270989775,
+          "recall@20": 0.6,
+          "precision@20": 0.15,
+          "mrr": 1.0,
+          "ap": 0.6
+        }
+      },
+      "judged_coverage": {
+        "permissioned_blockchain_platform": 1.0,
+        "self_sovereign_identity": 1.0,
+        "blockchain_governance_transparency": 1.0,
+        "blockchain_performance_consensus": 1.0,
+        "ipfs_offchain_storage": 1.0
+      },
+      "min_coverage": 1.0
+    }
+  },
+  "by_topic": {
+    "genre_analysis": {
+      "paper_level (bm25)": null,
+      "chunk_level (max, all)": null,
+      "chunk_level (mean_top3)": null,
+      "chunk_level@50 (max)": null,
+      "hybrid (bm25 + chunk, 50/50)": null
+    },
+    "blockchain_governance": {
+      "paper_level (bm25)": 0.48010600343791426,
+      "chunk_level (max, all)": 0.5564746713258331,
+      "chunk_level (mean_top3)": 0.5728649283269478,
+      "chunk_level@50 (max)": 0.5564746713258331,
+      "hybrid (bm25 + chunk, 50/50)": 0.5239735926400135
+    }
+  },
+  "coverage": {
+    "compared_queries": 5,
+    "excluded_queries": {
+      "intro_moves_cars": {
+        "pool": 58,
+        "with_chunks": 3
+      },
+      "disciplinary_variation": {
+        "pool": 58,
+        "with_chunks": 3
+      },
+      "corpus_genre_pedagogy": {
+        "pool": 58,
+        "with_chunks": 3
+      },
+      "move_annotation_methodology": {
+        "pool": 58,
+        "with_chunks": 3
+      },
+      "cars_l2_efl_contexts": {
+        "pool": 58,
+        "with_chunks": 3
+      },
+      "abstract_rhetorical_conventions": {
+        "pool": 58,
+        "with_chunks": 3
+      }
+    },
+    "per_query": {
+      "permissioned_blockchain_platform": {
+        "pool": 50,
+        "with_chunks": 16,
+        "coverage": 0.32
+      },
+      "self_sovereign_identity": {
+        "pool": 50,
+        "with_chunks": 16,
+        "coverage": 0.32
+      },
+      "blockchain_governance_transparency": {
+        "pool": 50,
+        "with_chunks": 16,
+        "coverage": 0.32
+      },
+      "blockchain_performance_consensus": {
+        "pool": 50,
+        "with_chunks": 16,
+        "coverage": 0.32
+      },
+      "ipfs_offchain_storage": {
+        "pool": 50,
+        "with_chunks": 16,
+        "coverage": 0.32
+      }
+    },
+    "min_subset_required": 5
+  },
+  "timing": {
+    "bm25": {
+      "total_seconds": 0.0087,
+      "total_documents": 80,
+      "seconds_per_document": 0.00010841,
+      "per_query": {
+        "blockchain_governance_transparency": 0.0018,
+        "blockchain_performance_consensus": 0.0016,
+        "ipfs_offchain_storage": 0.0017,
+        "permissioned_blockchain_platform": 0.0018,
+        "self_sovereign_identity": 0.0018
+      }
+    },
+    "chunk_retrieval": {
+      "total_seconds": 4.3675,
+      "total_documents": 3685,
+      "seconds_per_document": 0.00118521,
+      "per_query": {
+        "blockchain_governance_transparency": 1.0554,
+        "blockchain_performance_consensus": 0.831,
+        "ipfs_offchain_storage": 0.6623,
+        "permissioned_blockchain_platform": 0.9716,
+        "self_sovereign_identity": 0.8474
+      }
+    }
+  },
+  "notes": {
+    "candidate_set": "every strategy ranks the judged pool documents of that query that have chunks — restricted because 25 of the 108 judged documents have no DOI and no full-text system could fetch them",
+    "aggregation": "max over a paper's passages is the headline; mean_top3 is the robustness row",
+    "fusion": "weighted_norm at 50/50, fixed before the measurement; never RRF",
+    "page_numbers": "none: the chunker works on character offsets, and the Europe PMC JATS source has no pages at all"
+  }
+}

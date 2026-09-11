@@ -73,6 +73,8 @@ def load_documents(qrels_path: Path) -> tuple[dict, str]:
     def shape(doc_id: str, doc: dict) -> dict:
         return {
             "_doc_id": doc_id,
+            # The full-text evaluation addresses documents by DOI.
+            "DOI": doc.get("doi", ""),
             "Title": doc.get("title", ""),
             "Abstract": doc.get("abstract", ""),
             "Year": doc.get("year"),

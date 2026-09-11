@@ -1,0 +1,907 @@
+{
+  "generated": "2026-09-10T20:37:38",
+  "qrels": "papers/evaluation/qrels_pilot_genre_analysis.json",
+  "collection": "paper_chunks_eval",
+  "chain": [
+    "UnpaywallPdfSource",
+    "EuropePmcSource"
+  ],
+  "documents": 108,
+  "with_doi": 83,
+  "counters": {
+    "no_open_access": 35,
+    "download_failed": 29,
+    "obtained": 19,
+    "no_doi": 25
+  },
+  "last_run_counters": {
+    "obtained": 0,
+    "no_open_access": 35,
+    "download_failed": 29,
+    "no_text_layer": 0,
+    "no_doi": 25,
+    "not_attempted": 0,
+    "already_indexed": 19
+  },
+  "chunks_total": 737,
+  "documents_with_chunks": 19,
+  "per_topic": {
+    "genre_analysis": {
+      "pool": 58,
+      "with_doi": 38,
+      "with_chunks": 3
+    },
+    "blockchain_governance": {
+      "pool": 50,
+      "with_doi": 45,
+      "with_chunks": 16
+    }
+  },
+  "per_document": {
+    "doi:10.1207/s15326950dp3301_01": {
+      "title": "",
+      "doi": "10.1207/s15326950dp3301_01",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1002/(sici)1098-2736(199702)34:2<145::aid-tea4>3.0.co;2-t": {
+      "title": "",
+      "doi": "10.1002/(sici)1098-2736(199702)34:2<145::aid-tea4>3.0.co;2-t",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.4324/9780203422656-17": {
+      "title": "",
+      "doi": "10.4324/9780203422656-17",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.4314/ljh.v25i1.4": {
+      "title": "",
+      "doi": "10.4314/ljh.v25i1.4",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://www.ajol.info/index.php/ljh/article/download/135452/124959: 403 Client Error: Forbidden for url: https://www.ajol.info/index.php/ljh/article/download/135452/124959"
+    },
+    "doi:10.1111/ijal.12300": {
+      "title": "",
+      "doi": "10.1111/ijal.12300",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/j.jeap.2015.05.008": {
+      "title": "",
+      "doi": "10.1016/j.jeap.2015.05.008",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "http://hdl.handle.net/1808/18514 did not return a PDF (a landing page, most likely)"
+    },
+    "doi:10.17509/ijal.v10i1.24989": {
+      "title": "",
+      "doi": "10.17509/ijal.v10i1.24989",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://ejournal.upi.edu/index.php/IJAL/article/download/24989/12126: 403 Client Error: Forbidden for url: https://ejournal.upi.edu/index.php/IJAL/article/download/24989/12126"
+    },
+    "doi:10.30870/jels.v5i2.8129": {
+      "title": "",
+      "doi": "10.30870/jels.v5i2.8129",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://jurnal.untirta.ac.id/index.php/JELS/article/download/8129/6026: 403 Client Error: Forbidden for url: https://jurnal.untirta.ac.id/index.php/JELS/article/download/8129/6026"
+    },
+    "doi:10.5430/ijhe.v3n1p29": {
+      "title": "",
+      "doi": "10.5430/ijhe.v3n1p29",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 38,
+      "error": ""
+    },
+    "doi:10.1177/1461445609341006": {
+      "title": "",
+      "doi": "10.1177/1461445609341006",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 1,
+      "error": ""
+    },
+    "doi:10.1017/s0261444814000068": {
+      "title": "",
+      "doi": "10.1017/s0261444814000068",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.22132/tel.2012.54924": {
+      "title": "",
+      "doi": "10.22132/tel.2012.54924",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/j.esp.2004.09.002": {
+      "title": "",
+      "doi": "10.1016/j.esp.2004.09.002",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/j.amper.2014.12.002": {
+      "title": "",
+      "doi": "10.1016/j.amper.2014.12.002",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://www.sciencedirect.com/science/article/pii/S221503901500003X/pdf: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S221503901500003X/pdf"
+    },
+    "title:rhetoricalmovestructureofsoftandhardscienceresearcharticleintroductionsbynoviceindonesianauthors": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1017/s0261444813000037": {
+      "title": "",
+      "doi": "10.1017/s0261444813000037",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.36602/faj.2026.n21.13": {
+      "title": "",
+      "doi": "10.36602/faj.2026.n21.13",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 31,
+      "error": ""
+    },
+    "doi:10.2307/329786": {
+      "title": "",
+      "doi": "10.2307/329786",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/s0346-251x(01)00054-9": {
+      "title": "",
+      "doi": "10.1016/s0346-251x(01)00054-9",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.2307/416471": {
+      "title": "",
+      "doi": "10.2307/416471",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/j.esp.2007.07.005": {
+      "title": "",
+      "doi": "10.1016/j.esp.2007.07.005",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/j.esp.2006.10.005": {
+      "title": "",
+      "doi": "10.1016/j.esp.2006.10.005",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:criticalreflectionsongenreanalysis": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.22070/rsci.2024.18661.1708": {
+      "title": "",
+      "doi": "10.22070/rsci.2024.18661.1708",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/s0889-4906(01)00022-9": {
+      "title": "",
+      "doi": "10.1016/s0889-4906(01)00022-9",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1177/0033688215609230": {
+      "title": "",
+      "doi": "10.1177/0033688215609230",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/j.jeap.2011.10.004": {
+      "title": "",
+      "doi": "10.1016/j.jeap.2011.10.004",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "https://doi.org/10.1016/j.jeap.2011.10.004 did not return a PDF (a landing page, most likely)"
+    },
+    "doi:10.22099/jtls.2012.407": {
+      "title": "",
+      "doi": "10.22099/jtls.2012.407",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1177/1461445607087010": {
+      "title": "",
+      "doi": "10.1177/1461445607087010",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/j.esp.2020.01.005": {
+      "title": "",
+      "doi": "10.1016/j.esp.2020.01.005",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.24815/siele.v7i1.16342": {
+      "title": "",
+      "doi": "10.24815/siele.v7i1.16342",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for http://jurnal.unsyiah.ac.id/SiELE/article/download/16342/11943: HTTPConnectionPool(host='jurnal.unsyiah.ac.id', port=80): Max retries exceeded with url: /SiELE/article/download/16342/11943 (Caused by NewConnectionError(\"HTTPConnection(host='jurnal.unsyiah.ac.id', port=80): Failed"
+    },
+    "title:cstnewsadiscourseannotatedcorpusforsingleandmultidocumentsummarizationofnewstextsinbrazilianportuguese": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:raamoveacorpusforanalyzingmovesinresearcharticleabstracts": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:discourseanalysisanintroduction": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1177/0957926592003002004": {
+      "title": "",
+      "doi": "10.1177/0957926592003002004",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1093/applin/23.2.215": {
+      "title": "",
+      "doi": "10.1093/applin/23.2.215",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/j.jeap.2015.05.004": {
+      "title": "",
+      "doi": "10.1016/j.jeap.2015.05.004",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:rhetoricalstructuretheoryatheoryoftextorganization": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/j.jeap.2010.01.001": {
+      "title": "",
+      "doi": "10.1016/j.jeap.2010.01.001",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.3102/00346543075003365": {
+      "title": "",
+      "doi": "10.3102/00346543075003365",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:beyondthehumanaibinariesadvancedwritersselfdirecteduseofgenerativeaiinacademicwriting": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:theysayisaythemovesthatmatterinacademicwriting": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:generativeaiandlinguisticdiversityinacademicwritingandpublishingperspectivesfromworldenglishes": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:timeseriesanalysisofkeysocietaleventsasreflectedincomplexsocialmediadatastreams": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.2307/3737104": {
+      "title": "",
+      "doi": "10.2307/3737104",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/0378-2166(85)90002-5": {
+      "title": "",
+      "doi": "10.1016/0378-2166(85)90002-5",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1007/s10639-024-12878-7": {
+      "title": "",
+      "doi": "10.1007/s10639-024-12878-7",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "https://doi.org/10.1007/s10639-024-12878-7 did not return a PDF (a landing page, most likely)"
+    },
+    "title:ideologicaldiscourseanalysis": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:howtowritealotapracticalguidetoproductiveacademicwriting": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1016/j.esp.2017.11.006": {
+      "title": "",
+      "doi": "10.1016/j.esp.2017.11.006",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for http://hdl.handle.net/10612/10667: 403 Client Error: Forbidden for url: https://buleria.unileon.es/handle/10612/10667"
+    },
+    "title:thairhetoricalstructureanalysis": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:identitydilemmainimmigrantconsumersadiscourseanalysisofdiasporamarketing": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:techniquesforsuperchargingacademicwritingwithgenerativeai": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:coachgptascaffoldingbasedacademicwritingassistant": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:augmentingtheauthorexploringthepotentialofaicollaborationinacademicwriting": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:whencarsmeetdistributedcomputingdatastorageasanexample": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:endtoendperformanceanalysisofrelaycooperativecommunicationbasedonparkedcars": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:controbenchaninteractionawarebenchmarkforcontroversialdiscourseanalysisonsocialnetworks": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1109/access.2025.3606194": {
+      "title": "",
+      "doi": "10.1109/access.2025.3606194",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "https://doi.org/10.1109/access.2025.3606194 did not return a PDF (a landing page, most likely)"
+    },
+    "doi:10.56975/ijedr.v14i1.304683": {
+      "title": "",
+      "doi": "10.56975/ijedr.v14i1.304683",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 20,
+      "error": ""
+    },
+    "doi:10.56726/irjmets81948": {
+      "title": "",
+      "doi": "10.56726/irjmets81948",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 13,
+      "error": ""
+    },
+    "doi:10.69490/jcsdf8820260212": {
+      "title": "",
+      "doi": "10.69490/jcsdf8820260212",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 35,
+      "error": ""
+    },
+    "doi:10.17148/ijarcce.2023.125258": {
+      "title": "",
+      "doi": "10.17148/ijarcce.2023.125258",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 46,
+      "error": ""
+    },
+    "doi:10.36719/2663-4619/116/39-41": {
+      "title": "",
+      "doi": "10.36719/2663-4619/116/39-41",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 10,
+      "error": ""
+    },
+    "doi:10.1080/09540962.2025.2597949": {
+      "title": "",
+      "doi": "10.1080/09540962.2025.2597949",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://www.tandfonline.com/doi/pdf/10.1080/09540962.2025.2597949?needAccess=true: 403 Client Error: Forbidden for url: https://www.tandfonline.com/doi/pdf/10.1080/09540962.2025.2597949?needAccess=true"
+    },
+    "doi:10.7176/ppar/16-2-05": {
+      "title": "",
+      "doi": "10.7176/ppar/16-2-05",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 43,
+      "error": ""
+    },
+    "doi:10.1080/09540962.2026.2614325": {
+      "title": "",
+      "doi": "10.1080/09540962.2026.2614325",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.12720/jait.16.12.1758-1779": {
+      "title": "",
+      "doi": "10.12720/jait.16.12.1758-1779",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 95,
+      "error": ""
+    },
+    "doi:10.5120/ijca2021921294": {
+      "title": "",
+      "doi": "10.5120/ijca2021921294",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Could not parse the PDF: '/DescendantFonts'"
+    },
+    "doi:10.1007/s44282-026-00446-y": {
+      "title": "",
+      "doi": "10.1007/s44282-026-00446-y",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 75,
+      "error": ""
+    },
+    "doi:10.1504/ijics.2023.131094": {
+      "title": "",
+      "doi": "10.1504/ijics.2023.131094",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.7753/ijsea1409.1008": {
+      "title": "",
+      "doi": "10.7753/ijsea1409.1008",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://doi.org/10.7753/ijsea1409.1008: 406 Client Error: Not Acceptable for url: https://ijsea.com/archive/volume14/issue9/IJSEA14091008.pdf"
+    },
+    "doi:10.1016/j.tele.2026.102418": {
+      "title": "",
+      "doi": "10.1016/j.tele.2026.102418",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "https://doi.org/10.1016/j.tele.2026.102418 did not return a PDF (a landing page, most likely)"
+    },
+    "doi:10.56334/sei/8.11.14": {
+      "title": "",
+      "doi": "10.56334/sei/8.11.14",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://doi.org/10.56334/sei/8.11.14: 403 Client Error: Forbidden for url: https://imcra-az.org/uploads/public_files/2025-08/8114.pdf"
+    },
+    "doi:10.18280/isi.300121": {
+      "title": "",
+      "doi": "10.18280/isi.300121",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 26,
+      "error": ""
+    },
+    "doi:10.21552/edpl/2022/1/7": {
+      "title": "",
+      "doi": "10.21552/edpl/2022/1/7",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.71435/685960": {
+      "title": "",
+      "doi": "10.71435/685960",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://pppii.org/index.php/ADGP/article/download/158/294: 404 Client Error: Not Found for url: https://pppii.org/index.php/ADGP/article/download/158/294"
+    },
+    "doi:10.1080/07366981.2026.2662526": {
+      "title": "",
+      "doi": "10.1080/07366981.2026.2662526",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.53819/81018102t2450": {
+      "title": "",
+      "doi": "10.53819/81018102t2450",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 31,
+      "error": ""
+    },
+    "doi:10.71435/685958": {
+      "title": "",
+      "doi": "10.71435/685958",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://pppii.org/index.php/ADGP/article/download/155/284: 404 Client Error: Not Found for url: https://pppii.org/index.php/ADGP/article/download/155/284"
+    },
+    "doi:10.1016/j.procs.2024.03.261": {
+      "title": "",
+      "doi": "10.1016/j.procs.2024.03.261",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "https://doi.org/10.1016/j.procs.2024.03.261 did not return a PDF (a landing page, most likely)"
+    },
+    "doi:10.5750/ijme.v1i1.1392": {
+      "title": "",
+      "doi": "10.5750/ijme.v1i1.1392",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1109/mvt.2026.3689253": {
+      "title": "",
+      "doi": "10.1109/mvt.2026.3689253",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1134/s1063779626701029": {
+      "title": "",
+      "doi": "10.1134/s1063779626701029",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1109/ecce57851.2023.10101496": {
+      "title": "",
+      "doi": "10.1109/ecce57851.2023.10101496",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.5923/j.computer.20251506.05": {
+      "title": "",
+      "doi": "10.5923/j.computer.20251506.05",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 33,
+      "error": ""
+    },
+    "doi:10.3390/blockchains3010003": {
+      "title": "",
+      "doi": "10.3390/blockchains3010003",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://doi.org/10.3390/blockchains3010003: 403 Client Error: Forbidden for url: https://www.mdpi.com/2813-5288/3/1/3"
+    },
+    "title:privateblockchainbasedprocurementandassetmanagementsystemwithqrcode": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.1155/2023/6025789": {
+      "title": "",
+      "doi": "10.1155/2023/6025789",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://downloads.hindawi.com/journals/scn/2023/6025789.pdf: 403 Client Error: Forbidden for url: https://downloads.hindawi.com/journals/scn/2023/6025789.pdf"
+    },
+    "title:optimalresourceutilizationinhyperledgerfabricacomprehensivespnbasedperformanceevaluationparadigm": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.9734/ajrcos/2023/v16i3353": {
+      "title": "",
+      "doi": "10.9734/ajrcos/2023/v16i3353",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://journalajrcos.com/index.php/AJRCOS/article/view/353/703: 403 Client Error: Forbidden for url: https://journalajrcos.com/index.php/AJRCOS/article/view/353/703"
+    },
+    "doi:10.35741/issn.0258-2724.56.4.48": {
+      "title": "",
+      "doi": "10.35741/issn.0258-2724.56.4.48",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "http://funes.uniandes.edu.co/19394/1/Cabrera2018Invariantes.pdf did not return a PDF (a landing page, most likely)"
+    },
+    "doi:10.5267/j.ijdns.2024.7.009": {
+      "title": "",
+      "doi": "10.5267/j.ijdns.2024.7.009",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 58,
+      "error": ""
+    },
+    "title:atutorialontheinteroperabilityofselfsovereignidentities": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.54914/jtt.v9i2.751": {
+      "title": "",
+      "doi": "10.54914/jtt.v9i2.751",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 1,
+      "error": ""
+    },
+    "doi:10.22214/ijraset.2026.82258": {
+      "title": "",
+      "doi": "10.22214/ijraset.2026.82258",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 21,
+      "error": ""
+    },
+    "title:themissinglinkidentifyingdigitalintermediariesinegovernment": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "title:anadaptiveneurofuzzyblockchainaiframeworkforsecureandintelligentfintechtransactions": {
+      "title": "",
+      "doi": "",
+      "status": "no_doi",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.3390/technologies13090412": {
+      "title": "",
+      "doi": "10.3390/technologies13090412",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://www.mdpi.com/2227-7080/13/9/412/pdf?version=1757499536: 403 Client Error: Forbidden for url: https://www.mdpi.com/2227-7080/13/9/412/pdf?version=1757499536"
+    },
+    "doi:10.1093/isr/viaa097": {
+      "title": "",
+      "doi": "10.1093/isr/viaa097",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://academic.oup.com/isr/article-pdf/23/4/1230/41767093/viaa097.pdf: 403 Client Error: Forbidden for url: https://academic.oup.com/isr/article-pdf/23/4/1230/41767093/viaa097.pdf"
+    },
+    "doi:10.1016/j.bcra.2026.100530": {
+      "title": "",
+      "doi": "10.1016/j.bcra.2026.100530",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "https://doi.org/10.1016/j.bcra.2026.100530 did not return a PDF (a landing page, most likely)"
+    },
+    "doi:10.1016/j.giq.2021.101664": {
+      "title": "",
+      "doi": "10.1016/j.giq.2021.101664",
+      "status": "no_open_access",
+      "source": "",
+      "chunks": 0,
+      "error": ""
+    },
+    "doi:10.59075/d14vjy02": {
+      "title": "",
+      "doi": "10.59075/d14vjy02",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "https://doi.org/10.59075/d14vjy02 did not return a PDF (a landing page, most likely)"
+    },
+    "doi:10.1111/rego.12614": {
+      "title": "",
+      "doi": "10.1111/rego.12614",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/rego.12614: 403 Client Error: Forbidden for url: https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/rego.12614"
+    },
+    "doi:10.2298/csis250310062t": {
+      "title": "",
+      "doi": "10.2298/csis250310062t",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for http://www.doiserbia.nb.rs/ft.aspx?id=1820-02142500062T: 503 Server Error: Service Unavailable for url: http://www.doiserbia.nb.rs/ft.aspx?id=1820-02142500062T"
+    },
+    "doi:10.1016/j.future.2022.10.002": {
+      "title": "",
+      "doi": "10.1016/j.future.2022.10.002",
+      "status": "download_failed",
+      "source": "",
+      "chunks": 0,
+      "error": "Download failed for https://www.sciencedirect.com/science/article/pii/S0167739X2200317X/pdf: 403 Client Error: Forbidden for url: https://www.sciencedirect.com/science/article/pii/S0167739X2200317X/pdf"
+    },
+    "doi:10.3389/fbloc.2025.1707911": {
+      "title": "",
+      "doi": "10.3389/fbloc.2025.1707911",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 84,
+      "error": ""
+    },
+    "doi:10.1016/j.cose.2023.103376": {
+      "title": "",
+      "doi": "10.1016/j.cose.2023.103376",
+      "status": "obtained",
+      "source": "UnpaywallPdfSource",
+      "chunks": 76,
+      "error": ""
+    }
+  },
+  "note": "`status` describes the corpus, not the last run: a document whose full text the index already held is `obtained` here even though the run that regenerated this file skipped it. A document without a DOI is not a failure of the ingest — it is the structural ceiling of full-text coverage, and it is 23% of this collection."
+}
