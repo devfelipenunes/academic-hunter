@@ -11,10 +11,14 @@ sessão nova; os detalhes de cada item estão nos commits e no plano.
 
 |              |                                                                                         |
 | ------------ | --------------------------------------------------------------------------------------- |
-| Branch       | `feat/finalizar-ah` — **31 commits à frente de `main`**, que segue intacta em `ffbbc47` |
-| Testes       | **806 passando** (`./venv/bin/python -m pytest tests/ -q`) — mais 2 da flaky do MCP     |
-| Working tree | limpo                                                                                   |
-| Plano        | `/l/disk0/fnunes/.claude/plans/cozy-purring-hejlsberg.md`                               |
+| Branch       | `feat/finalizar-ah` — **37 commits à frente de `main`**, que segue intacta em `ffbbc47` |
+| Testes       | **901 passando** (`./venv/bin/python -m pytest tests/ -q`, ~2 min)                      |
+| Working tree | limpo — o full-text (fases D e E) e os seis defeitos estão commitados                   |
+| Planos       | `~/.claude/plans/continue-flickering-catmull.md` (fases D e E)                          |
+
+A flaky do MCP (`test_server_integration.py::test_list_tools`) passa isolada em
+22 s e falha sob carga: o servidor leva 44,6 s para o `initialize` contra um
+`timeout=45` (medido, ver achados). Ela passou nas últimas execuções.
 
 **Nada foi enviado ao GitHub.** A branch nunca teve upstream; `main` e
 `feat/weight-bleeding` são as únicas no remoto.
@@ -44,9 +48,13 @@ os modelos que sete call sites recriavam a cada chamada, e
 `core/nlp/reranker.py` + `RecomputeRanksStep._apply_rerank` implementam o estágio
 opt-in de reranking. Medido — e ele **ganha**, ao contrário do embedding.
 
-**Full-text com o núcleo pronto** (item 1): portas, chunker, adaptadores
-(Unpaywall, Europe PMC, pypdf, cache) e `IngestFullTextStep`, opt-in e desligado
-por padrão. Faltam as tools MCP e a avaliação.
+**Full-text completo (fases A–E)**: portas, chunker, adaptadores (Unpaywall,
+Europe PMC, pypdf, cache), `IngestFullTextStep` opt-in, as três tools MCP
+(`fulltext_status`, `index_fulltext`, `chunk_search`) e a avaliação na coleção
+julgada. Medido e com a base declarada junto: retrieval por trecho ganha
+`+0,0764` de nDCG@10 do BM25, sobre 5 das 11 consultas, 16 documentos e um
+tópico só. Cobertura 19/108, com teto estrutural de 66%/90% porque 25 dos 108
+documentos julgados não têm DOI. Detalhes no item 1 de "O que falta".
 
 **E uma auditoria de código inteira**, que não estava no plano e acabou sendo a
 maior parte do trabalho: ~15 defeitos reais corrigidos, cada um com teste que
@@ -66,79 +74,46 @@ Rode `git log --oneline main..feat/finalizar-ah` para a lista.
 
 Em ordem de execução sugerida.
 
-### 1. Full-text (Parte 3 do plano) — **núcleo feito**, faltam as tools e a avaliação
+### 1. Full-text — **fechado nas fases A–E**; falta ampliar a base da medição
 
-As fases A, B e C estão implementadas e commitadas: portas, chunker, adaptadores
-(Unpaywall, pypdf, cache) e o `IngestFullTextStep`, tudo opt-in e desligado por
-padrão. **Falta a fase D** (as tools MCP `fulltext_status`, `index_fulltext`,
-`chunk_search`) **e a fase E** (avaliação na coleção julgada).
+As três tools MCP existem (`fulltext_status`, `index_fulltext`, `chunk_search`),
+a identidade do paper viaja na metadata do chunk, a ingestão virou núcleo
+compartilhado (`core/fulltext/ingest.py`) e o passo rodou dentro de um run real.
 
-Validado ponta a ponta contra as APIs reais. Dois defeitos apareceram ali e em
-nenhum teste:
+O que a avaliação mediu, e o que ela **não** sustenta: retrieval por trecho ganha
+`+0,0764` de nDCG@10 sobre BM25 (0,4801 → 0,5565), mas sobre **5 das 11
+consultas, 16 documentos candidatos e um tópico só**. As seis consultas de
+`genre_analysis` ficaram de fora — apenas 3 dos 58 documentos daquele pool têm
+chunk. Cobertura: 19 dos 108 julgados, 737 chunks.
 
-- O adaptador usava só o `best_oa_location`, que o Unpaywall escolhe por
-  _confiabilidade_ e que costuma ser a landing page da editora, com
-  `url_for_pdf` nulo — enquanto **outro** local do mesmo registro nomeia o PDF.
-  Agora prefere o primeiro local que nomeie um PDF, caindo para a landing page só
-  quando nenhum nomeia.
-- **E a suposição que este documento trazia estava errada.** Ele dizia que "um
-  adaptador para PMC (`/pdf/`) recuperaria" os registros sem `url_for_pdf`.
-  Medido: `pmc.ncbi.nlm.nih.gov/…/pdf/` responde **200 com HTML** a qualquer
-  cliente que não seja navegador, então raspar PDF do PMC não recupera nada. O
-  que funciona é o **Europe PMC**, cuja API REST serve os mesmos artigos em
-  **JATS XML** — melhor que PDF, porque o XML já vem seccionado, que é
-  justamente o que o chunker teria de adivinhar.
+Três caminhos para ampliar a base, em ordem de retorno:
 
-  Com ele, o `10.1371/journal.pone.0000308` — antes `download_failed` — passou a
-  render 21.979 caracteres e 23 chunks com as seções `abstract`, `introduction`,
-  `method`, `results` e `discussion` corretas.
+- **(a) Ampliar a coleção julgada** com documentos que tenham DOI. Continua sendo
+  o gargalo humano (item 1 das pendências do autor) e é o que destrava tudo.
+- **(b) Melhorar o adaptador** para o caso "a cópia aberta é só uma landing
+  page". `fulltext_coverage.json` guarda o motivo de cada falha em `error` —
+  comece por ler isso em vez de refazer a rede. Dos 83 documentos endereçáveis,
+  29 falharam, e a maioria é isso ou editora recusando cliente que não seja
+  navegador.
+- **(c) Julgar necessidades específicas** ("qual dataset usaram", "quantos
+  anotadores codificaram"). É onde o retrieval por trecho deveria ganhar de
+  verdade, e o qrels atual não olha para lá: ele julga relevância tópica, que é
+  exatamente o que um abstract já resume bem. Sem isso, um resultado nulo seria
+  limitação da coleção para esta pergunta, não veredito sobre a técnica.
 
-As fontes são encadeadas: Unpaywall primeiro, Europe PMC depois. Um erro de
-configuração numa **não** interrompe a outra — elas não compartilham
-configuração, e o Europe PMC não usa e-mail — de modo que o full-text funciona
-até sem endereço de contato configurado.
+### 2. Defeitos menores da auditoria — **fechados**
 
-O desenho completo está na **Parte 3 do arquivo de plano**. Resumo do que não
-pode ser re-derivado:
+Os seis que estavam em aberto foram corrigidos, cada um com teste que falha no
+código anterior: backoff em 5xx e erro de rede nos conectores, `blocked_sources`
+limpo a cada run, escape em BibTeX/RIS/Obsidian, escrita atômica do
+`run_stats_*.json`, log no `except` do cache, e o nome do Semantic Scholar vindo
+de um lugar só. Detalhes no `CHANGELOG`.
 
-- **Nada existe hoje**: nenhum download de PDF, extração ou chunking; nenhuma
-  dependência de PDF declarada. A tool `find_open_access` devolve só metadados.
-- **Portas** em `core/ports/fulltext.py` (`FullTextSourcePort`, `TextExtractorPort`,
-  como `Protocol`) e capacidade de chunk como `ChunkStorePort` **separado** em
-  `core/ports/vector_store.py` — não tocar em `BaseVectorStore`, para os testes
-  existentes seguirem intactos.
-- **`core/fulltext/chunker.py`** puro. Tamanho do chunk: **180 palavras com 40 de
-  sobreposição**. Não é ajuste — o embedding padrão do ChromaDB é o MiniLM ONNX,
-  com limite de 256 word-pieces (~190 palavras); chunk maior fica parcialmente
-  invisível para o retriever, em silêncio. Nunca atravessar fronteira de seção;
-  excluir `references` e `appendix` por padrão.
-- **`pypdf`, não PyMuPDF.** O roadmap nomeia PyMuPDF, mas ele é **AGPL-3.0** e o
-  projeto é MIT. `pypdf` é BSD-3 e vira o extra `fulltext`.
-- **Coleção separada `paper_chunks`**, não um campo `doc_type` na `papers`: o
-  ChromaDB não tem operador `$exists`, e todo documento legado não tem essa
-  chave — um filtro por ela esvaziaria o `semantic_search` de todo o acervo.
-- **`IngestFullTextStep` opt-in** (`settings.fulltext.enabled`, default `false`),
-  rodando **depois do filtro de limiar**, para gastar download só nos ~270
-  incluídos. **Nunca levanta.** Registrar o status por paper (`unavailable`,
-  `download_failed`, `no_text_layer`) porque metodologia de SLR exige reportar
-  quantos full texts não foram obtidos.
-- **Armadilha da avaliação**: o qrels é autocontido e **não tem PDFs**. Medir
-  retrieval por chunk exige resolver N PDFs em OA, e a maioria pode não resolver
-  — o que mediria o conjunto de candidatos, não o retriever. Commitar um
-  `fulltext_coverage.json` e comparar só no subconjunto com respaldo de chunk.
-
-### 2. Defeitos menores da auditoria, ainda em aberto
-
-A auditoria achou ~40 itens e ~15 foram corrigidos. Estes ficaram, todos
-pequenos e independentes entre si: backoff ausente em erros 5xx dos conectores
-(hoje insistem sem esperar), `blocked_sources` que nunca é limpo dentro de um
-run, `BibTeX`/`RIS`/Obsidian sem escape de caracteres (um `}` no título quebra o
-registro), escrita não-atômica do `run_stats_*.json`, o cache SQLite engolindo
-exceção sem log, e chaves de `identified` incoerentes entre o `reset` e o que os
-conectores gravam.
-
-Nenhum corrompe resultado; são robustez. O caminho é um item por commit, com
-teste que falhe antes.
+Dois achados colaterais valem registro: o teste que cobria a corrupção do cache
+era **vacuoso** (corrompia só o arquivo principal e o SQLite recuperava o banco
+pelo `-wal`, então o ramo de erro nunca era alcançado — há um teste-guarda agora),
+e o `identified` do Semantic Scholar só afetava a contagem, não a detecção de
+peer review, porque `PaperResolver` normaliza o nome antes de procurar o conector.
 
 ### 3. Ensemble de embeddings (item 2.2)
 
@@ -173,6 +148,16 @@ pede major. `CITATION.cff` já está no lugar, com a versão casada em `__versio
 Medir contribuição marginal por fonte em vários tópicos e desativar por padrão as
 que não pagam o custo. Ver a correção do diagnóstico no `docs/roadmap.md` §2.5:
 o flag `is_keyword_only` **não** separa quem contribui de quem não contribui.
+
+### 7. O catálogo de tools do site está incompleto
+
+`docs/mcp/index.html` documenta **21 das 44** tools e `docs/index.html` destaca 18
+numa lista curada. As três de full-text entraram e as duas páginas ficaram
+internamente consistentes, mas a distância entre o que o servidor registra e o
+que o site documenta continua — e já existia antes (eram 18 de 41). Fechar isso
+é escrever ~23 cards; a página do MCP diz explicitamente que documenta as
+principais, então nada ali mente, mas é a maior lacuna de documentação do
+projeto hoje.
 
 ---
 
@@ -304,24 +289,85 @@ reversão**, ou o resultado não significa nada.
 
 ---
 
+**O teto de cobertura de full text é dos DADOS, não do código.** 25 dos 108
+documentos julgados **não têm DOI nenhum**, então nenhum sistema de full text
+conseguiria alcançá-los. O teto por tópico é 65,5% (`genre_analysis`) e 90,0%
+(`blockchain_governance`). Consequência metodológica: exigir cobertura de 100%
+do pool para uma consulta entrar na comparação produz **subconjunto vazio** — a
+regra correta é restringir o conjunto de candidatos a `pool ∩ documentos com
+chunk` e fazer **todas** as estratégias ranquearem esse mesmo conjunto. Isso não
+é o erro do pool top-30: lá a restrição vinha da métrica sob teste; aqui vem de
+um fato exógeno. Regra geral: medir o teto estrutural **antes** de definir o
+critério de comparabilidade.
+
+**`download_failed` cobria três situações e o "porquê" se perdia.** (a) erro
+transitório de rede, (b) a cópia em acesso aberto é só uma landing page — o
+Unpaywall diz `is_oa=True` mas o único local não nomeia PDF, então o download
+devolve HTML, (c) a editora recusa cliente que não seja navegador. Só (a) vale
+retentar; (b) pede outro adaptador; (c) nunca vai funcionar. Agora
+`_full_text_error` guarda a mensagem por documento e o artefato de cobertura a
+carrega. **Não é teoria: uma segunda passada recuperou um documento** que havia
+falhado na primeira.
+
+**`force` apagava os chunks antes de buscar.** Medido ao rodar `force` em três
+papers: os sete chunks que o índice tinha foram removidos e a nova busca falhou
+em dois deles — o documento ficou sem nada. A substituição agora é apagar e
+gravar juntas, **depois** de o texto estar em mãos. Um `force` que falha deixa o
+índice como estava.
+
+**`no_text_layer` juntava duas coisas.** "PDF escaneado" (o conserto é OCR) e
+"texto extraído mas nenhuma seção reconhecível" (o conserto é o extrator) iam
+para o mesmo status. Agora o segundo é `no_sections`. Apareceu num run real: dois
+documentos passaram pelo teste de camada de texto e só um foi indexado.
+
+**Os agradecimentos envenenam o retrieval, e isso foi medido.** Numa consulta
+sobre o próprio assunto de um paper, a seção de agradecimentos apareceu em
+**dois dos três primeiros lugares** — lista de autores, financiadores e conflito
+de interesses. Entraram em `_DROPPED_BY_DEFAULT` junto de `references` e
+`appendix`, pelo motivo que o plano já dava para eles.
+
+**`load_documents` descartava o DOI.** O carregador compartilhado dos
+experimentos (`papers/experiments/retrieval_eval.py`) projeta cada documento
+julgado numa forma fixa e não incluía o `DOI`, embora o qrels o tenha embutido.
+O primeiro run do full-text reportou `no_doi: 108` numa coleção com 83 DOIs — um
+erro que se parece com um resultado. Campo adicionado ao `shape()`.
+
+**Ordenar artefatos por `ctime` é frágil, e um teste piorava isso.** Em Linux
+`ctime` é hora de mudança de metadado, não de criação. Pior: `test_pipeline.py`
+construía `AcademicHunter` sem `output_dir` e gravava
+`run_stats_test_stats.json` **dentro de `results/`** a cada execução da suíte;
+sem carimbo no nome, ele ganhava por ctime e virava "o último run" — o
+`fulltext_status` chegou a imprimir `Last run: results`. Correção: a seleção usa
+o carimbo `(\d{8}_\d{6})` do próprio nome do arquivo (um arquivo sem carimbo
+nunca ganha), e o teste ganhou `output_dir` em `tempfile.mkdtemp()`. Vale grepar
+`AcademicHunter(` sem `output_dir` em `tests/` — havia 8 ocorrências.
+
+---
+
 ## Decisões já tomadas (não reabrir sem motivo)
 
-| Decisão             | Escolha                                                            |
-| ------------------- | ------------------------------------------------------------------ |
-| CLI                 | Removido; o MCP é a única interface                                |
-| LLM/SLM             | Só como experimento, nunca no pipeline                             |
-| Fase 3 (pesquisa)   | Fora do escopo                                                     |
-| Anotação da coleção | Eu rotulo, o autor do projeto revisa — **revisão ainda pendente**  |
-| Versão da release   | 3.0.0                                                              |
-| Biblioteca de PDF   | `pypdf` (o PyMuPDF do roadmap é AGPL)                              |
-| Reranking           | Opt-in por `settings.rerank`, **desligado por padrão**             |
-| Reranking sem query | Não atua: o cross-encoder pontua o par (query, documento)          |
-| Full-text           | Opt-in por `settings.fulltext.enabled`, **desligado por padrão**   |
-| Biblioteca de PDF   | `pypdf` no extra `fulltext` (o PyMuPDF do roadmap é AGPL)          |
-| Chunk               | 180 palavras com 40 de sobreposição — imposto pelo MiniLM (256 wp) |
-| Coleção de chunks   | `paper_chunks`, separada (o ChromaDB não tem `$exists`)            |
-| OCR                 | Não: tesseract não é dependência e quebraria o custo zero          |
-| Fontes de full-text | Unpaywall → Europe PMC, encadeadas                                 |
+| Decisão                    | Escolha                                                            |
+| -------------------------- | ------------------------------------------------------------------ |
+| CLI                        | Removido; o MCP é a única interface                                |
+| LLM/SLM                    | Só como experimento, nunca no pipeline                             |
+| Fase 3 (pesquisa)          | Fora do escopo                                                     |
+| Anotação da coleção        | Eu rotulo, o autor do projeto revisa — **revisão ainda pendente**  |
+| Versão da release          | 3.0.0                                                              |
+| Biblioteca de PDF          | `pypdf` (o PyMuPDF do roadmap é AGPL)                              |
+| Reranking                  | Opt-in por `settings.rerank`, **desligado por padrão**             |
+| Reranking sem query        | Não atua: o cross-encoder pontua o par (query, documento)          |
+| Full-text                  | Opt-in por `settings.fulltext.enabled`, **desligado por padrão**   |
+| Biblioteca de PDF          | `pypdf` no extra `fulltext` (o PyMuPDF do roadmap é AGPL)          |
+| Chunk                      | 180 palavras com 40 de sobreposição — imposto pelo MiniLM (256 wp) |
+| Coleção de chunks          | `paper_chunks`, separada (o ChromaDB não tem `$exists`)            |
+| OCR                        | Não: tesseract não é dependência e quebraria o custo zero          |
+| Fontes de full-text        | Unpaywall → Europe PMC, encadeadas                                 |
+| Chunk carrega a identidade | `title`/`doi`/`year`/`source` na metadata (a coleção estava vazia) |
+| Seções descartadas         | `references`, `appendix` **e `acknowledgements`** (medido)         |
+| Status de texto            | `no_text_layer` (sem texto) ≠ `no_sections` (texto sem seções)     |
+| `force`                    | Apaga e grava juntos, só depois do texto em mãos                   |
+| Coleção da avaliação       | `paper_chunks_eval`, em banco próprio, longe do `chunk_search`     |
+| Fragmento de página        | Não existe: o PDF tem páginas, o JATS do Europe PMC não tem        |
 
 ---
 
@@ -344,9 +390,14 @@ reversão**, ou o resultado não significa nada.
    faria a instalação mínima falhar em silêncio. Ligar é uma linha no
    `config.json` local: `"rerank": {"enabled": true}`, junto de um
    `ranking_query` — sem query o estágio avisa e não atua.
-5. **Decidir se liga o full-text,** e num run de verdade. O núcleo está pronto e
-   testado, mas **ninguém o rodou de ponta a ponta pelo pipeline** — o que foi
-   validado foi o caminho DOI→PDF→texto→chunks, não o passo dentro de um run.
-   `settings.fulltext.enabled: true` e um `email` (ou nem isso: o Europe PMC
-   dispensa). Requer o extra `fulltext` (`pip install academic-hunter[fulltext]`),
-   que **não** está no venv por padrão.
+5. **Decidir se liga o full-text.** O passo **já rodou dentro de um run real**
+   nesta sessão (40 papers incluídos, 2 tentados, `stats["full_text"]` e as
+   colunas no CSV conferidos) — o que faltava de verificação está feito. Ligar é
+   `settings.fulltext.enabled: true` mais um `email` no bloco `fulltext` (ou nem
+   isso: o Europe PMC dispensa endereço). Requer o extra `fulltext`
+   (`pip install academic-hunter[fulltext]`) — que **está instalado neste venv**,
+   mas não é dependência padrão do pacote.
+6. **Decidir o que fazer com a cobertura baixa de full text (19/108).** As duas
+   alavancas estão no item 1 de "O que falta": ampliar a coleção julgada com
+   documentos que tenham DOI, e melhorar o adaptador para os casos cujo motivo
+   está registrado em `error` no `fulltext_coverage.json`.

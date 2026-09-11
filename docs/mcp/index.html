@@ -60,10 +60,11 @@
     <div class="page-header">
       <h1>MCP Tools Reference</h1>
       <p>
-        Academic Hunter exposes 20 tools via the Model Context Protocol (MCP),
-        along with Resources and Prompts. Any MCP-compatible client —
-        Claude Desktop, Cursor, or custom agents — can drive the research
-        pipeline autonomously.
+        Academic Hunter exposes 44 tools via the Model Context Protocol (MCP),
+        along with Resources and Prompts. This page documents the ones you will
+        reach for most; the full list comes from the server itself. Any
+        MCP-compatible client — Claude Desktop, Cursor, or custom agents — can
+        drive the research pipeline autonomously.
       </p>
     </div>
 
@@ -197,6 +198,7 @@ academic-mcp</code></pre>
         <button class="filter-btn" data-category="discovery" role="tab">Discovery</button>
         <button class="filter-btn" data-category="export" role="tab">Export</button>
         <button class="filter-btn" data-category="rag" role="tab">RAG</button>
+        <button class="filter-btn" data-category="fulltext" role="tab">Full Text</button>
         <button class="filter-btn" data-category="system" role="tab">System</button>
       </div>
     </div>
@@ -1173,6 +1175,152 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
 
 - Paper 2 (Relevance: 0.85): 'Digital Euro Performance' (2023)
   Abstract: Latency remains below 500ms for retail transactions..."</code></pre>
+        </div>
+      </article>
+    </section>
+
+    <!-- ──────────────── FULL TEXT ──────────────── -->
+    <section class="cat-section" id="fulltext">
+      <div class="cat-header">
+        <h2>Full Text</h2>
+        <span class="cat-count">3 tools</span>
+      </div>
+
+      <!-- Tool 19: fulltext_status -->
+      <article class="tool-card" id="fulltext_status" data-category="fulltext"
+        data-name="fulltext_status"
+        data-description="Reports how much full text the corpus has, and where each part of the number came from">
+        <div class="tool-card-header">
+          <h3><a href="#fulltext_status">fulltext_status</a></h3>
+          <span class="tool-category cat-fulltext">Full Text</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Reports coverage for the last run: how many full texts were obtained, how
+            many had no open-access copy, how many failed to download and <em>why</em>,
+            and how many were already indexed by an earlier run. It also reports whether
+            the optional <code>pypdf</code> extra is installed — without it only Europe
+            PMC can deliver text, and "0 obtained" would be misread as "there is no
+            open access".
+          </p>
+          <div class="tool-sig">fulltext_status() &rarr; str</div>
+          <p class="tool-returns"><strong>Returns:</strong> Per-status counts from the last run's dataset, the persistent chunk count of the <code>paper_chunks</code> collection, and the configuration state.</p>
+        </div>
+      </article>
+
+      <!-- Tool 20: index_fulltext -->
+      <article class="tool-card" id="index_fulltext" data-category="fulltext"
+        data-name="index_fulltext"
+        data-description="Downloads, extracts and indexes the full text of the latest run's papers">
+        <div class="tool-card-header">
+          <h3><a href="#index_fulltext">index_fulltext</a></h3>
+          <span class="tool-category cat-fulltext">Full Text</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Resolves each paper's open-access copy, downloads it, extracts the text and
+            indexes 180-word passages into <code>paper_chunks</code>. Sources are chained:
+            Unpaywall first, Europe PMC after — the second recovers papers Unpaywall knows
+            to be open while naming no PDF. Papers already indexed are skipped unless
+            <code>force</code>, so a repeated call is cheap. Does not require
+            <code>settings.fulltext.enabled</code>; the pipeline step does.
+          </p>
+          <div class="tool-sig">index_fulltext(force: bool = False, limit: int = 0) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">force</td>
+                <td class="param-type">bool</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">False</td>
+                <td>Re-fetch and re-index papers that already have chunks</td>
+              </tr>
+              <tr>
+                <td class="param-name">limit</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">0</td>
+                <td>Cap how many papers to attempt (0 = the configured maximum)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Counts per status — obtained, already indexed, no open access, download failed, no text layer, no sections, no DOI, not attempted.</p>
+        </div>
+      </article>
+
+      <!-- Tool 21: chunk_search -->
+      <article class="tool-card" id="chunk_search" data-category="fulltext"
+        data-name="chunk_search"
+        data-description="Searches inside the full text and returns passages grouped by paper">
+        <div class="tool-card-header">
+          <h3><a href="#chunk_search">chunk_search</a></h3>
+          <span class="tool-category cat-fulltext">Full Text</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Answers what an abstract cannot: which dataset was used, how many annotators
+            coded the corpus, what the method actually did. Returns the passages grouped
+            under the paper they came from, with the section and the character offsets
+            within the extracted text. There is no page number — a PDF has pages and the
+            Europe PMC JATS source has none, so a page field would exist for half the
+            papers.
+          </p>
+          <div class="tool-sig">chunk_search(query: str, top_k: int = 10, per_paper: int = 3, collection_name: str = "paper_chunks") &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">query</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>What to look for, in natural language</td>
+              </tr>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">10</td>
+                <td>How many papers to return</td>
+              </tr>
+              <tr>
+                <td class="param-name">per_paper</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">3</td>
+                <td>How many passages to show per paper</td>
+              </tr>
+              <tr>
+                <td class="param-name">collection_name</td>
+                <td class="param-type">str</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">"paper_chunks"</td>
+                <td>Chunks collection to search</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Passages grouped by paper, each with its section, chunk index, character offsets and relevance.</p>
         </div>
       </article>
     </section>

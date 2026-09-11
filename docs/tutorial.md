@@ -95,6 +95,25 @@ Conecte qualquer cliente MCP (Claude Desktop, LangChain, etc.) e use as ferramen
 | `summarize_paper`     | Resumo de um paper         | `summarize_paper(doi="10.1016/j.jfe.2023.01.001")`             |
 | `get_citation_count`  | Citações de um paper       | `get_citation_count(doi="10.1016/j.jfe.2023.01.001")`          |
 
+### Full-text: procurar dentro dos papers
+
+Até aqui tudo trabalha sobre título + abstract, que trunca método e resultado.
+O full-text é **opt-in e desligado por padrão** — ligue com
+`settings.fulltext.enabled: true` no `config.json`, ou peça direto ao agente:
+
+| Tool              | Para que serve                                    | Exemplo                                                      |
+| ----------------- | ------------------------------------------------- | ------------------------------------------------------------ |
+| `fulltext_status` | Quanto full text o corpus tem, e de onde veio     | `fulltext_status()`                                          |
+| `index_fulltext`  | Baixar, extrair e indexar os papers do último run | `index_fulltext(limit=20)`                                   |
+| `chunk_search`    | Procurar um trecho, não um paper                  | `chunk_search(query="how many annotators coded the corpus")` |
+
+O `chunk_search` responde o que o abstract não responde — qual dataset usaram,
+quantos anotadores, o que o método realmente fez — devolvendo os trechos
+agrupados sob o paper de origem, com a seção e os offsets no texto extraído
+(não há número de página: o PDF tem páginas, a fonte JATS do Europe PMC não).
+Requer o extra `pip install academic-hunter[fulltext]`; sem ele só o Europe PMC
+consegue entregar texto, e o `fulltext_status` avisa.
+
 ## 5. Exemplo de Fluxo Completo via MCP
 
 Conectando o Claude Desktop ao Academic Hunter, você pode simplesmente dizer:

@@ -109,6 +109,25 @@ Usage: `python fulltext_eval.py --fetch` (first run, downloads), `--refresh`
 hundreds of downloads), `--min-subset 1` (compare even when the restricted set
 is tiny).
 
+### Other scripts
+
+Short reference for the rest — one line each, no usage block. Every one of them
+writes to `results/` or prints a table; none is needed to reproduce the numbers
+quoted in the papers, which come from the five documented above.
+
+| Script                                     | What it does                                                                                                                            |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `retrieval_eval.py`                        | Ranks each query's pool with the first-stage strategies (`keyword`, `bm25`, `citations`, `embedding`) and reports nDCG/MRR/AP plus cost |
+| `fusion_comparison.py`                     | Holds the two signals fixed and varies only the fusion rule — the measurement that replaced the percentile-rank geometric mean          |
+| `overlap_analysis.py`                      | DOI overlap between the keyword, embedding and hybrid runs: shared, unique to one mode, and the Jaccard between them                    |
+| `source_uniqueness.py`                     | How much each database contributes _exclusively_ to a multi-source run, and how much the sources overlap                                |
+| `benchmark_baselines.py`                   | Vanilla bi-encoder vs Weight-Bleeding vs echo-style repetition, across MiniLM, BGE-base and GTE-small                                   |
+| `benchmark_comprehensive.py`               | Same comparison against SGPT-style positional weighting, SIF-style inverse frequency, an `N_base` sweep and a BEIR subset               |
+| `cross_encoder_table.py`                   | Reproduces the paper's cross-encoder correlation table from `cross_encoder_expanded.json`                                               |
+| `weight_sweep_multiterm.py`                | Sweeps the weights of three domain terms across 64 combinations and measures the ranking change                                         |
+| `validate_innovation_claims.py`            | Confirms or refutes each claimed innovation with numbers from the existing benchmarks; writes a Markdown report                         |
+| `validate_scoring.py`, `verify_scoring.py` | Formula checks — they print, they do not produce an artefact                                                                            |
+
 ## Results
 
 All outputs go to `results/`:

@@ -41,6 +41,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     interrompe a outra: o Europe PMC não usa e-mail, então o full-text funciona
     até sem endereço de contato.
   - `pypdf` e não PyMuPDF: o segundo é AGPL-3.0 e o projeto é MIT.
+  - **Três tools MCP**: `fulltext_status` (quanto full text o corpus tem, com a
+    proveniência de cada número), `index_fulltext` (indexa sob demanda, sem exigir
+    que o passo esteja ligado na config) e `chunk_search` (trechos agrupados sob o
+    paper de origem, com seção e offsets).
+  - **Sem número de página, de propósito.** O PDF tem páginas; o JATS do Europe
+    PMC não tem. O campo existiria para metade dos papers e faltaria para a
+    outra, o que é pior que não ter — a tool devolve seção, índice do chunk e
+    offsets de caractere no texto extraído, que é o que existe de fato.
+  - **O chunk guarda a identidade do paper** (`title`/`doi`/`year`/`source`) na
+    metadata, para o `chunk_search` nomear a origem sem depender do CSV do
+    último run — que não é versionado e é limpo.
+  - **`already_indexed`**: um paper cujos chunks já estão no índice não é baixado
+    nem re-embeddado. O status é contado à parte no PRISMA, porque "já estava
+    indexado" não é "não foi obtido".
+  - **Agradecimentos ficam de fora, como `references` e `appendix`.** Medido num
+    paper real: uma consulta sobre o próprio assunto do artigo devolveu a seção
+    de agradecimentos em **dois dos três primeiros lugares** — lista de autores,
+    financiadores e conflito de interesses, que casa com qualquer consulta sobre
+    pessoas e não responde nenhuma. (`funding` é a mesma seção.)
+  - **`no_sections` é um status próprio**, separado de `no_text_layer`: aquele
+    significa PDF escaneado e aponta para OCR; este significa texto extraído sem
+    seção reconhecível e aponta para o extrator — consertos diferentes.
+  - **Falha de download guarda o motivo** (`_full_text_error` por paper).
+    `download_failed` cobre três situações distintas — erro transitório, cópia
+    aberta que é só uma landing page, e editora recusando cliente que não seja
+    navegador — e só a primeira vale retentar. Medido: uma segunda passada
+    recuperou um documento que havia falhado na primeira.
 
 - **Fronteiras hexagonais explícitas**: `core/ports/` passa a declarar os contratos
   (`BaseExporter`/`ExportContext`, `BaseScreener`, `BaseVectorStore`, `ConnectorPort`), e a
@@ -130,6 +157,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `track_exclusion` mutava estatísticas fora do lock.
 - SQLite passa a abrir com WAL e `busy_timeout` — sem isso o `SQLiteCache` não era thread-safe
   apesar do docstring afirmar que era.
+- **Só o 429 tinha espera entre tentativas.** Um 5xx ou uma conexão derrubada voltavam na hora:
+  o orçamento de retry era gasto no mesmo instante em que o servidor disse "agora não", o que
+  não é retentar, é a mesma requisição duas vezes. Agora 5xx e erro de rede esperam, dobrando a
+  cada tentativa, e nada é esperado depois da última.
+- **`blocked_sources` nunca era limpo entre runs.** O conjunto vive na config, que sobrevive ao
+  run: um 429 pedindo espera longa silenciava aquela fonte em toda execução seguinte do mesmo
+  processo, sem volta a não ser reiniciar. O bloqueio passa a ser propriedade do run.
+- **Escrita sem escape nos exportadores.** Um `}` no título fechava o campo BibTeX antes do fim
+  e o resto do registro virava lixo — só o abstract era escapado. No RIS, um `\n` num campo
+  quebrava a linha e criava um tag que o leitor não reconhece. No frontmatter do Obsidian, uma
+  aspa no tópico custava a nota inteira o frontmatter, que é o que a torna encontrável.
+- **`run_stats_*.json` era escrito direto no caminho final.** Qualquer leitor que caísse na
+  janela de escrita abria um arquivo pela metade e recebia erro de parse de um arquivo que está
+  íntegro um milissegundo depois. Passa a gravar num temporário irmão e renomear.
+- **O cache engolia a exceção de leitura sem log**, enquanto a de escrita registrava. Uma
+  resposta `None` para tudo transforma cada run em run de rede, e o sintoma é lentidão — nada
+  aponta para o arquivo. O teste que cobria isso era **vacuoso**: corrompia só o arquivo
+  principal, e o SQLite recuperava o banco pelo `-wal`, então o `except` nunca era alcançado.
+- **Semantic Scholar era registrado como `"Semantic Scholar"` e carimbava
+  `"SemanticScholar"`**, então o run reportava essa fonte com uma contagem e uma segunda fonte
+  com zero. O nome passa a ser declarado uma vez por conector (`SOURCE_NAME`) e o registro
+  recusa carregar um conector cujo nome divirja do que ele carimba.
 
 ### Removed
 

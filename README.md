@@ -46,7 +46,7 @@ O pipeline consulta **7 fontes acadêmicas em paralelo**: arXiv, Crossref, Seman
 
 Método original de ponderação semântica configurável via centroide ponderado em espaço de embeddings — permite que o pesquisador defina quais termos são mais importantes sem modificar o modelo, sem GPU, sem dados rotulados.
 
-### 📊 12 Análises com o Mesmo Modelo (MiniLM 22MB)
+### 📊 13 Análises com o Mesmo Modelo (MiniLM 22MB)
 
 | Análise         | Tool MCP              | O que faz                                           |
 | --------------- | --------------------- | --------------------------------------------------- |
@@ -62,10 +62,11 @@ Método original de ponderação semântica configurável via centroide ponderad
 | Resumo          | `summarize_paper`     | Resumo extrativo via MMR                            |
 | Citações        | `get_citation_count`  | Contagem de citações via OpenCitations              |
 | Acesso Aberto   | `find_open_access`    | Versão OA de papers pagos via Unpaywall             |
+| Dentro do paper | `chunk_search`        | Busca por trecho no full text, com seção e offsets  |
 
 ### 🤖 MCP Server — Integração com Agentes de IA
 
-O Academic Hunter expõe **35+ ferramentas, 4 recursos e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
+O Academic Hunter expõe **44 ferramentas, 4 recursos e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
 
 ```bash
 # Inicia o servidor (stdio)
@@ -109,7 +110,7 @@ CSV, BibTeX, RIS, JSON, Markdown, PRISMA — e exportação direta para **Obsidi
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    MCP Server (35+ tools)                    │
+│                    MCP Server (44 tools)                     │
 │  4 Resources · 2 Prompts · Health Check · SSE Transport     │
 ├─────────────────────────────────────────────────────────────┤
 │ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐│

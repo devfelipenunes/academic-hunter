@@ -168,11 +168,13 @@ pre:hover .copy-btn,
 .tool-category.cat-discovery { background: #2d1b0c; color: var(--gold); }
 .tool-category.cat-export { background: #1b0c2d; color: var(--purple); }
 .tool-category.cat-rag { background: #0c2d2b; color: var(--teal); }
+.tool-category.cat-fulltext { background: #2d0c1b; color: var(--pink, #f778ba); }
 
 [data-theme="light"] .tool-category.cat-search { background: #ddf4ff; color: #1a7f37; }
 [data-theme="light"] .tool-category.cat-discovery { background: #fff8c5; color: #9a6700; }
 [data-theme="light"] .tool-category.cat-export { background: #f2e5ff; color: #8250df; }
 [data-theme="light"] .tool-category.cat-rag { background: #ddf4e8; color: #055d4f; }
+[data-theme="light"] .tool-category.cat-fulltext { background: #ffdff0; color: #bf3989; }
 
 .tool-card-body {
   padding: var(--space-lg);
