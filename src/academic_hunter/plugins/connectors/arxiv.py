@@ -9,6 +9,7 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 class ArxivConnector(BaseConnector):
     fetch_suffix = "arxiv"
+    SOURCE_NAME = "ArXiv"
     is_keyword_only = False
     domain = "export.arxiv.org"
     default_delay = 3.0
@@ -21,7 +22,7 @@ class ArxivConnector(BaseConnector):
         tech_group = ' OR '.join([f'all:{t}' for t in tech_strings])
         query = f"({anchor_group}) AND ({tech_group})"
         with self.lock:
-            self.query_history.append({"Source": "ArXiv", "Query": query})
+            self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
 
         articles = []
         start = 0
@@ -64,7 +65,7 @@ class ArxivConnector(BaseConnector):
                         "Abstract": summary_elem.text.strip().replace('\n', ' ') if summary_elem is not None and summary_elem.text else "",
                         "Year": published_elem.text[:4] if published_elem is not None and published_elem.text else "N/A",
                         "URL": id_elem.text if id_elem is not None and id_elem.text else "",
-                        "Source": "ArXiv",
+                        "Source": self.SOURCE_NAME,
                         "Citations": 0,
                         "Type": doc_type,
                         "Peer_Reviewed": self.detect_peer_review(doc_type),

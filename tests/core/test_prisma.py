@@ -211,7 +211,7 @@ class TestAcademicRigor(unittest.TestCase):
             {"Source": "ArXiv", "Type": "preprint", "expected": "No (Preprint)"},
             {"Source": "OpenAlex", "Type": "article", "expected": "Yes"},
             {"Source": "OpenAlex", "Type": "proceedings-article", "expected": "Yes"},
-            {"Source": "SemanticScholar", "Type": "JournalArticle", "expected": "Likely"},
+            {"Source": "Semantic Scholar", "Type": "JournalArticle", "expected": "Likely"},
             {"Source": "CORE", "Type": "journal", "expected": "Yes"},
             {"Source": "Unknown", "Type": "unknown", "expected": "N/A"}
         ]

@@ -8,6 +8,7 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 class CrossrefConnector(BaseConnector):
     fetch_suffix = "crossref"
+    SOURCE_NAME = "Crossref"
     is_keyword_only = False
     domain = "api.crossref.org"
     default_delay = 1.5
@@ -34,7 +35,7 @@ class CrossrefConnector(BaseConnector):
         tech_group = ' '.join([f'"{t}"' for t in tech_strings])
         query = f"({anchor_group}) AND ({tech_group})"
         with self.lock:
-            self.query_history.append({"Source": "Crossref", "Query": query})
+            self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
 
         start_year = self.settings.get('start_year', 2021)
         user_email = self.settings.get('user_email', 'academic_hunter@example.com')
@@ -89,7 +90,7 @@ class CrossrefConnector(BaseConnector):
                     "Abstract": i.get('abstract', ""),
                     "Year": year,
                     "URL": i.get('URL', ""),
-                    "Source": "Crossref",
+                    "Source": self.SOURCE_NAME,
                     "Citations": i.get('is-referenced-by-count', 0),
                     "DOI": i.get('DOI'),
                     "Type": doc_type,

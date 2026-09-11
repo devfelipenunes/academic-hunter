@@ -46,9 +46,25 @@ def _discover_connectors() -> None:
                 continue
             if not issubclass(cls, BaseConnector) or cls is BaseConnector:
                 continue
-            display_name = _CONNECTOR_NAMES.get(module_name)
-            if display_name:
-                CONNECTORS[display_name] = cls
+            _register(module_name, cls)
+
+
+def _register(module_name: str, cls: type) -> None:
+    """Register one connector under its display name.
+
+    Papers are counted under the name the connector stamps on them, so a
+    mismatch shows up as one source with a count and a second with a zero.
+    Failing here is cheaper than finding that in a report.
+    """
+    display_name = _CONNECTOR_NAMES.get(module_name)
+    if not display_name:
+        return
+    if cls.SOURCE_NAME != display_name:
+        raise ValueError(
+            f"{cls.__name__} stamps {cls.SOURCE_NAME!r} but is registered "
+            f"as {display_name!r}; the two have to be the same string."
+        )
+    CONNECTORS[display_name] = cls
 
 
 _discover_connectors()

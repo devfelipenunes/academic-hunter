@@ -20,6 +20,52 @@ def _make_hunter_with_results(results_dict):
     return hunter
 
 
+# ── state reset between runs ────────────────────────────────────────────────
+
+
+def test_a_blocked_source_is_unblocked_by_the_next_run():
+    """A block lasts for the run that hit the rate limit, not for the session.
+
+    Measured defect: `blocked_sources` lives on the config, which outlives the
+    run, and nothing ever cleared it — so one 429 with a long wait silenced that
+    source for every run afterwards, in the same process, with no way back
+    except restarting.
+    """
+    from academic_hunter.core.pipeline.manager import SearchPipeline
+    from academic_hunter.core.infra.state import SearchState
+
+    hunter = MagicMock()
+    hunter.connectors = {"ArXiv": MagicMock(), "OpenAlex": MagicMock()}
+    hunter.state = SearchState()
+    hunter.blocked_sources = {"api.openalex.org"}
+
+    SearchPipeline(hunter)._reset_run_state()
+
+    assert hunter.blocked_sources == set(), "the source stayed blocked"
+    assert set(hunter.state.stats["identified"]) == {"ArXiv", "OpenAlex"}
+
+
+def test_the_reset_clears_the_block_in_place():
+    """It has to be `.clear()`: the connectors hold this very set.
+
+    Rebinding would hand the connectors a new object and leave them reading the
+    old one, which is how a reset can look like it worked and change nothing.
+    """
+    from academic_hunter.core.pipeline.manager import SearchPipeline
+    from academic_hunter.core.infra.state import SearchState
+
+    shared = {"api.openalex.org"}
+    hunter = MagicMock()
+    hunter.connectors = {}
+    hunter.state = SearchState()
+    hunter.blocked_sources = shared
+
+    SearchPipeline(hunter)._reset_run_state()
+
+    assert shared == set()
+    assert hunter.blocked_sources is shared
+
+
 # ── vector_store property ───────────────────────────────────────────────────
 
 

@@ -7,6 +7,7 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 class DblpConnector(BaseConnector):
     fetch_suffix = "dblp"
+    SOURCE_NAME = "DBLP"
     is_keyword_only = True
     domain = "dblp.org"
     default_delay = 1.5
@@ -20,7 +21,7 @@ class DblpConnector(BaseConnector):
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
         query = f"{' '.join(anchors[:3])} {' '.join(tech_strings[:2])}"
         with self.lock:
-            self.query_history.append({"Source": "DBLP", "Query": query})
+            self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
 
         articles = []
         first = 0
@@ -53,7 +54,7 @@ class DblpConnector(BaseConnector):
                     "Abstract": "",
                     "Year": year,
                     "URL": url,
-                    "Source": "DBLP",
+                    "Source": self.SOURCE_NAME,
                     "Citations": 0,
                     "DOI": doi,
                     "Type": doc_type,

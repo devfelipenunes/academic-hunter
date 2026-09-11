@@ -10,6 +10,10 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger("academic_hunter.connectors")
 
+#: First wait before retrying a transient failure; doubles per attempt.
+#: A 404 does not become a 200 by waiting, and 429 has its own escalation.
+_RETRY_BACKOFF_SECONDS = 0.5
+
 
 class BaseConnector:
     """Base API connector handling domain pacing, concurrency limits, retries, and caching."""
@@ -18,6 +22,9 @@ class BaseConnector:
     domain = ""
     default_delay = 1.5
     resolve_priority = 0
+    #: Stamped on every paper and used as the key in `stats["identified"]`; it
+    #: has to match the name the connector is registered under.
+    SOURCE_NAME = ""
 
     def __init__(self, cache, settings, query_history, lock, semaphore, use_cache=True):
         self.cache = cache
@@ -134,13 +141,30 @@ class BaseConnector:
                             return None
 
                     if resp.status_code != 200:
+                        # A 5xx is the server saying "not now"; retrying it with
+                        # no wait spends the budget without the pause it asked for.
+                        if resp.status_code >= 500:
+                            self._backoff(domain, attempt, max_retries)
                         continue
 
                     return resp
                 except Exception as e:
                     logger.debug(f"Request to {domain} failed (attempt {attempt + 1}): {e}")
+                    self._backoff(domain, attempt, max_retries)
                     continue
         return None
+
+    def _backoff(self, domain: str, attempt: int, max_retries: int) -> None:
+        """Wait before the next attempt, unless this was the last one.
+
+        Pacing spaces different queries apart; this spaces the retries of one
+        failing request, which nothing else covers.
+        """
+        if attempt >= max_retries - 1:
+            return
+        wait = _RETRY_BACKOFF_SECONDS * (2 ** attempt)
+        logger.debug("Retrying %s in %.1fs (attempt %d).", domain, wait, attempt + 1)
+        time.sleep(wait)
 
     def _make_request(self, url: str, params: Dict[str, Any] = None, timeout: int = 20, max_retries: int = 2) -> Any:
         """

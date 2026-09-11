@@ -8,6 +8,7 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 class SemanticScholarConnector(BaseConnector):
     fetch_suffix = "semantic_scholar"
+    SOURCE_NAME = "Semantic Scholar"
     is_keyword_only = True
     domain = "api.semanticscholar.org"
     default_delay = 4.0
@@ -37,7 +38,7 @@ class SemanticScholarConnector(BaseConnector):
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
         query = f'{" ".join(anchors[:3])} {" ".join(tech_strings[:2])}'
         with self.lock:
-            self.query_history.append({"Source": "SemanticScholar", "Query": query})
+            self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
         start_year = self.settings.get('start_year', 2021)
         s2_url = "https://api.semanticscholar.org/graph/v1/paper/search"
 
@@ -75,7 +76,7 @@ class SemanticScholarConnector(BaseConnector):
                         "Abstract": i.get('abstract') or "",
                         "Year": i.get('year', "N/A"),
                         "URL": i.get('url', ""),
-                        "Source": "SemanticScholar",
+                        "Source": self.SOURCE_NAME,
                         "Citations": i.get('citationCount', 0),
                         "DOI": i.get('externalIds', {}).get('DOI'),
                         "Type": doc_type,

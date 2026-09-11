@@ -8,6 +8,7 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 class CoreConnector(BaseConnector):
     fetch_suffix = "core_ac"
+    SOURCE_NAME = "CORE"
     is_keyword_only = False
     domain = "api.core.ac.uk"
     default_delay = 3.0
@@ -31,7 +32,7 @@ class CoreConnector(BaseConnector):
         tech_group = ' OR '.join([f'"{t}"' for t in tech_strings])
         query = f"title:({anchor_group}) AND abstract:({tech_group})"
         with self.lock:
-            self.query_history.append({"Source": "CORE", "Query": query})
+            self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
 
         articles = []
         offset = 0
@@ -61,7 +62,7 @@ class CoreConnector(BaseConnector):
                     "Abstract": i.get('abstract', ""),
                     "Year": i.get('yearPublished', "N/A"),
                     "URL": f"https://core.ac.uk/works/{i.get('id')}" if i.get('id') else "",
-                    "Source": "CORE",
+                    "Source": self.SOURCE_NAME,
                     "Citations": 0,
                     "DOI": i.get('doi'),
                     "Type": doc_type,

@@ -8,6 +8,7 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 class OpenAlexConnector(BaseConnector):
     fetch_suffix = "openalex"
+    SOURCE_NAME = "OpenAlex"
     is_keyword_only = False
     domain = "api.openalex.org"
     default_delay = 1.5
@@ -55,7 +56,7 @@ class OpenAlexConnector(BaseConnector):
         tech_q = ' OR '.join([f'"{t}"' for t in tech_strings])
         query = f"({anchor_q}) AND ({tech_q})"
         with self.lock:
-            self.query_history.append({"Source": "OpenAlex", "Query": query})
+            self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
 
         url = "https://api.openalex.org/works"
         articles = []
@@ -94,7 +95,7 @@ class OpenAlexConnector(BaseConnector):
                     "Abstract": abstract_text,
                     "Year": i.get('publication_year', "N/A"),
                     "URL": i.get('doi') or i.get('id') or "",
-                    "Source": "OpenAlex",
+                    "Source": self.SOURCE_NAME,
                     "Citations": i.get('cited_by_count', 0),
                     "DOI": doi_clean,
                     "Type": doc_type,

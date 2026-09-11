@@ -102,11 +102,21 @@ class SearchPipeline:
 
                     time.sleep(1.0)
 
+    def _reset_run_state(self) -> None:
+        """Start a run from a clean slate.
+
+        ``blocked_sources`` lives on the config, which outlives the run: without
+        clearing it here, one 429 silences a source for every later run in the
+        same process. The block belongs to the run, not to the session.
+        """
+        self.hunter.state.reset(list(self.hunter.connectors.keys()))
+        self.hunter.blocked_sources.clear()
+
     def run(self, limit_per_source: int = 100):
         logger.info("🚀 Initializing Multi-Threaded Academic Hunter V2 Pipeline...")
         timestamp = time.strftime("%Y%m%d_%H%M%S")
 
-        self.hunter.state.reset(list(self.hunter.connectors.keys()))
+        self._reset_run_state()
         self.hunter.last_request_time = time.time()
 
         threads = []
