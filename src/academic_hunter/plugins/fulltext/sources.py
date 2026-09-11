@@ -70,6 +70,7 @@ class ChainFullTextSource:
                 continue
 
             if document.has_text_layer:
+                document.source = name
                 return document
             # Text was found but is unusable (a scan, an abstract-only record);
             # another source may still have the real thing.

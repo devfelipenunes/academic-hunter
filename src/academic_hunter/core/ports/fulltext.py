@@ -54,6 +54,9 @@ class ExtractedDocument:
     page_count: int = 0
     #: False when the PDF carries no text layer (a scan). No OCR is attempted.
     has_text_layer: bool = True
+    #: Which leg of the chain delivered it — a coverage report needs to say which
+    #: source could actually produce the text, not just that there was one.
+    source: str = ""
 
 
 @runtime_checkable

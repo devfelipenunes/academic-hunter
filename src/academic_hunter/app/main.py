@@ -130,37 +130,19 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
         self.pipeline = SearchPipeline(self)
 
     def _build_full_text_fetcher(self):
-        """Compose the full-text sources into one callable: DOI in, document out.
+        """Compose the full-text source chain for this hunter's configuration.
 
-        Unpaywall goes first — it is the index of where open copies live — and
-        Europe PMC follows, because Unpaywall frequently knows a paper is open
-        while naming no PDF, and Europe PMC serves those as JATS XML.
-
-        Without a usable contact e-mail the Unpaywall leg is dropped rather than
-        the whole feature: Europe PMC needs no address, so full text still works.
+        The chain itself is built in :mod:`academic_hunter.plugins.fulltext.compose`
+        because the MCP tool and the evaluation script need the same one without
+        standing up a hunter; what stays here is the decision of which e-mail and
+        which cache directory this project uses.
         """
-        from ..core.ports.fulltext import FullTextConfigError
-        from ..plugins.fulltext.cache import CachedFullTextSource, PdfCache
-        from ..plugins.fulltext.europepmc import EuropePmcSource
-        from ..plugins.fulltext.pdf import PdfExtractor
-        from ..plugins.fulltext.sources import ChainFullTextSource, UnpaywallPdfSource
-        from ..plugins.fulltext.unpaywall import UnpaywallSource
+        from ..plugins.fulltext.compose import build_full_text_fetcher
 
-        sources = [EuropePmcSource()]
-
-        try:
-            pdf_source = CachedFullTextSource(
-                UnpaywallSource(self.config.fulltext_config()["email"]),
-                PdfCache(
-                    Path(self.output_dir).parent / ".academic_hunter" / "fulltext"
-                ),
-            )
-        except FullTextConfigError as e:
-            logger.info("Unpaywall unavailable (%s); using Europe PMC only.", e)
-        else:
-            sources.insert(0, UnpaywallPdfSource(pdf_source, PdfExtractor()))
-
-        return ChainFullTextSource(sources)
+        return build_full_text_fetcher(
+            self.config.fulltext_config()["email"],
+            Path(self.output_dir).parent / ".academic_hunter" / "fulltext",
+        )
 
     @staticmethod
     def _resolve_connector_classes(connectors: Optional[Dict[str, Any]]) -> Dict[str, Any]:

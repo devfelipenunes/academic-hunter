@@ -6,20 +6,13 @@ logic, logging, and testability.
 
 import logging
 import math
-import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from ..evaluation.qrels import doc_id_for
-from ..fulltext import chunk_document
+from ..fulltext.ingest import ingest_full_text
 from ..nlp.bm25 import BM25
 from ..nlp.fusion import DEFAULT_STRATEGY, fuse_scores, percentile_ranks
 from ..nlp.reranker import rerank_config, rerank_scores, rerank_texts
-from ..ports.fulltext import (
-    FullTextConfigError,
-    FullTextTransientError,
-    NoOpenAccessVersion,
-)
 from ..ports.vector_store import ChunkStorePort
 
 logger = logging.getLogger("academic_hunter.pipeline")
@@ -379,25 +372,11 @@ class AutoExportObsidianStep(PipelineStep):
 class IngestFullTextStep(PipelineStep):
     """Fetch, extract and index the full text of the included papers.
 
-    Opt-in via ``settings.fulltext.enabled``, off by default, and **never
-    raises**: it runs between a finished run and its report, and a publisher's
-    403 is not a reason to lose the run.
-
-    It runs *after* the threshold filter, so the downloads are spent on the
-    papers that qualified rather than on everything that was ever identified.
-    Sequential rather than threaded — the connector threads already share a
-    pacing state, and publishers do not tolerate an aggressive client — so it is
-    bounded by a paper count and a wall-clock budget.
-
-    Every paper gets a ``_full_text_status``. That is not only robustness: SLR
-    methodology requires reporting how many full texts were not obtained, and
-    "there is no open-access copy" is a different finding from "the download
-    broke".
+    Opt-in via ``settings.fulltext.enabled``, off by default, and runs *after*
+    the threshold filter so downloads are spent on the papers that qualified.
+    The loop itself is :mod:`academic_hunter.core.fulltext.ingest`, which the
+    ``index_fulltext`` MCP tool runs too.
     """
-
-    #: Status recorded per paper, and counted in `stats`.
-    STATUSES = ("obtained", "no_open_access", "download_failed", "no_text_layer",
-                "no_doi", "not_attempted")
 
     def run(self) -> None:
         cfg = self.hunter.config.fulltext_config()
@@ -414,95 +393,11 @@ class IngestFullTextStep(PipelineStep):
             logger.info("Vector store cannot hold chunks; skipping full-text ingest.")
             return
 
-        papers = list(self.hunter.consolidated_results.items())
+        papers = list(self.hunter.consolidated_results.values())
         if not papers:
             return
 
-        counters = {status: 0 for status in self.STATUSES}
-        started = time.monotonic()
-        attempted = 0
-        abandoned = False
-
-        for slug, paper in papers:
-            if abandoned or attempted >= cfg["max_papers"] or (
-                time.monotonic() - started > cfg["time_budget_seconds"]
-            ):
-                status = "not_attempted"
-            else:
-                doi = str(paper.get("DOI") or "").strip()
-                if not doi:
-                    status = "no_doi"
-                else:
-                    attempted += 1
-                    try:
-                        status = self._ingest_one(paper, doi, fetcher, store)
-                    except FullTextConfigError as e:
-                        # Every remaining call would fail identically. This one
-                        # *was* attempted and did fail, so it is not "skipped".
-                        logger.error("Full-text ingest aborted: %s", e)
-                        abandoned = True
-                        status = "download_failed"
-
-            paper["_full_text_status"] = status
-            counters[status] += 1
+        counters = ingest_full_text(papers, fetcher, store, cfg)
 
         with self.hunter.lock:
             self.hunter.state.stats["full_text"] = dict(counters)
-
-        logger.info(
-            "Full text: %d obtained, %d without an OA copy, %d failed, "
-            "%d without a text layer, %d not attempted.",
-            counters["obtained"], counters["no_open_access"],
-            counters["download_failed"], counters["no_text_layer"],
-            counters["not_attempted"],
-        )
-        if counters["not_attempted"]:
-            # Saying nothing would read as "there is no OA copy", which is the
-            # wrong conclusion to draw from a budget that ran out.
-            logger.warning(
-                "%d papers were not attempted (budget: %d papers / %ds). "
-                "Raise settings.fulltext.max_papers or time_budget_seconds.",
-                counters["not_attempted"], cfg["max_papers"], cfg["time_budget_seconds"],
-            )
-
-    def _ingest_one(self, paper: Dict[str, Any], doi: str, fetcher: Any, store: Any) -> str:
-        """Fetch, chunk and index one paper. Returns its status; never raises."""
-        try:
-            document = fetcher(doi)
-        except NoOpenAccessVersion:
-            return "no_open_access"
-        except FullTextConfigError:
-            raise  # the caller stops the whole step
-        except FullTextTransientError as e:
-            logger.info("Full text unavailable for %s: %s", doi, e)
-            return "download_failed"
-        except Exception as e:  # noqa: BLE001 — an optional stage must not fail the run
-            logger.warning("Unexpected full-text failure for %s: %s", doi, e)
-            return "download_failed"
-
-        if not document.has_text_layer:
-            return "no_text_layer"
-
-        parent_id = doc_id_for(str(paper.get("Title", "")), doi)
-        chunks = chunk_document(document, parent_id)
-        if not chunks:
-            return "no_text_layer"
-
-        records = [
-            {
-                "chunk_id": c.chunk_id,
-                "parent_id": c.parent_id,
-                "text": c.text,
-                "section": c.section,
-                "index": c.index,
-                "start": c.start,
-                "end": c.end,
-            }
-            for c in chunks
-        ]
-        try:
-            indexed = store.index_chunks(records)
-        except Exception as e:  # noqa: BLE001
-            logger.warning("Could not index chunks for %s: %s", doi, e)
-            return "download_failed"
-        return "obtained" if indexed else "download_failed"

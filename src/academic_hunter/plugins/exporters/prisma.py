@@ -173,8 +173,14 @@ graph TD
             if full_text:
                 f.write("### Full Text Retrieval\n\n")
                 f.write(f"- **Obtained:** {full_text.get('obtained', 0)}\n")
+                # Not a failure to obtain: the corpus has the text already.
+                if full_text.get("already_indexed"):
+                    f.write(
+                        "- **Already indexed (not re-fetched):** "
+                        f"{full_text['already_indexed']}\n"
+                    )
                 for status, count in sorted(full_text.items()):
-                    if status == "obtained" or not count:
+                    if status in ("obtained", "already_indexed") or not count:
                         continue
                     f.write(f"- **Not obtained — {status}:** {count}\n")
                 f.write("\n")

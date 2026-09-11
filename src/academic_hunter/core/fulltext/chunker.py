@@ -43,8 +43,8 @@ _SECTION_ALIASES = {
 }
 
 #: Dropped by default: 20-40% of a paper's text, matching queries about author
-#: names rather than content, and it poisons the retrieval pool.
-_DROPPED_BY_DEFAULT = ("references", "appendix")
+#: names rather than content. Acknowledgements are the same kind of boilerplate.
+_DROPPED_BY_DEFAULT = ("references", "appendix", "acknowledgements")
 
 #: A heading is a short line that is not a sentence.
 _MAX_HEADING_CHARS = 70
@@ -184,7 +184,8 @@ def chunk_document(
 
     The abstract becomes exactly one chunk: it is already a curated summary, and
     splitting it would scatter the densest signal in the paper. The preamble is
-    dropped, and so are references and appendices unless asked for.
+    dropped, and so is the back matter — references, appendices and
+    acknowledgements — unless ``include_references`` asks to keep it.
     """
     if not doc.text or not doc.text.strip():
         return []

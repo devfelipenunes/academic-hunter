@@ -160,6 +160,40 @@ def test_an_appendix_is_excluded_by_default():
     assert not [c for c in chunk(text=text) if c.section == "appendix"]
 
 
+def test_acknowledgements_are_excluded_by_default():
+    """Measured on a real paper: author lists and funders outranked the method.
+
+    A query about the paper's own subject returned the acknowledgements section
+    in two of the top three slots. They match queries about people and answer
+    none of them, which is the same reason `references` is dropped.
+    """
+    text = build(
+        ("Abstract", "Short."),
+        ("Methods", words("m", 200)),
+        ("Acknowledgements", words("thanks", 200)),
+    )
+
+    sections = {c.section for c in chunk(text=text)}
+
+    assert "acknowledgements" not in sections
+    assert "method" in sections, "the rest of the paper must survive"
+
+
+def test_funding_is_the_same_section_as_acknowledgements():
+    text = build(("Abstract", "Short."), ("Funding", words("grant", 200)))
+
+    assert not [c for c in chunk(text=text) if c.section == "acknowledgements"]
+
+
+def test_acknowledgements_can_be_asked_for():
+    """`include_references` is the switch for all of the back matter."""
+    text = build(("Abstract", "Short."), ("Acknowledgements", words("thanks", 200)))
+
+    kept = [c for c in chunk(text=text, include_references=True) if c.section == "acknowledgements"]
+
+    assert kept
+
+
 # ── identity and degenerate input ───────────────────────────────────────────
 
 

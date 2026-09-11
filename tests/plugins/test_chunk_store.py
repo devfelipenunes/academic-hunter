@@ -80,6 +80,43 @@ def test_indexing_chunks_leaves_the_papers_collection_alone(store):
     assert "paper_chunks" in store.list_collections()
 
 
+def test_the_paper_identity_round_trips_with_the_chunk(store):
+    """`chunk_search` names the paper from the chunk, so it has to survive.
+
+    The values go through Chroma's metadata validation, which accepts only
+    str/int/float/bool — a `None` reaching the upsert takes the whole batch
+    down, and a mock would not notice.
+    """
+    records = [
+        {
+            **chunk("doi:10.1/a::0", "doi:10.1/a", "latency in distributed ledgers"),
+            "title": "Ledgers in practice",
+            "doi": "10.1/a",
+            "year": 2024,
+            "source": "EuropePmcSource",
+        }
+    ]
+
+    store.index_chunks(records)
+    top = store.query_chunks("latency in distributed ledgers", top_k=1)[0]
+
+    assert top["title"] == "Ledgers in practice"
+    assert top["doi"] == "10.1/a"
+    assert top["year"] == "2024"
+    assert top["source"] == "EuropePmcSource"
+
+
+def test_a_missing_identity_round_trips_as_empty(store):
+    """A chunk indexed before the identity existed, or from a caller that omits it."""
+    store.index_chunks([chunk("doi:10.1/a::0", "doi:10.1/a", "a fragment")])
+
+    top = store.query_chunks("a fragment", top_k=1)[0]
+
+    assert top["title"] == ""
+    assert top["doi"] == ""
+    assert top["source"] == ""
+
+
 def test_an_empty_batch_is_not_an_error(store):
     assert store.index_chunks([]) is True
 

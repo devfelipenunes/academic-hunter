@@ -212,12 +212,18 @@ class ChromaVectorStore(BaseVectorStore):
                 if not text or not chunk_id:
                     continue
                 documents.append(text)
+                # The paper's identity travels with the chunk so `chunk_search`
+                # can name it: the parent_id is a derived id, not a readable one.
                 metadatas.append({
                     "parent_id": _as_str(chunk.get("parent_id")),
                     "section": _as_str(chunk.get("section")),
                     "index": _as_int(chunk.get("index")),
                     "start": _as_int(chunk.get("start")),
                     "end": _as_int(chunk.get("end")),
+                    "title": _as_str(chunk.get("title"))[:500],
+                    "doi": _as_str(chunk.get("doi")),
+                    "year": _as_str(chunk.get("year")),
+                    "source": _as_str(chunk.get("source")),
                 })
                 ids.append(chunk_id)
 
@@ -262,6 +268,10 @@ class ChromaVectorStore(BaseVectorStore):
                     "index": metadata.get("index", 0),
                     "start": metadata.get("start", 0),
                     "end": metadata.get("end", 0),
+                    "title": metadata.get("title", ""),
+                    "doi": metadata.get("doi", ""),
+                    "year": metadata.get("year", ""),
+                    "source": metadata.get("source", ""),
                     "text": results["documents"][0][i] if results["documents"] else "",
                     "relevance": round(
                         max(0.0, min(1.0, (1.414 - distance) / 1.414)), 4
