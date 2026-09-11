@@ -52,6 +52,22 @@ def test_discover_and_register(mock_ctx):
     assert mock_mcp.tool.call_count >= 10
 
 
+async def test_the_fulltext_tools_are_registered():
+    """Registration is by convention, so it can fail without failing anything.
+
+    Auto-discovery picks up an `async def` only if one of its parameters is
+    annotated `Context`; a tool that loses that annotation stops existing with no
+    import error and no red test. Two tools have already shipped dead in this
+    project for exactly that reason.
+    """
+    from academic_hunter.interfaces.mcp.server import create_mcp_server
+
+    server = create_mcp_server()
+    names = {tool.name for tool in await server.list_tools()}
+
+    assert {"fulltext_status", "index_fulltext", "chunk_search"} <= names
+
+
 def test_server_status_imported():
     """server_status tool is registered in the server module."""
     from academic_hunter.interfaces.mcp.server import server_status, _check_components

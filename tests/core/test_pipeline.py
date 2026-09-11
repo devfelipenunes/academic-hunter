@@ -2,7 +2,9 @@ import unittest
 from unittest.mock import patch, MagicMock
 import json
 import os
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 # Add src to path
@@ -50,7 +52,17 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
             os.remove(cls.test_config_path)
 
     def setUp(self):
-        self.hunter = AcademicHunter(config_path=self.test_config_path)
+        # Its own output directory. Without this the hunter defaults to the
+        # project's `results/`, and a test that generates a PRISMA report writes
+        # `run_stats_test_stats.json` there — a file with no run stamp, which
+        # tools then have to be careful not to mistake for a run.
+        self.output_dir = tempfile.mkdtemp(prefix="ah-test-")
+        self.hunter = AcademicHunter(
+            config_path=self.test_config_path, output_dir=self.output_dir
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.output_dir, ignore_errors=True)
 
     @patch('requests.get')
     def test_crossref_fallback_dates(self, mock_get):

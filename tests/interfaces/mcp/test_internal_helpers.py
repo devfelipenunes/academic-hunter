@@ -176,6 +176,63 @@ def test_get_project_root_fallback_cwd():
     assert root == Path.cwd()
 
 
+# ── _utils: which run is "the latest" ────────────────────────────
+
+
+def _fake_project(tmp_path):
+    """A results/ tree with two runs and one file that is not a run."""
+    run = tmp_path / "results" / "run_20260910_120000"
+    run.mkdir(parents=True)
+    (run / "academic_dataset_20260910_120000.csv").write_text("Title\nA\n")
+    (run / "run_stats_20260910_120000.json").write_text("{}")
+
+    old = tmp_path / "results" / "run_20260601_090000"
+    old.mkdir(parents=True)
+    (old / "academic_dataset_20260601_090000.csv").write_text("Title\nB\n")
+
+    # Ordered last by ctime, and the reason the ordering stopped using it.
+    (tmp_path / "results" / "run_stats_test_stats.json").write_text("{}")
+    return tmp_path
+
+
+def test_latest_run_dir_ignores_a_file_that_is_not_a_run(tmp_path):
+    """Measured defect: `run_stats_test_stats.json` became "the latest run".
+
+    It is written into `results/` by a test, carries no run stamp, and used to
+    win on ctime — which made `fulltext_status` report on a file that is not a
+    run at all.
+    """
+    from academic_hunter.interfaces.mcp.tools import _utils
+
+    root = _fake_project(tmp_path)
+    with patch.object(_utils, "get_project_root", return_value=root):
+        assert _utils._latest_run_dir().name == "run_20260910_120000"
+
+
+def test_latest_run_dir_is_none_without_runs(tmp_path):
+    from academic_hunter.interfaces.mcp.tools import _utils
+
+    (tmp_path / "results").mkdir()
+    with patch.object(_utils, "get_project_root", return_value=tmp_path):
+        assert _utils._latest_run_dir() is None
+
+
+def test_load_latest_papers_reads_the_newest_run(tmp_path):
+    """The stamp in the filename decides, not the file's change time."""
+    from academic_hunter.interfaces.mcp.tools import _utils
+
+    root = _fake_project(tmp_path)
+    older = root / "results" / "run_20260601_090000" / "academic_dataset_20260601_090000.csv"
+    import os
+
+    os.utime(older, (9_000_000_000, 9_000_000_000))  # newest by ctime, oldest by name
+
+    with patch.object(_utils, "get_project_root", return_value=root):
+        papers = _utils._load_latest_papers()
+
+    assert papers and papers[0]["Title"] == "A"
+
+
 # ── _utils: _get_vector_store ────────────────────────────────────
 
 

@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-import os
+import re
 from pathlib import Path
 from typing import Any, Callable
 from academic_hunter import AcademicHunter
@@ -62,6 +62,39 @@ def _make_hunter() -> AcademicHunter:
     return AcademicHunter(output_dir=str(get_project_root() / "results"))
 
 
+def _newest_run_artifact(paths):
+    """The path whose filename carries the latest run stamp, or None.
+
+    Not `getctime`: on Linux that is metadata-change time, and a file with no run
+    stamp at all (a test's leftovers) sorted as the newest run.
+    """
+    newest, newest_stamp = None, ""
+    for path in paths:
+        match = re.search(r"(\d{8}_\d{6})", path.name)
+        if not match:
+            continue
+        if match.group(1) > newest_stamp:
+            newest, newest_stamp = path, match.group(1)
+    return newest
+
+
+def _latest_run_dir() -> Path | None:
+    """Directory of the most recent run, whichever artifact it left behind.
+
+    A run writes its dataset and its ``run_stats`` into the same directory, so
+    asking once answers for both; looking them up independently would mix two
+    runs whenever one of them is missing.
+    """
+    results_dir = get_project_root() / "results"
+    candidates = [
+        path
+        for pattern in ("academic_dataset_*.csv", "run_stats_*.json")
+        for path in results_dir.rglob(pattern)
+    ]
+    newest = _newest_run_artifact(candidates)
+    return newest.parent if newest else None
+
+
 def _load_latest_papers() -> list:
     """Papers from the most recent run, read back from disk.
 
@@ -70,21 +103,17 @@ def _load_latest_papers() -> list:
     Recursive because the exporter writes into a per-run subdirectory.
     """
     results_dir = get_project_root() / "results"
-    csv_files = sorted(
-        results_dir.rglob("academic_dataset_*.csv"),
-        key=os.path.getctime,
-        reverse=True,
-    )
-    if not csv_files:
+    csv_path = _newest_run_artifact(results_dir.rglob("academic_dataset_*.csv"))
+    if csv_path is None:
         return []
     try:
         import pandas as pd
 
-        frame = pd.read_csv(csv_files[0])
+        frame = pd.read_csv(csv_path)
         # pandas makes an empty cell NaN — a float that stringifies to "nan" and
         # makes Chroma reject the batch. Callers expect the missing value.
         cleaned = frame.astype(object).where(frame.notna(), None)
         return cleaned.to_dict(orient="records")
     except Exception as e:
-        logger.warning("Could not read %s: %s", csv_files[0], e)
+        logger.warning("Could not read %s: %s", csv_path, e)
         return []
