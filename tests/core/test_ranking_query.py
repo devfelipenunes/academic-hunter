@@ -151,15 +151,20 @@ def test_query_mode_still_respects_the_reported_scale():
         assert 0.0 <= paper["Relevance_Score"] <= 10.0
 
 
-def test_scores_stay_constant_when_nothing_matches():
-    """A query nothing matches must not empty the run at the threshold.
+def test_scores_collapse_when_nothing_matches():
+    """A query that matches no paper is evidence for no paper.
 
-    Every document ties at the top of the scale rather than at the bottom —
-    the same rule that keeps a single-paper collection from being discarded.
+    These used to tie at the *top* of the scale, which passed every one of them
+    through the threshold. That is the wrong direction for a review — an included
+    paper costs a reader more than an empty run — and the run is not silent about
+    it: the query it was ranked against is recorded in the report.
+
+    A flat signal that carries something (every paper matched the anchors equally)
+    still ties at the top; only the all-zero case drops.
     """
     papers = {"a": {"Title": "alpha", "Abstract": ""}, "b": {"Title": "beta", "Abstract": ""}}
     step = make_step(papers, {"ranking_query": "nothingmatchesthis", "min_relevance_score": 5.0})
 
     step.run()
 
-    assert [p["Relevance_Score"] for p in papers.values()] == [10.0, 10.0]
+    assert [p["Relevance_Score"] for p in papers.values()] == [0.0, 0.0]

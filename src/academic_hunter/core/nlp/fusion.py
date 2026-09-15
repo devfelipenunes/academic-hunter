@@ -109,6 +109,13 @@ def fuse_scores(
     fused = [(alpha * a + beta * b) / total for a, b in zip(kw_norm, sem_norm)]
 
     if max(fused) == min(fused):
-        return [10.0] * n
+        # Every signal is flat, so there is no ordering to preserve. Whether that
+        # means "no evidence" or "equal evidence" is what decides the score: an
+        # all-zero signal is a query that matched nothing, and tying it at the top
+        # of the scale approved the entire corpus at the threshold. `_minmax`
+        # already treats a flat signal as contributing nothing — this only asks
+        # whether anything was there to contribute.
+        evidence = (alpha > 0 and any(kw_scores)) or (beta > 0 and any(sem_scores))
+        return [10.0] * n if evidence else [0.0] * n
 
     return [f * 10.0 for f in fused]

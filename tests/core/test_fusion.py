@@ -130,6 +130,27 @@ def test_constant_signals_tie_at_the_top_not_the_bottom():
     assert list(scores) == [10.0, 10.0, 10.0]
 
 
+def test_a_flat_signal_with_no_evidence_does_not_tie_at_the_top():
+    """Absent evidence is not the same as equal evidence.
+
+    Every raw score is zero, which is what a ranking query whose terms are in no
+    paper produces. `_minmax` already answers this — "a signal that does not vary
+    carries no ordering information, so it should contribute nothing" — and the
+    caller turned its zeros into 10.0, the top of the scale, approving the whole
+    corpus at the threshold.
+    """
+    scores = fuse([0.0, 0.0], [0.0, 0.0], weights={"keyword": 1.0, "embedding": 0.0})
+
+    assert list(scores) == [0.0, 0.0]
+
+
+def test_a_flat_signal_matching_nothing_is_not_evidence_even_if_unweighted():
+    """The embedding is weighted zero here, so its value cannot be the evidence."""
+    scores = fuse([0.0, 0.0], [0.4, 0.4], weights={"keyword": 1.0, "embedding": 0.0})
+
+    assert list(scores) == [0.0, 0.0]
+
+
 def test_one_constant_signal_still_ranks_by_the_other():
     """A flat embedding must not flatten the keyword ordering."""
     scores = fuse([1.0, 2.0, 3.0], [0.5, 0.5, 0.5])
