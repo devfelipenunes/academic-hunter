@@ -13,6 +13,10 @@ from typing import Optional
 from mcp.server.fastmcp import Context
 
 from academic_hunter import AcademicHunter
+from academic_hunter.core.writing.style import BibtexKeyAllocator
+from academic_hunter.plugins.exporters.bibtex import escape_bibtex
+from academic_hunter.plugins.exporters.csv import neutralise_formula
+from academic_hunter.plugins.exporters.ris import one_line
 from ._utils import _load_latest_papers, get_project_root, run_blocking
 from ..exceptions import SearchError
 
@@ -75,6 +79,8 @@ async def export_report(
             import pandas as pd  # lazy import
 
             df = pd.DataFrame(papers)
+            for column in df.columns:
+                df[column] = df[column].map(neutralise_formula)
             df.to_csv(output_path, index=False)
 
         elif format_lower == "json":
@@ -103,36 +109,37 @@ def _write_bibtex(papers: list, output_path: str) -> None:
     Each paper produces an ``@article{...}`` entry with author, title,
     journal, year, url, doi, and abstract fields where available.
     """
+    allocate_key = BibtexKeyAllocator()
     lines = []
-    for i, paper in enumerate(papers):
+    for paper in papers:
         doi = paper.get("DOI", "")
-        key = doi.replace("/", "-").replace("_", "-") if doi else f"paper_{i + 1}"
+        title = paper.get("Title", "")
+        year = paper.get("Year", "")
+        # The key `paper_context` hands the agent, so the citation it was told to
+        # use is one this file contains.
+        key = allocate_key(title, year)
 
         authors = paper.get("Authors", paper.get("author", ""))
         if isinstance(authors, list):
             authors = " and ".join(authors)
 
-        title = paper.get("Title", "")
-        journal = paper.get("Source", "")
-        year = paper.get("Year", "")
+        # `Venue` is the publication; `Source` is the database it was found in.
+        journal = paper.get("Venue", "")
         url = paper.get("URL", "")
         abstract = paper.get("Abstract", "")
 
         lines.append(f"@article{{{key},")
-        if authors:
-            lines.append(f"  author = {{{authors}}},")
-        if title:
-            lines.append(f"  title = {{{title}}},")
-        if journal:
-            lines.append(f"  journal = {{{journal}}},")
-        if year:
-            lines.append(f"  year = {{{year}}},")
-        if url:
-            lines.append(f"  url = {{{url}}},")
-        if doi:
-            lines.append(f"  doi = {{{doi}}},")
-        if abstract:
-            lines.append(f"  abstract = {{{abstract}}},")
+        for field, value in (
+            ("author", authors),
+            ("title", title),
+            ("journal", journal),
+            ("year", year),
+            ("url", url),
+            ("doi", doi),
+            ("abstract", abstract),
+        ):
+            if value:
+                lines.append(f"  {field} = {{{escape_bibtex(value)}}},")
         lines.append("}")
 
     with open(output_path, "w", encoding="utf-8") as f:
@@ -152,34 +159,34 @@ def _write_ris(papers: list, output_path: str) -> None:
 
         title = paper.get("Title", "")
         if title:
-            entry.append(f"TI  - {title}")
+            entry.append(f"TI  - {one_line(title)}")
 
         authors = paper.get("Authors", paper.get("author", ""))
         if isinstance(authors, list):
             for a in authors:
-                entry.append(f"AU  - {a}")
+                entry.append(f"AU  - {one_line(a)}")
         elif authors:
-            entry.append(f"AU  - {authors}")
+            entry.append(f"AU  - {one_line(authors)}")
 
         year = paper.get("Year", "")
         if year:
             entry.append(f"PY  - {year}")
 
-        journal = paper.get("Source", "")
+        journal = paper.get("Venue", "")
         if journal:
-            entry.append(f"JO  - {journal}")
+            entry.append(f"JO  - {one_line(journal)}")
 
         doi = paper.get("DOI", "")
         if doi:
-            entry.append(f"DO  - {doi}")
+            entry.append(f"DO  - {one_line(doi)}")
 
         abstract = paper.get("Abstract", "")
         if abstract:
-            entry.append(f"AB  - {abstract}")
+            entry.append(f"AB  - {one_line(abstract)}")
 
         url = paper.get("URL", "")
         if url:
-            entry.append(f"UR  - {url}")
+            entry.append(f"UR  - {one_line(url)}")
 
         entry.append("ER  - ")
         records.append("\n".join(entry))

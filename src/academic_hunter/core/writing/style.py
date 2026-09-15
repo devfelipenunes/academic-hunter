@@ -72,6 +72,29 @@ def format_bibtex_key(title: str, year: int | str, author: Optional[str] = None)
     return f"{stem}{year}"
 
 
+class BibtexKeyAllocator:
+    """Hands out citation keys unique within one bibliography.
+
+    ``format_bibtex_key`` is derived from the paper, which is what lets a tool
+    promise a key the exported ``.bib`` will contain. It is not injective: two
+    papers whose title stem and year coincide would share a key, and a citation
+    would then resolve to whichever was written last.
+    """
+
+    def __init__(self) -> None:
+        self._used: set[str] = set()
+
+    def __call__(self, title: str, year, author: Optional[str] = None) -> str:
+        base = format_bibtex_key(title, year, author)
+        key = base
+        disambiguator = 1
+        while key in self._used:
+            disambiguator += 1
+            key = f"{base}-{disambiguator}"
+        self._used.add(key)
+        return key
+
+
 def format_table(
     headers: Sequence[str],
     rows: Sequence[Sequence[object]],

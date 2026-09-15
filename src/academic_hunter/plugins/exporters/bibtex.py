@@ -1,6 +1,9 @@
 import logging
 from pathlib import Path
 from typing import List, Dict, Any
+
+from academic_hunter.core.writing.style import BibtexKeyAllocator
+
 from .base import BaseExporter, ExportContext
 
 logger = logging.getLogger("academic_hunter.exporters")
@@ -30,12 +33,13 @@ class BibtexExporter(BaseExporter):
         # No early return on an empty list: the file is still written, empty, so
         # the run leaves its own artifact instead of an older run's — or the
         # unfiltered one written before the threshold was applied.
+        allocate_key = BibtexKeyAllocator()
+
         with open(bib_file, 'w', encoding='utf-8') as f:
-            for index, row in enumerate(papers):
+            for row in papers:
                 title = row.get('Title', '')
-                clean_title = "".join(c for c in title if c.isalnum())[:15].lower()
                 year = str(row.get('Year', ''))[:4] or "2021"
-                cite_key = f"{clean_title}_{year}_{index}"
+                cite_key = allocate_key(title, year)
 
                 f.write(f"@article{{{cite_key},\n")
                 f.write(f"  title = {{{escape_bibtex(title)}}},\n")

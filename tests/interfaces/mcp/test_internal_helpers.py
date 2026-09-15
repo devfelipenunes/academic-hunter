@@ -323,15 +323,16 @@ def test_write_bibtex_empty_fields(tmp_path):
 
 
 def test_write_bibtex_no_doi_key(tmp_path):
-    """Falls back to paper_N key when DOI is empty."""
+    """A paper with no DOI still gets the key the agent was told to cite."""
+    from academic_hunter.core.writing import format_bibtex_key
     from academic_hunter.interfaces.mcp.tools.export import _write_bibtex
 
-    papers = [{"Title": "No DOI Paper"}]
+    papers = [{"Title": "No DOI Paper", "Year": "2024"}]
     out = tmp_path / "test.bib"
     _write_bibtex(papers, str(out))
 
-    content = out.read_text()
-    assert "paper_1" in content
+    expected = format_bibtex_key("No DOI Paper", "2024")
+    assert f"@article{{{expected}," in out.read_text()
 
 
 # ── _write_ris ─────────────────────────────────────────────────────

@@ -12,7 +12,7 @@ logger = logging.getLogger("academic_hunter.exporters")
 _FORMULA_PREFIXES = ("=", "+", "-", "@")
 
 
-def _neutralise(value: Any) -> Any:
+def neutralise_formula(value: Any) -> Any:
     """Defuse a cell a spreadsheet would evaluate as a formula.
 
     A title or abstract starting with ``=``, ``+``, ``-`` or ``@`` runs as a
@@ -52,7 +52,7 @@ class CsvExporter(BaseExporter):
         df['Database_Count'] = df['Source'].apply(get_db_count)
 
         for column in df.columns:
-            df[column] = df[column].map(_neutralise)
+            df[column] = df[column].map(neutralise_formula)
 
         df = df.sort_values(by='Relevance_Score', ascending=False)
 

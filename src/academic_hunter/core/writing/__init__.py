@@ -15,6 +15,7 @@ character.
 
 from .templates import ArticleTemplate, get_template, list_templates
 from .style import (
+    BibtexKeyAllocator,
     format_bibtex_key,
     format_citation,
     format_equation,
@@ -50,6 +51,7 @@ __all__ = [
     "format_citation",
     "format_table",
     "format_equation",
+    "BibtexKeyAllocator",
     "format_bibtex_key",
     "format_statistical_claim",
     # outline
