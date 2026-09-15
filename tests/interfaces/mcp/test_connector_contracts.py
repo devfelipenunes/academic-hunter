@@ -308,3 +308,44 @@ async def test_biorxiv_stops_when_the_cursor_stops_moving(mock_ctx):
 
     assert "No matching preprints" in report
     assert m_get.call_count <= 2, f"the loop did not stop: {m_get.call_count} pages"
+
+
+# ── o health e um store que não responde ────────────────────────────────────
+
+
+async def test_a_store_that_cannot_be_read_makes_the_status_degrade(mock_ctx):
+    """`collection_stats` returns `{"count": 0, "error": ...}` on an access failure.
+
+    Health read only `count`, so a database that could not be opened was
+    indistinguishable from an empty one — and the probe a container orchestrator
+    relies on answered `status: ok`.
+    """
+    from academic_hunter.interfaces.mcp.health import _probe_components
+
+    broken = MagicMock()
+    broken.collection_stats.return_value = {
+        "name": "papers",
+        "count": 0,
+        "error": "disk I/O error",
+    }
+
+    with patch("academic_hunter.interfaces.mcp.health._get_vector_store", return_value=broken), \
+         patch("academic_hunter.core.get_config", return_value=MagicMock()):
+        status = _probe_components()
+
+    assert status["vector_store"]["available"] is False, status
+    assert status["status"] != "ok", f"a broken store reported {status['status']!r}"
+
+
+async def test_an_empty_store_is_still_healthy(mock_ctx):
+    """Absent is not broken: a collection that does not exist yet is fine."""
+    from academic_hunter.interfaces.mcp.health import _probe_components
+
+    empty = MagicMock()
+    empty.collection_stats.return_value = {"name": "papers", "count": 0, "status": "empty"}
+
+    with patch("academic_hunter.interfaces.mcp.health._get_vector_store", return_value=empty), \
+         patch("academic_hunter.core.get_config", return_value=MagicMock()):
+        status = _probe_components()
+
+    assert status["vector_store"]["available"] is True, status

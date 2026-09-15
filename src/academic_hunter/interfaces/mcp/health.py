@@ -60,6 +60,12 @@ def _probe_components() -> dict:
             store = _get_vector_store()
             if store is not None:
                 stats = store.collection_stats("papers")
+                # A store that cannot be read reports `count: 0` **and** an error.
+                # Reading only the count made a broken database indistinguishable
+                # from an empty one, so the probe a container orchestrator relies
+                # on answered "ok" for a server that could not answer anything.
+                if stats.get("error"):
+                    raise RuntimeError(str(stats["error"]))
                 paper_count = stats.get("count", 0)
             else:
                 raise RuntimeError("Vector store returned None")
