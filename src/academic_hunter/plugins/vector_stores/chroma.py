@@ -42,6 +42,23 @@ def _as_str(value: Any) -> str:
     return "" if value is None else str(value)
 
 
+def _abstract_of(metadata: dict, document: str, title: str) -> str:
+    """The abstract, from the metadata or derived from the indexed document.
+
+    Collections built before the field existed hold only ``title\\n\\nabstract``
+    as one string, truncated at the preview boundary — derived is worse than
+    stored, and better than the nothing those collections reported.
+    """
+    stored = metadata.get("abstract")
+    if stored:
+        return str(stored)
+
+    separator = f"{title}\n\n"
+    if title and document.startswith(separator):
+        return document[len(separator):]
+    return document
+
+
 def _space_of(collection) -> str:
     """The metric the collection actually uses.
 
@@ -157,6 +174,11 @@ class ChromaVectorStore(BaseVectorStore):
                 documents.append(doc_text)
                 metadatas.append({
                     "title": title[:500],
+                    # Consumers build their text from `title` + `abstract`:
+                    # `novelty` embeds the pair for its outlier detection, and
+                    # `paper_context` prints it. Stored as its own field so those
+                    # two read what they say they read.
+                    "abstract": abstract,
                     "doi": doi,
                     "year": _as_str(paper.get("Year")),
                     "source": _as_str(paper.get("Source")),
@@ -229,6 +251,7 @@ class ChromaVectorStore(BaseVectorStore):
                         "venue": metadata.get("venue", ""),
                         "url": metadata.get("url", ""),
                         "semantic_relevance": round(relevance, 4),
+                        "abstract": _abstract_of(metadata, document, title),
                         "abstract_preview": document[:500] if document else "",
                     })
 

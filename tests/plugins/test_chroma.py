@@ -182,8 +182,7 @@ def test_query_with_score_threshold(store):
         "distances": [[0.2, 1.2]],
         "documents": [["Content 1", "Content 2"]],
     }
-    # relevance = (1.414 - distance) / 1.414
-    # distance 0.2 → relevance 0.858, distance 1.2 → relevance 0.151
+    # `l2`, so cos = 1 - d/2: 0.2 → 0.9, and 1.2 → 0.4, under the threshold.
     results = store.query("test", top_k=5, score_threshold=0.5)
     assert len(results) == 1
     assert results[0]["title"] == "Paper 1"
@@ -203,3 +202,23 @@ def test_get_or_create_collection_creates(store):
     coll = s._get_or_create_collection("new_coll")
     assert coll is not None
     store.client.create_collection.assert_called_once()
+
+
+def test_a_query_result_carries_a_key_named_abstract(tmp_path):
+    """The producer's key, not the consumers'.
+
+    Two readers build text from `paper["abstract"]`: `novelty` embeds
+    `title + abstract` for its outlier detection, and `paper_context` prints it.
+    The store returned `abstract_preview` and no `abstract`, so novelty ran its
+    analysis on titles alone and the context never showed an abstract — and
+    neither failed, because a missing dict key is not an error.
+    """
+    store = ChromaVectorStore(db_dir=str(tmp_path / "chroma"))
+    store.index_papers([
+        {"Title": "Ledgers at scale", "Abstract": "We measure ledger throughput."}
+    ])
+
+    result = store.query("ledger throughput", top_k=1)[0]
+
+    assert result["abstract"] == "We measure ledger throughput."
+    assert result["abstract_preview"], "the preview is kept for display"
