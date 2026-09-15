@@ -73,11 +73,16 @@ async def update_config(config_update: SearchConfigUpdate, ctx: Context) -> str:
         # 2. Apply updates
         if config_update.settings:
             config.settings.update(config_update.settings)
-        if config_update.anchors:
+        # `is not None`, not truthiness: an empty mapping is a request to clear,
+        # and an omitted one is a request to leave alone. The schema defaults to
+        # `None`, so it is the only thing that separates them — with truthiness,
+        # anchors could be set and never removed, and the call still said
+        # "successfully".
+        if config_update.anchors is not None:
             config.anchors = config_update.anchors
-        if config_update.technical_strings:
+        if config_update.technical_strings is not None:
             config.tech_strings = config_update.technical_strings
-        if config_update.technical_weights:
+        if config_update.technical_weights is not None:
             config.tech_weights = config_update.technical_weights
         if config_update.context_rules is not None:
             config.context_rules = config_update.context_rules

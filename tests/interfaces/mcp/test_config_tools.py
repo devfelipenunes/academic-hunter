@@ -201,3 +201,39 @@ async def test_the_backup_does_not_store_credentials(mock_ctx, tmp_path):
         dumped = json.dumps(snapshot)
         assert secret not in dumped, f"the key reached the SQLite history: {dumped}"
         assert REDACTED in dumped, "the snapshot should still show a key is set"
+
+
+# ── limpar versus não mencionar ─────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "field, attribute",
+    [("anchors", "anchors"), ("technical_strings", "tech_strings"),
+     ("technical_weights", "tech_weights")],
+)
+async def test_an_empty_mapping_clears_what_was_there(
+    mock_hunter_config, mock_mcp_db, mock_ctx, field, attribute
+):
+    """`if config_update.anchors:` is falsy for `{}`.
+
+    A researcher could replace the anchors but never remove them: the call
+    reported success and the old ones stayed. An omitted field and an empty one
+    are different requests — "do not touch" and "make it empty" — and only
+    `is not None` can tell them apart, since the schema defaults to `None`.
+    """
+    setattr(mock_hunter_config, attribute, {"Old": ["term"]})
+
+    await update_config(SearchConfigUpdate(topic="Clear", **{field: {}}), mock_ctx)
+
+    assert getattr(mock_hunter_config, attribute) == {}, (
+        f"{field} was not cleared"
+    )
+
+
+async def test_an_omitted_mapping_is_left_alone(mock_hunter_config, mock_mcp_db, mock_ctx):
+    """The other half: not mentioning a field must not wipe it."""
+    mock_hunter_config.anchors = {"Kept": ["term"]}
+
+    await update_config(SearchConfigUpdate(topic="Only the topic"), mock_ctx)
+
+    assert mock_hunter_config.anchors == {"Kept": ["term"]}

@@ -8,10 +8,6 @@ class SearchConfigUpdate(BaseModel):
         None,
         description="A short name to describe this configuration (e.g. 'Blockchain Gov 2023'). Used for database records."
     )
-    research_strategy: Optional[str] = Field(
-        None,
-        description="Write a paragraph detailing your research plan. Describe the taxonomy pillars (e.g., Architecture, Core, Performance) and list the jargon you discovered on the web."
-    )
     settings: Optional[Dict] = Field(
         None,
         description=(

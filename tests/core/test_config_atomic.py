@@ -61,3 +61,21 @@ def test_a_broken_config_says_which_file_is_broken(tmp_path):
 
     with pytest.raises(ValueError, match="config.json"):
         HunterConfig(config_path=str(path))  # the constructor loads
+
+
+def test_a_config_that_says_nothing_about_the_topic_gets_no_topic(tmp_path):
+    """A missing `keyword_only_terms` injected a fintech default.
+
+    `ledger`, `payment`, `interoperability`, `settlement`, `blockchain`, filed
+    under "Consolidated_Fintech" — handed to anyone whose config did not mention
+    the field, whatever they were researching. Nothing in the pipeline reads it,
+    so it changed no search and appeared only in `read_config`, where it reads as
+    configuration the researcher had set.
+    """
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"settings": {"user_email": "a@b.c"}}), encoding="utf-8")
+
+    config = HunterConfig(config_path=str(path))
+
+    assert config.keyword_only_terms == []
+    assert config.keyword_only_category == ""

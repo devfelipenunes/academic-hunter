@@ -114,16 +114,14 @@ class HunterConfig:
         self.tech_strings = self._raw.get('technical_strings', {})
         self.tech_weights = self._raw.get('technical_weights', {})
         self.context_rules = self._raw.get('context_rules', {})
+        # No fallback here. A config that did not mention these was given
+        # `ledger`, `payment`, `interoperability`, `settlement`, `blockchain`
+        # under "Consolidated_Fintech" — whatever the researcher was studying.
+        # Nothing in the pipeline reads either field, so the only place they
+        # showed up was `read_config`, where they read as settings the researcher
+        # had chosen.
         self.keyword_only_terms = self._raw.get('keyword_only_terms', [])
         self.keyword_only_category = self._raw.get('keyword_only_category', '')
-
-        # Default fallbacks for keyword-only search configurations
-        if not self.keyword_only_terms:
-            self.keyword_only_terms = [
-                "ledger", "payment", "interoperability", "settlement", "blockchain"
-            ]
-        if not self.keyword_only_category:
-            self.keyword_only_category = "Consolidated_Fintech"
 
         self._mtime = time.time()
         self._push_history(raw_copy)
