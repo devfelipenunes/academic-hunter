@@ -81,6 +81,33 @@ def test_server_status_imported():
     assert callable(_check_components)
 
 
+async def test_a_tool_describes_the_default_it_actually_has():
+    """The docstring *is* the description the agent reads to choose arguments.
+
+    Four tools advertised a `top_k` default their signature did not have, so an
+    agent asking for the documented amount of context silently got a different
+    one. Nothing else checks that prose and signature agree.
+    """
+    import re
+
+    from academic_hunter.interfaces.mcp.server import create_mcp_server
+
+    server = create_mcp_server()
+    tools = await server.list_tools()
+
+    mismatched = []
+    for tool in tools:
+        properties = (tool.inputSchema or {}).get("properties", {})
+        if "top_k" not in properties:
+            continue
+        stated = re.search(r"default\s+(\d+)", tool.description or "")
+        actual = properties["top_k"].get("default")
+        if stated and int(stated.group(1)) != actual:
+            mismatched.append(f"{tool.name}: says {stated.group(1)}, has {actual}")
+
+    assert not mismatched, mismatched
+
+
 async def test_server_status_publishes_no_arguments():
     """The schema a client sees must not demand a `ctx` it cannot supply.
 

@@ -19,7 +19,7 @@ async def find_related_papers(ctx: Context, query: str, top_k: int = 20) -> str:
     Args:
         ctx: FastMCP Context (auto-injected).
         query: Search text (title, DOI, or free text).
-        top_k: Number of results (default 5, max 20).
+        top_k: Number of results (default 20, capped at 20).
     """
     await ctx.info(f"Finding papers related to: '{query[:60]}'...")
     store = _get_vector_store()

@@ -34,7 +34,7 @@ async def semantic_search(
     Args:
         ctx: FastMCP Context (auto-injected).
         query: Natural language query describing what you're looking for.
-        top_k: Maximum number of results to return (default 10, max 50).
+        top_k: Maximum number of results to return (default 20, max 50).
         score_threshold: Minimum semantic relevance threshold 0.0-1.0 (default 0.0).
     """
     await ctx.info(f"Semantic search for: '{query}'...")
@@ -178,7 +178,7 @@ async def ask_papers(question: str, top_k: int = 15, ctx: Context = None) -> str
     Args:
         ctx: FastMCP Context (auto-injected).
         question: Your research question (e.g., "What do papers say about CBDC latency?").
-        top_k: Number of papers to retrieve for context (default 5, max 20).
+        top_k: Number of papers to retrieve for context (default 15, max 20).
     """
     await ctx.info(f"Retrieving context for: '{question}'...")
     store = _get_vector_store()
@@ -228,7 +228,7 @@ async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -
 
     Args:
         question: The research question to answer.
-        top_k: Number of papers to retrieve for context (default 5, max 20).
+        top_k: Number of papers to retrieve for context (default 15, max 20).
         ctx: FastMCP Context (auto-injected).
     """
     await ctx.info(f"Answering question: '{question}'")
