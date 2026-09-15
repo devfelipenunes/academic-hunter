@@ -42,6 +42,47 @@ def _as_str(value: Any) -> str:
     return "" if value is None else str(value)
 
 
+def _space_of(collection) -> str:
+    """The metric the collection actually uses.
+
+    `hnsw:space` lives in the collection's configuration, and collections created
+    before it was declared report `l2` — Chroma's default — even though their
+    metadata says nothing about it.
+    """
+    space = None
+    try:
+        space = collection.configuration["hnsw"]["space"]
+    except Exception:
+        pass
+    if space is None:
+        space = (collection.metadata or {}).get("hnsw:space")
+
+    # An unrecognised value falls back to the default rather than through the
+    # `else` of the conversion, where a typo would silently mean "l2".
+    normalised = str(space).lower() if space is not None else ""
+    return normalised if normalised in ("l2", "cosine", "ip") else "l2"
+
+
+def _cosine_from(distance: float, space: str) -> float:
+    """Chroma's distance as a cosine similarity, clamped to [0, 1].
+
+    The formula depends on the space, and getting it wrong is not a cosmetic
+    error: `cosine` returns ``1 - cos``, while `l2` returns the **squared**
+    Euclidean distance, which for the unit vectors this store embeds is
+    ``2 - 2·cos``. The ``(1.414 - d) / 1.414`` this replaced was neither, and it
+    compressed the scale — a paper at 0.45 came back as 0.23, under the
+    thresholds callers filter by.
+    """
+    if space == "cosine":
+        similarity = 1.0 - distance
+    elif space == "ip":
+        # Inner product. On the unit vectors embedded here that is the cosine.
+        similarity = 1.0 - distance
+    else:
+        similarity = 1.0 - distance / 2.0
+    return max(0.0, min(1.0, similarity))
+
+
 class ChromaVectorStore(BaseVectorStore):
     """ChromaDB-backed vector store for semantic paper search."""
 
@@ -67,7 +108,16 @@ class ChromaVectorStore(BaseVectorStore):
             # ChromaDB raises NotFoundError (or ValueError in older versions)
             return self.client.create_collection(
                 name,
-                metadata={"created": datetime.now().isoformat(), "type": "academic_papers"},
+                metadata={
+                    "created": datetime.now().isoformat(),
+                    "type": "academic_papers",
+                    # Declared rather than inherited: Chroma's default is squared
+                    # L2, and the conversion back to a similarity depends on
+                    # knowing which one it was. Collections built before this
+                    # keep working — `_cosine_from` reads what the collection
+                    # actually uses.
+                    "hnsw:space": "cosine",
+                },
             )
 
     def index_papers(self, papers: List[Dict[str, Any]], collection_name: str = "papers") -> bool:
@@ -161,7 +211,7 @@ class ChromaVectorStore(BaseVectorStore):
                     distance = results["distances"][0][i] if results["distances"] else 0.0
                     document = results["documents"][0][i] if results["documents"] else ""
 
-                    relevance = max(0.0, min(1.0, (1.414 - distance) / 1.414))
+                    relevance = _cosine_from(distance, _space_of(collection))
 
                     if score_threshold is not None and relevance < score_threshold:
                         continue
@@ -274,7 +324,7 @@ class ChromaVectorStore(BaseVectorStore):
                     "source": metadata.get("source", ""),
                     "text": results["documents"][0][i] if results["documents"] else "",
                     "relevance": round(
-                        max(0.0, min(1.0, (1.414 - distance) / 1.414)), 4
+                        _cosine_from(distance, _space_of(collection)), 4
                     ),
                 })
             return out

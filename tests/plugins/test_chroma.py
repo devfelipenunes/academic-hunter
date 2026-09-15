@@ -128,6 +128,7 @@ def test_query_returns_results(store):
     """query returns parsed results from ChromaDB."""
     mock_coll = MagicMock()
     mock_coll.count.return_value = 10
+    mock_coll.configuration = {"hnsw": {"space": "l2"}}
     store.client.get_collection.return_value = mock_coll
 
     mock_coll.query.return_value = {
@@ -143,13 +144,36 @@ def test_query_returns_results(store):
     assert len(results) == 2
     assert results[0]["title"] == "Paper 1"
     assert results[0]["doi"] == "10.1000/1"
-    assert results[0]["semantic_relevance"] == pytest.approx(0.6464, rel=0.01)
+    # Chroma's `l2` distance is the *squared* one, and the embedded vectors are
+    # unit length, so `cos = 1 - d/2`. Collections that predate the declared
+    # metric still report `l2`, and this is the branch they take.
+    assert results[0]["semantic_relevance"] == pytest.approx(0.75, rel=0.01)
+    assert results[1]["semantic_relevance"] == pytest.approx(0.6, rel=0.01)
+
+
+def test_a_cosine_collection_converts_with_its_own_formula(store):
+    """`cosine` distance already is `1 - cos`, so it is not halved."""
+    mock_coll = MagicMock()
+    mock_coll.count.return_value = 1
+    mock_coll.configuration = {"hnsw": {"space": "cosine"}}
+    mock_coll.query.return_value = {
+        "ids": [["id1"]],
+        "metadatas": [[{"title": "Paper 1"}]],
+        "distances": [[0.25]],
+        "documents": [["Doc 1."]],
+    }
+    store.client.get_collection.return_value = mock_coll
+
+    results = store.query("q", top_k=1)
+
+    assert results[0]["semantic_relevance"] == pytest.approx(0.75, rel=0.01)
 
 
 def test_query_with_score_threshold(store):
     """query filters results below score_threshold."""
     mock_coll = MagicMock()
     mock_coll.count.return_value = 10
+    mock_coll.configuration = {"hnsw": {"space": "l2"}}
     store.client.get_collection.return_value = mock_coll
 
     mock_coll.query.return_value = {
