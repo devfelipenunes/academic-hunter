@@ -333,7 +333,15 @@ async def verify_citations(
         entry = entries.get(key) or {}
         return entry.get("doi") or None
 
-    def doi_resolves(doi: str) -> bool:
+    def doi_resolves(doi: str) -> Optional[bool]:
+        """Refuting probe: `False` accuses, so only Crossref may say it.
+
+        A 404 is the registry answering "no such DOI". Everything else — a
+        timeout, a 429, a 5xx — is the registry declining to answer, and that is
+        `None`: `verify_existence` reports it as unverifiable rather than
+        fabricated. Returning `False` for those accused live references of being
+        invented whenever Crossref had a bad minute.
+        """
         import requests
 
         try:
@@ -342,9 +350,14 @@ async def verify_citations(
                 timeout=10,
                 headers={"User-Agent": "academic-hunter/2.1 (citation check)"},
             )
-            return response.status_code == 200
-        except Exception:
+        except requests.RequestException:
+            return None
+
+        if response.status_code == 200:
+            return True
+        if response.status_code == 404:
             return False
+        return None
 
     def in_corpus(key: str):
         """Confirming probe: is this cited work among the locally indexed papers?
