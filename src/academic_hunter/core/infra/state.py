@@ -29,6 +29,10 @@ class SearchState:
         #: "included". Without the claim two threads resolving the same duplicate
         #: both pass validation and both write it, counting the stats twice.
         self.pending_promotions = set()
+        #: dedup_id -> why it was rejected, so a later version that passes can
+        #: undo that exact exclusion. Without it the promotion path guessed,
+        #: and decremented counters belonging to other papers.
+        self.exclusion_reasons = {}
 
     def reset(self, connectors_keys: List[str]):
         self.stats = {
@@ -55,6 +59,7 @@ class SearchState:
         self.last_request_time = 0
         self.last_request_by_domain.clear()
         self.pending_promotions.clear()
+        self.exclusion_reasons.clear()
 
     def track_exclusion(self, source: str, reason: str):
         """State mutation to track reasons for excluding papers by source."""

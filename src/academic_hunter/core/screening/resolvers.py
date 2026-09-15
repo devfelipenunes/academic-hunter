@@ -5,6 +5,10 @@ from ..infra import SearchState, HunterConfig
 from ..nlp import AcademicScorer
 from .validators import PaperValidator
 
+#: Why a paper was rejected -> the counter that recorded the rejection.
+EXCLUSION_COUNTERS = {"year": "excluded_year", "anchor": "excluded_anchors"}
+
+
 class PaperResolver:
     def __init__(self, state: SearchState, scorer: AcademicScorer, config: HunterConfig, connectors: Dict[str, Any], lock: threading.RLock, semantic_screener=None):
         self.state = state
@@ -147,12 +151,14 @@ class PaperResolver:
             self.state.pending_promotions.discard(dedup_id)
             if relevance_score >= min_score:
                 self.state.stats["included_final"] += 1
-                if self.state.stats.get("excluded_anchors", 0) > 0:
-                    self.state.stats["excluded_anchors"] -= 1
-                elif self.state.stats.get("excluded_year", 0) > 0:
-                    self.state.stats["excluded_year"] -= 1
-                elif self.state.stats.get("excluded_technical_score", 0) > 0:
-                    self.state.stats["excluded_technical_score"] -= 1
+                # Undo the exclusion this very paper caused, which the rejection
+                # recorded. Guessing instead — "decrement whichever counter is
+                # non-zero" — took the count from other papers: a run with two
+                # genuine anchor rejections ended with `excluded_anchors` at zero
+                # as soon as any duplicate was promoted.
+                counter = EXCLUSION_COUNTERS.get(self.state.exclusion_reasons.pop(dedup_id, None))
+                if counter and self.state.stats.get(counter, 0) > 0:
+                    self.state.stats[counter] -= 1
             else:
                 self.state.stats["excluded_technical_score"] += 1
                 self.state.track_exclusion(source, "score")
@@ -165,10 +171,10 @@ class PaperResolver:
             # inside the lock with the rest of the stats it updates.
             with self.lock:
                 self.state.track_exclusion(source, reason)
-                if reason == "year":
-                    self.state.stats["excluded_year"] += 1
-                elif reason == "anchor":
-                    self.state.stats["excluded_anchors"] += 1
+                self.state.exclusion_reasons[dedup_id] = reason
+                counter = EXCLUSION_COUNTERS.get(reason)
+                if counter:
+                    self.state.stats[counter] += 1
             return
 
         min_score = self.config.min_inclusion_score()
