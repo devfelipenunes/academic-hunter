@@ -19,7 +19,6 @@ def report(tmp_path, full_text):
         stats={
             "identified": {"OpenAlex": 1},
             "duplicates_removed": 0,
-            "excluded_score": 0,
             "excluded_year": 0,
             "excluded_anchors": 0,
             "excluded_technical_score": 0,

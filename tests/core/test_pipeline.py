@@ -448,7 +448,7 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
         
         # Test 1: ML paper should fail anchor check
         self.hunter.anchors = {"Pagamentos": ["Pix payment", "Zelle", "Drex"]}
-        self.hunter.stats = {"identified": {}, "duplicates_removed": 0, "excluded_year": 0, "excluded_anchors": 0, "excluded_technical_score": 0, "excluded_score": 0, "included_final": 0}
+        self.hunter.stats = {"identified": {}, "duplicates_removed": 0, "excluded_year": 0, "excluded_anchors": 0, "excluded_technical_score": 0, "included_final": 0}
         self.hunter.consolidated_results = {}
         self.hunter.seen_ids = set()
         
@@ -457,7 +457,7 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
         self.assertEqual(self.hunter.stats["included_final"], 0)
         
         # Test 2: Financial paper should pass anchor check
-        self.hunter.stats = {"identified": {}, "duplicates_removed": 0, "excluded_year": 0, "excluded_anchors": 0, "excluded_technical_score": 0, "excluded_score": 0, "included_final": 0}
+        self.hunter.stats = {"identified": {}, "duplicates_removed": 0, "excluded_year": 0, "excluded_anchors": 0, "excluded_technical_score": 0, "included_final": 0}
         self.hunter.consolidated_results = {}
         self.hunter.seen_ids = set()
         self.hunter.settings["min_relevance_score"] = 0.0

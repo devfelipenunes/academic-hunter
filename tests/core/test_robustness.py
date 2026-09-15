@@ -325,3 +325,44 @@ def test_concurrent_promotion_of_an_excluded_duplicate_happens_once(config, scor
         f"{len(promotions)} threads entered the promotion path for the same "
         f"duplicate; only the one that claimed it under the lock may"
     )
+
+
+def test_a_rejected_promotion_releases_its_claim(config, scorer):
+    """A rejected duplicate must not hold its slug for the rest of the run.
+
+    ``process`` claims the slug before calling ``resolve_excluded_duplicate``,
+    because validation runs outside the lock. The rejection path returned without
+    releasing it, and ``pending_promotions`` is only emptied by ``state.reset()``
+    — so a third, valid version of the same paper found the slug already claimed,
+    matched neither branch in ``process``, and was dropped without a word.
+    """
+    processor = _make_processor(config, scorer)
+    args = {
+        "anchor_cat": "cat", "tech_cat": "cat",
+        "anchor_list": ["blockchain"], "tech_list": ["latency"],
+    }
+    excluded = {
+        "Title": "A study of ledgers",
+        "Abstract": "",
+        "Year": "2024",
+        "Source": "First",
+        "Citations": 0,
+        "Type": "article",
+        "Venue": "V",
+        "URL": "http://example.com",
+    }
+
+    processor.process(paper=dict(excluded), **args)
+    processor.process(paper=dict(excluded), **args)
+    assert processor.state.consolidated_results == {}, "neither version passes the anchor filter"
+
+    processor.process(
+        paper={**excluded, "Abstract": "Blockchain latency and consensus."},
+        **args,
+    )
+
+    slug = scorer.generate_slug("A study of ledgers")
+    assert slug in processor.state.consolidated_results, (
+        "the third version is valid and must be promoted; it was dropped because "
+        "the rejected second version never released its claim"
+    )

@@ -111,6 +111,11 @@ class PaperResolver:
         """Processes a duplicate that was previously excluded (passes filters and updates stats)."""
         passed, reason, anchor_cat, anchor_terms, relevance_score, tech_terms = self.validator.validate_and_score(paper, title, tech_list)
         if not passed:
+            # Release the claim. `processor` took it before calling, and leaving
+            # it held made the slug unclaimable for the rest of the run — so a
+            # third, valid version of the same paper was never validated.
+            with self.lock:
+                self.state.pending_promotions.discard(dedup_id)
             return
 
         min_score = self.config.min_inclusion_score()
@@ -139,6 +144,7 @@ class PaperResolver:
         
         with self.lock:
             self.state.consolidated_results[dedup_id] = paper_metadata
+            self.state.pending_promotions.discard(dedup_id)
             if relevance_score >= min_score:
                 self.state.stats["included_final"] += 1
                 if self.state.stats.get("excluded_anchors", 0) > 0:

@@ -18,12 +18,12 @@ class RisExporter(BaseExporter):
         timestamp = context.timestamp
         output_dir = context.output_dir
 
-        if not papers:
-            return
-            
         run_dir = self._get_run_dir(timestamp, output_dir)
         ris_file = run_dir / f"academic_dataset_{timestamp}.ris"
-        
+
+        # No early return on an empty list: the file is still written, empty, so
+        # the run leaves its own artifact instead of an older run's — or the
+        # unfiltered one written before the threshold was applied.
         with open(ris_file, 'w', encoding='utf-8') as f:
             for row in papers:
                 f.write("TY  - JOUR\n")

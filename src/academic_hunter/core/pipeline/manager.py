@@ -146,7 +146,6 @@ class SearchPipeline:
         # Rank-based scoring: recompute scores using percentil normalization
         self._recompute_ranks()
 
-        self.hunter.export_results(timestamp)
         self.hunter.generate_prisma_report(timestamp)
 
         final_qualifiers = {
@@ -154,6 +153,10 @@ class SearchPipeline:
             if paper.get("Relevance_Score", 0.0) >= self.hunter.settings.get('min_relevance_score', 5.0)
         }
 
+        # Assigned before anything is written. Exporting the collection first and
+        # filtering afterwards left the unfiltered set on disk whenever the
+        # filtered one was empty: the exporters skipped an empty list, so the file
+        # from the earlier call survived, and its excluded papers read as results.
         self.hunter.consolidated_results = final_qualifiers
 
         # Full text, opt-in and off by default. Here — after the threshold
@@ -164,7 +167,7 @@ class SearchPipeline:
         self.hunter.export_results(timestamp)
         # Regenerated: the report above was written before this step could know
         # how many full texts were obtained, and SLR methodology requires that
-        # number. Same reason `export_results` is called twice.
+        # number.
         self.hunter.generate_prisma_report(timestamp)
 
         # Auto-index for RAG

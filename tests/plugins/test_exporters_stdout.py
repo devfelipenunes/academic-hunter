@@ -61,7 +61,6 @@ def make_context(output_dir: Path) -> ExportContext:
         stats={
             "identified": {"OpenAlex": 10},
             "duplicates_removed": 2,
-            "excluded_score": 1,
             "excluded_year": 0,
             "excluded_anchors": 0,
             "excluded_technical_score": 0,

@@ -24,12 +24,12 @@ class BibtexExporter(BaseExporter):
         timestamp = context.timestamp
         output_dir = context.output_dir
 
-        if not papers:
-            return
-            
         run_dir = self._get_run_dir(timestamp, output_dir)
         bib_file = run_dir / f"academic_dataset_{timestamp}.bib"
-        
+
+        # No early return on an empty list: the file is still written, empty, so
+        # the run leaves its own artifact instead of an older run's — or the
+        # unfiltered one written before the threshold was applied.
         with open(bib_file, 'w', encoding='utf-8') as f:
             for index, row in enumerate(papers):
                 title = row.get('Title', '')

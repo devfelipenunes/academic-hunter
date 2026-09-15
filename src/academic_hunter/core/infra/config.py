@@ -163,10 +163,15 @@ class HunterConfig:
           ``AcademicScorer.compute_hybrid_score``. Its scale depends on the
           ablation mode: keyword mode yields the raw regex score (unbounded),
           embedding mode yields ``sqrt(cosine) * 10`` in [0, 10], hybrid adds
-          ``kw * 0.3`` on top of that. Used to decide *whether a paper enters*.
+          ``kw * 0.3`` on top of that. It **classifies** a paper as included or
+          excluded in the screening statistics; it does not evict it from the
+          collection. Removal is deferred to the rank step, which is the only
+          place where the mode-independent score exists — so evicting here would
+          drop papers the final threshold would have kept.
         - ``Relevance_Score`` — written once, after the whole run, by
           ``RecomputeRanksStep``. Rank-normalised to [0, 10] and therefore
-          independent of the ablation mode. Used for ordering and reporting.
+          independent of the ablation mode. Used for ordering, reporting, and the
+          final threshold that decides what is exported.
 
         Comparing one constant against both scales is what made enriched papers
         systematically outrank the rest, and what made the ablation modes
