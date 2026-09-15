@@ -5,7 +5,10 @@ Atom — quebra títulos e abstracts com indentação. A normalização trocava 
 por um espaço, o que deixa a **indentação da linha seguinte** no meio do texto.
 """
 
+import pytest
+
 from academic_hunter.core.models import Paper
+from academic_hunter.core.models.utils import normalize_doi
 from academic_hunter.core.nlp import AcademicScorer
 
 WRAPPED = {
@@ -32,6 +35,33 @@ def test_the_wrap_is_not_carried_into_the_displayed_text():
 
     assert "  " not in title
     assert "\n" not in title
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "https://dx.doi.org/10.1234/ABC",
+        "http://dx.doi.org/10.1234/ABC",
+        "https://doi.org/10.1234/ABC",
+        "http://doi.org/10.1234/ABC",
+        "doi:10.1234/ABC",
+        "  10.1234/ABC  ",
+    ],
+)
+def test_every_spelling_of_a_doi_normalises_to_one_identifier(raw):
+    """Two spellings of one DOI must not become two papers.
+
+    The known defect: `dx.doi.org/` was stripped *after* the scheme, so
+    `https://dx.doi.org/10.1234/ABC` became `https://10.1234/abc`. This string is
+    what the identity index, the deduplication and the exported `.bib` all key
+    on, so the corruption produced a second paper for the same work.
+    """
+    assert normalize_doi(raw) == "10.1234/abc"
+
+
+def test_a_missing_doi_stays_empty():
+    assert normalize_doi("") == ""
+    assert normalize_doi(None) == ""
 
 
 def _processor():

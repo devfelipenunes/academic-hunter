@@ -1,6 +1,9 @@
 import os
 import logging
 from typing import List, Dict, Any
+
+from ...core.models.utils import normalize_doi
+
 from .base import BaseConnector
 
 logger = logging.getLogger("academic_hunter.connectors")
@@ -82,7 +85,9 @@ class OpenAlexConnector(BaseConnector):
 
             for i in results:
                 raw_doi = i.get('doi') or ""
-                doi_clean = raw_doi.replace('https://doi.org/', '').replace('http://doi.org/', '').lower()
+                # One normaliser for the whole project: this copy missed the
+                # `dx.doi.org` forms, and a second rule drifts from the first.
+                doi_clean = normalize_doi(raw_doi)
                 abstract_text = self._decode_openalex_abstract(i.get('abstract_inverted_index', {}))
 
                 primary_loc = i.get('primary_location') or {}

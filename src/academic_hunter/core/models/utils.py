@@ -9,7 +9,29 @@ def collapse_whitespace(value) -> str:
     return " ".join(str(value or "").split())
 
 
+#: Longest first: the scheme and the host are one prefix, not two removals.
+_DOI_PREFIXES = (
+    "https://dx.doi.org/",
+    "http://dx.doi.org/",
+    "https://doi.org/",
+    "http://doi.org/",
+    "dx.doi.org/",
+    "doi:",
+)
+
+
 def normalize_doi(doi: str) -> str:
+    """The bare DOI, lowercased — the identity every layer keys on.
+
+    Stripping the prefixes in sequence, in the order they happened to be written,
+    removed `dx.doi.org/` before the scheme and left `https://10.1234/abc`
+    behind. That string feeds the identity index, the deduplication and the
+    exported `.bib`, so one work written two ways became two papers.
+    """
     if not doi:
         return ""
-    return str(doi).strip().lower().replace('https://doi.org/', '').replace('http://doi.org/', '').replace('dx.doi.org/', '').replace('http://dx.doi.org/', '')
+    value = str(doi).strip().lower()
+    for prefix in _DOI_PREFIXES:
+        if value.startswith(prefix):
+            return value[len(prefix):].strip()
+    return value
