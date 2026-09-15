@@ -12,7 +12,10 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+REPO_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(REPO_ROOT / "src"))
+
+EXAMPLE_CONFIG = str(REPO_ROOT / "config.example.json")
 
 
 # =============================================================================
@@ -145,7 +148,7 @@ class TestAblationModes:
         from academic_hunter.plugins.screeners.semantic import SemanticScreener
         from academic_hunter.core.screening.validators import PaperValidator
 
-        cfg = HunterConfig()
+        cfg = HunterConfig(EXAMPLE_CONFIG)
         cfg.load(force=True)
 
         # Use a controlled test config (not dependent on current config.json)
@@ -293,7 +296,7 @@ class TestComputeHybridScore:
         from academic_hunter.plugins.screeners.semantic import SemanticScreener
         from academic_hunter.core.screening.validators import PaperValidator
 
-        cfg = HunterConfig()
+        cfg = HunterConfig(EXAMPLE_CONFIG)
         cfg.load(force=True)
 
         test_anchors = {"Test": ["quantum"]}
@@ -376,7 +379,7 @@ class TestConfigPropagation:
         """Validator should receive the SemanticScreener from the pipeline."""
         from academic_hunter import AcademicHunter
 
-        hunter = AcademicHunter()
+        hunter = AcademicHunter(config_path=EXAMPLE_CONFIG)
         validator = hunter.processor.resolver.validator
 
         assert validator.semantic_screener is not None, (
@@ -389,12 +392,12 @@ class TestConfigPropagation:
         from academic_hunter.core.infra.config import HunterConfig
 
         # Read config directly
-        cfg = HunterConfig()
+        cfg = HunterConfig(EXAMPLE_CONFIG)
         cfg.load(force=True)
         config_mode = cfg.settings.get("ablation", {}).get("mode", "hybrid")
 
         # Read via hunter
-        hunter = AcademicHunter()
+        hunter = AcademicHunter(config_path=EXAMPLE_CONFIG)
         hunter_mode = hunter.config.settings.get("ablation", {}).get("mode", "hybrid")
 
         # Both should be the same
@@ -409,7 +412,7 @@ class TestConfigPropagation:
         from academic_hunter.plugins.screeners.semantic import SemanticScreener
         from academic_hunter.core.screening.validators import PaperValidator
 
-        cfg = HunterConfig()
+        cfg = HunterConfig(EXAMPLE_CONFIG)
         cfg.load(force=True)
 
         test_anchors = {"Test": ["blockchain"]}
@@ -576,10 +579,10 @@ class TestPipelineIntegration:
         from academic_hunter.core.infra.config import HunterConfig
 
         # Read current config
-        cfg = HunterConfig()
+        cfg = HunterConfig(EXAMPLE_CONFIG)
         mode = cfg.settings.get("ablation", {}).get("mode", "hybrid")
 
-        hunter = AcademicHunter()
+        hunter = AcademicHunter(config_path=EXAMPLE_CONFIG)
         scores = [p.get("Relevance_Score", -1) for p in hunter.state.consolidated_results.values()]
 
         # If there are results, verify scores
