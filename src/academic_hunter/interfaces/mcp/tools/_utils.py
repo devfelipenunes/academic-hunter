@@ -95,6 +95,31 @@ def _latest_run_dir() -> Path | None:
     return newest.parent if newest else None
 
 
+def _latest_report_path(results_dir: Path) -> Path | None:
+    """The report of the most recent run, or None.
+
+    `RELATORIO_ELITE_*` rather than any `.md`: the manager writes `export_results`
+    and then `generate_prisma_report`, so the PRISMA flow lands in the same
+    directory *after* the report. Selecting by `mtime` over every Markdown handed
+    a client asking for the latest report a Mermaid diagram of the screening
+    counters.
+
+    Chosen by the run stamp in the name, like the other readers here — `ctime` is
+    metadata-change time on Linux, so copying a file made it "the latest".
+    """
+    candidates = list(results_dir.rglob("RELATORIO_ELITE_*.md"))
+    if not candidates:
+        candidates = list(results_dir.glob("*.md"))
+    if not candidates:
+        return None
+
+    stamped = _newest_run_artifact(candidates)
+    if stamped is not None:
+        return stamped
+    # A report with no run stamp in its name; nothing to order it by but time.
+    return max(candidates, key=lambda path: path.stat().st_mtime)
+
+
 def _load_latest_papers() -> list:
     """Papers from the most recent run, read back from disk.
 

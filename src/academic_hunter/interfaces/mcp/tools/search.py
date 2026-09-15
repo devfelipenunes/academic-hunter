@@ -3,10 +3,9 @@
 ``run_search`` reports progress through the FastMCP Context when available.
 """
 
-import os
 from pathlib import Path
 from academic_hunter import AcademicHunter
-from ._utils import get_project_root, run_blocking
+from ._utils import _latest_report_path, get_project_root, run_blocking
 from ..exceptions import SearchError
 from mcp.server.fastmcp import Context
 
@@ -65,16 +64,10 @@ async def read_latest_report(ctx: Context, max_chars: int = 10000, offset: int =
             await ctx.info("No results directory found")
             return "Error: No results directory found. Have you run a search yet?"
 
-        # First try RELATORIO_ELITE_* files (the main output format)
-        md_files = list(results_dir.rglob("RELATORIO_ELITE_*.md"))
-        if not md_files:
-            # Fallback to any markdown file
-            md_files = list(results_dir.glob("*.md"))
-        if not md_files:
+        latest_file = _latest_report_path(results_dir)
+        if latest_file is None:
             await ctx.info("No markdown reports found in results/")
             return "Error: No markdown reports found in results/."
-
-        latest_file = max(md_files, key=os.path.getctime)
         with open(latest_file, "r", encoding="utf-8") as f:
             content = f.read()
 

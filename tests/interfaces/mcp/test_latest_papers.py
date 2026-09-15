@@ -77,3 +77,20 @@ def test_a_corrupt_csv_yields_no_papers_instead_of_raising(tmp_path):
     csv_file.write_text('\x00\x00 not,a,csv\n"unclosed')
 
     assert load(tmp_path) == []
+
+
+def test_an_empty_run_does_not_resurrect_the_previous_one(tmp_path):
+    """`_load_latest_papers` takes the newest CSV in the whole tree.
+
+    A run that qualified nothing used to leave no file at all — the exporters
+    skipped an empty list — so this walked back to the previous run's papers and
+    handed them over as this run's results. The dataset is now written empty, and
+    that empty file is the latest result.
+
+    The exporters' half of this is fixed and tested in
+    `tests/plugins/test_exporters_empty_run.py`; this is the reader's half.
+    """
+    write_run(tmp_path, name="run_20260101_000000", rows=("Title,DOI", "Old Paper,10.1/old"))
+    write_run(tmp_path, name="run_20260601_000000", rows=("Title,DOI",))
+
+    assert load(tmp_path) == [], "the previous run's papers came back as this run's"

@@ -38,21 +38,20 @@ async def get_latest_report_resource() -> str:
 
     URI: ``academic-hunter://reports/latest``
     """
-    from .tools._utils import get_project_root
+    from .tools._utils import _latest_report_path, get_project_root
 
     results_dir = get_project_root() / "results"
     if not results_dir.exists():
         return "No report available"
 
-    md_files = sorted(
-        results_dir.glob("**/*.md"),
-        key=lambda p: p.stat().st_mtime,
-        reverse=True,
-    )
-    if not md_files:
+    # The same rule `read_latest_report` uses. Two readers answering "which is
+    # the latest report" with two different criteria is how this resource came to
+    # serve the PRISMA flow.
+    latest = _latest_report_path(results_dir)
+    if latest is None:
         return "No report available"
 
-    content = md_files[0].read_text(encoding="utf-8", errors="replace")
+    content = latest.read_text(encoding="utf-8", errors="replace")
     return content[:10000]
 
 
