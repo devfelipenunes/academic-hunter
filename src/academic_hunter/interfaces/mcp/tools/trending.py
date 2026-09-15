@@ -10,7 +10,7 @@ from collections import Counter
 
 from mcp.server.fastmcp import Context
 
-from ._utils import _STOPWORDS, _get_vector_store
+from ._utils import _STOPWORDS, _get_vector_store, corpus_of
 
 logger = logging.getLogger("academic_hunter.mcp.trending")
 
@@ -44,9 +44,7 @@ async def trending_topics(ctx: Context, days: int = 30, min_papers: int = 3) -> 
         await ctx.error("Vector store not available")
         return "Vector store not available. Index papers first."
 
-    # Retrieve all indexed papers via a broad query with a high limit.
-    # ChromaDB will clamp n_results to the collection size.
-    results = store.query("research paper topic analysis", top_k=1000)
+    results = corpus_of(store, 1000)
 
     if not results:
         await ctx.info("No indexed papers found")

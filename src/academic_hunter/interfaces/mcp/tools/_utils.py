@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from typing import Any, Callable
 from academic_hunter import AcademicHunter
+from academic_hunter.core.ports.vector_store import PaperListingPort
 from academic_hunter.plugins.vector_stores import ChromaVectorStore
 import academic_hunter as pkg
 
@@ -142,3 +143,24 @@ def _load_latest_papers() -> list:
     except Exception as e:
         logger.warning("Could not read %s: %s", csv_path, e)
         return []
+
+
+def corpus_of(store, fallback_top_k: int = 1000) -> list:
+    """The papers an analysis of the corpus should describe.
+
+    Reading the collection is what makes clustering, trends and duplicate
+    detection statements about the corpus. A similarity query answers a different
+    question — which documents sit nearest a phrase — and the analyses then
+    describe that neighbourhood instead, without saying so.
+
+    `fallback_top_k` is reached only for a store that cannot list, where a query
+    is all there is; the warning names the consequence rather than hiding it.
+    """
+    if isinstance(store, PaperListingPort):
+        return store.all_papers()
+
+    logger.warning(
+        "The vector store cannot list its collection; falling back to a "
+        "similarity query, so this analysis describes a sample of it."
+    )
+    return store.query("research paper", top_k=fallback_top_k)

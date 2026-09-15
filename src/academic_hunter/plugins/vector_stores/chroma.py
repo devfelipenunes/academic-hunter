@@ -42,6 +42,31 @@ def _as_str(value: Any) -> str:
     return "" if value is None else str(value)
 
 
+def _result_row(doc_id: str, metadata: dict, document: str) -> Dict[str, Any]:
+    """One paper as the tools receive it, without any similarity.
+
+    Shared by `query` and `all_papers` so the two cannot drift into returning
+    different shapes for the same document.
+    """
+    metadata = metadata or {}
+    document = document or ""
+    title = metadata.get("title") or (document.split("\n")[0] if document else doc_id)
+
+    return {
+        "id": doc_id,
+        "title": title,
+        "doi": metadata.get("doi", ""),
+        "year": metadata.get("year", ""),
+        "source": metadata.get("source", ""),
+        "score": metadata.get("score", 0.0),
+        "citations": metadata.get("citations", 0),
+        "venue": metadata.get("venue", ""),
+        "url": metadata.get("url", ""),
+        "abstract": _abstract_of(metadata, document, title),
+        "abstract_preview": document[:500],
+    }
+
+
 def _abstract_of(metadata: dict, document: str, title: str) -> str:
     """The abstract, from the metadata or derived from the indexed document.
 
@@ -238,28 +263,64 @@ class ChromaVectorStore(BaseVectorStore):
                     if score_threshold is not None and relevance < score_threshold:
                         continue
 
-                    title = metadata.get("title", document.split("\n")[0] if document else doc_id)
-
-                    papers.append({
-                        "id": doc_id,
-                        "title": title,
-                        "doi": metadata.get("doi", ""),
-                        "year": metadata.get("year", ""),
-                        "source": metadata.get("source", ""),
-                        "score": metadata.get("score", 0.0),
-                        "citations": metadata.get("citations", 0),
-                        "venue": metadata.get("venue", ""),
-                        "url": metadata.get("url", ""),
-                        "semantic_relevance": round(relevance, 4),
-                        "abstract": _abstract_of(metadata, document, title),
-                        "abstract_preview": document[:500] if document else "",
-                    })
+                    row = _result_row(doc_id, metadata, document)
+                    row["semantic_relevance"] = round(relevance, 4)
+                    papers.append(row)
 
             return papers
 
         except Exception as e:
             logger.error(f"ChromaDB query failed: {e}")
             return []
+
+    # ── reading the collection (the PaperListingPort capability) ────────────
+
+    #: ChromaDB caps a `get`, so the listing walks it in pages.
+    listing_page = 500
+
+    def all_papers(self, collection_name: str = "papers") -> List[Dict[str, Any]]:
+        """Every indexed paper, in no particular order, with no similarity.
+
+        The corpus analyses used `query("research topic analysis", top_k=1000)`.
+        ChromaDB clamps that to the collection size — but only while the limit
+        *reaches* the collection. Past that, the answer is the thousand papers
+        nearest that phrase, so clustering, trends and duplicates described a
+        semantic neighbourhood of "research topic analysis", not the corpus.
+        """
+        try:
+            collection = self.client.get_collection(collection_name)
+        except Exception:
+            logger.warning(f"Collection '{collection_name}' does not exist yet.")
+            return []
+
+        papers: List[Dict[str, Any]] = []
+        offset = 0
+        while True:
+            try:
+                page = collection.get(
+                    limit=self.listing_page, offset=offset,
+                    include=["documents", "metadatas"],
+                )
+            except Exception as e:
+                logger.error(f"Could not read collection '{collection_name}': {e}")
+                return papers
+
+            ids = page.get("ids") or []
+            if not ids:
+                return papers
+
+            metadatas = page.get("metadatas") or []
+            documents = page.get("documents") or []
+            for i, doc_id in enumerate(ids):
+                papers.append(_result_row(
+                    doc_id,
+                    metadatas[i] if i < len(metadatas) else {},
+                    documents[i] if i < len(documents) else "",
+                ))
+
+            offset += len(ids)
+            if len(ids) < self.listing_page:
+                return papers
 
     # ── chunk retrieval (the ChunkStorePort capability) ─────────────────────
     #
@@ -418,3 +479,4 @@ class ChromaVectorStore(BaseVectorStore):
             }
         except Exception as e:
             return {"name": name, "count": 0, "error": str(e)}
+

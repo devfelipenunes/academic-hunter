@@ -43,6 +43,24 @@ class BaseVectorStore(ABC):
 
 
 @runtime_checkable
+class PaperListingPort(Protocol):
+    """Reading the collection, as opposed to searching it.
+
+    The analyses of a corpus — clustering, trends, duplicates — describe the
+    corpus, and a query answers a different question: the documents nearest a
+    phrase. Asking with a phrase made those results depend on how close each
+    paper sits to "research topic analysis".
+
+    Separate from :class:`BaseVectorStore` for the reason given below: a store
+    that cannot list is still a valid vector store, and callers degrade.
+    """
+
+    def all_papers(self, collection_name: str = "papers") -> List[Dict[str, Any]]:
+        """Every indexed paper, in no particular order, with no similarity."""
+        ...
+
+
+@runtime_checkable
 class ChunkStorePort(Protocol):
     """Retrieval over document *fragments* rather than whole papers.
 

@@ -10,7 +10,7 @@ import numpy as np
 from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
-from ._utils import _get_vector_store, run_blocking
+from ._utils import _get_vector_store, corpus_of, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.dedup")
 
@@ -34,8 +34,7 @@ async def semantic_dedup(ctx: Context, threshold: float = 0.85, min_group_size: 
         await ctx.error("Vector store not available")
         return "Error: Vector store not available. Index papers first."
 
-    # Get all papers
-    results = store.query("research paper", top_k=1000)
+    results = corpus_of(store, 1000)
     if not results or len(results) < min_group_size:
         await ctx.info("Too few papers for dedup")
         return "Not enough papers for deduplication."
