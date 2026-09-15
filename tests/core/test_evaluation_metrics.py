@@ -210,3 +210,46 @@ def test_mean_metrics_only_averages_shared_keys():
     mean = mean_metrics([{"a": 1.0, "b": 0.0}, {"a": 0.0}])
 
     assert mean == {"a": 0.5}
+
+
+# ── a ranking lists a document once ─────────────────────────────────────────
+
+
+def test_a_repeated_document_is_not_a_second_hit_in_average_precision():
+    """Counting it twice made AP exceed its own maximum.
+
+    `average_precision(["a", "a"], {"a": 1})` returned **2.0**. A metric that can
+    go above 1 is one nobody reads correctly: "AP improved to 1.4" does not look
+    like an error, it looks like a result.
+    """
+    assert average_precision(["a", "a"], {"a": 1}) == 1.0
+
+
+def test_a_repeated_document_adds_no_gain_of_its_own():
+    """It occupies a slot — and discounting that is correct — but scores nothing.
+
+    Compared against an unrelated document in the same position, so the assertion
+    is about the repeat's own contribution and not about the ranks it shifts.
+    """
+    duplicated = dcg_at_k(["a", "a", "b"], {"a": 1, "b": 1}, 3)
+    unrelated = dcg_at_k(["a", "z", "b"], {"a": 1, "b": 1}, 3)
+
+    assert duplicated == unrelated
+
+
+def test_a_repeated_document_cannot_push_ndcg_above_one():
+    assert ndcg_at_k(["a", "a"], {"a": 1}, 2) == 1.0
+
+
+def test_skipping_the_repeat_does_not_shift_what_follows_it():
+    """The document after the duplicate still sits at its own rank.
+
+    Deduplicating by *removing* the repeat would move `b` from position 3 to 2 and
+    inflate every metric that discounts by rank; skipping it in place does not.
+    """
+    assert average_precision(["a", "a", "b"], {"a": 1, "b": 1}) == pytest.approx(5 / 6)
+
+
+def test_a_ranking_without_repeats_is_untouched():
+    """Both relevant documents at the top is a perfect ranking, duplicate or not."""
+    assert average_precision(["a", "b"], {"a": 1, "b": 1}) == 1.0

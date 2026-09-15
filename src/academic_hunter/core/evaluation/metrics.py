@@ -46,7 +46,13 @@ def dcg_at_k(
         return 0.0
 
     total = 0.0
+    seen: set = set()
     for rank, doc_id in enumerate(ranking[:k], start=1):
+        # A ranking lists a document once. Counting a repeat gave it its gain
+        # twice while the ideal counts it once, so nDCG could exceed 1.
+        if doc_id in seen:
+            continue
+        seen.add(doc_id)
         grade = relevance.get(doc_id, 0)
         if grade <= 0:
             continue
@@ -150,7 +156,13 @@ def average_precision(
 
     hits = 0
     total = 0.0
+    seen: set = set()
     for rank, doc_id in enumerate(ranking, start=1):
+        # Skipped in place, not removed: deleting the repeat would move everything
+        # after it up a rank and change what the metric discounts.
+        if doc_id in seen:
+            continue
+        seen.add(doc_id)
         if doc_id in relevant:
             hits += 1
             total += hits / rank
