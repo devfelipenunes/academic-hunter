@@ -44,18 +44,18 @@ async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
 
         person = data.get("person") or {}
         name_data = person.get("name") or {}
-        given = name_data.get("given-names", {}).get("value", "?")
-        family = name_data.get("family-name", {}).get("value", "?")
-        credit = name_data.get("credit-name", {}).get("value", f"{given} {family}")
+        given = _value(name_data.get("given-names"))
+        family = _value(name_data.get("family-name"))
+        credit = _value(name_data.get("credit-name"), f"{given} {family}")
 
         lines = [f"# ORCID Profile: {credit}\n", f"**ORCID:** https://orcid.org/{orcid_id}\n"]
 
         # Affiliations
-        employments = (person.get("employments") or {}).get("employment-summary", [])
+        employments = _employments(data)
         if employments:
             lines.append("\n## Affiliations\n")
             for emp in employments[:5]:
-                org = emp.get("organization", {}).get("name", "?")
+                org = (emp.get("organization") or {}).get("name") or "?"
                 dept = emp.get("department-name", "") or ""
                 role = emp.get("role-title", "") or ""
                 parts = []
@@ -97,3 +97,33 @@ async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
     except Exception as e:
         await ctx.error(f"ORCID lookup failed: {e}")
         raise DiscoveryError(str(e))
+
+
+def _value(node, default: str = "?") -> str:
+    """ORCID wraps every scalar as ``{"value": ...}``.
+
+    A field the researcher left out arrives as an explicit ``null`` rather than
+    absent, so `.get(name, {})` returns `None` and the next `.get` was a call on
+    it — which failed the whole lookup.
+    """
+    if not isinstance(node, dict):
+        return default
+    value = node.get("value")
+    return str(value) if value else default
+
+
+def _employments(record: dict) -> list:
+    """The employment summaries of a record, flattened.
+
+    They live under ``activities-summary``, nested through ``affiliation-group``
+    and ``summaries``. Read from ``person`` — where they never are — the
+    affiliations section was always empty while the record carried the data.
+    """
+    activities = (record.get("activities-summary") or {}).get("employments") or {}
+    summaries = []
+    for group in activities.get("affiliation-group") or []:
+        for entry in group.get("summaries") or []:
+            summary = entry.get("employment-summary")
+            if summary:
+                summaries.append(summary)
+    return summaries

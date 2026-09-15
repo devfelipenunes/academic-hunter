@@ -18,17 +18,25 @@ async def test_lookup_orcid(mock_ctx):
                 "family-name": {"value": "Lovelace"},
                 "credit-name": {"value": "Ada Lovelace"},
             },
+        },
+        # Employments live here, nested two levels deep — not under `person`,
+        # which is where the tool looked and where this fixture used to put them.
+        "activities-summary": {
             "employments": {
-                "employment-summary": [
+                "affiliation-group": [
                     {
-                        "organization": {"name": "University of Cambridge"},
-                        "department-name": "Mathematics",
-                        "role-title": "Professor",
+                        "summaries": [
+                            {
+                                "employment-summary": {
+                                    "organization": {"name": "University of Cambridge"},
+                                    "department-name": "Mathematics",
+                                    "role-title": "Professor",
+                                }
+                            }
+                        ]
                     }
                 ]
             },
-        },
-        "activities-summary": {
             "works": {
                 "group": [
                     {

@@ -55,7 +55,10 @@ async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com"
         ]
 
         if best_loc:
-            url = best_loc.get("url_for_pdf", best_loc.get("url", ""))
+            # `or`, not `.get(k, default)`: the default applies only when the key
+            # is absent, and Unpaywall sends `"url_for_pdf": null` on locations
+            # it knows as a landing page. The URL it did send was dropped.
+            url = best_loc.get("url_for_pdf") or best_loc.get("url") or ""
             host = best_loc.get("host_type", "")
             license = best_loc.get("license", "")
             version = best_loc.get("version", "")

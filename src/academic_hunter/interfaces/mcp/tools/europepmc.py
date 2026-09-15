@@ -23,6 +23,7 @@ async def search_europepmc(ctx: Context, query: str, limit: int = 10) -> str:
         limit: Max results (default 10, max 50).
     """
     await ctx.info(f"Searching Europe PMC for: '{query}'...")
+    # `isOpenAccess` arrives as "Y"/"N"; truthiness made every "N" an open paper.
 
     url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
     params = {
@@ -55,7 +56,7 @@ async def search_europepmc(ctx: Context, query: str, limit: int = 10) -> str:
             year = paper.get("firstPublicationDate", "?")[:4] if paper.get("firstPublicationDate") else "?"
             doi = paper.get("doi", "")
             source = paper.get("source", "")
-            is_open_access = paper.get("isOpenAccess", False)
+            is_open_access = _is_open_access(paper.get("isOpenAccess"))
             preprint = "[PREPRINT]" if "preprint" in source.lower() else ""
             oa = "[OA]" if is_open_access else ""
 
@@ -75,3 +76,14 @@ async def search_europepmc(ctx: Context, query: str, limit: int = 10) -> str:
     except Exception as e:
         await ctx.error(f"Europe PMC search failed: {e}")
         raise DiscoveryError(str(e))
+
+
+def _is_open_access(flag) -> bool:
+    """Europe PMC sends ``"Y"``/``"N"``; some records send a boolean.
+
+    The tool used the raw value for its truthiness, and ``"N"`` is a non-empty
+    string — so every closed-access paper was badged open.
+    """
+    if isinstance(flag, bool):
+        return flag
+    return str(flag).strip().upper() in ("Y", "YES", "TRUE")
