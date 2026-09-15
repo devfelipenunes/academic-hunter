@@ -10,6 +10,7 @@ import time
 from pathlib import Path
 from typing import Dict, Any, List, Set, Optional
 
+from .atomic import write_json_atomically
 from .history import ConfigHistory
 
 #: Placeholder shown wherever a credential must not be echoed. A fixed string
@@ -92,8 +93,16 @@ class HunterConfig:
                 "Copy config.example.json to config.json and customize it."
             )
 
-        with open(self.config_path, 'r', encoding='utf-8') as f:
-            self._raw = json.load(f)
+        try:
+            with open(self.config_path, 'r', encoding='utf-8') as f:
+                self._raw = json.load(f)
+        except json.JSONDecodeError as e:
+            # `json.load` on its own names neither the file nor a cause, and a
+            # half-written config is exactly what someone has to diagnose.
+            raise ValueError(
+                f"Configuration file at '{self.config_path}' is not valid JSON: {e}. "
+                "An interrupted save leaves it half-written."
+            ) from e
 
         # Save pre-override snapshot for history tracking
         raw_copy = json.loads(json.dumps(self._raw))
@@ -270,8 +279,7 @@ class HunterConfig:
             if k not in config and k.startswith("_"):
                 config[k] = self._raw[k]
 
-        with open(self.config_path, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=4, ensure_ascii=False)
+        write_json_atomically(self.config_path, config, indent=4)
 
         # Update mtime so cache knows it's fresh
         self._mtime = time.time()

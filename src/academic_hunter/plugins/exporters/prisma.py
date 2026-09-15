@@ -1,28 +1,12 @@
-import json
 import logging
 from pathlib import Path
 from typing import List, Dict, Any
+
+from academic_hunter.core.infra.atomic import write_json_atomically
+
 from .base import BaseExporter, ExportContext
 
 logger = logging.getLogger("academic_hunter.exporters")
-
-
-def write_json_atomically(path: Path, payload: Any) -> None:
-    """Write through a sibling temp file, then rename.
-
-    Other tools read these numbers back; written in place, the file exists and is
-    half a document for a moment, and a reader landing in that window gets a
-    parse error from a file that is fine a millisecond later.
-    """
-    temporary = path.with_suffix(path.suffix + ".part")
-    try:
-        temporary.write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
-        temporary.replace(path)
-    except OSError:
-        temporary.unlink(missing_ok=True)
-        raise
 
 
 def flow_counts(stats: Dict[str, Any]) -> Dict[str, Any]:
