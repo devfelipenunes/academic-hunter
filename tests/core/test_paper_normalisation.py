@@ -34,6 +34,59 @@ def test_the_wrap_is_not_carried_into_the_displayed_text():
     assert "\n" not in title
 
 
+def _processor():
+    import json
+    import tempfile
+    import threading
+    from pathlib import Path
+
+    from academic_hunter.core.infra import HunterConfig, SearchState
+    from academic_hunter.core.screening.processor import PaperProcessor
+
+    settings = {
+        "settings": {"min_relevance_score": 0.0, "start_year": 2024},
+        "anchors": {"cat": ["blockchain interoperability"]},
+        "technical_strings": {},
+        "technical_weights": {},
+    }
+    path = Path(tempfile.mkdtemp()) / "config.json"
+    path.write_text(json.dumps(settings))
+    config = HunterConfig(config_path=str(path))
+    scorer = AcademicScorer(
+        config.anchors, config.tech_strings, config.tech_weights,
+        config.context_rules, config.settings,
+    )
+    return PaperProcessor(
+        state=SearchState(), scorer=scorer, config=config,
+        connectors={}, lock=threading.RLock(),
+    )
+
+
+def test_the_pipeline_normalises_what_a_connector_hands_it():
+    """The scorer reads the raw paper dict, not the stored `Paper`.
+
+    So normalising in the model is not enough: whatever a connector returns has
+    to be clean *before* it reaches scoring, or the next connector repeats the
+    arXiv defect and nothing catches it.
+    """
+    processor = _processor()
+
+    processor.process(
+        paper={
+            "Title": "A study of blockchain\n      interoperability",
+            "Abstract": "Throughput\n        across ledgers.",
+            "Year": "2024", "Source": "Mock", "Citations": 0,
+            "Type": "article", "Venue": "V", "URL": "u",
+        },
+        anchor_cat="cat", tech_cat="cat",
+        anchor_list=["blockchain interoperability"], tech_list=[],
+    )
+
+    stored = next(iter(processor.state.consolidated_results.values()))
+    assert stored["Title"] == "A study of blockchain interoperability"
+    assert stored["Abstract"] == "Throughput across ledgers."
+
+
 def test_a_two_word_term_split_by_the_wrap_still_matches():
     """The scorer matches terms with a literal space, so the wrap broke the match.
 

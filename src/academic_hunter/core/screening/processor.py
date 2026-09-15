@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 from ..infra import SearchState, HunterConfig
 from ..nlp import AcademicScorer
 from ..models import Paper
+from ..models.utils import collapse_whitespace
 from .resolvers import PaperResolver
 
 class PaperProcessor:
@@ -23,7 +24,13 @@ class PaperProcessor:
         with self.lock:
             self.state.stats["identified"][source] = self.state.stats["identified"].get(source, 0) + 1
 
-        title = paper.get('Title', '').strip()
+        # Normalised here, at the boundary, because scoring reads this dict and
+        # not the `Paper` built from it: a title wrapped across lines carried the
+        # indentation of the next line, and a two-word term straddling the wrap
+        # failed to match. Doing it per connector means the next one repeats it.
+        paper["Title"] = collapse_whitespace(paper.get("Title"))
+        paper["Abstract"] = collapse_whitespace(paper.get("Abstract"))
+        title = paper["Title"]
         if not title:
             return
 
