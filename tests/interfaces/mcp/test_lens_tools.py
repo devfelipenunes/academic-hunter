@@ -7,6 +7,16 @@ import pytest
 from academic_hunter.interfaces.mcp.tools.lens import search_patents
 
 
+@pytest.fixture(autouse=True)
+def lens_token(monkeypatch):
+    """Lens requires a token on every request.
+
+    These tests are about parsing the response, not about authentication — which
+    has its own tests in `test_connector_contracts.py`.
+    """
+    monkeypatch.setenv("LENS_API_KEY", "test-token")
+
+
 async def test_search_patents(mock_ctx):
     """Returns patent search results."""
     mock_response = {

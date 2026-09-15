@@ -24,13 +24,27 @@ async def search_patents(ctx: Context, query: str, limit: int = 10) -> str:
         limit: Max results (default 10, max 25).
     """
     await ctx.info(f"Searching patents for: '{query}'...")
+
+    # Checked before the call, not after: without it every request is a 401, and
+    # a 401 does not tell anyone which variable to set.
+    token = _api_token()
+    if not token:
+        await ctx.error("Lens.org token is not configured")
+        raise DiscoveryError(
+            "Lens.org requires a token. Set LENS_API_KEY in the environment or "
+            "settings.api_keys.lens in config.json."
+        )
+
     try:
         url = "https://api.lens.org/patent/search"
         payload = {
             "query": {"terms": [{"field": "title", "value": query}]},
             "size": min(limit, 25),
         }
-        headers = {"Content-Type": "application/json"}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        }
         resp = await asyncio.to_thread(requests.post, url, json=payload, headers=headers, timeout=15)
         resp.raise_for_status()
         data = resp.json()
@@ -67,3 +81,25 @@ async def search_patents(ctx: Context, query: str, limit: int = 10) -> str:
     except Exception as e:
         await ctx.error(f"Patent search failed: {e}")
         raise DiscoveryError(str(e))
+
+
+def _api_token() -> str:
+    """The Lens token: environment first, then the config.
+
+    The same order the connectors use, so a key set either way is found.
+    """
+    import os
+
+    from academic_hunter.core import get_config
+
+    token = os.environ.get("LENS_API_KEY")
+    if token:
+        return token
+
+    try:
+        settings = get_config().settings or {}
+    except Exception:
+        return ""
+
+    keys = settings.get("api_keys") or {}
+    return str(keys.get("lens") or settings.get("lens_api_key") or "")

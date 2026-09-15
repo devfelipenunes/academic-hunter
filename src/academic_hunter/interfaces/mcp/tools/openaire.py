@@ -12,9 +12,21 @@ from ..exceptions import DiscoveryError
 logger = logging.getLogger("academic_hunter.mcp.openaire")
 
 
+def _as_list(node) -> list:
+    """OAI-PMH's XML→JSON conversion gives a dict for one value, a list for many.
+
+    Every field in this format has the same shape, and the guard existed on
+    `project` alone — the others iterated the dict's *keys* and called `.get` on
+    the resulting strings.
+    """
+    if node is None:
+        return []
+    return node if isinstance(node, list) else [node]
+
+
 def _extract_meta(oaf: dict) -> dict:
     """Extract flat metadata from OpenAIRE's nested oaf:result structure."""
-    title_list = oaf.get("title", [])
+    title_list = _as_list(oaf.get("title"))
     title = ""
     for t in title_list:
         if t.get("@classid") == "main title":
@@ -23,21 +35,23 @@ def _extract_meta(oaf: dict) -> dict:
     if not title and title_list:
         title = title_list[0].get("$", "")
 
-    creators = oaf.get("creator", [])
-    authors = "; ".join(c.get("$", "") for c in creators[:5]) if creators else "?"
+    creators = _as_list(oaf.get("creator"))
+    authors = "; ".join(c.get("$", "") for c in creators[:5] if isinstance(c, dict)) or "?"
 
     date_acc = oaf.get("dateofacceptance", {})
     pub_date = date_acc.get("$", "?")[:10] if isinstance(date_acc, dict) else "?"
 
-    pids = oaf.get("pid", [])
+    pids = _as_list(oaf.get("pid"))
     doi = ""
     for p in pids:
-        if p.get("@classid") == "doi":
+        if isinstance(p, dict) and p.get("@classid") == "doi":
             doi = p.get("$", "")
             break
 
-    access = oaf.get("bestaccessright", {})
-    is_oa = "✅ OA" if access.get("@classid") == "OPEN ACCESS" else ""
+    access = _as_list(oaf.get("bestaccessright"))
+    is_oa = "" if not access or not isinstance(access[0], dict) else (
+        "✅ OA" if access[0].get("@classid") == "OPEN ACCESS" else ""
+    )
 
     projects = oaf.get("project", [])
     funder = ""

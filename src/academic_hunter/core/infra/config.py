@@ -209,7 +209,7 @@ class HunterConfig:
     #: Settings keys that hold credentials. They are read by the connectors
     #: straight from `settings`, so they must stay in the live config — but they
     #: must never be serialised back out to a caller.
-    SECRET_SETTINGS = ("semantic_scholar_api_key", "openalex_api_key", "core_api_key")
+    SECRET_SETTINGS = ("semantic_scholar_api_key", "openalex_api_key", "core_api_key", "lens_api_key")
 
     def public_settings(self) -> Dict[str, Any]:
         """``settings`` with credentials masked, for anything that returns it.

@@ -7,6 +7,7 @@ No API key is needed.
 
 import logging
 from datetime import datetime, timedelta
+from typing import Any
 
 import asyncio
 import requests
@@ -18,6 +19,12 @@ logger = logging.getLogger("academic_hunter.mcp.biorxiv")
 
 BIORXIV_API = "https://api.biorxiv.org/details/biorxiv"
 MEDRXIV_API = "https://api.biorxiv.org/details/medrxiv"
+
+#: The API serves at most 100 items per page.
+PAGE_SIZE = 100
+#: An upper bound on the reading. A query that matches nothing would otherwise
+#: walk the whole window, and 90 days of bioRxiv is tens of thousands of records.
+MAX_PAGES = 5
 
 # Common bioRxiv subject categories (for reference / hinting)
 
@@ -55,27 +62,47 @@ async def search_biorxiv(
         end_date = datetime.now().strftime("%Y-%m-%d")
         start_date = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
 
-        # Request more than ``limit`` to leave room for client-side filtering.
-        # The API cursor parameter is ``{start}/{end}/{cursor}/{count}``.
-        url = f"{api_url}/{start_date}/{end_date}/0/{limit * 3}"
-
-        resp = await asyncio.to_thread(requests.get, url, timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
-
-        collection = data.get("collection", [])
-        if not collection:
-            await ctx.info(f"No recent preprints found for '{query}'")
-            return f"No preprints found for: '{query}'."
-
-        # Client-side keyword filter on title and abstract
+        # The API answers by date range and paginates with a cursor. Reading one
+        # page of a 90-day window and calling the result "not found" is a claim
+        # about the window, made from a sample of it.
         query_lower = query.lower()
         matches = []
-        for preprint in collection:
-            title = preprint.get("title", "")
-            abstract = preprint.get("abstract", "")
-            if query_lower in title.lower() or query_lower in abstract.lower():
-                matches.append(preprint)
+        cursor: Any = 0
+        visited = set()
+        pages = 0
+        # Whether the API returned anything at all, as opposed to returning
+        # records that none of which matched. The two need different messages.
+        seen_any = False
+
+        while len(matches) < limit and pages < MAX_PAGES and cursor not in visited:
+            visited.add(cursor)
+            pages += 1
+
+            url = f"{api_url}/{start_date}/{end_date}/{cursor}/{PAGE_SIZE}"
+            resp = await asyncio.to_thread(requests.get, url, timeout=15)
+            resp.raise_for_status()
+            data = resp.json()
+
+            collection = data.get("collection") or []
+            if not collection:
+                break
+            seen_any = True
+
+            for preprint in collection:
+                title = preprint.get("title", "")
+                abstract = preprint.get("abstract", "")
+                if query_lower in title.lower() or query_lower in abstract.lower():
+                    matches.append(preprint)
+
+            # A cursor that does not move would repeat the same page forever.
+            next_cursor = (data.get("messages") or [{}])[0].get("cursor")
+            if not isinstance(next_cursor, int) or next_cursor == cursor:
+                break
+            cursor = next_cursor
+
+        if not seen_any:
+            await ctx.info(f"No recent preprints found for '{query}'")
+            return f"No preprints found for: '{query}'."
 
         matches = matches[:limit]
 
