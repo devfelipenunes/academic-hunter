@@ -56,6 +56,14 @@ async def get_latest_report_resource() -> str:
     return content[:10000]
 
 
+def _read_store(store):
+    """Every synchronous call the vector-store resource needs, in one place."""
+    collections = store.list_collections()
+    collection_data = [store.collection_stats(name) for name in collections]
+    total_papers = sum(stats.get("count", 0) for stats in collection_data)
+    return collections, collection_data, total_papers
+
+
 async def get_vector_stats_resource() -> str:
     """Return vector-store statistics as JSON.
 
@@ -71,13 +79,9 @@ async def get_vector_stats_resource() -> str:
                 ensure_ascii=False,
                 indent=2,
             )
-        collections = store.list_collections()
-        total_papers = 0
-        collection_data = []
-        for coll_name in collections:
-            stats = store.collection_stats(coll_name)
-            total_papers += stats.get("count", 0)
-            collection_data.append(stats)
+        # Off the loop: opening the Chroma client and counting collections is
+        # I/O, and doing it here froze every other request for as long as it took.
+        collections, collection_data, total_papers = await run_blocking(_read_store, store)
 
         return _json.dumps(
             {

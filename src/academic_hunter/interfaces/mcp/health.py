@@ -16,6 +16,18 @@ except Exception:
 async def _check_components() -> dict:
     """Check all components and return status data.
 
+    Off the event loop: every check below opens a file or a client, and this runs
+    on the same loop as every tool — `GET /health` is what an orchestrator polls,
+    so blocking here stops the server answering anything else.
+    """
+    from .tools._utils import run_blocking
+
+    return await run_blocking(_probe_components)
+
+
+def _probe_components() -> dict:
+    """The synchronous work behind ``_check_components``.
+
     Returns a dict with ``status`` (ok/degraded/error), ``config_loaded``,
     ``vector_store`` info, and ``last_config_backup``.
     """

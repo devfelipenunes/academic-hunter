@@ -105,3 +105,75 @@ async def test_a_blocking_helper_exists_and_is_used():
     assert hasattr(_utils, "run_blocking"), (
         "there should be a single place that says how blocking work is offloaded"
     )
+
+
+# ── resources and the health route ──────────────────────────────────────────
+#
+# These are `async def` with no `await` anywhere: every call they make is
+# synchronous, and it ran on the loop that serves everything else. The tools were
+# covered by the tests above; the resource layer and the route `/health` calls
+# were not.
+
+
+def _slow_store(seconds=0.2):
+    store = MagicMock()
+    store.list_collections.return_value = ["papers"]
+    store.collection_stats.side_effect = lambda *a, **k: (
+        time.sleep(seconds) or {"name": "papers", "count": 3}
+    )
+    return store
+
+
+async def _heartbeat_while(work):
+    started = time.monotonic()
+    stamps = []
+
+    async def heartbeat():
+        for _ in range(5):
+            await asyncio.sleep(0.02)
+            stamps.append(time.monotonic() - started)
+
+    await asyncio.gather(work, heartbeat())
+    return stamps
+
+
+async def test_the_vector_stats_resource_does_not_block_the_event_loop():
+    """Reading `academic-hunter://vector-store/stats` freezes every other request.
+
+    Listing the collections and counting them opens the Chroma client and reads
+    from disk. One read measured 355 ms of stall.
+    """
+    from academic_hunter.interfaces.mcp.resources import get_vector_stats_resource
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools._utils._get_vector_store",
+        return_value=_slow_store(),
+    ):
+        stamps = await _heartbeat_while(get_vector_stats_resource())
+
+    assert stamps, "the heartbeat never ran"
+    assert max(stamps) < 0.15, (
+        f"the event loop was blocked for {max(stamps):.2f}s — every other request, "
+        f"and the SSE heartbeat, waited on the vector store"
+    )
+
+
+async def test_the_health_check_does_not_block_the_event_loop():
+    """`GET /health` is what an orchestrator polls, and it froze the server.
+
+    `_check_components` runs the same synchronous store reads as the tool, on the
+    same loop, for every probe.
+    """
+    from academic_hunter.interfaces.mcp.health import _check_components
+
+    with patch(
+        "academic_hunter.interfaces.mcp.health._get_vector_store",
+        return_value=_slow_store(),
+    ), patch("academic_hunter.core.get_config", return_value=MagicMock()):
+        stamps = await _heartbeat_while(_check_components())
+
+    assert stamps, "the heartbeat never ran"
+    assert max(stamps) < 0.15, (
+        f"the event loop was blocked for {max(stamps):.2f}s — every probe of "
+        f"/health stops the server from answering anything else"
+    )
