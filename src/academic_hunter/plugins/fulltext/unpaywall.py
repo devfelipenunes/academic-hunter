@@ -6,7 +6,9 @@ this without importing the interface layer.
 """
 
 import logging
+import re
 from typing import Any, Dict
+from urllib.parse import urljoin
 
 import requests
 
@@ -26,7 +28,67 @@ DEFAULT_TIMEOUT = 10
 #: A PDF larger than this is aborted mid-stream rather than held in memory.
 MAX_PDF_BYTES = 40_000_000
 
+#: Enough of a landing page to reach its `<head>`; the rest is not read.
+MAX_HTML_BYTES = 512_000
+
 _CHUNK = 64 * 1024
+
+#: The convention Google Scholar and Zotero read. Attribute order varies.
+_CITATION_PDF_PATTERNS = (
+    re.compile(
+        r'<meta[^>]+name=["\']citation_pdf_url["\'][^>]+content=["\']([^"\']+)["\']',
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']citation_pdf_url["\']',
+        re.IGNORECASE,
+    ),
+)
+
+
+def pdf_url_from_landing_page(url: str, timeout: int = DEFAULT_TIMEOUT) -> str:
+    """The PDF a landing page points at, via its `citation_pdf_url` meta tag.
+
+    Returns "" when there is none — a page without the tag, a network failure, a
+    non-HTML body. Never raises: the caller has a fallback and this is a probe.
+    """
+    try:
+        # No custom User-Agent: measured, one repository answered a 827-byte stub
+        # to ours and the full page to the default one.
+        response = requests.get(url, timeout=timeout, stream=True)
+    except requests.RequestException as e:
+        logger.debug("Could not read landing page %s: %s", url, e)
+        return ""
+
+    try:
+        if response.status_code != 200:
+            return ""
+        # `iter_content`, not `raw.read(n)`: the latter returned the first
+        # socket chunk — 827 bytes on the one measured — and never the tag.
+        chunks, total = [], 0
+        for chunk in response.iter_content(chunk_size=_CHUNK):
+            if chunk:
+                chunks.append(chunk)
+                total += len(chunk)
+            if total >= MAX_HTML_BYTES:
+                break
+        body = b"".join(chunks)
+    except Exception as e:  # noqa: BLE001 — a probe on a failure path
+        logger.debug("Could not read landing page %s: %s", url, e)
+        return ""
+    finally:
+        response.close()
+
+    if b"%PDF-" in body[:1024]:
+        # It is already the PDF, so the URL the caller has is the right one.
+        return url
+
+    html = body.decode("utf-8", errors="replace")
+    for pattern in _CITATION_PDF_PATTERNS:
+        match = pattern.search(html)
+        if match:
+            return urljoin(url, match.group(1).strip())
+    return ""
 
 
 def fetch_record(doi: str, email: str, timeout: int = DEFAULT_TIMEOUT) -> Dict[str, Any]:
@@ -100,8 +162,17 @@ class UnpaywallSource:
             if location.get("url_for_pdf"):
                 return self._as_location(location, pdf=True)
 
-        # No location names a PDF directly. A landing page still sometimes
-        # serves one, and the download checks the magic bytes either way.
+        # No location names a PDF. Repository landing pages usually declare one
+        # in a meta tag, so ask — but only here, on the records that would
+        # otherwise fail with "did not return a PDF".
+        for location in locations:
+            url = str(location.get("url") or "")
+            if not url:
+                continue
+            pdf_url = pdf_url_from_landing_page(url, self.timeout)
+            if pdf_url:
+                return self._as_location({**location, "url_for_pdf": pdf_url}, pdf=True)
+
         for location in locations:
             if location.get("url"):
                 return self._as_location(location, pdf=False)
