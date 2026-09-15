@@ -9,23 +9,23 @@
     "OpenAlex": 685,
     "Crossref": 582,
     "ArXiv": 292,
-    "SemanticScholar": 90
+    "Semantic Scholar": 90
   },
   "per_source_exclusive": {
     "Crossref": 494,
-    "SemanticScholar": 76,
+    "Semantic Scholar": 76,
     "ArXiv": 274,
     "OpenAlex": 586
   },
   "multi_source_combination_counts": {
     "Crossref+OpenAlex": 77,
-    "OpenAlex+SemanticScholar": 6,
-    "Crossref+OpenAlex+SemanticScholar": 2,
-    "Crossref+SemanticScholar": 5,
+    "OpenAlex+Semantic Scholar": 6,
+    "Crossref+OpenAlex+Semantic Scholar": 2,
+    "Crossref+Semantic Scholar": 5,
     "ArXiv+OpenAlex": 13,
     "ArXiv+Crossref+OpenAlex": 1,
     "ArXiv+Crossref": 3,
-    "ArXiv+SemanticScholar": 1
+    "ArXiv+Semantic Scholar": 1
   },
   "reference_point": "Third-party comparison reports ~40% uniqueness between single-source AI discovery tools (SciSpace, Consensus, Ai2 Paper Finder), all built on Semantic Scholar. Lower overlap here indicates genuine coverage gain."
 }
