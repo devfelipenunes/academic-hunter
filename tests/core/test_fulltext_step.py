@@ -40,7 +40,7 @@ class FakeChunkStore:
     def has_chunks(self, parent_id, collection_name="paper_chunks"):
         return False
 
-    def delete_chunks(self, parent_id, collection_name="paper_chunks"):
+    def delete_chunks(self, parent_id, collection_name="paper_chunks", *, keep_ids=()):
         return 0
 
 

@@ -33,6 +33,7 @@ class FakeChunkStore:
         self.indexed = []
         self.indexed_collections = []
         self.deleted = []
+        self.kept = []
         self.asked = []
 
     def index_chunks(self, chunks, collection_name="paper_chunks"):
@@ -47,8 +48,9 @@ class FakeChunkStore:
         self.asked.append(parent_id)
         return parent_id in self.already
 
-    def delete_chunks(self, parent_id, collection_name="paper_chunks"):
+    def delete_chunks(self, parent_id, collection_name="paper_chunks", *, keep_ids=()):
         self.deleted.append(parent_id)
+        self.kept.append(set(keep_ids))
         return 1
 
 
@@ -196,6 +198,38 @@ def test_a_force_that_fails_keeps_the_chunks_that_were_there():
     assert counters["download_failed"] == 1
     assert store.deleted == [], "the old chunks were destroyed for nothing"
     assert store.indexed == []
+
+
+def test_a_force_whose_indexing_fails_keeps_the_chunks_that_were_there():
+    """The other half of the reindex hazard: the document arrives, and then the
+    store refuses the batch.
+
+    `test_a_force_that_fails_keeps_the_chunks_that_were_there` covers the fetch
+    failing. Here the fetch succeeds, so a delete ordered before the index would
+    already have run — and the paper would be left with nothing at all.
+    """
+    parent_id = doc_id_for("A study", "10.1/a")
+    store = FakeChunkStore(already={parent_id}, result=False)
+
+    counters = ingest_full_text(
+        [paper()], fetcher_returning(document()), store, config(), force=True
+    )
+
+    assert counters["download_failed"] == 1
+    assert store.deleted == [], "the old chunks were destroyed for a batch the store refused"
+
+
+def test_a_successful_force_removes_only_what_the_new_version_lacks():
+    """Indexing upserts by chunk id, so the surplus is what has to be named."""
+    parent_id = doc_id_for("A study", "10.1/a")
+    store = FakeChunkStore(already={parent_id})
+
+    ingest_full_text([paper()], fetcher_returning(document()), store, config(), force=True)
+
+    assert store.deleted == [parent_id]
+    assert store.kept[-1] == {c["chunk_id"] for c in store.indexed[-1]}, (
+        "the store was told to delete without being told what the new version kept"
+    )
 
 
 def test_the_collection_can_be_redirected():

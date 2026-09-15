@@ -8,7 +8,7 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from .base import BaseVectorStore
 
@@ -293,12 +293,19 @@ class ChromaVectorStore(BaseVectorStore):
             # A missing collection simply has no chunks.
             return False
 
-    def delete_chunks(self, parent_id: str, collection_name: str = "paper_chunks") -> int:
-        """Remove every chunk of ``parent_id``; returns how many were removed."""
+    def delete_chunks(
+        self,
+        parent_id: str,
+        collection_name: str = "paper_chunks",
+        *,
+        keep_ids: Sequence[str] = (),
+    ) -> int:
+        """Remove the chunks of ``parent_id`` that are not in ``keep_ids``."""
         try:
             collection = self.client.get_collection(collection_name)
             found = collection.get(where={"parent_id": parent_id})
-            ids = found.get("ids") or []
+            kept = set(keep_ids)
+            ids = [i for i in (found.get("ids") or []) if i not in kept]
             if ids:
                 collection.delete(ids=ids)
             return len(ids)

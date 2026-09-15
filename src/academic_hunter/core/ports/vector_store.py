@@ -69,6 +69,17 @@ class ChunkStorePort(Protocol):
         """Whether any chunk belonging to ``parent_id`` is already indexed."""
         ...
 
-    def delete_chunks(self, parent_id: str, collection_name: str = "paper_chunks") -> int:
-        """Remove every chunk of ``parent_id``; returns how many were removed."""
+    def delete_chunks(
+        self,
+        parent_id: str,
+        collection_name: str = "paper_chunks",
+        *,
+        keep_ids: Sequence[str] = (),
+    ) -> int:
+        """Remove the chunks of ``parent_id`` that are not in ``keep_ids``.
+
+        Returns how many were removed. ``keep_ids`` is what makes a reindex safe:
+        the caller indexes the replacement first and then names what it kept, so
+        the store never has to guess which chunks belong to the older version.
+        """
         ...

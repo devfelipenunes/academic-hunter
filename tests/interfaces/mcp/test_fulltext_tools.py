@@ -47,7 +47,7 @@ class FakeStore:
     def has_chunks(self, parent_id, collection_name="paper_chunks"):
         return parent_id in self.already
 
-    def delete_chunks(self, parent_id, collection_name="paper_chunks"):
+    def delete_chunks(self, parent_id, collection_name="paper_chunks", *, keep_ids=()):
         self.deleted.append(parent_id)
         return 1
 

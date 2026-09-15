@@ -150,16 +150,22 @@ def _ingest_one(
         for c in chunks
     ]
 
-    if replace:
-        # Delete only with the replacement in hand, or a re-fetch that fails on a
-        # flaky network destroys a document the index already held.
-        store.delete_chunks(parent_id, collection_name=collection_name)
-
     try:
         indexed = store.index_chunks(records, collection_name=collection_name)
     except Exception as e:  # noqa: BLE001
         logger.warning("Could not index chunks for %s: %s", doi, e)
         return _failed(paper, e)
+
+    if indexed and replace:
+        # After the replacement is in the store, and naming what it kept. A delete
+        # ordered before the index ran on the old chunks and then left the paper
+        # with none at all when the store refused the batch.
+        store.delete_chunks(
+            parent_id,
+            collection_name=collection_name,
+            keep_ids=[c["chunk_id"] for c in records],
+        )
+
     return "obtained" if indexed else _failed(paper, "the store refused the batch")
 
 
