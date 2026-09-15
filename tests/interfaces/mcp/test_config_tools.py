@@ -237,3 +237,24 @@ async def test_an_omitted_mapping_is_left_alone(mock_hunter_config, mock_mcp_db,
     await update_config(SearchConfigUpdate(topic="Only the topic"), mock_ctx)
 
     assert mock_hunter_config.anchors == {"Kept": ["term"]}
+
+
+async def test_restoring_removes_what_was_added_after_the_backup(
+    mock_hunter_config, mock_mcp_db, mock_ctx
+):
+    """The backup's settings were **merged** over the current ones.
+
+    A key added after the backup survived the restore, so "restore this
+    configuration" returned a hybrid of the two and the researcher could not get
+    back to the state they had saved. The live credentials are the one thing that
+    must survive — a backup never carries them.
+    """
+    mock_hunter_config.settings = {"start_year": 2024, "rerank": {"enabled": True}}
+    mock_mcp_db.get_config.return_value = {"settings": {"start_year": 1999}}
+
+    await restore_config_by_id(1, mock_ctx)
+
+    assert mock_hunter_config.settings["start_year"] == 1999
+    assert "rerank" not in mock_hunter_config.settings, (
+        "a setting added after the backup survived the restore"
+    )

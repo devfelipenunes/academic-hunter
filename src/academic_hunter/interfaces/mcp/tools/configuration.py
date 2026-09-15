@@ -160,7 +160,16 @@ async def restore_config_by_id(config_id: int, ctx: Context) -> str:
                 for key, value in config_data["settings"].items()
                 if key not in HunterConfig.SECRET_SETTINGS and key != "api_keys"
             }
-            config.settings = {**config.settings, **restored}
+            # Replaced, not merged. Merging left anything added since the backup
+            # in place, so "restore this configuration" returned a hybrid of the
+            # two that the researcher never configured and could not get out of.
+            # The credentials are the single thing that has to survive.
+            live_secrets = {
+                key: value
+                for key, value in config.settings.items()
+                if key in HunterConfig.SECRET_SETTINGS or key == "api_keys"
+            }
+            config.settings = {**restored, **live_secrets}
         if "anchors" in config_data:
             config.anchors = config_data["anchors"]
         if "technical_strings" in config_data:
