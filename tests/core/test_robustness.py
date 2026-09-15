@@ -327,6 +327,58 @@ def test_concurrent_promotion_of_an_excluded_duplicate_happens_once(config, scor
     )
 
 
+def test_a_paper_seen_while_it_is_being_registered_is_counted_once(config, scorer, monkeypatch):
+    """`existing is None` means two different things, and they were conflated.
+
+    A duplicate whose slug is missing from `consolidated_results` was read as "the
+    paper was excluded earlier", so it took the promotion path — while in fact the
+    first copy was still being validated and had not been written yet. Both wrote
+    the paper and both counted it: `included_final` reached 2 for a single paper.
+
+    The exclusion reason is what tells them apart. A paper that was rejected has
+    one recorded; a paper still in flight does not.
+    """
+    import time
+
+    processor = _make_processor(config, scorer)
+    real_validate = processor.resolver.validator.validate_and_score
+
+    def slow_validate(*args, **kwargs):
+        time.sleep(0.05)  # the window between "seen" and "written"
+        return real_validate(*args, **kwargs)
+
+    monkeypatch.setattr(processor.resolver.validator, "validate_and_score", slow_validate)
+
+    paper = {
+        "Title": "Blockchain latency",
+        "Abstract": "Blockchain latency measurement.",
+        "Year": "2024",
+        "URL": "http://example.com",
+        "Source": "Mock",
+        "Citations": 0,
+        "Type": "article",
+        "Venue": "V",
+    }
+    barrier = threading.Barrier(2)
+
+    def submit():
+        barrier.wait()
+        processor.process(
+            paper=dict(paper),
+            anchor_cat="cat", tech_cat="cat",
+            anchor_list=["blockchain"], tech_list=["latency"],
+        )
+
+    threads = [threading.Thread(target=submit) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(processor.state.consolidated_results) == 1
+    assert processor.state.stats["included_final"] == 1, "the same paper counted twice"
+
+
 def test_a_rejected_promotion_releases_its_claim(config, scorer):
     """A rejected duplicate must not hold its slug for the rest of the run.
 

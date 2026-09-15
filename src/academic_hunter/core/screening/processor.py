@@ -55,8 +55,14 @@ class PaperProcessor:
                 # critical section. Validation happens outside the lock and is
                 # slow, so without the claim every thread holding the same
                 # duplicate passed it and wrote the same paper.
+                # `existing is None` alone does not mean "excluded": the first
+                # copy of this paper may still be mid-validation and simply not
+                # written yet. Only a recorded rejection makes this a promotion;
+                # otherwise the copy is a duplicate of a paper already being
+                # registered and has nothing to do.
                 claim_promotion = (
                     existing is None
+                    and dedup_id in self.state.exclusion_reasons
                     and dedup_id not in self.state.pending_promotions
                 )
                 if claim_promotion:
