@@ -214,3 +214,98 @@ async def test_verify_citations_marks_unverifiable_without_a_bibliography(
     result = await verify_citations(mock_ctx, text="See [@something2024].")
     assert "unverifiable" in result.lower()
     assert "NOT_FOUND" not in result
+
+
+# ── verify_numbers ──────────────────────────────────────────────────────────
+#
+# The body of this tool had no test at all: `core/writing/numbers.py` sat at 96%
+# and looked validated, while the layer that turns its verdict into something the
+# agent reads never ran.
+
+
+async def test_verify_numbers_matches_a_figure_the_results_contain(mock_ctx, project):
+    from academic_hunter.interfaces.mcp.tools.writing import verify_numbers
+
+    _make_run(project, "run_20250910_204256")
+
+    report = await verify_numbers(mock_ctx, "The review included 304 papers in total.")
+
+    assert "## Matched" in report
+    assert "304" in report
+
+
+async def test_verify_numbers_flags_a_figure_nothing_supports(mock_ctx, project):
+    from academic_hunter.interfaces.mcp.tools.writing import verify_numbers
+
+    _make_run(project, "run_20250910_204256")
+
+    report = await verify_numbers(mock_ctx, "The review included 9999 papers in total.")
+
+    assert "## Unsourced" in report
+    assert "Not necessarily wrong" in report, (
+        "the caveat that keeps this from reading as a verdict"
+    )
+
+
+async def test_verify_numbers_says_when_there_is_nothing_to_check(mock_ctx, project):
+    from academic_hunter.interfaces.mcp.tools.writing import verify_numbers
+
+    report = await verify_numbers(mock_ctx, "No figures appear in this sentence.")
+
+    assert "No checkable figures found" in report
+
+
+async def test_verify_numbers_names_the_directory_it_searched(mock_ctx, project):
+    """The report has to say what it compared against, or nobody can tell
+    "quoted from the literature" from "invented"."""
+    from academic_hunter.interfaces.mcp.tools.writing import verify_numbers
+
+    _make_run(project, "run_20250910_204256")
+
+    report = await verify_numbers(mock_ctx, "The review included 304 papers.")
+
+    assert str(project / "results") in report
+    assert "distinct values indexed" in report
+
+
+async def test_verify_numbers_resolves_a_relative_directory(mock_ctx, project):
+    from academic_hunter.interfaces.mcp.tools.writing import verify_numbers
+
+    _make_run(project, "run_20250910_204256")
+
+    report = await verify_numbers(mock_ctx, "The review included 304 papers.", results_dir="results")
+
+    assert "## Matched" in report
+
+
+async def test_verify_numbers_warns_when_it_indexed_nothing(mock_ctx, project):
+    """Silence here would read as "every figure is unsourced"."""
+    from academic_hunter.interfaces.mcp.tools.writing import verify_numbers
+
+    empty = project / "nothing"
+    empty.mkdir()
+
+    report = await verify_numbers(
+        mock_ctx, "The review included 304 papers.", results_dir=str(empty)
+    )
+
+    assert "## Unsourced" in report
+    mock_ctx.warning.assert_called()
+
+
+async def test_verify_numbers_reports_a_near_miss_as_close(mock_ctx, project):
+    """CLOSE is a section of its own, and the report has to render it.
+
+    A value near the claim but not equal to it at the claim's precision is a
+    prompt to look. Folding it into either MATCHED or UNSOURCED would lose the
+    only case where the reader has to decide.
+    """
+    from academic_hunter.interfaces.mcp.tools.writing import verify_numbers
+
+    run = _make_run(project, "run_20250910_204256")
+    (run / "extra.json").write_text(json.dumps({"overlap": 0.9275}))
+
+    report = await verify_numbers(mock_ctx, "The overlap was 92.7%.")
+
+    assert "## Close" in report
+    assert "0.9275" in report
