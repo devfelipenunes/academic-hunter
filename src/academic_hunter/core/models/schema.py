@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from .utils import normalize_doi
+from .utils import collapse_whitespace, normalize_doi
 from .strategies import (
     strategy_max,
     strategy_first_non_empty,
@@ -14,11 +14,11 @@ from .strategies import (
 FIELD_SCHEMA: Dict[str, Dict[str, Any]] = {
     "Title": {
         "default": "",
-        "normalize": lambda x: str(x or "").strip().replace('\n', ' ')
+        "normalize": collapse_whitespace,
     },
     "Abstract": {
         "default": "",
-        "normalize": lambda x: str(x or "").strip().replace('\n', ' '),
+        "normalize": collapse_whitespace,
         "strategy": strategy_longest_string
     },
     "Year": {

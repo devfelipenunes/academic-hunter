@@ -2,6 +2,9 @@ import logging
 import urllib.parse
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any
+
+from ...core.models.utils import collapse_whitespace
+
 from .base import BaseConnector
 
 logger = logging.getLogger("academic_hunter.connectors")
@@ -61,8 +64,8 @@ class ArxivConnector(BaseConnector):
 
                     doc_type = "preprint"
                     articles.append({
-                        "Title": title_elem.text.strip().replace('\n', ' ') if title_elem is not None and title_elem.text else "N/A",
-                        "Abstract": summary_elem.text.strip().replace('\n', ' ') if summary_elem is not None and summary_elem.text else "",
+                        "Title": collapse_whitespace(title_elem.text) if title_elem is not None and title_elem.text else "N/A",
+                        "Abstract": collapse_whitespace(summary_elem.text) if summary_elem is not None and summary_elem.text else "",
                         "Year": published_elem.text[:4] if published_elem is not None and published_elem.text else "N/A",
                         "URL": id_elem.text if id_elem is not None and id_elem.text else "",
                         "Source": self.SOURCE_NAME,
