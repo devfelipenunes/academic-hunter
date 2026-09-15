@@ -186,8 +186,11 @@ async def test_compare_papers_api_error(mock_ctx):
 
         m_get.side_effect = RequestException("Network error")
 
-        with pytest.raises(DiscoveryError) as exc_info:
-            await compare_papers(mock_ctx, "10.1000/a", "10.1000/b")
+        with patch("academic_hunter.interfaces.mcp.tools.comparison.AcademicHunter") as m_h:
+            m_h.return_value.fetch_abstract_by_doi.return_value = None
+
+            with pytest.raises(DiscoveryError) as exc_info:
+                await compare_papers(mock_ctx, "10.1000/a", "10.1000/b")
 
         assert "Network error" in str(exc_info.value)
         mock_ctx.error.assert_called()

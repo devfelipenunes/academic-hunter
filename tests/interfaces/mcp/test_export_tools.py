@@ -110,9 +110,11 @@ async def test_export_report_fallback_to_csv(mock_ctx, tmp_path):
     csv_file.write_text("Title,DOI\nPaper,10.1000/test\n")
 
     with patch("academic_hunter.interfaces.mcp.tools.export.AcademicHunter") as m_h, \
-         patch("academic_hunter.interfaces.mcp.tools.export.get_project_root") as m_root:
+         patch("academic_hunter.interfaces.mcp.tools.export.get_project_root") as m_root, \
+         patch("academic_hunter.interfaces.mcp.tools._utils.get_project_root") as m_utils_root:
         m_h.return_value.consolidated_results = {}
         m_root.return_value = tmp_path
+        m_utils_root.return_value = tmp_path
         result = await export_report(mock_ctx, format="json")
 
     assert "Successfully exported" in result

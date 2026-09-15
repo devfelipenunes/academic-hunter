@@ -73,20 +73,20 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
         meta_a = await _fetch_meta(doi_a)
         meta_b = await _fetch_meta(doi_b)
 
-        hunter = await run_blocking(AcademicHunter)
+        async def _abstract_for(meta: dict, doi: str) -> str:
+            abstract = meta.get("abstract") or ""
+            if abstract:
+                return abstract
+            hunter = await run_blocking(AcademicHunter)
+            return hunter.fetch_abstract_by_doi(doi) or ""
 
         title_a = meta_a.get("title") or "Unknown Title"
         title_b = meta_b.get("title") or "Unknown Title"
         year_a = meta_a.get("year") or "Unknown Year"
         year_b = meta_b.get("year") or "Unknown Year"
 
-        abstract_a = meta_a.get("abstract") or ""
-        if not abstract_a:
-            abstract_a = hunter.fetch_abstract_by_doi(doi_a) or ""
-
-        abstract_b = meta_b.get("abstract") or ""
-        if not abstract_b:
-            abstract_b = hunter.fetch_abstract_by_doi(doi_b) or ""
+        abstract_a = await _abstract_for(meta_a, doi_a)
+        abstract_b = await _abstract_for(meta_b, doi_b)
 
         # Compute shared keywords
         kw_a = _keyword_set(abstract_a)
