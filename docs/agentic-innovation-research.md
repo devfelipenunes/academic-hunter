@@ -19,7 +19,7 @@ de SLR) com inovações vindas da **infraestrutura de agentes** — um campo dif
 
 Isso **é** o padrão orchestrator–worker, com separação de privilégios por papel. Mas é apenas
 especificação em Markdown: não há enforcement, nem estado compartilhado, nem orquestração real.
-Um agente conectado ao MCP hoje vê as **37 tools** — incluindo as que não deveria usar.
+Um agente conectado ao MCP hoje vê as **44 tools** — incluindo as que não deveria usar.
 
 Esta pesquisa mapeia o que a infraestrutura agêntica de 2026 oferece para fechar essa lacuna.
 
@@ -209,7 +209,7 @@ CAS no claim e o dispatcher.
 
 ### 5.2 Enforcement de tool sets por papel
 
-**Problema:** os 3 agentes estão especificados, mas hoje qualquer cliente MCP vê as 37 tools.
+**Problema:** os 3 agentes estão especificados, mas hoje qualquer cliente MCP vê as 44 tools.
 
 **Proposta:** aplicar o princípio do Hermes — worker recebe só as tools do seu ciclo. O
 Orchestrator não deveria poder chamar `run_search`; o Hunter não deveria poder reconfigurar;

@@ -1,7 +1,7 @@
 # Melhorias e Inovação a partir do Landscape
 
 **Criado em:** 2026-09-10
-**Base:** mapeamento de 37 ferramentas concorrentes (`papers/tool-mapping.md`)
+**Base:** mapeamento de 37 ferramentas concorrentes (o mapeamento não acompanha este repositório)
 **Relação com outros docs:** `docs/roadmap.md` parte da dívida técnica interna. Este documento
 parte do **que os concorrentes fazem** — o que copiar, o que aprofundar e o que ninguém faz ainda.
 
@@ -110,7 +110,7 @@ Pré-requisito: o conjunto de avaliação da §4.1.
 
 ### 3.3 MCP como plataforma, não só conjunto de tools
 
-O AH expõe 37 tools. Quase todos os MCP servers acadêmicos concorrentes expõem 1–5 e fazem uma
+O AH expõe 44 tools. Quase todos os MCP servers acadêmicos concorrentes expõem 1–5 e fazem uma
 coisa. A oportunidade não é ter mais tools, é ser **a camada de retrieval padrão** para agentes
 que fazem pesquisa — o que Mishra et al. (SoK Agentic RAG) chamam de risco de _retrieval
 misalignment_. O AH já ataca isso por construção.

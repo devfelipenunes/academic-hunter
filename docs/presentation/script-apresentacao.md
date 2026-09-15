@@ -75,7 +75,7 @@
 >
 > Foi criado pela Anthropic, mas hoje é mantido pela Linux Foundation — o mesmo pessoal do Linux, do Kubernetes. OpenAI e Google adotaram.
 >
-> O Academic Hunter expõe **35+ ferramentas, 4 recursos e 2 templates** via MCP. Na prática: um agente de IA pode chamar cada funcionalidade que eu vou mostrar automaticamente.
+> O Academic Hunter expõe **44 ferramentas, 3 recursos, 1 template e 2 prompts** via MCP. Na prática: um agente de IA pode chamar cada funcionalidade que eu vou mostrar automaticamente.
 >
 > É como ter um **assistente de pesquisa** que sabe usar TODAS as ferramentas e planeja sozinho a melhor sequência de passos."
 
@@ -102,7 +102,7 @@
 >
 > **O pesquisador valida o resultado em 15 minutos. Não em 6 meses.**
 >
-> O Claude orquestra 35+ ferramentas especializadas. O pesquisador só valida o trabalho."
+> O Claude orquestra 44 ferramentas especializadas. O pesquisador só valida o trabalho."
 
 **[Avançar]**
 
@@ -146,7 +146,7 @@
 >
 > Quatro camadas:
 >
-> **MCP Server** — a interface com agentes de IA. 35+ ferramentas.
+> **MCP Server** — a interface com agentes de IA. 44 ferramentas.
 > **Core Domain** — o núcleo. O modelo de paper, o scoring, o pipeline, a exportação PRISMA. TUDO funciona sem LLM.
 > **Plugin Layer** — cada fonte de dados é um plugin independente. Quer adicionar uma nova base? Não precisa mexer no núcleo.
 > **Infrastructure** — SQLite pra cache, ChromaDB pros vetores, config JSON.
@@ -385,7 +385,7 @@
 
 > "Dois tracks de publicação:
 >
-> **JOSS** — Journal of Open Source Software — foco na ferramenta, no ecossistema, em como usar. 16 conectores, 35+ ferramentas, 155 testes.
+> **JOSS** — Journal of Open Source Software — foco na ferramenta, no ecossistema, em como usar. 15 fontes, 44 ferramentas, 993 testes.
 >
 > **Conferência** — alvo EMNLP/ACL/ECIR — foco no método Weight-Bleeding. 12 experimentos, 3 modelos, 5 baselines.
 >
