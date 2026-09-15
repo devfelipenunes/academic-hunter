@@ -21,10 +21,11 @@ the canonical helper so a qrels entry can be matched to a corpus row.
 """
 
 import json
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Union
+
+from academic_hunter.core.nlp.scorer import title_slug
 
 #: Grades at or above this are "relevant"; anything below is not.
 RELEVANT_THRESHOLD = 1
@@ -105,7 +106,7 @@ def doc_id_for(title: str = "", doi: str = "") -> str:
     doi_clean = (doi or "").strip().lower()
     if doi_clean:
         return f"doi:{doi_clean}"
-    return f"title:{re.sub(r'\W+', '', str(title).lower())}"
+    return f"title:{title_slug(title)}"
 
 
 def load_qrels(path: Union[str, Path]) -> Qrels:

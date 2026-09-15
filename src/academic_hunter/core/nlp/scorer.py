@@ -2,6 +2,13 @@ import math
 import re
 from typing import List, Dict, Any
 
+def title_slug(title: Any) -> str:
+    """Slug form of a title — the identity of a paper that carries no DOI."""
+    if title is None:
+        return ""
+    return re.sub(r"\W+", "", str(title).lower())
+
+
 class AcademicScorer:
     """Calculates relevance scores, detects anchors and normalizes terms for academic search."""
     def __init__(self, anchors: Dict[str, List[str]], tech_strings: Dict[str, List[str]], tech_weights: Dict[str, float], context_rules: Dict[str, List[str]], settings: Dict[str, Any]):
@@ -26,8 +33,7 @@ class AcademicScorer:
         }
         
     def generate_slug(self, title: str) -> str:
-        if title is None: return ""
-        return re.sub(r'\W+', '', str(title).lower())
+        return title_slug(title)
 
     def calculate_score(self, title: str, abstract: str, citations: int = 0) -> float:
         score = 0.0
