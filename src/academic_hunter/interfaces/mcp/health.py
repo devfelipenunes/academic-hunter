@@ -3,6 +3,8 @@
 import json
 import logging
 
+from mcp.server.fastmcp import Context
+
 logger = logging.getLogger("academic_hunter.mcp")
 
 try:
@@ -80,7 +82,7 @@ async def _check_components() -> dict:
     }
 
 
-async def server_status(ctx) -> str:
+async def server_status(ctx: Context) -> str:
     """Returns diagnostic information about the MCP server and its dependencies.
 
     Checks:

@@ -77,6 +77,24 @@ def test_server_status_imported():
     assert callable(_check_components)
 
 
+async def test_server_status_publishes_no_arguments():
+    """The schema a client sees must not demand a `ctx` it cannot supply.
+
+    `async def server_status(ctx)` without the `Context` annotation is published as
+    a tool taking one required *string* named `ctx`, so every client call fails
+    validation before the tool body runs. The mock-context test above passes
+    either way, which is how this shipped.
+    """
+    from academic_hunter.interfaces.mcp.server import create_mcp_server
+
+    server = create_mcp_server()
+    tools = await server.list_tools()
+    status = next(t for t in tools if t.name == "server_status")
+
+    assert "ctx" not in status.inputSchema.get("properties", {})
+    assert status.inputSchema.get("required", []) == []
+
+
 async def test_health_check(mock_ctx):
     """Health check endpoint returns component status."""
     from academic_hunter.interfaces.mcp.server import health_check
