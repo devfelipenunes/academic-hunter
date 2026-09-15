@@ -200,11 +200,16 @@ def test_a_store_failure_leaves_the_run_alive():
     assert step.hunter.consolidated_results["a"]["_full_text_status"] == "download_failed"
 
 
-# ── a broken configuration stops the whole step ─────────────────────────────
+# ── a broken configuration is reported, not generalized ─────────────────────
 
 
-def test_a_config_error_abandons_the_rest_of_the_batch():
-    """Every remaining call would fail the same way, so they are not attempted."""
+def test_a_config_error_is_recorded_per_paper():
+    """The chain raises it only after every source failed for one DOI.
+
+    The sources do not share configuration, so a rejected contact e-mail is
+    evidence about Unpaywall and nothing about the next paper. The step records
+    the reason and keeps going; the time budget is what bounds a doomed run.
+    """
     calls = []
 
     def fetcher(doi):
@@ -216,11 +221,11 @@ def test_a_config_error_abandons_the_rest_of_the_batch():
     step.run()
 
     statuses = [p["_full_text_status"] for p in step.hunter.consolidated_results.values()]
-    assert len(calls) == 1, f"kept trying after a config error: {calls}"
-    # The one that failed was attempted; the four after it were not.
-    assert statuses.count("download_failed") == 1
-    assert statuses.count("not_attempted") == 4
-    assert step.hunter.state.stats["full_text"]["not_attempted"] == 4
+    assert len(calls) == 5, f"the batch was cut short: {calls}"
+    assert statuses.count("download_failed") == 5
+    assert step.hunter.state.stats["full_text"]["not_attempted"] == 0
+    for entry in step.hunter.consolidated_results.values():
+        assert "contact e-mail" in entry["_full_text_error"], "the reason is lost"
 
 
 def test_the_paper_budget_is_respected_and_reported():

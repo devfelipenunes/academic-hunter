@@ -29,10 +29,13 @@ class FullTextTransientError(FullTextError):
 
 
 class FullTextConfigError(FullTextError):
-    """The configuration is unusable, so every attempt would fail the same way.
+    """A source could not be used because of its configuration.
 
-    Aborts the step. Collapsing this into the transient case is how a run ends up
-    making dozens of doomed HTTP calls with a malformed e-mail before giving up.
+    Distinct from the transient case so the caller can say "fix the config"
+    rather than "the network was down". It does not abort the step: a chain
+    raises it only after every source failed for one DOI, and the sources do not
+    share configuration — an e-mail one repository rejects leaves the others
+    working. The time budget, not this exception, bounds a run going nowhere.
     """
 
 

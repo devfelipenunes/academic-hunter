@@ -275,15 +275,43 @@ def test_a_very_long_reason_is_truncated():
     assert len(papers[0]["_full_text_error"]) == 300
 
 
-def test_a_bad_config_stops_the_batch_but_does_not_raise():
+def test_a_bad_config_fails_each_paper_without_raising():
+    """The ingest cannot tell a global config problem from a per-DOI one.
+
+    The sources in the chain do not share configuration, so a rejected e-mail is
+    evidence about Unpaywall and nothing about Europe PMC. Every paper is
+    attempted and marked, and the time budget is what stops a run going nowhere.
+    """
     papers = [paper("One", "10.1/a"), paper("Two", "10.1/b"), paper("Three", "10.1/c")]
     fetch = fetcher_returning(FullTextConfigError("invalid e-mail"))
 
     counters = ingest_full_text(papers, fetch, FakeChunkStore(), config())
 
+    assert counters["download_failed"] == 3
+    assert counters["not_attempted"] == 0
+    assert len(fetch.calls) == 3
+    assert all(p["_full_text_error"] for p in papers), "the reason is kept per paper"
+
+
+def test_a_config_error_on_one_paper_does_not_abandon_the_rest():
+    """A config error out of the chain means every source failed for **this** doi.
+
+    The sources do not share configuration, so that says nothing about the next
+    paper — `ChainFullTextSource` documents exactly this ("an unusable contact
+    address breaks Unpaywall and leaves Europe PMC untouched"). Reading it as a
+    global failure is how one rejected e-mail silenced the full-text of an entire
+    run, including papers another source would have served.
+    """
+    papers = [paper("One", "10.1/a"), paper("Two", "10.1/b")]
+    fetch = fetcher_returning(FullTextConfigError("invalid e-mail"), document())
+
+    counters = ingest_full_text(papers, fetch, FakeChunkStore(), config())
+
+    assert counters["not_attempted"] == 0, "a per-paper failure abandoned the run"
     assert counters["download_failed"] == 1
-    assert counters["not_attempted"] == 2, "the rest were still attempted"
-    assert len(fetch.calls) == 1, "every remaining call would have failed identically"
+    assert counters["obtained"] == 1
+    assert papers[1]["_full_text_status"] == "obtained"
+    assert len(fetch.calls) == 2, "the second paper was never attempted"
 
 
 def test_a_store_that_cannot_hold_chunks_is_not_an_error():

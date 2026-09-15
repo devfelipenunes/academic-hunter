@@ -60,14 +60,13 @@ def ingest_full_text(
     budget = float(config.get("time_budget_seconds") or DEFAULT_TIME_BUDGET)
     started = time.monotonic()
     attempted = 0
-    abandoned = False
 
     for paper in papers:
         # A previous run's dataset carries this column; a stale value would be
         # attributed to an attempt that never reached a source.
         paper.pop("_full_text_source", None)
 
-        if abandoned or attempted >= max_papers or (time.monotonic() - started > budget):
+        if attempted >= max_papers or (time.monotonic() - started > budget):
             status = "not_attempted"
         else:
             doi = str(paper.get("DOI") or "").strip()
@@ -85,10 +84,12 @@ def ingest_full_text(
                             replace=force,
                         )
                     except FullTextConfigError as e:
-                        # Every remaining call would fail identically.
-                        logger.error("Full-text ingest aborted: %s", e)
-                        abandoned = True
-                        status = "download_failed"
+                        # The chain raises this only after every source failed for
+                        # *this* DOI. The sources do not share configuration, so it
+                        # says nothing about the next paper — treating it as global
+                        # is how one rejected e-mail silenced a whole run.
+                        logger.warning("Full text needs configuration for %s: %s", doi, e)
+                        status = _failed(paper, e)
 
         paper["_full_text_status"] = status
         counters[status] += 1
