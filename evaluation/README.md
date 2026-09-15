@@ -5,9 +5,6 @@ recuperação, e o registro do que ela **pode e não pode** sustentar.
 
 Antes dela, o projeto não tinha critério de sucesso para mudanças de retrieval:
 comparava-se score com score, sem nada que dissesse se a ordenação ficou melhor.
-Dois scripts consomem estes arquivos: `papers/experiments/retrieval_eval.py`
-(estratégias de score) e `papers/experiments/fusion_comparison.py` (regras de
-combinação dos dois sinais).
 
 ## Arquivos
 
@@ -114,9 +111,8 @@ reproduzir execuções anteriores.
 
 ## Full-text: o que o retrieval por trecho acrescenta
 
-`papers/experiments/fulltext_eval.py` mede se recuperar **trechos** de 180
-palavras ordena melhor do que ranquear sobre título + abstract. A hipótese está
-declarada no docstring do script **antes** da medição.
+Uma medição comparou recuperar **trechos** de 180 palavras contra ranquear sobre
+título + abstract. A hipótese foi declarada **antes** da medição.
 
 **O conjunto de candidatos é restrito, e isso não é o erro do pool top-30.**
 25 dos 108 documentos julgados **não têm DOI nenhum** — nenhum sistema de
@@ -202,8 +198,8 @@ relatório de cobertura diz qual perna entregou cada documento.
    conclusão.
 2. Adicione consultas ao `queries` do JSON, com `topic`, `pool` e julgamentos
    para os documentos do pool.
-3. Rode `python papers/experiments/retrieval_eval.py --with-embedding` e
-   `python papers/experiments/fusion_comparison.py`.
+3. Meça com `build_rankings` e `evaluate_run`, de
+   `academic_hunter.core.evaluation`, sobre a coleção ampliada.
 4. Verifique `min_coverage` no relatório: se cair abaixo de 1,00, a comparação
    está medindo o qrels e não o ranqueador.
 

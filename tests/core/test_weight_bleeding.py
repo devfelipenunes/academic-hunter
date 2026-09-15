@@ -526,9 +526,9 @@ class TestCrossEncoderCorrelation:
         import json
         from pathlib import Path
 
-        result_path = Path(__file__).parent.parent.parent / "papers/experiments/results/cross_encoder_correlation.json"
+        result_path = Path(__file__).parent.parent.parent / "evaluation/cross_encoder_correlation.json"
         if not result_path.exists():
-            pytest.skip("Cross-encoder results not found. Run cross_encoder_val.py first.")
+            pytest.skip(f"cross-encoder results not found at {result_path}")
 
         data = json.loads(result_path.read_text())
         results = data.get("results", [])
@@ -546,9 +546,9 @@ class TestCrossEncoderCorrelation:
         import json
         from pathlib import Path
 
-        result_path = Path(__file__).parent.parent.parent / "papers/experiments/results/cross_encoder_correlation.json"
+        result_path = Path(__file__).parent.parent.parent / "evaluation/cross_encoder_correlation.json"
         if not result_path.exists():
-            pytest.skip("Cross-encoder results not found.")
+            pytest.skip(f"cross-encoder results not found at {result_path}")
 
         data = json.loads(result_path.read_text())
         results = data.get("results", [])

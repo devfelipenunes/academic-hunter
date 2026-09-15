@@ -15,8 +15,8 @@ from academic_hunter.core.evaluation.qrels import pooled_documents
 from academic_hunter.core.fulltext.ingest import STATUSES
 
 ROOT = Path(__file__).resolve().parent.parent
-COVERAGE_PATH = ROOT / "papers" / "evaluation" / "fulltext_coverage.json"
-QRELS_PATH = ROOT / "papers" / "evaluation" / "qrels_pilot_genre_analysis.json"
+COVERAGE_PATH = ROOT / "evaluation" / "fulltext_coverage.json"
+QRELS_PATH = ROOT / "evaluation" / "qrels_pilot_genre_analysis.json"
 
 
 @pytest.fixture(scope="module")
@@ -25,9 +25,7 @@ def payload():
 
 
 def test_the_artefact_exists_and_parses():
-    assert COVERAGE_PATH.exists(), (
-        "regenerate it with papers/experiments/fulltext_eval.py"
-    )
+    assert COVERAGE_PATH.exists(), f"missing coverage artefact at {COVERAGE_PATH}"
     assert isinstance(json.loads(COVERAGE_PATH.read_text(encoding="utf-8")), dict)
 
 

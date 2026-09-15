@@ -14,7 +14,7 @@ sistema não mede o que diz medir.
 > **Status: concluída.** Os cinco itens abaixo foram implementados, mais um sexto que
 > não estava previsto aqui: a fusão dos dois sinais foi substituída após a avaliação
 > mostrar que a regra vigente ranqueava pior que cada um dos seus próprios componentes
-> (`docs/roadmap.md` §2.3 e `papers/evaluation/README.md`). O texto de cada item é
+> (`docs/roadmap.md` §2.3 e `evaluation/README.md`). O texto de cada item é
 > mantido como registro do problema original — os detalhes de implementação estão nos
 > commits e nos docstrings.
 

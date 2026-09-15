@@ -125,12 +125,14 @@ CSV, BibTeX, RIS, JSON, Markdown, PRISMA — e exportação direta para **Obsidi
 
 ---
 
-## 📚 Leia os Papers
+## 📚 Publicações
 
 - **JOSS**: "Academic Hunter: An Open-Source Systematic Literature Review Tool with Agentic RAG and Embedding-Space Relevance Scoring"
 - **Conferência**: "Weight-Bleeding: Configurable Semantic Relevance Scoring via Input-Level Term Repetition in Bi-Encoders"
 
-Ambos em [`papers/`](papers/).
+Os manuscritos não acompanham este repositório, que publica só o software. A
+coleção julgada sobre a qual as medições de retrieval se apoiam está em
+[`evaluation/`](evaluation/).
 
 ---
 

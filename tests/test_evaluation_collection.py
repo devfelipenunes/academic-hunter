@@ -17,7 +17,7 @@ from academic_hunter.core.evaluation import load_qrels
 from academic_hunter.core.evaluation.qrels import RELEVANT_THRESHOLD, doc_id_for
 
 ROOT = Path(__file__).resolve().parent.parent
-QRELS_PATH = ROOT / "papers" / "evaluation" / "qrels_pilot_genre_analysis.json"
+QRELS_PATH = ROOT / "evaluation" / "qrels_pilot_genre_analysis.json"
 
 
 @pytest.fixture(scope="module")

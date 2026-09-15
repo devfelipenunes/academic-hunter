@@ -440,8 +440,8 @@ async def verify_numbers(
     Args:
         ctx: FastMCP Context (auto-injected).
         text: Manuscript text to check.
-        results_dir: Directory of result files. Defaults to
-            ``papers/experiments/results`` in the project.
+        results_dir: Directory of result files. Defaults to ``results/`` in the
+            project — the directory the pipeline writes its runs into.
 
     Returns:
         Per-figure report with statuses, plus a summary count.
@@ -452,9 +452,7 @@ async def verify_numbers(
         return "No checkable figures found. Nothing to verify."
 
     project_root = get_project_root()
-    results_path = (
-        Path(results_dir) if results_dir else project_root / "papers" / "experiments" / "results"
-    )
+    results_path = Path(results_dir) if results_dir else project_root / "results"
     if not results_path.is_absolute():
         results_path = project_root / results_path
 
