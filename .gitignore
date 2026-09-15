@@ -34,8 +34,16 @@ __pycache__/
 .coverage
 .pytest_cache/
 
-# Claude
+# Local agent wiring — these name an absolute path to this machine's
+# interpreter, which is useless in a clone and leaks the author's disk layout.
+# `.gemini/` was missed when `.mcp.json` was fixed; the other runtimes are listed
+# so the next one does not repeat it.
+#
+# `.mcp.json` is deliberately NOT here: it is tracked, and portable — it calls
+# `academic-mcp` by name rather than by path.
 .claude/
+.gemini/
+.cursor/
 
 # User config (has API keys)
 config.json
