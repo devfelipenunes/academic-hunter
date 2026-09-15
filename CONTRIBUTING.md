@@ -70,14 +70,14 @@ class PubmedConnector(BaseConnector):
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
         # 1. Compose search query format
         query = f"..."
-        
+
         with self.lock:
             self.query_history.append({"Source": "PubMed", "Query": query})
-            
+
         results = []
         url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
         params = {"term": query, "retmode": "json"}
-        
+
         # 2. Fetch using self._make_request() to respect caching, headers, and pacing
         data = self._make_request(url, params=params)
         if data:
@@ -98,7 +98,7 @@ class PubmedConnector(BaseConnector):
 
 ### 2. Register the Connector
 
-In [src/academic_hunter/plugins/connectors/__init__.py](file:///l/disk0/fnunes/Documentos/me/pesquisa_academica/src/academic_hunter/plugins/connectors/__init__.py), import your class and register it inside the `CONNECTORS` dictionary:
+In [`src/academic_hunter/plugins/connectors/__init__.py`](src/academic_hunter/plugins/connectors/__init__.py), import your class and register it inside the `CONNECTORS` dictionary:
 
 ```python
 from .pubmed import PubmedConnector
@@ -111,7 +111,7 @@ CONNECTORS = {
 
 ### 3. Expose Proxy Method (Optional)
 
-Add a facade proxy fetch method on `AcademicHunter` inside [src/academic_hunter/core/engine.py](file:///l/disk0/fnunes/Documentos/me/pesquisa_academica/src/academic_hunter/core/engine.py) to enable direct queries:
+Add a facade proxy fetch method on `AcademicHunter` inside [src/academic_hunter/app/facades.py](src/academic_hunter/app/facades.py) to enable direct queries:
 
 ```python
     def fetch_pubmed(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
@@ -121,6 +121,7 @@ Add a facade proxy fetch method on `AcademicHunter` inside [src/academic_hunter/
 ### 4. Write Unit Tests
 
 Add a new mock-based test suite (e.g., `tests/test_pubmed_mock.py`) to verify the correctness of the parser and integration with the database responses. Make sure all tests pass:
+
 ```bash
 PYTHONPATH=. ./venv/bin/pytest
 ```

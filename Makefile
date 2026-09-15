@@ -1,29 +1,35 @@
 .PHONY: install test test-fast lint format clean build docker-build
 
-VENV = .venv
+# `venv`, not `.venv`: the README, the tutorial and install.py all create `venv`,
+# and a Makefile that looks somewhere else fails on a fresh clone.
+VENV = venv
 PYTHON = $(VENV)/bin/python
 PYTEST = $(VENV)/bin/pytest
 RUFF = $(VENV)/bin/ruff
 
+# `ml` carries sentence-transformers and the clustering stack. Without it the
+# tools that need them degrade quietly, which is what the Dockerfile documents
+# having fixed for itself. The integration tests are already deselected by
+# `addopts` in pyproject.toml, so nothing here has to name them.
 install:
-	pip install -e ".[rag,dev]"
+	pip install -e ".[ml,rag,dev]"
 
 install-dev:
-	pip install -e ".[rag,dev]"
+	pip install -e ".[ml,rag,dev]"
 	pip install ruff pre-commit pytest-cov pytest-xdist pytest-benchmark
 	pre-commit install
 
 test:
-	$(PYTEST) tests/ --deselect tests/interfaces/mcp/test_server_integration.py -v --tb=short
-
-test-fast:
-	$(PYTEST) tests/ --deselect tests/interfaces/mcp/test_server_integration.py -n auto -q --tb=short
-
-test-all:
 	$(PYTEST) tests/ -v --tb=short
 
+test-fast:
+	$(PYTEST) tests/ -n auto -q --tb=short
+
+test-all:
+	$(PYTEST) tests/ -m integration -v --tb=short
+
 test-cov:
-	$(PYTEST) tests/ --deselect tests/interfaces/mcp/test_server_integration.py --cov=src/academic_hunter --cov-report=term-missing
+	$(PYTEST) tests/ --cov=src/academic_hunter --cov-report=term-missing
 
 lint:
 	$(RUFF) check src/ tests/

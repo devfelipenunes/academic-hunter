@@ -6,7 +6,9 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./config.json:/app/config.json:ro
+      # Writable: `update_config` and `restore_config_by_id` are tools, and a
+      # read-only mount makes them fail rather than fail loudly.
+      - ./config.json:/app/config.json
       - academic_data:/app/.academic_hunter
 
 volumes:

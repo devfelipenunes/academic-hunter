@@ -5,6 +5,27 @@ import shutil
 import json
 from pathlib import Path
 
+#: Everything is resolved against the script, not the caller's directory: run as
+#: `python /path/to/install.py` from anywhere else, the relative paths created a
+#: second virtualenv and installed into it.
+PROJECT_ROOT = Path(__file__).parent.absolute()
+
+
+def venv_dir() -> Path:
+    return PROJECT_ROOT / "venv"
+
+
+def pip_executable() -> Path:
+    parts = ("Scripts", "pip.exe") if os.name == "nt" else ("bin", "pip")
+    return venv_dir().joinpath(*parts)
+
+
+def install_command() -> list:
+    """`fulltext` is not optional in practice: without `pypdf` the PDF leg of the
+    full-text step finds nothing, and reports that as "no open access copy"."""
+    return [str(pip_executable()), "install", "-e", ".[fulltext]"]
+
+
 def print_banner():
     print("=" * 60)
     print("🎯 ACADEMIC HUNTER V2 - Auto-Installer")
@@ -12,30 +33,37 @@ def print_banner():
 
 def check_python():
     print(">> Checking Python version...")
-    if sys.version_info < (3, 8):
-        print("❌ Error: Python 3.8 or higher is required.")
+    # Matches `requires-python` in pyproject.toml. Accepting less meant the check
+    # passed and then `pip install` failed with a message about the package.
+    if sys.version_info < (3, 10):
+        print("❌ Error: Python 3.10 or higher is required.")
+        print("   (pyproject.toml declares requires-python >= 3.10)")
         sys.exit(1)
     print("✅ Python version OK.")
 
 def setup_venv():
     print("\n>> Setting up virtual environment (venv)...")
-    venv_dir = Path("venv")
-    if not venv_dir.exists():
-        subprocess.run([sys.executable, "-m", "venv", "venv"], check=True)
+    target = venv_dir()
+    if not target.exists():
+        subprocess.run([sys.executable, "-m", "venv", str(target)], check=True)
         print("✅ Virtual environment created.")
     else:
         print("✅ Virtual environment already exists. Skipping.")
 
     print("\n>> Installing dependencies...")
-    pip_exe = "venv\\Scripts\\pip" if os.name == "nt" else "venv/bin/pip"
-    subprocess.run([pip_exe, "install", "-e", "."], check=True)
+    subprocess.run(install_command(), cwd=str(PROJECT_ROOT), check=True)
     print("✅ Dependencies installed successfully.")
+    print("   Clustering, novelty detection and RAG need the ML stack, which is a")
+    print("   large download and is not installed by default:")
+    print(f"   {pip_executable()} install -e '.[ml]'")
 
 def setup_config():
     print("\n>> Setting up config.json...")
-    if not Path("config.json").exists():
-        if Path("config.example.json").exists():
-            shutil.copy("config.example.json", "config.json")
+    config = PROJECT_ROOT / "config.json"
+    example = PROJECT_ROOT / "config.example.json"
+    if not config.exists():
+        if example.exists():
+            shutil.copy(example, config)
             print("✅ Copied config.example.json to config.json.")
         else:
             print("⚠️ Warning: config.example.json not found.")
@@ -74,9 +102,12 @@ def install_mcp_claude():
         config["mcpServers"] = {}
 
     # Define absolute paths
-    project_root = Path(__file__).parent.absolute()
-    python_exe = str(project_root / "venv" / "Scripts" / "python" if os.name == "nt" else project_root / "venv" / "bin" / "python")
-    src_dir = str(project_root / "src")
+    python_exe = str(
+        venv_dir().joinpath(*(
+            ("Scripts", "python.exe") if os.name == "nt" else ("bin", "python")
+        ))
+    )
+    src_dir = str(PROJECT_ROOT / "src")
 
     # Inject Academic Hunter server
     config["mcpServers"]["academic-hunter"] = {
