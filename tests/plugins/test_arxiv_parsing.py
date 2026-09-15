@@ -143,3 +143,39 @@ def test_a_failing_request_stops_with_what_it_has(connector, monkeypatch):
     monkeypatch.setattr(connector, "_raw_request", lambda url, timeout=None: None)
 
     assert connector.fetch(["ledger"], ["throughput"], limit=10) == []
+
+
+def test_the_query_goes_over_https(connector):
+    """A consulta carrega o tópico do pesquisador; `http://` a manda em claro."""
+    connector.serve(EMPTY)
+
+    connector.fetch(["ledger"], ["throughput"], limit=5)
+
+    assert connector.served[0].startswith("https://"), connector.served[0]
+
+
+def test_a_feed_carrying_an_entity_bomb_is_not_expanded(connector):
+    """Atom nunca traz DTD, e `ET.fromstring` expande entidades internas.
+
+    Um feed hostil — ou um registro envenenado no cache de requisições, que é lido
+    e reparseado sem validação — faz o processo alocar muito mais do que recebeu.
+    """
+    bomb = (
+        '<?xml version="1.0"?>\n'
+        '<!DOCTYPE feed [\n'
+        '  <!ENTITY a "lollollollollol">\n'
+        '  <!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">\n'
+        '  <!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">\n'
+        ']>\n'
+        '<feed xmlns="http://www.w3.org/2005/Atom">'
+        '<entry><title>&c;</title><summary>x</summary>'
+        '<id>http://arxiv.org/abs/1</id><published>2024-01-01T00:00:00Z</published>'
+        '</entry></feed>'
+    )
+    connector.serve(bomb)
+
+    papers = connector.fetch(["x"], ["y"], limit=5)
+
+    assert not papers or "lollollollol" not in papers[0]["Title"], (
+        "the document's internal entities were expanded"
+    )

@@ -17,6 +17,8 @@ from typing import Any, Dict, Optional
 
 import requests
 
+from ..safe_xml import parse_xml
+
 from ...core.ports.fulltext import (
     ExtractedDocument,
     FullTextTransientError,
@@ -83,8 +85,8 @@ def jats_to_text(xml_bytes: bytes) -> str:
         FullTextTransientError: the bytes are not parseable JATS.
     """
     try:
-        root = ET.fromstring(xml_bytes)
-    except ET.ParseError as e:
+        root = parse_xml(xml_bytes)
+    except (ET.ParseError, ValueError) as e:
         raise FullTextTransientError(f"Europe PMC returned invalid XML: {e}") from e
 
     blocks = []

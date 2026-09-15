@@ -1,10 +1,10 @@
 import logging
 import urllib.parse
-import xml.etree.ElementTree as ET
 from typing import List, Dict, Any
 
 from ...core.models.utils import collapse_whitespace
 
+from ..safe_xml import parse_xml
 from .base import BaseConnector
 
 logger = logging.getLogger("academic_hunter.connectors")
@@ -30,7 +30,9 @@ class ArxivConnector(BaseConnector):
         articles = []
         start = 0
         page_size = 100
-        arxiv_url = "http://export.arxiv.org/api/query?"
+        # https: the query carries the researcher's topic, and the plain-text
+        # version sends it in the clear on the first hop.
+        arxiv_url = "https://export.arxiv.org/api/query?"
 
         while len(articles) < limit:
             max_results = min(limit - len(articles), page_size)
@@ -49,7 +51,7 @@ class ArxivConnector(BaseConnector):
                     if self.use_cache and self.cache:
                         self.cache.set(url, xml_data)
 
-                root = ET.fromstring(xml_data)
+                root = parse_xml(xml_data)
                 ns = {'atom': 'http://www.w3.org/2005/Atom'}
 
                 entries = root.findall('atom:entry', ns)
