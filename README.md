@@ -21,6 +21,9 @@ O Academic Hunter é um **servidor MCP**: conecte-o a um agente de IA e peça a 
 # Instale
 pip install git+https://github.com/devfelipenunes/academic-hunter.git
 
+# Crie o config a partir do exemplo — o servidor não funciona sem ele
+curl -fsSL https://raw.githubusercontent.com/devfelipenunes/academic-hunter/main/config.example.json -o config.json
+
 # Inicie o servidor MCP (stdio)
 academic-mcp
 

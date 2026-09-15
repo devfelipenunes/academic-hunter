@@ -25,6 +25,9 @@ pip install -e .
 
 # (Opcional) Para funcionalidades avançadas de ML
 pip install -e ".[ml]"
+
+# Crie seu config a partir do exemplo — o servidor não funciona sem ele
+cp config.example.json config.json
 ```
 
 ## 2. Uso via MCP (recomendado)
