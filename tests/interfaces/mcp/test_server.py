@@ -49,8 +49,12 @@ def test_discover_and_register(mock_ctx):
     mock_mcp = MagicMock()
     _discover_and_register(mock_mcp)
 
-    # Should have called mcp.tool() multiple times (one per tool module function)
-    assert mock_mcp.tool.call_count >= 10
+    # The exact count, not a floor. A floor of 10 was satisfied by 10 tools and
+    # by 43: a tool that loses its `Context` annotation stops being discovered
+    # silently, and the assertion below was no help at all. Update this number
+    # when a tool is added or removed on purpose — that is what makes it worth
+    # having.
+    assert mock_mcp.tool.call_count == 43
 
 
 async def test_the_fulltext_tools_are_registered():

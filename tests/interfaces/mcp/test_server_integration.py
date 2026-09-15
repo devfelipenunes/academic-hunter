@@ -72,4 +72,8 @@ def test_list_tools():
                      "cluster_papers", "find_novel_papers", "summarize_paper",
                      "search_europepmc", "search_openaire", "lookup_orcid"):
         assert expected in names, f"Tool '{expected}' not found"
-    assert len(tools) >= 28, f"Expected >=28 tools, got {len(tools)}"
+    assert len(tools) == 44, (
+        f"Expected 44 tools, got {len(tools)}. A tool that loses its `Context` "
+        f"annotation stops being discovered without an import error; if the "
+        f"change was deliberate, update this number."
+    )
