@@ -61,6 +61,23 @@ Homepage = "https://github.com/devfelipenunes/academic-hunter"
 Documentation = "https://devfelipenunes.github.io/academic-hunter"
 "Bug Tracker" = "https://github.com/devfelipenunes/academic-hunter/issues"
 
+# A published sdist is the one artifact nobody can un-publish: PyPI refuses to
+# delete a release. The 2.1.0 sdist built in July shipped `config copy.json`
+# with a live API key in it, plus the local agent wiring for two other runtimes.
+#
+# `config*.json` is gitignored, but a gitignore is a habit, not a build
+# contract — it protects the repository, not the tarball. These patterns are the
+# contract, and they are checked by a test rather than by remembering.
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "config*.json",
+    "!config.example.json",
+    ".claude",
+    ".gemini",
+    ".cursor",
+    ".codex",
+]
+
 [tool.hatch.version]
 path = "src/academic_hunter/__init__.py"
 
