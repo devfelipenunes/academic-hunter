@@ -131,12 +131,34 @@ def test_a_short_tail_is_dropped_rather_than_merged():
 # ── what is kept and what is dropped ────────────────────────────────────────
 
 
-def test_the_abstract_is_exactly_one_chunk():
-    """It is already a curated summary; splitting it scatters the densest signal."""
+def test_a_short_abstract_is_exactly_one_chunk():
+    """It fits in one window, so splitting it would scatter the densest signal."""
     abstracts = [c for c in chunk() if c.section == "abstract"]
 
     assert len(abstracts) == 1
     assert abstracts[0].text == "This paper studies ledgers."
+
+
+def test_a_long_abstract_keeps_every_word():
+    """An abstract longer than one window used to lose its tail in silence.
+
+    `whole_span` forced it into a single window and then broke the loop, so the
+    remainder was never indexed — with nothing counting it, and the ingest still
+    reporting the fetch as "obtained". Measured on a 300-word abstract: 180
+    indexed, 120 gone.
+    """
+    body = words("a", 300)
+    text = build(("Abstract", body), ("Introduction", words("b", 200)))
+
+    indexed = {
+        word
+        for c in chunk(text=text)
+        if c.section == "abstract"
+        for word in c.text.split()
+    }
+    missing = [w for w in body.split() if w not in indexed]
+
+    assert not missing, f"{len(missing)} of the abstract's words were never indexed"
 
 
 def test_references_are_excluded_by_default():

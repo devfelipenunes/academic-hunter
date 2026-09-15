@@ -126,7 +126,6 @@ def _chunk_span(
     target_words: int,
     overlap_words: int,
     min_chunk_words: int,
-    whole_span: bool,
 ) -> List[Chunk]:
     """Fragment one span of ``text``, never letting a chunk cross its boundary.
 
@@ -164,7 +163,7 @@ def _chunk_span(
             end=end,
         ))
 
-        if whole_span or len(window) < target_words:
+        if len(window) < target_words:
             break
         position += step
 
@@ -182,10 +181,11 @@ def chunk_document(
 ) -> List[Chunk]:
     """Fragment ``doc`` into chunks, in document order.
 
-    The abstract becomes exactly one chunk: it is already a curated summary, and
-    splitting it would scatter the densest signal in the paper. The preamble is
-    dropped, and so is the back matter — references, appendices and
-    acknowledgements — unless ``include_references`` asks to keep it.
+    Every section is fragmented the same way, the abstract included: an abstract
+    that fits in one window is one chunk, and a longer one is several rather than
+    one truncated. The preamble is dropped, and so is the back matter —
+    references, appendices and acknowledgements — unless ``include_references``
+    asks to keep it.
     """
     if not doc.text or not doc.text.strip():
         return []
@@ -206,6 +206,5 @@ def chunk_document(
             target_words=target_words,
             overlap_words=overlap_words,
             min_chunk_words=min_chunk_words,
-            whole_span=(section.name == "abstract"),
         ))
     return chunks
