@@ -36,6 +36,26 @@ def test_extracts_p_value():
     assert claims[0].value == 0.012
 
 
+def test_extracts_a_p_value_with_an_exponent():
+    claims = extract_claims("The effect was p = 1.57e-73 in all cases.")
+    assert claims[0].kind == "pvalue"
+    assert claims[0].value == 1.57e-73
+
+
+def test_extracts_a_p_value_written_with_a_superscript():
+    """The form `format_statistical_claim` renders, so the checker can read what
+    the project itself writes."""
+    claims = extract_claims("The effect was p = 1.57 × 10⁻⁷³ in all cases.")
+    assert claims[0].kind == "pvalue"
+    assert claims[0].value == 1.57e-73
+
+
+def test_a_negative_decimal_keeps_its_sign():
+    """A sign is the finding: `-0.5` and `0.5` are opposite conclusions."""
+    claims = extract_claims("The correlation was r = -0.5.")
+    assert claims[0].value == -0.5
+
+
 def test_extracts_paper_count():
     claims = extract_claims("The run retrieved 1,538 papers in total.")
     assert claims[0].kind == "count"
@@ -152,6 +172,20 @@ def test_does_not_match_a_different_figure_at_the_same_precision():
         _claims("A separate run achieved 87.3% overlap."), {0.871, 0.927}
     )
     assert results[0].status == "UNSOURCED"
+
+
+def test_an_inverted_sign_does_not_match():
+    """`-0.5` and `+0.5` are opposite findings, not the same figure."""
+    results = verify_numbers(_claims("The correlation was r = -0.5."), {0.5})
+    assert results[0].status == "UNSOURCED"
+    assert results[0].claim.value == -0.5
+
+
+def test_a_p_value_matches_at_its_own_magnitude():
+    """Truncating the exponent made a p-value of 10⁻⁷³ match a stored 1.57."""
+    results = verify_numbers(_claims("The effect was p = 1.57e-73."), {1.57e-73})
+    assert results[0].status == "MATCHED"
+    assert results[0].claim.value == 1.57e-73
 
 
 def test_real_figure_still_matches_alongside_a_fabricated_one():

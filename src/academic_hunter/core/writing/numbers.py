@@ -33,12 +33,19 @@ STATUS_UNSOURCED = "UNSOURCED"
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*%")
 # A correlation, in either markdown math or plain text: "ρ = 0.968", "$\\rho = -0.084$"
 _CORRELATION = re.compile(r"(?:ρ|\\rho)\s*=\s*(-?\d+(?:\.\d+)?)")
-# A p-value with an exponent: "p = 1.57 × 10⁻⁷³", "p < 0.0001", "p = 0.012"
-_PVALUE = re.compile(r"p\s*[=<>]\s*(\d+(?:\.\d+)?)")
+# A p-value in the rendering `format_statistical_claim` produces:
+# "p = 1.57 × 10⁻⁷³". The superscript digits are translated, not parsed.
+_PVALUE_SCIENTIFIC = re.compile(
+    r"p\s*[=<>]\s*(\d+(?:\.\d+)?)\s*[×x]\s*10\s*\^?\s*([⁻⁺-]?[⁰¹²³⁴⁵⁶⁷⁸⁹0-9]+)"
+)
+# A p-value: "p = 1.57e-73", "p < 0.0001", "p = 0.012"
+_PVALUE = re.compile(r"p\s*[=<>]\s*(\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 # A count of things: "1,538 papers", "586 papers", "304 papers"
 _COUNT = re.compile(r"(\d[\d,]*)\s+(?:papers|titles|records|studies|documents)\b")
-# A bare decimal in prose — the weakest signal, only used when nothing else matched
-_BARE = re.compile(r"\b(\d+\.\d+)\b")
+# A bare decimal in prose — the weakest signal, only used when nothing else
+# matched. The sign is kept: dropping it made `-0.5` match a stored `+0.5`, and a
+# false match endorses a claim while a false miss only asks someone to look.
+_BARE = re.compile(r"(?<![\w.])(-?\d+\.\d+)")
 
 # Numbers that are structural references, not findings: "§3.13", "Table 2.1",
 # "Section 3.2", "phase 0.5". Reporting these as unsourced figures buries the
@@ -97,8 +104,20 @@ def _sentence_around(text: str, position: int) -> str:
     return " ".join(text[start:end].split())
 
 
+_SUPERSCRIPT = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺", "0123456789-+")
+
+
 def _as_float(raw: str) -> float:
     return float(raw.replace(",", ""))
+
+
+def _plain(match: "re.Match") -> float:
+    return _as_float(match.group(1))
+
+
+def _scientific(match: "re.Match") -> float:
+    exponent = int(match.group(2).translate(_SUPERSCRIPT))
+    return float(match.group(1)) * 10**exponent
 
 
 def extract_claims(text: str) -> List[NumericClaim]:
@@ -121,15 +140,19 @@ def extract_claims(text: str) -> List[NumericClaim]:
         for match in pattern.finditer(text):
             taken.append(match.span())
 
+    # Order matters: the first pattern to claim a span wins, so the superscript
+    # form is tried before the plain one, which would otherwise take "p = 1.57"
+    # and leave the exponent behind.
     patterns = [
-        (_PERCENT, "percent", 1),
-        (_CORRELATION, "correlation", 1),
-        (_PVALUE, "pvalue", 1),
-        (_COUNT, "count", 1),
-        (_BARE, "decimal", 1),
+        (_PERCENT, "percent", _plain),
+        (_CORRELATION, "correlation", _plain),
+        (_PVALUE_SCIENTIFIC, "pvalue", _scientific),
+        (_PVALUE, "pvalue", _plain),
+        (_COUNT, "count", _plain),
+        (_BARE, "decimal", _plain),
     ]
 
-    for pattern, kind, group in patterns:
+    for pattern, kind, value_of in patterns:
         for match in pattern.finditer(text):
             start, end = match.span()
             if overlaps(start, end):
@@ -137,7 +160,7 @@ def extract_claims(text: str) -> List[NumericClaim]:
             taken.append((start, end))
             claims.append(
                 NumericClaim(
-                    value=_as_float(match.group(group)),
+                    value=value_of(match),
                     raw=match.group(0).strip(),
                     kind=kind,
                     context=_sentence_around(text, start),
