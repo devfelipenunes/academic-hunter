@@ -69,7 +69,7 @@ Método original de ponderação semântica configurável via centroide ponderad
 
 ### 🤖 MCP Server — Integração com Agentes de IA
 
-O Academic Hunter expõe **44 ferramentas, 4 recursos e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
+O Academic Hunter expõe **44 ferramentas, 3 recursos (e um template de URI) e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
 
 ```bash
 # Inicia o servidor (stdio)
@@ -99,7 +99,7 @@ CSV, BibTeX, RIS, JSON, Markdown, PRISMA — e exportação direta para **Obsidi
 | Recurso              | Academic Hunter    | ASReview       | Rayyan | Covidence |
 | -------------------- | ------------------ | -------------- | ------ | --------- |
 | Código aberto        | ✅                 | ✅             | ❌     | ❌        |
-| Fontes de dados      | **16**             | 1 (importação) | 1      | 1         |
+| Fontes de dados      | **15**             | 1 (importação) | 1      | 1         |
 | Scoring semântico    | ✅ Weight-Bleeding | ❌             | ❌     | ❌        |
 | Cluster automático   | ✅                 | ❌             | ❌     | ❌        |
 | Detecção de novidade | ✅                 | ❌             | ❌     | ❌        |
