@@ -99,8 +99,6 @@ class PaperResolver:
             # Correct the stats if the paper is now promoted
             if old_score < min_score and new_score >= min_score:
                 self.state.stats["included_final"] += 1
-                if self.state.stats["excluded_score"] > 0:
-                    self.state.stats["excluded_score"] -= 1
                 if self.state.stats["excluded_technical_score"] > 0:
                     self.state.stats["excluded_technical_score"] -= 1
 
@@ -147,11 +145,10 @@ class PaperResolver:
                     self.state.stats["excluded_anchors"] -= 1
                 elif self.state.stats.get("excluded_year", 0) > 0:
                     self.state.stats["excluded_year"] -= 1
-                elif self.state.stats.get("excluded_score", 0) > 0:
-                    self.state.stats["excluded_score"] -= 1
+                elif self.state.stats.get("excluded_technical_score", 0) > 0:
+                    self.state.stats["excluded_technical_score"] -= 1
             else:
                 self.state.stats["excluded_technical_score"] += 1
-                self.state.stats["excluded_score"] += 1
                 self.state.track_exclusion(source, "score")
 
     def register_new_paper(self, paper: Dict[str, Any], dedup_id: str, title: str, doi_clean: str, tech_cat: str, tech_list: List[str], source: str) -> None:
@@ -209,5 +206,4 @@ class PaperResolver:
                 self.state.stats["included_final"] += 1
             else:
                 self.state.stats["excluded_technical_score"] += 1
-                self.state.stats["excluded_score"] += 1
                 self.state.track_exclusion(source, "score")

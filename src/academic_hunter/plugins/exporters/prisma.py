@@ -25,6 +25,40 @@ def write_json_atomically(path: Path, payload: Any) -> None:
         raise
 
 
+def flow_counts(stats: Dict[str, Any]) -> Dict[str, Any]:
+    """Every count the PRISMA flow reports, and whether it reconciles.
+
+    Technical Evaluation is where the two families of counters meet: everything
+    the earlier filters passed is split into the excluded and the included that
+    the ranking step writes. `closes` is that identity, and it is reported rather
+    than enforced — a diagram that silently balanced would hide a real
+    disagreement instead of showing it.
+    """
+    total_identified = sum(stats.get("identified", {}).values())
+    duplicates = stats.get("duplicates_removed", 0)
+    excluded_year = stats.get("excluded_year", 0)
+    excluded_anchors = stats.get("excluded_anchors", 0)
+    excluded_tech = stats.get("excluded_technical_score", 0)
+    final = stats.get("included_final", 0)
+
+    unique = total_identified - duplicates
+    after_year = unique - excluded_year
+    evaluated = after_year - excluded_anchors
+
+    return {
+        "total_identified": total_identified,
+        "duplicates": duplicates,
+        "excluded_year": excluded_year,
+        "excluded_anchors": excluded_anchors,
+        "excluded_tech": excluded_tech,
+        "final": final,
+        "unique": unique,
+        "after_year": after_year,
+        "evaluated": evaluated,
+        "closes": evaluated == excluded_tech + final,
+    }
+
+
 class PrismaExporter(BaseExporter):
     is_prisma = True
 
@@ -38,13 +72,25 @@ class PrismaExporter(BaseExporter):
         timestamp = context.timestamp
         output_dir = context.output_dir
 
-        total_identified = sum(stats.get("identified", {}).values())
-        duplicates = stats.get("duplicates_removed", 0)
-        excluded_year = stats.get("excluded_year", 0)
-        excluded_anchors = stats.get("excluded_anchors", 0)
-        excluded_tech = stats.get("excluded_technical_score", 0)
-        final = stats.get("included_final", 0)
-        
+        counts = flow_counts(stats)
+        total_identified = counts["total_identified"]
+        duplicates = counts["duplicates"]
+        excluded_year = counts["excluded_year"]
+        excluded_anchors = counts["excluded_anchors"]
+        excluded_tech = counts["excluded_tech"]
+        final = counts["final"]
+        unique = counts["unique"]
+        after_year = counts["after_year"]
+        evaluated = counts["evaluated"]
+
+        if not counts["closes"]:
+            logger.warning(
+                "PRISMA flow does not close at Technical Evaluation: %d entered, "
+                "but %d excluded + %d included = %d. The diagram reports the "
+                "numbers as recorded; treat this run's stats as suspect.",
+                evaluated, excluded_tech, final, excluded_tech + final,
+            )
+
         run_dir = self._get_run_dir(timestamp, output_dir)
         prisma_file = run_dir / f"FLUXO_PRISMA_{timestamp}.md"
 
@@ -93,11 +139,11 @@ graph TD
 
     A[Total Records Identified: {total_identified}]:::identification --> B{{Deduplication}}:::screening
     B -->|Duplicates Removed: {duplicates}| C[Duplicate Records Excluded]:::exclusion
-    B -->|Unique Records: {total_identified - duplicates}| D{{Temporal Filter}}:::screening
+    B -->|Unique Records: {unique}| D{{Temporal Filter}}:::screening
     D -->|Published < {settings.get('start_year', 2021)}: {excluded_year}| E[Excluded: Out of Date Range]:::exclusion
-    D -->|Passed: {total_identified - duplicates - excluded_year}| F{{Anchor Screening}}:::screening
+    D -->|Passed: {after_year}| F{{Anchor Screening}}:::screening
     F -->|No Core Anchors: {excluded_anchors}| G[Excluded: Out of Scope]:::exclusion
-    F -->|Passed: {total_identified - duplicates - excluded_year - excluded_anchors}| H{{Technical Evaluation}}:::screening
+    F -->|Passed: {evaluated}| H{{Technical Evaluation}}:::screening
     H -->|Failed Score: {excluded_tech}| I[Excluded: Low Technical Density]:::exclusion
     H -->|Passed: {final}| J[Final Studies Included in Review]:::included
 ```"""

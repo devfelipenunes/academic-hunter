@@ -7,7 +7,6 @@ class SearchState:
         self.stats = {
             "identified": {},
             "duplicates_removed": 0,
-            "excluded_score": 0,
             "excluded_year": 0,
             "excluded_anchors": 0,
             "excluded_technical_score": 0,
@@ -35,7 +34,6 @@ class SearchState:
         self.stats = {
             "identified": {src: 0 for src in connectors_keys},
             "duplicates_removed": 0,
-            "excluded_score": 0,
             "excluded_year": 0,
             "excluded_anchors": 0,
             "excluded_technical_score": 0,

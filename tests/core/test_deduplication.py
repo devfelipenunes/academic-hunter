@@ -73,7 +73,7 @@ class TestDedupBug(unittest.TestCase):
         # In the current implementation of run():
         # raw_results = fetch_arxiv + fetch_crossref + ...
         # If they are in the same raw_results list:
-        # paper1 comes first, it is processed, seen_ids.add(), excluded_score += 1
+        # paper1 comes first, it is processed, seen_ids.add(), excluded_technical_score += 1
         # paper2 comes second, it is in seen_ids, duplicates_removed += 1, continue.
         # RESULT: paper is lost.
 
@@ -96,7 +96,7 @@ class TestDedupBug(unittest.TestCase):
                          "The duplicate merge leaves exactly one paper")
         self.assertEqual(self.hunter.stats["included_final"], 1,
                          "The promoted paper is counted once, not once per source")
-        self.assertEqual(self.hunter.stats["excluded_score"], 0,
+        self.assertEqual(self.hunter.stats["excluded_technical_score"], 0,
                          "No paper excluded after percentile re-ranking")
 
     def test_promotion_from_anchor_mismatch(self):
@@ -140,8 +140,8 @@ class TestDedupBug(unittest.TestCase):
 
         print(f"Stats (Anchor Mismatch Case): {self.hunter.stats}")
         
-        # excluded_score should NOT be negative!
-        self.assertGreaterEqual(self.hunter.stats["excluded_score"], 0)
+        # excluded_technical_score should NOT be negative!
+        self.assertGreaterEqual(self.hunter.stats["excluded_technical_score"], 0)
         self.assertEqual(self.hunter.stats["included_final"], 1)
 
 if __name__ == "__main__":

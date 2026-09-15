@@ -183,7 +183,7 @@ def test_inclusion_gate_uses_min_inclusion_score(resolver):
     )
 
     assert resolver.state.stats["included_final"] == 1, "p2 must not count as included"
-    assert resolver.state.stats["excluded_score"] == 1, "p2 must count as score-excluded"
+    assert resolver.state.stats["excluded_technical_score"] == 1, "p2 must count as score-excluded"
     assert "p2" in resolver.state.consolidated_results, (
         "the gate classifies; it does not evict — removal is deferred to the rank step"
     )

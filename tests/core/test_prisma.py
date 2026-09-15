@@ -52,7 +52,7 @@ class TestAcademicRigor(unittest.TestCase):
         expected_stats = {
             "identified": {},
             "duplicates_removed": 0,
-            "excluded_score": 0,
+            "excluded_technical_score": 0,
             "excluded_year": 0,
             "excluded_anchors": 0,
             "excluded_technical_score": 0,
@@ -134,7 +134,7 @@ class TestAcademicRigor(unittest.TestCase):
                 consolidated[dedup_id] = paper
                 self.hunter.stats["included_final"] += 1
             else:
-                self.hunter.stats["excluded_score"] += 1
+                self.hunter.stats["excluded_technical_score"] += 1
 
         # Assertions
         self.assertEqual(len(consolidated), 1)
@@ -142,7 +142,7 @@ class TestAcademicRigor(unittest.TestCase):
         self.assertEqual(self.hunter.stats["identified"]["SourceA"], 2)
         self.assertEqual(self.hunter.stats["identified"]["SourceB"], 1)
         self.assertEqual(self.hunter.stats["duplicates_removed"], 1)
-        self.assertEqual(self.hunter.stats["excluded_score"], 1)
+        self.assertEqual(self.hunter.stats["excluded_technical_score"], 1)
         self.assertEqual(self.hunter.stats["included_final"], 1)
 
     def test_prisma_math_low_score_duplicates(self):
@@ -159,7 +159,7 @@ class TestAcademicRigor(unittest.TestCase):
         # We will test the logic that should be in run()
         seen_ids = set()
         consolidated = {}
-        self.hunter.stats = {"identified": {}, "duplicates_removed": 0, "excluded_score": 0, "included_final": 0}
+        self.hunter.stats = {"identified": {}, "duplicates_removed": 0, "excluded_technical_score": 0, "included_final": 0}
         
         for paper in mock_results:
             source = paper.get('Source', 'Unknown')
@@ -176,10 +176,10 @@ class TestAcademicRigor(unittest.TestCase):
                 consolidated[dedup_id] = paper
                 self.hunter.stats["included_final"] += 1
             else:
-                self.hunter.stats["excluded_score"] += 1
+                self.hunter.stats["excluded_technical_score"] += 1
                 
         self.assertEqual(self.hunter.stats["duplicates_removed"], 1)
-        self.assertEqual(self.hunter.stats["excluded_score"], 1)
+        self.assertEqual(self.hunter.stats["excluded_technical_score"], 1)
 
     def test_metadata_merging(self):
         """Verify metadata fields are merged correctly."""
@@ -245,7 +245,6 @@ class TestAcademicRigor(unittest.TestCase):
         self.hunter.stats = {
             "identified": {"ArXiv": 10, "Crossref": 20},
             "duplicates_removed": 5,
-            "excluded_score": 10,
             "excluded_year": 0,
             "excluded_anchors": 6,
             "excluded_technical_score": 4,

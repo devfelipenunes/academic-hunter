@@ -185,7 +185,7 @@ class RecomputeRanksStep(PipelineStep):
         n_after = sum(1 for p in results.values() if p.get("Relevance_Score", 0) >= min_score)
         with self.hunter.lock:
             self.hunter.state.stats["included_final"] = n_after
-            self.hunter.state.stats["excluded_score"] = n - n_after
+            self.hunter.state.stats["excluded_technical_score"] = n - n_after
 
         logger.info("Re-ranked %d papers (%s). %d pass threshold.", n, strategy, n_after)
 
