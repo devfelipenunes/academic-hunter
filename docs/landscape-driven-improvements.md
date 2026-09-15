@@ -2,8 +2,8 @@
 
 **Criado em:** 2026-09-10
 **Base:** mapeamento de 37 ferramentas concorrentes (o mapeamento não acompanha este repositório)
-**Relação com outros docs:** `docs/roadmap.md` parte da dívida técnica interna. Este documento
-parte do **que os concorrentes fazem** — o que copiar, o que aprofundar e o que ninguém faz ainda.
+**Relação com outros docs:** este documento parte do **que os concorrentes fazem** — o que
+copiar, o que aprofundar e o que ninguém faz ainda.
 
 ---
 

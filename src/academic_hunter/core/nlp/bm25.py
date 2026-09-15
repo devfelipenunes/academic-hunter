@@ -79,12 +79,14 @@ class BM25:
         self._document_frequency: Dict[str, int] = dict(document_frequency)
 
     def idf(self, term: str) -> float:
-        """Inverse document frequency, always strictly positive."""
+        """Inverse document frequency, or ``0.0`` for a term no document contains.
+
+        Zero rather than the value the formula would give: a term nobody wrote
+        cannot discriminate, and letting it contribute would shift every score in
+        the corpus. ``score`` skips those terms — a guard written against this.
+        """
         n = self._document_frequency.get(term, 0)
         if n == 0:
-            # A term no document contains cannot discriminate; contributing 0
-            # (rather than the IDF it would have) keeps unseen query terms from
-            # shifting the scale.
             return 0.0
         return math.log(1.0 + (self.n_documents - n + 0.5) / (n + 0.5))
 

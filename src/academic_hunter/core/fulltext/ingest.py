@@ -108,7 +108,14 @@ def _ingest_one(
     *,
     replace: bool = False,
 ) -> str:
-    """Fetch, chunk and index one paper. Returns its status; never raises."""
+    """Fetch, chunk and index one paper. Returns its status.
+
+    Raises:
+        FullTextConfigError: no source could be used for this DOI. Propagated so
+            the caller records it against the paper rather than swallowing it —
+            it is not a reason to abandon the batch, since the sources do not
+            share configuration.
+    """
     try:
         document = fetcher(doi)
     except NoOpenAccessVersion:

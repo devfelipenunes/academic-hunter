@@ -93,7 +93,9 @@ def create_mcp_server(host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
         "academic-hunter",
         host=host,
         port=port,
-        dependencies=["requests", "pandas", "bibtexparser", "chromadb"],
+        # Announced to the client, which may act on it. Each one is imported by
+        # this project: `bibtexparser` was listed here and appears nowhere.
+        dependencies=["requests", "pandas", "chromadb"],
     )
 
     # ── Tools (auto-discovered from tools/ package) ─────────────────────────

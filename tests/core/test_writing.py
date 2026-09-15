@@ -225,9 +225,8 @@ def test_outline_marks_every_leaf_section_for_prose():
 def test_outline_never_injects_score_numbers():
     """A guard against the outline silently carrying computed scores.
 
-    Scores are the part of the pipeline whose definition was ambiguous (see
-    docs/roadmap.md phase 0) — the outline must not bake them in until that is
-    settled.
+    Scores are the part of the pipeline whose definition was ambiguous, and the
+    outline must not bake them in until that is settled.
     """
     out = build_outline(get_template("method"), _run_data())
     assert "Relevance_Score" not in out
