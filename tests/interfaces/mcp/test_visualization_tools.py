@@ -29,8 +29,12 @@ async def test_visualize_landscape(mock_ctx):
         store.query.return_value = mock_papers
         m_store.return_value = store
 
-        with patch("academic_hunter.interfaces.mcp.tools.visualization.umap") as m_umap:
-            m_umap.UMAP.return_value.fit_transform.return_value = mock_embeddings
+        m_umap = MagicMock()
+        m_umap.UMAP.return_value.fit_transform.return_value = mock_embeddings
+        with patch(
+            "academic_hunter.interfaces.mcp.tools.visualization._load_umap",
+            return_value=m_umap,
+        ):
 
             with patch(
                 "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer"
@@ -110,10 +114,9 @@ async def test_visualize_landscape_import_error(mock_ctx):
         store.query.return_value = [{"title": f"P{i}"} for i in range(10)]
         m_store.return_value = store
 
-        # umap must be "present" (not None) so we get past its guard
         with patch(
-            "academic_hunter.interfaces.mcp.tools.visualization.umap",
-            MagicMock(),
+            "academic_hunter.interfaces.mcp.tools.visualization._load_umap",
+            return_value=MagicMock(),
         ):
             with patch(
                 "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer",
@@ -147,13 +150,13 @@ async def test_topic_evolution(mock_ctx):
         store.query.return_value = mock_papers
         m_store.return_value = store
 
+        model = MagicMock()
+        model.fit_transform.return_value = ([0, 1, 2, 1, 0], None)
+        model.get_topic.return_value = [("deep", 0.5), ("learning", 0.3)]
         with patch(
-            "academic_hunter.interfaces.mcp.tools.visualization.BERTopic"
-        ) as m_bt:
-            model = MagicMock()
-            model.fit_transform.return_value = ([0, 1, 2, 1, 0], None)
-            model.get_topic.return_value = [("deep", 0.5), ("learning", 0.3)]
-            m_bt.return_value = model
+            "academic_hunter.interfaces.mcp.tools.visualization._load_bertopic",
+            return_value=MagicMock(return_value=model),
+        ):
 
             with patch(
                 "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer"
@@ -215,7 +218,8 @@ async def test_topic_evolution_bertopic_not_installed(mock_ctx):
         m_store.return_value = store
 
         with patch(
-            "academic_hunter.interfaces.mcp.tools.visualization.BERTopic", None
+            "academic_hunter.interfaces.mcp.tools.visualization._load_bertopic",
+            side_effect=ImportError("no bertopic"),
         ):
             from academic_hunter.interfaces.mcp.tools.visualization import (
                 topic_evolution,
@@ -242,13 +246,13 @@ async def test_topic_evolution_no_year(mock_ctx):
         store.query.return_value = mock_papers
         m_store.return_value = store
 
+        model = MagicMock()
+        model.fit_transform.return_value = ([0, 1, 2, 3, 0], None)
+        model.get_topic.return_value = [("test", 0.5)]
         with patch(
-            "academic_hunter.interfaces.mcp.tools.visualization.BERTopic"
-        ) as m_bt:
-            model = MagicMock()
-            model.fit_transform.return_value = ([0, 1, 2, 3, 0], None)
-            model.get_topic.return_value = [("test", 0.5)]
-            m_bt.return_value = model
+            "academic_hunter.interfaces.mcp.tools.visualization._load_bertopic",
+            return_value=MagicMock(return_value=model),
+        ):
 
             with patch(
                 "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer"

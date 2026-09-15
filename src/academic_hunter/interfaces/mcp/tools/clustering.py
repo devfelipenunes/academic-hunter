@@ -13,13 +13,16 @@ from ._utils import _get_vector_store, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.clustering")
 
-# Module-level BERTopic reference so that unittest.mock.patch can target it.
-# BERTopic is never used outside the tool function, but a module-level name
-# allows clean patching in tests without interfering with sys.modules.
-try:
+
+def _load_bertopic():
+    """Imported on use: BERTopic pulls in umap, hdbscan and scikit-learn.
+
+    At module scope it cost 16 s of the MCP server's startup — measured, and
+    the whole of it — for a tool most sessions never call.
+    """
     from bertopic import BERTopic
-except ImportError:
-    BERTopic = None
+
+    return BERTopic
 
 
 async def cluster_papers(
@@ -60,7 +63,9 @@ async def cluster_papers(
         return "No papers found to cluster. Index papers first."
 
     # ── Guard: BERTopic available? ──────────────────────────────────────────
-    if BERTopic is None:
+    try:
+        BERTopic = await run_blocking(_load_bertopic)
+    except ImportError:
         await ctx.error("BERTopic is not installed")
         return (
             "BERTopic is not installed. "

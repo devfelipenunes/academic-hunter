@@ -12,23 +12,25 @@ from ._utils import _get_vector_store, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.visualization")
 
-# Module-level BERTopic reference so that unittest.mock.patch can target it.
-# BERTopic is never used outside the tool function, but a module-level name
-# allows clean patching in tests without interfering with sys.modules.
-try:
-    from bertopic import BERTopic
-except ImportError:
-    BERTopic = None
-
-# Module-level reference for UMAP so that unittest.mock.patch can target it
-# from the test suite. SentenceTransformer is reached through the shared cache
-# instead; tests patch `visualization.get_sentence_transformer`.
-try:
-    import umap
-except ImportError:
-    umap = None
-
 from academic_hunter.core.nlp.model_cache import get_sentence_transformer
+
+
+def _load_umap():
+    """Imported on use: umap-learn pulls in numba and scikit-learn.
+
+    At module scope these two cost 17 s of the MCP server's startup — measured,
+    and the whole of it — for tools most sessions never call.
+    """
+    import umap
+
+    return umap
+
+
+def _load_bertopic():
+    """Imported on use, for the same reason as UMAP."""
+    from bertopic import BERTopic
+
+    return BERTopic
 
 
 async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int = 15) -> str:
@@ -54,7 +56,9 @@ async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int =
         await ctx.info("Too few papers for visualization")
         return "Not enough papers for a meaningful visualization."
 
-    if umap is None:
+    try:
+        umap = await run_blocking(_load_umap)
+    except ImportError:
         await ctx.error("UMAP is not installed")
         return "Required library not installed: umap-learn. Install with: pip install umap-learn"
 
@@ -117,7 +121,9 @@ async def topic_evolution(ctx: Context, top_k: int = 500) -> str:
         await ctx.info("Too few papers for evolution analysis")
         return "Not enough papers for evolution analysis."
 
-    if BERTopic is None:
+    try:
+        BERTopic = await run_blocking(_load_bertopic)
+    except ImportError:
         await ctx.error("BERTopic is not installed")
         return (
             "BERTopic not installed. "
