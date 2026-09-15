@@ -7,6 +7,7 @@ Tests cover:
 - ``run_mcp_server`` — argument parsing (excluding SSE mode start)
 """
 
+import inspect
 import logging
 from unittest.mock import patch, MagicMock, PropertyMock
 
@@ -130,6 +131,19 @@ def test_run_mcp_server_parses_stdio():
         assert kwargs.get("transport") is None or kwargs.get("host") is None
 
 
+def _accepted_run_kwargs() -> set:
+    """The keyword arguments the installed `FastMCP.run` really accepts.
+
+    A bare `MagicMock` accepts anything, which is how this call shipped passing
+    `host=` and `port=` to a method that takes neither — the test asserted the
+    invalid call and so pinned the bug in place. Checking against the real
+    signature is what stops that from happening again.
+    """
+    from mcp.server.fastmcp import FastMCP
+
+    return set(inspect.signature(FastMCP.run).parameters) - {"self"}
+
+
 def test_run_mcp_server_parses_sse():
     """run_mcp_server parses arguments and starts in SSE mode."""
     from academic_hunter.interfaces.mcp.server import run_mcp_server
@@ -143,9 +157,11 @@ def test_run_mcp_server_parses_sse():
 
         run_mcp_server()
 
-        mock_server.run.assert_called_once_with(
-            transport="sse", host="127.0.0.1", port=9999
-        )
+        m_create.assert_called_once_with(host="127.0.0.1", port=9999)
+        mock_server.run.assert_called_once_with(transport="sse")
+
+        unknown = set(mock_server.run.call_args.kwargs) - _accepted_run_kwargs()
+        assert not unknown, f"FastMCP.run does not accept {unknown}"
 
 
 def test_run_mcp_server_parses_env_vars():
@@ -162,9 +178,8 @@ def test_run_mcp_server_parses_env_vars():
 
         run_mcp_server()
 
-        mock_server.run.assert_called_once_with(
-            transport="sse", host="127.0.0.1", port=7777
-        )
+        m_create.assert_called_once_with(host="127.0.0.1", port=7777)
+        mock_server.run.assert_called_once_with(transport="sse")
 
 
 def test_run_mcp_server_debug_log_level():

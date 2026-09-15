@@ -84,13 +84,15 @@ def _discover_and_register(mcp: FastMCP) -> None:
 # ── Server factory ────────────────────────────────────────────────────────────
 
 
-def create_mcp_server() -> FastMCP:
+def create_mcp_server(host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
     """Instantiate the FastMCP server and register all tools, resources, and prompts."""
     _setup_logging()
     logger.info("Creating Academic Hunter MCP server…")
 
     mcp = FastMCP(
         "academic-hunter",
+        host=host,
+        port=port,
         dependencies=["requests", "pandas", "bibtexparser", "chromadb"],
     )
 
@@ -152,11 +154,11 @@ def run_mcp_server():
     args = parser.parse_args()
     logging.getLogger("academic_hunter").setLevel(args.log_level.upper())
 
-    server = create_mcp_server()
+    server = create_mcp_server(host=args.host, port=args.port)
 
     if args.transport == "sse":
         logger.info("Starting MCP server in SSE mode on %s:%s", args.host, args.port)
-        server.run(transport="sse", host=args.host, port=args.port)
+        server.run(transport="sse")
     else:
         logger.info("Starting MCP server in stdio mode…")
         server.run()
