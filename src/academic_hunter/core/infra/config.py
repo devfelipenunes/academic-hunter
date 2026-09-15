@@ -109,11 +109,22 @@ class HunterConfig:
 
         self._apply_env_overrides()
 
-        self.settings = self._raw.get('settings', {})
-        self.anchors = self._raw.get('anchors', {})
-        self.tech_strings = self._raw.get('technical_strings', {})
-        self.tech_weights = self._raw.get('technical_weights', {})
-        self.context_rules = self._raw.get('context_rules', {})
+        # Updated in place, not rebound. The scorer and the connectors are built
+        # once, with these very dictionaries as arguments, so assigning fresh
+        # ones left them reading the configuration from before the reload —
+        # `load_config` changed what the config reported and nothing about what
+        # the pipeline did. `SearchState.reset` documents the same hazard for
+        # `query_history`; this is the same fix in the other place that needs it.
+        for name, value in (
+            ("settings", self._raw.get('settings', {})),
+            ("anchors", self._raw.get('anchors', {})),
+            ("tech_strings", self._raw.get('technical_strings', {})),
+            ("tech_weights", self._raw.get('technical_weights', {})),
+            ("context_rules", self._raw.get('context_rules', {})),
+        ):
+            current = getattr(self, name)
+            current.clear()
+            current.update(value)
         # No fallback here. A config that did not mention these was given
         # `ledger`, `payment`, `interoperability`, `settlement`, `blockchain`
         # under "Consolidated_Fintech" — whatever the researcher was studying.
