@@ -103,6 +103,17 @@ def evaluate_run(
     )
 
 
+def _require_non_negative(top_k: int) -> None:
+    """A negative limit reaches the slice as an index, not as a limit.
+
+    ``scored[:-1]`` drops the last document and leaves a ranking that looks
+    perfectly valid, so the corpus quietly shrinks and every metric measured on
+    it reads as a real result.
+    """
+    if top_k < 0:
+        raise ValueError(f"top_k must not be negative, got {top_k}")
+
+
 def build_rankings(
     corpus: Sequence[Any],
     queries: Mapping[str, str],
@@ -125,6 +136,8 @@ def build_rankings(
     Returns:
         Query id -> ranked document ids.
     """
+    _require_non_negative(top_k)
+
     rankings: Dict[str, List[str]] = {}
     for query_id, text in queries.items():
         scored = [(scorer(doc, text), doc_id(doc)) for doc in corpus]
@@ -197,6 +210,8 @@ def build_rankings_timed(
     The timer wraps only the scoring loop, so it measures the retriever and not
     the harness around it.
     """
+    _require_non_negative(top_k)
+
     rankings: Dict[str, List[str]] = {}
     timing = Timing()
 

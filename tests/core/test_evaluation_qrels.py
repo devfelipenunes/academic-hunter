@@ -12,7 +12,11 @@ from academic_hunter.core.evaluation import (
     load_qrels,
 )
 from academic_hunter.core.evaluation.qrels import documents_for, doc_id_for, save_qrels, topics
-from academic_hunter.core.evaluation.runner import build_rankings, unjudged_in_pool
+from academic_hunter.core.evaluation.runner import (
+    build_rankings,
+    build_rankings_timed,
+    unjudged_in_pool,
+)
 
 VALID = {
     "description": "pilot",
@@ -220,6 +224,47 @@ def test_build_rankings_truncates_to_top_k():
     )
 
     assert rankings["q"] == ["9", "8", "7"]
+
+
+def test_a_negative_top_k_is_rejected_rather_than_truncating():
+    """`scored[:-1]` keeps four of five documents and reads as a valid ranking.
+
+    A negative limit reached the slice as an index, so the corpus silently lost
+    its last document — and every metric computed on it looked fine.
+    """
+    corpus = [{"id": str(i)} for i in range(5)]
+
+    with pytest.raises(ValueError, match="top_k"):
+        build_rankings(
+            corpus, {"q": "text"},
+            scorer=lambda doc, q: float(doc["id"]),
+            doc_id=lambda doc: doc["id"],
+            top_k=-1,
+        )
+
+
+def test_a_zero_top_k_is_an_empty_ranking_not_an_error():
+    """Asking for nothing is a request that can be honoured."""
+    corpus = [{"id": "a"}]
+
+    rankings = build_rankings(
+        corpus, {"q": "text"}, scorer=lambda doc, q: 1.0, doc_id=lambda doc: doc["id"], top_k=0
+    )
+
+    assert rankings == {"q": []}
+
+
+def test_build_rankings_timed_rejects_a_negative_top_k_too():
+    """The two entry points must not disagree about what a limit is."""
+    corpus = [{"id": str(i)} for i in range(5)]
+
+    with pytest.raises(ValueError, match="top_k"):
+        build_rankings_timed(
+            corpus, {"q": "text"},
+            scorer=lambda doc, q: float(doc["id"]),
+            doc_id=lambda doc: doc["id"],
+            top_k=-1,
+        )
 
 
 def test_build_rankings_uses_the_same_pool_for_every_query():
