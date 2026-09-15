@@ -68,15 +68,30 @@ def run_output(tmp_path, monkeypatch):
             AcademicHunter, name, lambda *a, **k: [p.copy() for p in PAPERS]
         )
 
-    hunter.run(limit_per_source=1)
+    returned = hunter.run(limit_per_source=1)
 
     reports = list(tmp_path.rglob("FLUXO_PRISMA_*.md"))
     assert reports, "no PRISMA report was written"
-    return hunter, _edges(reports[0].read_text(encoding="utf-8"))
+    return hunter, _edges(reports[0].read_text(encoding="utf-8")), returned
+
+
+def test_run_returns_a_path_that_exists(run_output):
+    """`run_search` hands this path back to the agent as the report.
+
+    The manager returned `output_dir/RELATORIO_ELITE_<ts>.md` while the exporters
+    wrote into `output_dir/run_<ts>/`, so every consumer that followed it got a
+    file that was never there.
+    """
+    from pathlib import Path
+
+    _, _, returned = run_output
+
+    assert returned, "run() returned nothing to point at"
+    assert Path(returned).exists(), f"run() returned a path that does not exist: {returned}"
 
 
 def test_the_exported_flow_closes_at_technical_evaluation(run_output):
-    hunter, edges = run_output
+    hunter, edges, _ = run_output
     labels = dict(edges)
 
     passed = [value for label, value in edges if label == "Passed"]
@@ -92,7 +107,7 @@ def test_the_exported_flow_closes_at_technical_evaluation(run_output):
 
 
 def test_the_stages_above_it_chain_without_gaps(run_output):
-    _, edges = run_output
+    _, edges, _ = run_output
     labels = dict(edges)
 
     passed = [value for label, value in edges if label == "Passed"]

@@ -2,6 +2,7 @@ import logging
 import threading
 import time
 
+from ..ports.exporter import run_dir_for
 from .steps import (
     AutoExportObsidianStep,
     IndexResultsStep,
@@ -199,8 +200,11 @@ class SearchPipeline:
                 f"   - Reranked (cross-encoder): {self.hunter.stats['reranked']}"
             )
 
-        import os
-        return os.path.join(self.hunter.output_dir, f"RELATORIO_ELITE_{timestamp}.md")
+        # The exporters' rule, not a second guess at it: they write into
+        # `output_dir/run_<ts>/`, so joining the filename onto `output_dir` handed
+        # back a path that never existed.
+        report = run_dir_for(timestamp, self.hunter.output_dir) / f"RELATORIO_ELITE_{timestamp}.md"
+        return str(report)
 
     def _auto_export_to_obsidian(self, timestamp: str):
         """Auto-export elite report to Obsidian vault if configured."""
