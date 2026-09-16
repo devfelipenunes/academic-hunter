@@ -315,6 +315,79 @@ def test_absent_pool_defaults_to_empty(tmp_path):
     assert qrels["q1"].topic == ""
 
 
+def test_blocks_the_loader_does_not_read_survive_a_round_trip(tmp_path):
+    """`provenance` and `documents` are the evidence for the grades.
+
+    A reviewer who edits grades and saves through `save_qrels` must not lose
+    the record of how those grades were made, nor the documents they were made
+    against — the shipped collection embeds all 108 abstracts for exactly that
+    reason, and `results/` is not versioned.
+    """
+    payload = {
+        "description": "pilot",
+        "provenance": {"annotators": 1, "annotation_method": "title+abstract"},
+        "documents": {"d1": {"title": "A paper", "abstract": "..."}},
+        "queries": {"q1": {"text": "t", "judgments": {"d1": 2}}},
+    }
+    source = _write(tmp_path, payload)
+
+    result = json.loads(save_qrels(load_qrels(source), tmp_path / "out.json").read_text())
+
+    assert result["provenance"] == payload["provenance"]
+    assert result["documents"] == payload["documents"]
+
+
+def test_a_round_trip_preserves_the_key_order_of_the_original(tmp_path):
+    """The file is meant to be read by a human; the shape should not shuffle."""
+    payload = {
+        "description": "pilot",
+        "provenance": {"annotators": 1},
+        "documents": {"d1": {"title": "A paper"}},
+        "queries": {"q1": {"text": "t", "judgments": {"d1": 2}}},
+    }
+    source = _write(tmp_path, payload)
+
+    result = json.loads(save_qrels(load_qrels(source), tmp_path / "out.json").read_text())
+
+    assert list(result) == list(payload)
+
+
+def test_saving_preserves_the_authored_query_order(tmp_path):
+    """The reviewer's order survives the save.
+
+    The file is edited by hand; sorting it on the way out would bury the
+    reviewer's own edits under a reordering of every query.
+    """
+    payload = {
+        "queries": {
+            "zeta": {"text": "t", "judgments": {"d2": 1}},
+            "alpha": {"text": "t2", "judgments": {"d1": 2}},
+        },
+    }
+
+    saved = save_qrels(load_qrels(_write(tmp_path, payload)), tmp_path / "out.json")
+
+    assert list(json.loads(saved.read_text())["queries"]) == ["zeta", "alpha"]
+
+
+def test_saving_what_was_just_loaded_is_byte_stable(tmp_path):
+    """A second save shows only real edits, never a reshuffle."""
+    payload = {
+        "description": "pilot",
+        "provenance": {"annotators": 1},
+        "queries": {
+            "zeta": {"text": "t", "topic": "alpha", "pool": ["d2", "d1"],
+                     "judgments": {"d2": 1, "d1": 0}},
+            "alpha": {"text": "t2", "judgments": {"d1": 2}},
+        },
+    }
+
+    once = save_qrels(load_qrels(_write(tmp_path, payload)), tmp_path / "1.json")
+    twice = save_qrels(load_qrels(once), tmp_path / "2.json")
+
+    assert once.read_text(encoding="utf-8") == twice.read_text(encoding="utf-8")
+
+
 def test_documents_for_returns_the_declared_pool():
     qrels = Qrels(queries={
         "q1": Judgment("q1", "t", {"a": 1, "b": 1}, pool=["a", "b", "c"]),

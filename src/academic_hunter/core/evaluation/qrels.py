@@ -18,6 +18,9 @@ Shape::
 
 Document ids must be stable and derivable from a paper — :func:`doc_id_for` is
 the canonical helper so a qrels entry can be matched to a corpus row.
+
+A file may carry further top-level blocks (``provenance``, ``documents``). This
+module does not read them, but it preserves them across a load/save round-trip.
 """
 
 import json
@@ -67,6 +70,12 @@ class Qrels:
 
     queries: Dict[str, Judgment] = field(default_factory=dict)
     description: str = ""
+    #: Top-level blocks this module does not interpret — ``provenance`` and
+    #: ``documents`` in the shipped collection. Carried through a load/save
+    #: round-trip untouched: they are the record of how the grades were made
+    #: and the documents they were made against, and a review that dropped
+    #: them would delete the evidence for the labels it was reviewing.
+    extra: Dict[str, Any] = field(default_factory=dict)
 
     def __len__(self) -> int:
         return len(self.queries)
@@ -134,6 +143,7 @@ def load_qrels(path: Union[str, Path]) -> Qrels:
         raise QrelsError(f"{path}: 'queries' must be a non-empty object")
 
     qrels = Qrels(description=str(raw.get("description", "")))
+    qrels.extra = {k: v for k, v in raw.items() if k not in ("description", "queries")}
 
     for query_id, entry in queries_raw.items():
         if not isinstance(entry, dict):
@@ -197,10 +207,22 @@ def topics(qrels: Qrels) -> Dict[str, List[str]]:
 
 
 def save_qrels(qrels: Qrels, path: Union[str, Path]) -> Path:
-    """Write a qrels collection back to disk, sorted for stable diffs."""
+    """Write a qrels collection back to disk.
+
+    Order is preserved rather than sorted: the file is reviewed by hand, and a
+    save that reordered every entry would bury the reviewer's own edits in the
+    diff. Saving what was just loaded produces the same bytes, so a second save
+    shows only real edits. (Each query's keys are written in this module's
+    order — text, topic, pool, judgments — so a file authored in another order
+    is normalized on its first save.)
+
+    Blocks the loader does not own (``provenance``, ``documents``) are written
+    back as they were read, in their original position.
+    """
     path = Path(path)
     payload = {
         "description": qrels.description,
+        **qrels.extra,
         "queries": {
             qid: {
                 "text": j.text,
@@ -208,9 +230,9 @@ def save_qrels(qrels: Qrels, path: Union[str, Path]) -> Path:
                 # and a diff stays readable.
                 **({"topic": j.topic} if j.topic else {}),
                 **({"pool": list(j.pool)} if j.pool else {}),
-                "judgments": dict(sorted(j.grades.items())),
+                "judgments": dict(j.grades.items()),
             }
-            for qid, j in sorted(qrels.queries.items())
+            for qid, j in qrels.queries.items()
         },
     }
     path.parent.mkdir(parents=True, exist_ok=True)
