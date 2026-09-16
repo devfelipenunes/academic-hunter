@@ -40,3 +40,6 @@ config.json
 /config.json
 config*.json
 !config.example.json
+
+# mutmut sandbox — rebuild it with `mutmut run`; 7 MB of copies, not source
+mutants/

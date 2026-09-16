@@ -108,3 +108,18 @@ select = ["E", "F", "I", "N", "W", "UP", "S"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+# Measuring how many defects the suite actually detects, as opposed to how much
+# code it touches. `mutate_only_covered_lines` is off on purpose: a line that no
+# test reaches is the finding, not a line to skip.
+#
+# `also_copy` is not optional — mutmut copies only `source_paths` into its
+# sandbox, and four test files read the repository root (pyproject.toml,
+# install.py, evaluation/*.json). Without them the baseline fails and nothing
+# runs.
+[tool.mutmut]
+source_paths = ["src/academic_hunter"]
+only_mutate = ["*core/nlp/fusion.py"]
+also_copy = ["tests", "evaluation", "pyproject.toml", "install.py", "config.example.json"]
+pytest_add_cli_args = ["-p", "no:cov"]
+max_children = 4
