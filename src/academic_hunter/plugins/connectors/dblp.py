@@ -5,6 +5,13 @@ from .base import BaseConnector
 logger = logging.getLogger("academic_hunter.connectors")
 
 
+#: The search endpoint is ``/search/publ/api``. This was ``/search/pub/api``
+#: for months: the mock in `test_dblp.py` patches `_make_request`, so the URL was
+#: never exercised and the connector returned zero results in every run while the
+#: PRISMA reported "DBLP: 0" as if the source had been searched.
+DBLP_SEARCH_URL = "https://dblp.org/search/publ/api"
+
+
 class DblpConnector(BaseConnector):
     fetch_suffix = "dblp"
     SOURCE_NAME = "DBLP"
@@ -26,13 +33,12 @@ class DblpConnector(BaseConnector):
         articles = []
         first = 0
         page_size = 100
-        dblp_url = "https://dblp.org/search/pub/api"
 
         while len(articles) < limit:
             max_limit = min(limit - len(articles), page_size)
             params = {"q": query, "format": "json", "h": max_limit, "f": first}
 
-            data = self._make_request(dblp_url, params=params, timeout=15)
+            data = self._make_request(DBLP_SEARCH_URL, params=params, timeout=15)
             if not data:
                 break
 

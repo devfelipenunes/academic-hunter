@@ -75,3 +75,15 @@ def test_dblp_detect_peer_review_article():
     assert conn.detect_peer_review("journal") == "Yes"
     assert conn.detect_peer_review("phdthesis") == "N/A"
     assert conn.detect_peer_review("book") == "N/A"
+
+
+def test_the_search_url_is_the_one_dblp_actually_serves():
+    """`/search/pub/api` does not exist; the endpoint is `/search/publ/api`.
+
+    This went unnoticed because every test here patches `_make_request`, so the
+    URL was never exercised — the connector returned zero results in every run,
+    and the PRISMA reported `DBLP: 0` as if the source had been searched.
+    """
+    from academic_hunter.plugins.connectors.dblp import DBLP_SEARCH_URL
+
+    assert DBLP_SEARCH_URL == "https://dblp.org/search/publ/api"

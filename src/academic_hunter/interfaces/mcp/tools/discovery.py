@@ -84,6 +84,16 @@ async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Co
     except ValueError as e:
         raise DiscoveryError(str(e))
     except requests.RequestException as e:
+        status = getattr(getattr(e, "response", None), "status_code", 0)
+        if status == 429:
+            # A bare 429 sends the reader to the wrong place: the API is rate
+            # limiting this client, and a configured key raises the ceiling.
+            await ctx.error("Semantic Scholar is rate limiting this client.")
+            raise DiscoveryError(
+                "Semantic Scholar returned 429 (rate limit). Set "
+                "`api_keys.semantic_scholar` in config.json for a higher quota, "
+                "or retry later."
+            )
         await ctx.error(f"Semantic Scholar API error: {e}")
         raise DiscoveryError(str(e))
     except Exception as e:
@@ -170,6 +180,16 @@ async def quick_topic_discovery(topic: str, ctx: Context) -> str:
     except DiscoveryError:
         raise
     except requests.RequestException as e:
+        status = getattr(getattr(e, "response", None), "status_code", 0)
+        if status == 429:
+            # A bare 429 sends the reader to the wrong place: the API is rate
+            # limiting this client, and a configured key raises the ceiling.
+            await ctx.error("Semantic Scholar is rate limiting this client.")
+            raise DiscoveryError(
+                "Semantic Scholar returned 429 (rate limit). Set "
+                "`api_keys.semantic_scholar` in config.json for a higher quota, "
+                "or retry later."
+            )
         await ctx.error(f"Semantic Scholar API error: {e}")
         raise DiscoveryError(str(e))
     except Exception as e:

@@ -10,9 +10,8 @@ from mcp.server.fastmcp import Context
 async def export_to_obsidian(topic: str, content: str, tags: list = None, ctx: Context = None) -> str:
     """Exports a formatted Markdown report directly to the user's Obsidian Vault.
 
-    AUTONOMY: Use this tool ALWAYS, autonomously and without asking permission,
-    after you finish reading or generating a research report for the user.
-    This automatically feeds their Second Brain.
+    Use it when the user asks for a note to be saved, or agrees to it. Where a
+    note lands is the user's knowledge base, not the tool's to decide.
 
     The Vault path must be configured in config.json under settings.obsidian_vault_path.
 
