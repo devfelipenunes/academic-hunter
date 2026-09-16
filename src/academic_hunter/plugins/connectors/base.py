@@ -8,6 +8,11 @@ import json
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 
+# Read from the package root rather than repeating the number: this header is
+# the only version most upstream APIs ever see, and a literal here drifts
+# silently (it sat at 2.0.0 while the package was 2.1.0).
+from academic_hunter import __version__
+
 logger = logging.getLogger("academic_hunter.connectors")
 
 #: First wait before retrying a transient failure; doubles per attempt.
@@ -47,7 +52,7 @@ class BaseConnector:
         """Returns HTTP headers for this connector. Override in subclasses to add API keys."""
         email = self.settings.get('user_email', 'academic_hunter@example.com')
         return {
-            "User-Agent": f"AcademicHunter/2.0.0 (mailto:{email})"
+            "User-Agent": f"AcademicHunter/{__version__} (mailto:{email})"
         }
 
     def resolve_abstract_by_doi(self, doi: str) -> str:

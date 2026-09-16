@@ -13,6 +13,7 @@ from typing import Optional
 
 from mcp.server.fastmcp import Context
 
+from academic_hunter import __version__
 from academic_hunter.core.writing import (
     ExistenceProbes,
     build_outline,
@@ -348,7 +349,7 @@ async def verify_citations(
             response = requests.get(
                 f"https://api.crossref.org/works/{doi}",
                 timeout=10,
-                headers={"User-Agent": "academic-hunter/2.1 (citation check)"},
+                headers={"User-Agent": f"AcademicHunter/{__version__} (citation check)"},
             )
         except requests.RequestException:
             return None
