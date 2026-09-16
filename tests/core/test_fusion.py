@@ -84,6 +84,17 @@ def test_zero_weights_fall_back_to_keyword_instead_of_dividing_by_zero():
     assert scores[1] > scores[0]
 
 
+def test_zero_weights_fall_back_at_the_reported_scale():
+    """The fallback keeps the [0, 10] scale the docstring promises.
+
+    Ordering alone survives any constant multiplier — doubling every score keeps
+    the ranking and breaks every comparison against the threshold.
+    """
+    scores = fuse([1.0, 2.0, 3.0], [0.0, 0.0, 0.0], weights={"keyword": 0, "embedding": 0})
+
+    assert list(scores) == pytest.approx([0.0, 5.0, 10.0])
+
+
 def test_weights_are_normalised_by_their_sum():
     """Only the ratio matters, so unnormalised weights behave the same."""
     kw, sem = [0.0, 10.0], [10.0, 0.0]
@@ -158,6 +169,42 @@ def test_one_constant_signal_still_ranks_by_the_other():
     assert scores[2] > scores[1] > scores[0]
 
 
+def test_a_flat_signal_contributes_nothing_to_the_score():
+    """Flat means no ordering — and no points either.
+
+    Asserted on the values, not the order. Giving a constant signal a full
+    normalised score of 1.0 instead of 0.0 shifts every paper by the same
+    constant, so the ranking is untouched and papers cross the threshold.
+    """
+    scores = fuse([5.0, 5.0, 5.0], [0.0, 10.0, 5.0])
+
+    assert list(scores) == pytest.approx([0.0, 3.0, 1.5])
+
+
+def test_a_zero_weight_is_not_evidence():
+    """Weighting a signal at zero means it cannot be the evidence.
+
+    A `>= 0` reads a zero weight as present, so a keyword match with no
+    embedding behind it stops being "nothing matched" and becomes 10.0 for every
+    paper — approving the whole corpus at the threshold, which is the failure
+    this guard exists to prevent.
+    """
+    scores = fuse([1.0, 2.0], [0.0, 0.0], weights={"keyword": 0, "embedding": 1.0})
+
+    assert list(scores) == [0.0, 0.0]
+
+
+def test_a_flat_but_nonzero_signal_is_evidence_when_it_carries_weight():
+    """A constant non-zero signal is evidence, just not an ordering.
+
+    The keyword is weighted out, so the first half of the guard is false and the
+    embedding has to carry the answer: `beta > 0`, not `beta > 1`.
+    """
+    scores = fuse([0.0, 0.0], [5.0, 5.0], weights={"keyword": 0.0, "embedding": 0.3})
+
+    assert list(scores) == [10.0, 10.0]
+
+
 def test_single_paper_takes_the_top_of_the_scale():
     scores = fuse([3.0], [0.2])
 
@@ -186,6 +233,16 @@ def test_percentile_ranks_span_zero_to_one():
 def test_percentile_ranks_of_single_value_is_top():
     """No distribution to rank against, so the value is trivially the top."""
     assert percentile_ranks([7.0]) == [1.0]
+
+
+def test_percentile_ranks_of_two_values_separates_them():
+    """Two papers are a distribution; the lower one is not also at the top.
+
+    Only reachable through `rank_geometric`, which is kept so earlier runs stay
+    reproducible — a rule that quietly ties at n=2 stops reproducing them.
+    """
+    assert percentile_ranks([5.0, 9.0]) == [0.0, 1.0]
+    assert percentile_ranks([9.0, 5.0]) == [1.0, 0.0]
 
 
 def test_percentile_ranks_of_empty_list():
