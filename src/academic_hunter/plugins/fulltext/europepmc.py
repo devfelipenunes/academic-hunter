@@ -13,7 +13,7 @@ exists but names no ``url_for_pdf``: a DOI resolver and a PMC landing page.
 import logging
 import re
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import requests
 

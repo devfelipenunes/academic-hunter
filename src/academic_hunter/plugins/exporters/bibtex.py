@@ -1,6 +1,5 @@
 import logging
-from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
 
 from academic_hunter.core.writing.style import BibtexKeyAllocator
 

@@ -1,6 +1,5 @@
 import logging
-from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
 from .base import BaseExporter, ExportContext
 
 logger = logging.getLogger("academic_hunter.exporters")

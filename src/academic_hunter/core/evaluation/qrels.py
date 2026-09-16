@@ -26,7 +26,7 @@ module does not read them, but it preserves them across a load/save round-trip.
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Union
 
 from academic_hunter.core.nlp.scorer import title_slug
 

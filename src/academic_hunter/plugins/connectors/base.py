@@ -1,7 +1,4 @@
-import os
 import logging
-import urllib.parse
-import urllib.request
 import time
 import requests
 import json

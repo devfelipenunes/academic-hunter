@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from ..nlp import AcademicScorer
 from ..infra import HunterConfig
 

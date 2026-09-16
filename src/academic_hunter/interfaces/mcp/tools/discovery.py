@@ -10,7 +10,7 @@ from academic_hunter import AcademicHunter
 from ..cache import cached, discovery_cache
 from ._utils import run_blocking
 from ..exceptions import DiscoveryError
-from ..validation import validate_doi, validate_topic
+from ..validation import validate_doi
 from mcp.server.fastmcp import Context
 
 

@@ -19,7 +19,6 @@ from .resources import (
     get_vector_stats_resource, get_paper_resource,
 )
 from .prompts import systematic_review, quick_discovery
-from .exceptions import ConfigError, VectorStoreError
 
 logger = logging.getLogger("academic_hunter.mcp")
 

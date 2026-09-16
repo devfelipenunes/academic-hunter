@@ -7,7 +7,7 @@ domain ABC would drag transport concerns into ``core``.
 """
 
 from dataclasses import dataclass
-from typing import Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 
 class FullTextError(Exception):

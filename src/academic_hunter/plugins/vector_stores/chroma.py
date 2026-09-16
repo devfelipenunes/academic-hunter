@@ -4,7 +4,6 @@ Uses ONNX-based all-MiniLM-L6-v2 embeddings via ChromaDB's DefaultEmbeddingFunct
 """
 
 import hashlib
-import json
 import logging
 import os
 from datetime import datetime

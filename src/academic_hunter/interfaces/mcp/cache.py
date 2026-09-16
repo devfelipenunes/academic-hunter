@@ -61,7 +61,6 @@ def cached(cache: TTLCache, key_prefix: str = ""):
     """
     def decorator(func):
         sig = inspect.signature(func)
-        param_names = list(sig.parameters.keys())
 
         @wraps(func)
         async def wrapper(*args, **kwargs):

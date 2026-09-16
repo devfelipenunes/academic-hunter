@@ -1,6 +1,5 @@
 import logging
-from pathlib import Path
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 from academic_hunter.core.infra.atomic import write_json_atomically
 

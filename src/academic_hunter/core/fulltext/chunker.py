@@ -11,7 +11,7 @@ words, with 40 of overlap so a sentence on a boundary survives in one piece.
 
 import re
 from dataclasses import dataclass
-from typing import List, Sequence
+from typing import List
 
 from ..ports.fulltext import ExtractedDocument
 

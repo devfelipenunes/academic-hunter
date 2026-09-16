@@ -68,8 +68,6 @@ async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int =
         return "Required library not installed: sentence-transformers"
 
     try:
-        import numpy as np
-
         texts = [f"{p.get('title','')} {p.get('abstract_preview','')}" for p in results]
         embeddings = await run_blocking(model.encode, texts)
 

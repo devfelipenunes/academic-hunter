@@ -1,7 +1,6 @@
 import logging
 import pandas as pd
-from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
 
 from academic_hunter.core.models.schema import FIELD_SCHEMA
 

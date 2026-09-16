@@ -1,7 +1,7 @@
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, Any, List
+from typing import Dict, Any
 from ..models import Paper
 from ..infra import SearchState
 

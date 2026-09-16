@@ -3,7 +3,6 @@
 ``run_search`` reports progress through the FastMCP Context when available.
 """
 
-from pathlib import Path
 from academic_hunter import AcademicHunter
 from ._utils import _latest_report_path, get_project_root, run_blocking
 from ..exceptions import SearchError
