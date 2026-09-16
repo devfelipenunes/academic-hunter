@@ -137,7 +137,7 @@ def _render_data(keys: List[str], data: RunData) -> str:
     return "\n\n".join(blocks)
 
 
-def _render_section(section: Section, data: RunData, available_data: bool) -> str:
+def _render_section(section: Section, data: RunData) -> str:
     """Render one section, recursing into subsections."""
     heading = f"## {section.number} {section.name}" if section.number else f"## {section.name}"
 
@@ -159,7 +159,7 @@ def _render_section(section: Section, data: RunData, available_data: bool) -> st
         lines.append("")
 
     for sub in section.subsections:
-        lines.append(_render_section(sub, data, available_data))
+        lines.append(_render_section(sub, data))
 
     return "\n".join(lines).rstrip() + "\n"
 
@@ -198,6 +198,6 @@ def build_outline(
         "",
     ])
 
-    body = "\n\n".join(_render_section(s, data, bool(data.stats)) for s in template.sections)
+    body = "\n\n".join(_render_section(s, data) for s in template.sections)
 
     return header + body + "\n"

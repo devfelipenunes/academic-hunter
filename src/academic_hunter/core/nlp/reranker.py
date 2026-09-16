@@ -7,6 +7,7 @@ and reorders only the head of a ranking — it is far too slow for a corpus.
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
+from ..infra.config import positive_int
 from .model_cache import DEFAULT_CE_MAX_LENGTH, DEFAULT_CE_MODEL, get_cross_encoder
 
 logger = logging.getLogger("academic_hunter.reranker")
@@ -107,18 +108,11 @@ def rerank_config(settings: Dict[str, Any]) -> Dict[str, Any]:
     raw = settings.get("rerank")
     cfg = raw if isinstance(raw, dict) else {}
 
-    def _positive_int(value: Any, default: int) -> int:
-        try:
-            parsed = int(value)
-        except (TypeError, ValueError):
-            return default
-        return parsed if parsed > 0 else default
-
     return {
         # `is True`, not truthiness: `bool("false")` is True, so `"enabled":
         # "false"` would switch on a ~6 s model load.
         "enabled": cfg.get("enabled", False) is True,
         "model": str(cfg.get("model", DEFAULT_CE_MODEL)),
-        "top_n": _positive_int(cfg.get("top_n"), DEFAULT_TOP_N),
-        "max_length": _positive_int(cfg.get("max_length"), DEFAULT_CE_MAX_LENGTH),
+        "top_n": positive_int(cfg.get("top_n"), DEFAULT_TOP_N),
+        "max_length": positive_int(cfg.get("max_length"), DEFAULT_CE_MAX_LENGTH),
     }

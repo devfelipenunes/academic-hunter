@@ -21,6 +21,7 @@ this" is reported as its own verdict, never as "this is wrong".
 import json
 import math
 import re
+from ._text import sentence_around
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Set
@@ -62,7 +63,6 @@ _HEADING = re.compile(r"^#{1,6}\s+\d+(?:\.\d+)+", re.MULTILINE)
 # Markdown table separator rows: "| ----: | ----: |"
 _TABLE_RULE = re.compile(r"^\s*\|[\s:|-]+\|\s*$", re.MULTILINE)
 
-_SENTENCE = re.compile(r"[^.!?]*[.!?]")
 
 
 @dataclass
@@ -93,15 +93,6 @@ class NumberResult:
             "status": self.status,
             "matched_value": self.matched_value,
         }
-
-
-def _sentence_around(text: str, position: int) -> str:
-    start = 0
-    for sentence in _SENTENCE.finditer(text[:position]):
-        start = sentence.end()
-    end_match = _SENTENCE.search(text, position)
-    end = end_match.end() if end_match else len(text)
-    return " ".join(text[start:end].split())
 
 
 _SUPERSCRIPT = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺", "0123456789-+")
@@ -163,7 +154,7 @@ def extract_claims(text: str) -> List[NumericClaim]:
                     value=value_of(match),
                     raw=match.group(0).strip(),
                     kind=kind,
-                    context=_sentence_around(text, start),
+                    context=sentence_around(text, start),
                     offset=start,
                 )
             )

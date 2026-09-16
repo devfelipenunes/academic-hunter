@@ -24,6 +24,19 @@ DEFAULT_FULLTEXT_MAX_PAPERS = 200
 DEFAULT_FULLTEXT_TIME_BUDGET = 900
 
 
+def positive_int(value: Any, default: int) -> int:
+    """A settings value that has to be a positive integer, or the default.
+
+    Lives here because both settings blocks that need it — `rerank` and
+    `fulltext` — have no schema, and each carried its own copy of this.
+    """
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
 class HunterConfig:
     """Handles JSON configuration loading, environment variables, pacing delays, and default fallback parameters.
 
@@ -254,20 +267,13 @@ class HunterConfig:
         raw = self.settings.get("fulltext")
         cfg = raw if isinstance(raw, dict) else {}
 
-        def _positive_int(value: Any, default: int) -> int:
-            try:
-                parsed = int(value)
-            except (TypeError, ValueError):
-                return default
-            return parsed if parsed > 0 else default
-
         # An unusable address makes every single request fail, so it is better
         # to fall back to the one the user already configured for the APIs.
         return {
             "enabled": cfg.get("enabled", False) is True,
             "email": str(cfg.get("email") or self.settings.get("user_email") or ""),
-            "max_papers": _positive_int(cfg.get("max_papers"), DEFAULT_FULLTEXT_MAX_PAPERS),
-            "time_budget_seconds": _positive_int(
+            "max_papers": positive_int(cfg.get("max_papers"), DEFAULT_FULLTEXT_MAX_PAPERS),
+            "time_budget_seconds": positive_int(
                 cfg.get("time_budget_seconds"), DEFAULT_FULLTEXT_TIME_BUDGET
             ),
         }

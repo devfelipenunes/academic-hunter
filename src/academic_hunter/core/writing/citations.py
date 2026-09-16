@@ -16,6 +16,7 @@ the logic is testable with no network, no corpus and no model.
 """
 
 import re
+from ._text import sentence_around
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, List, Optional
 
@@ -24,7 +25,6 @@ from typing import Callable, Dict, Iterable, List, Optional
 # stems are not valid keys, but hyphens are).
 _CITATION = re.compile(r"\[@([^\]]+)\]")
 _KEY_SPLIT = re.compile(r"\s*;\s*")
-_SENTENCE = re.compile(r"[^.!?]*[.!?]")
 
 VERDICT_VERIFIED = "VERIFIED"
 VERDICT_NOT_FOUND = "NOT_FOUND"
@@ -71,7 +71,7 @@ def extract_citations(text: str) -> List[CitationCandidate]:
     """
     candidates: List[CitationCandidate] = []
     for match in _CITATION.finditer(text):
-        context = _sentence_around(text, match.start())
+        context = sentence_around(text, match.start())
         for raw in _KEY_SPLIT.split(match.group(1)):
             key = raw.strip().lstrip("@").strip()
             if key:
@@ -79,16 +79,6 @@ def extract_citations(text: str) -> List[CitationCandidate]:
                     CitationCandidate(key=key, context=context, offset=match.start())
                 )
     return candidates
-
-
-def _sentence_around(text: str, position: int) -> str:
-    """The sentence containing ``position``, for reporting where a citation was used."""
-    start = 0
-    for sentence in _SENTENCE.finditer(text[:position]):
-        start = sentence.end()
-    end_match = _SENTENCE.search(text, position)
-    end = end_match.end() if end_match else len(text)
-    return " ".join(text[start:end].split())
 
 
 @dataclass
