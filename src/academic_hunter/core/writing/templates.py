@@ -8,9 +8,11 @@ codebase, so the outline generator and the reviewers can agree on what a
 complete article looks like.
 
 Sources of truth:
-    papers/conference-2027/paper.md  -> "method"   (~6,000 words)
-    papers/joss-2026/paper.md        -> "software" (JOSS format)
-    papers/tool-mapping/paper.md     -> "survey"   (~2,300 words)
+    the author's conference manuscript    -> "method"   (~6,000 words)
+    the author's JOSS submission          -> "software" (JOSS format)
+    the author's tool-mapping survey      -> "survey"   (~2,300 words)
+
+Those manuscripts are not in this repository — it publishes the software only.
 """
 
 from dataclasses import dataclass, field
@@ -23,7 +25,7 @@ DATA_RUN_STATS = "run_stats"            # identified / duplicates / excluded / i
 DATA_SOURCE_BREAKDOWN = "source_breakdown"  # counts per source
 DATA_EXCLUSIONS = "exclusions_by_source"
 DATA_CORPUS = "corpus"                  # papers retrieved in this run
-DATA_EXPERIMENTS = "experiments"        # papers/experiments/results/*.json
+DATA_EXPERIMENTS = "experiments"        # results/*.json
 DATA_PROSE = "prose"                    # nothing to inject — agent writes it
 
 
@@ -78,7 +80,7 @@ _METHOD = ArticleTemplate(
         "A contribution paper: a technique with formalisation and experiments. "
         "The most complete shape and the default for new technical content."
     ),
-    source_example="papers/conference-2027/paper.md",
+    source_example="the author's conference manuscript",
     sections=[
         Section(
             name="Abstract",
@@ -166,7 +168,7 @@ _SOFTWARE = ArticleTemplate(
         "The Journal of Open Source Software format: describes a tool rather than "
         "a technique. Unnumbered sections, one comparative feature table."
     ),
-    source_example="papers/joss-2026/paper.md",
+    source_example="the author's JOSS submission",
     sections=[
         Section(
             name="Summary",
@@ -247,7 +249,7 @@ _SURVEY = ArticleTemplate(
         "Maps a landscape: states its own method, classifies what it finds, then "
         "argues a position. Shorter, argumentative, little or no mathematics."
     ),
-    source_example="papers/tool-mapping/paper.md",
+    source_example="the author's tool-mapping survey",
     sections=[
         Section(
             name="Abstract",

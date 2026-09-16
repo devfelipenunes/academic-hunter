@@ -1,11 +1,8 @@
 {
   "generated": "2026-09-10T20:37:38",
-  "qrels": "papers/evaluation/qrels_pilot_genre_analysis.json",
+  "qrels": "evaluation/qrels_pilot_genre_analysis.json",
   "collection": "paper_chunks_eval",
-  "chain": [
-    "UnpaywallPdfSource",
-    "EuropePmcSource"
-  ],
+  "chain": ["UnpaywallPdfSource", "EuropePmcSource"],
   "documents": 108,
   "with_doi": 83,
   "counters": {

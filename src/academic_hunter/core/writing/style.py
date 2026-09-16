@@ -1,9 +1,9 @@
 """The author's writing conventions, as functions.
 
 These are not cosmetic preferences — they are what separates text that reads as
-the author's from generic LLM prose. They were extracted from the three
-manuscripts in ``papers/`` and from the citation keys used in
-``papers/joss-2026/paper.bib`` and ``papers/conference-2027/paper.bib``.
+the author's from generic LLM prose. They were extracted from the author's three
+manuscripts, which are not in this repository, and from the citation keys in
+their bibliographies.
 
 Keeping them here (rather than in a prompt) means the deterministic parts of an
 article are produced by code that can be tested, and the agent's freedom is

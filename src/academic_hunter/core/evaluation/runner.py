@@ -160,9 +160,9 @@ class Timing:
     """Wall-clock cost of producing a ranking.
 
     Reported alongside the metrics because a quality gain that costs two orders
-    of magnitude more is not a gain in the same sense. ``papers/tool-mapping.md``
-    lists the absence of comparative performance figures as a gap in the
-    project's own positioning, and this is the measurable half of it.
+    of magnitude more is not a gain in the same sense. The absence of
+    comparative performance figures is a gap the project has named in its own
+    positioning, and this is the measurable half of it.
     """
 
     #: Query id -> seconds spent ranking that query's candidate set.

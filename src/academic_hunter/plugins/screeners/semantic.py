@@ -49,8 +49,8 @@ class SemanticScreener(BaseScreener):
     not equivalent to it: ``v_base`` is a single embedding of the concatenated
     base vocabulary while ``N_base`` counts individual terms, and token
     truncation in the encoder breaks the correspondence further. Empirically
-    the two formulations yield divergent rankings (Spearman rho = -0.2242 on
-    the probe set in ``papers/experiments/cross_encoder_val.py``).
+    the two formulations yield divergent rankings (Spearman rho = -0.2242; the
+    probe measurements are in ``evaluation/cross_encoder_correlation.json``).
     """
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:

@@ -29,7 +29,7 @@ def test_unknown_template_lists_valid_keys():
 
 
 def test_method_template_matches_the_reference_manuscript():
-    """Section order follows papers/conference-2027/paper.md."""
+    """Section order follows the author's conference manuscript."""
     names = get_template("method").section_names()
     assert names[0] == "Abstract"
     assert names[1] == "Introduction"
