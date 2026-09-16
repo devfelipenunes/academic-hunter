@@ -17,16 +17,17 @@ Clone the repository and initialize the virtual environment:
 
 ```bash
 # Clone the repository
-git clone https://github.com/fnunes/pesquisa_academica.git
-cd pesquisa_academica
+git clone https://github.com/devfelipenunes/academic-hunter.git
+cd academic-hunter
 
 # Set up virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
-pip install pytest pandas requests
+# Install the package with its development extras — the same set `make
+# install-dev` installs. Add `fulltext` for PDF ingestion (pypdf):
+# pip install -e ".[ml,rag,fulltext,dev]"
+pip install -e ".[ml,rag,dev]"
 ```
 
 ### 2. Running Tests
@@ -34,23 +35,38 @@ pip install pytest pandas requests
 Before submitting any changes, verify that the entire test suite passes:
 
 ```bash
-PYTHONPATH=. venv/bin/pytest
+make test
 ```
+
+Tests that reach real APIs are marked `integration` and deselected by default;
+`make test-all` runs those too.
 
 ---
 
 ## 🏗️ Core Architecture Overview
 
-The package is split into separate modular components under `src/academic_hunter/`:
+The package follows an inverted-dependency (hexagonal) layout under
+`src/academic_hunter/`, enforced mechanically by `tests/test_architecture.py` —
+an import in the wrong direction fails the suite. `docs/architecture.md` has the
+long version.
 
-1. **`core/`**:
-   - **`engine.py`**: The central execution orchestrator (`AcademicHunter`). Handles the multi-threaded pipeline, coordinates rate-limiting pacing delays, aggregates results, and invokes filters.
-   - **`models.py`**: Contains the `Paper` domain model class, wrapping slug generation, metadata merging, peer-review heuristic detection, and metadata validation.
-   - **`scorer.py`**: The scoring system (`AcademicScorer`) evaluating technical density, title bonuses, and contextual checks.
-   - **`cache.py`**: Thread-safe persistent request cache wrapper using SQLite.
-2. **`plugins/`**:
-   - **`connectors/`**: Isolated academic database clients (e.g. ArXiv, OpenAlex, Semantic Scholar). Every client inherits from `BaseConnector`.
+1. **`core/`** — the domain. Imports nothing from the layers below it.
+   - **`models/paper.py`**: the `Paper` domain model — slug generation, metadata
+     merging, peer-review heuristic detection, metadata validation.
+   - **`nlp/scorer.py`**: the scoring system (`AcademicScorer`) — technical
+     density, title bonuses, contextual checks.
+   - **`infra/cache.py`**: thread-safe persistent request cache on SQLite.
+   - **`ports/`**: the contracts the adapters implement (`BaseExporter`,
+     `BaseScreener`, `BaseVectorStore`, `ConnectorPort`).
+2. **`app/`** — the application layer. **`main.py`** holds `AcademicHunter`, the
+   central execution orchestrator and the only module that imports plugins: it
+   runs the multi-threaded pipeline, coordinates rate-limiting pacing delays,
+   aggregates results and invokes filters.
+3. **`plugins/`** — the adapters:
+   - **`connectors/`**: isolated academic database clients (e.g. ArXiv, OpenAlex, Semantic Scholar). Every client inherits from `BaseConnector`.
    - **`exporters/`**: Specialized document generators (CSV, RIS, BibTeX, PRISMA flow, and Markdown reports). Every format client inherits from `BaseExporter`.
+4. **`interfaces/`** — the MCP server and its tools. It is the only public
+   surface; the interactive CLI was removed.
 
 ---
 
@@ -98,16 +114,23 @@ class PubmedConnector(BaseConnector):
 
 ### 2. Register the Connector
 
-In [`src/academic_hunter/plugins/connectors/__init__.py`](src/academic_hunter/plugins/connectors/__init__.py), import your class and register it inside the `CONNECTORS` dictionary:
+There is no dictionary to edit by hand: every module in `connectors/` is
+imported and scanned for `BaseConnector` subclasses at startup. What you do add
+is the module's stem to `_CONNECTOR_NAMES` in
+[`src/academic_hunter/plugins/connectors/__init__.py`](src/academic_hunter/plugins/connectors/__init__.py),
+which is what keeps the display keys stable:
 
 ```python
-from .pubmed import PubmedConnector
-
-CONNECTORS = {
+_CONNECTOR_NAMES = {
     ...
-    "PubMed": PubmedConnector
+    "pubmed": "PubMed",
 }
 ```
+
+The class must declare a matching `SOURCE_NAME = "PubMed"`. Registration refuses
+a connector that stamps a different name than the one it is filed under —
+otherwise a run reports the same source twice, once with a count and once with a
+zero.
 
 ### 3. Expose Proxy Method (Optional)
 
@@ -120,8 +143,8 @@ Add a facade proxy fetch method on `AcademicHunter` inside [src/academic_hunter/
 
 ### 4. Write Unit Tests
 
-Add a new mock-based test suite (e.g., `tests/test_pubmed_mock.py`) to verify the correctness of the parser and integration with the database responses. Make sure all tests pass:
+Add a new mock-based test suite (e.g., `tests/test_pubmed_mock.py`) to verify the correctness of the parser and integration with the database responses. Note that the suite runs offline by default — the tests that reach real APIs carry the `integration` marker and are deselected. Make sure everything passes:
 
 ```bash
-PYTHONPATH=. ./venv/bin/pytest
+make test
 ```
