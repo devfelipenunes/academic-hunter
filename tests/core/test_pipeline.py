@@ -15,7 +15,10 @@ from academic_hunter import AcademicHunter
 class TestAcademicHunterEnhancements(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.test_config_path = 'test_config_enhancements.json'
+        # In a temp dir, not the CWD: the file is only removed on a clean
+        # teardown, so an interrupted run left it in the repository root.
+        cls.config_dir = tempfile.mkdtemp(prefix="ah-test-config-")
+        cls.test_config_path = os.path.join(cls.config_dir, 'test_config_enhancements.json')
         cls.config = {
             "settings": {
                 "user_email": "test@example.com",
@@ -48,8 +51,7 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if os.path.exists(cls.test_config_path):
-            os.remove(cls.test_config_path)
+        shutil.rmtree(cls.config_dir, ignore_errors=True)
 
     def setUp(self):
         # Its own output directory. Without this the hunter defaults to the
