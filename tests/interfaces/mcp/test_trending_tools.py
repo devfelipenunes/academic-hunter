@@ -48,7 +48,7 @@ async def test_trending_topics_returns_topics(mock_ctx):
     from academic_hunter.interfaces.mcp.tools.trending import trending_topics
 
     mock_store = MagicMock()
-    mock_store.query.return_value = [
+    mock_papers = [
         {"title": "Deep Learning for NLP Applications"},
         {"title": "Deep Learning Advances in 2024"},
         {"title": "Deep Learning Methods Review"},
@@ -56,6 +56,11 @@ async def test_trending_topics_returns_topics(mock_ctx):
         {"title": "Blockchain Scalability in Distributed Systems"},
         {"title": "Blockchain Consensus Mechanisms Compared"},
     ]
+    # Both entry points: `corpus_of` reads `all_papers` or falls back to a query,
+    # and `isinstance` against a runtime-checkable Protocol answers differently
+    # for a bare MagicMock on 3.10/3.11 than on 3.12.
+    mock_store.query.return_value = mock_papers
+    mock_store.all_papers.return_value = mock_papers
 
     with patch("academic_hunter.interfaces.mcp.tools.trending._get_vector_store") as m:
         m.return_value = mock_store

@@ -15,7 +15,11 @@ async def test_cluster_papers_success(mock_ctx):
 
     with patch("academic_hunter.interfaces.mcp.tools.clustering._get_vector_store") as m_store:
         store = MagicMock()
+        # Both entry points: `corpus_of` reads `all_papers` or falls back to a
+        # query, and `isinstance` against a runtime-checkable Protocol answers
+        # differently for a bare MagicMock on 3.10/3.11 than on 3.12.
         store.query.return_value = mock_results
+        store.all_papers.return_value = mock_results
         m_store.return_value = store
 
         topic_model = MagicMock()
@@ -84,6 +88,7 @@ async def test_cluster_papers_no_results(mock_ctx):
     with patch("academic_hunter.interfaces.mcp.tools.clustering._get_vector_store") as m_store:
         store = MagicMock()
         store.query.return_value = []
+        store.all_papers.return_value = []
         m_store.return_value = store
 
         result = await cluster_papers(mock_ctx)

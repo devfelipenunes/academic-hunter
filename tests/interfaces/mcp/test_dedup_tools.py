@@ -16,7 +16,11 @@ async def test_semantic_dedup(mock_ctx):
 
     with patch("academic_hunter.interfaces.mcp.tools.dedup._get_vector_store") as m_get:
         store = MagicMock()
+        # Both entry points: `corpus_of` reads `all_papers` or falls back to a
+        # query, and `isinstance` against a runtime-checkable Protocol answers
+        # differently for a bare MagicMock on 3.10/3.11 than on 3.12.
         store.query.return_value = mock_papers
+        store.all_papers.return_value = mock_papers
         m_get.return_value = store
         with patch("academic_hunter.interfaces.mcp.tools.dedup.get_sentence_transformer") as m_st:
             model = MagicMock()

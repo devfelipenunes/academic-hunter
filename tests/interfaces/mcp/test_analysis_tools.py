@@ -35,7 +35,12 @@ async def test_trending_topics(mock_ctx):
         "academic_hunter.interfaces.mcp.tools.trending._get_vector_store"
     ) as m_get:
         store = MagicMock()
+        # Both entry points: `corpus_of` reads `all_papers` or falls back to a
+        # query, and `isinstance` against a runtime-checkable Protocol answers
+        # differently for a bare MagicMock on 3.10/3.11 than on 3.12. Without
+        # this, the empty mock makes a test pass for the wrong reason.
         store.query.return_value = mock_papers
+        store.all_papers.return_value = mock_papers
         m_get.return_value = store
 
         result = await trending_topics(mock_ctx, days=30, min_papers=2)
@@ -43,7 +48,9 @@ async def test_trending_topics(mock_ctx):
         assert "Trending Research Topics" in result
         assert "deep learning" in result.lower()
         assert "7 papers analyzed" in result or "7" in result.split("Total papers analyzed")[-1][:5]
-        store.query.assert_called_once()
+        # Which entry point `corpus_of` takes depends on the Protocol check, so
+        # the claim is that the collection was read, not how.
+        assert store.all_papers.called or store.query.called
         mock_ctx.info.assert_called()
 
 
@@ -86,7 +93,12 @@ async def test_trending_topics_below_threshold(mock_ctx):
         "academic_hunter.interfaces.mcp.tools.trending._get_vector_store"
     ) as m_get:
         store = MagicMock()
+        # Both entry points: `corpus_of` reads `all_papers` or falls back to a
+        # query, and `isinstance` against a runtime-checkable Protocol answers
+        # differently for a bare MagicMock on 3.10/3.11 than on 3.12. Without
+        # this, the empty mock makes a test pass for the wrong reason.
         store.query.return_value = mock_papers
+        store.all_papers.return_value = mock_papers
         m_get.return_value = store
 
         result = await trending_topics(mock_ctx, min_papers=3)
