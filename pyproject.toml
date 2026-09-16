@@ -26,7 +26,11 @@ keywords = ["SLR", "systematic-review", "literature-review", "embeddings", "MCP"
 dependencies = [
     "pandas>=1.0.0",
     "requests>=2.25.0",
-    "mcp>=1.0.0",
+    # mcp 2.0 renamed FastMCP to MCPServer and moved it out of
+    # `mcp.server.fastmcp`, which every tool module imports. Without the
+    # ceiling a fresh install resolves to 2.x and the MCP layer cannot import
+    # at all — the server then exits silently, with no output on stdio.
+    "mcp>=1.0.0,<2",
     "chromadb>=1.5.0"
 ]
 
