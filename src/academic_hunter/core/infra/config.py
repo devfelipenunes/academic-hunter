@@ -293,19 +293,3 @@ class HunterConfig:
         # Update mtime so cache knows it's fresh
         self._mtime = time.time()
 
-    def get_full_config(self) -> Dict[str, Any]:
-        """Return the full config dict (useful for MCP tools)."""
-        return {
-            "settings": self.settings,
-            "anchors": self.anchors,
-            "technical_strings": self.tech_strings,
-            "technical_weights": self.tech_weights,
-            "context_rules": self.context_rules,
-            "keyword_only_terms": self.keyword_only_terms,
-            "keyword_only_category": self.keyword_only_category,
-        }
-
-    @classmethod
-    def get_history(cls) -> List[Dict[str, Any]]:
-        """Get config change history for MCP tool display."""
-        return ConfigHistory.list_history()

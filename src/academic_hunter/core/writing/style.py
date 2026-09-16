@@ -13,13 +13,6 @@ confined to the prose itself.
 import re
 from typing import Iterable, List, Optional, Sequence
 
-# LaTeX symbols that recur across the manuscripts. Centralised so a reviewer can
-# check consistency in one place.
-RHO = r"$\rho$"
-SIGMA = r"$\sigma$"
-SQRT_SIGMA = r"$\sqrt{\sigma}$"
-TIMES = r"$\times$"
-
 _MULTI_SPACE = re.compile(r"\s+")
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 
@@ -179,11 +172,6 @@ def format_equation(latex: str, where: Optional[str] = None) -> str:
             clause = f"where {clause}"
         body = f"{body}\n\n{clause}"
     return body
-
-
-def format_section_ref(number: str) -> str:
-    """Section cross-reference in the author's notation: ``§3.13``."""
-    return f"§{number}"
 
 
 def format_statistical_claim(

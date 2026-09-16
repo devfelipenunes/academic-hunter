@@ -164,10 +164,6 @@ class HunterFacadeMixin:
             f"under another source's credentials."
         )
 
-    def _track_exclusion(self, source: str, reason: str):
-        with self.lock:
-            self.state.track_exclusion(source, reason)
-
     def load_config(self):
         self.config.load()
 
