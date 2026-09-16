@@ -7,7 +7,7 @@ not a reason to lose the run.
 
 import logging
 import time
-from typing import Any, Callable, Dict, List, Mapping
+from typing import Any, Callable, Dict, List, Mapping, Optional
 
 from ..evaluation.qrels import doc_id_for
 from ..ports.fulltext import (
@@ -60,6 +60,7 @@ def ingest_full_text(
     budget = float(config.get("time_budget_seconds") or DEFAULT_TIME_BUDGET)
     started = time.monotonic()
     attempted = 0
+    failure_kinds: Dict[str, int] = {}
 
     for paper in papers:
         # A previous run's dataset carries this column; a stale value would be
@@ -93,8 +94,11 @@ def ingest_full_text(
 
         paper["_full_text_status"] = status
         counters[status] += 1
+        if status == "download_failed":
+            kind = paper.get("_full_text_error_kind", "unknown")
+            failure_kinds[kind] = failure_kinds.get(kind, 0) + 1
 
-    _report(counters, max_papers, budget)
+    _report(counters, max_papers, budget, failure_kinds)
     return counters
 
 
@@ -161,7 +165,7 @@ def _ingest_one(
         indexed = store.index_chunks(records, collection_name=collection_name)
     except Exception as e:  # noqa: BLE001
         logger.warning("Could not index chunks for %s: %s", doi, e)
-        return _failed(paper, e)
+        return _failed(paper, e, kind="store")
 
     if indexed and replace:
         # After the replacement is in the store, and naming what it kept. A delete
@@ -173,16 +177,36 @@ def _ingest_one(
             keep_ids=[c["chunk_id"] for c in records],
         )
 
-    return "obtained" if indexed else _failed(paper, "the store refused the batch")
+    return "obtained" if indexed else _failed(paper, "the store refused the batch", kind="store")
 
 
-def _failed(paper: Dict[str, Any], reason: Any) -> str:
-    """Mark a download as failed, keeping why: the three causes need different fixes."""
+def _failed(paper: Dict[str, Any], reason: Any, kind: str = "") -> str:
+    """Mark a download as failed, keeping why: the causes need different fixes.
+
+    The kind travels beside the message so the coverage can be counted by cause
+    — and so it survives the 300-character truncation, which is the only thing
+    the reason used to be.
+    """
     paper["_full_text_error"] = " ".join(str(reason).split())[:300]
+    paper["_full_text_error_kind"] = kind or _kind_of(reason)
     return "download_failed"
 
 
-def _report(counters: Mapping[str, int], max_papers: int, budget: float) -> None:
+def _kind_of(reason: Any) -> str:
+    """Which cause this was, as a value rather than prose."""
+    if isinstance(reason, FullTextTransientError):
+        return reason.kind
+    if isinstance(reason, FullTextConfigError):
+        return "config"
+    return "unknown"
+
+
+def _report(
+    counters: Mapping[str, int],
+    max_papers: int,
+    budget: float,
+    failure_kinds: Optional[Mapping[str, int]] = None,
+) -> None:
     logger.info(
         "Full text: %d obtained, %d without an OA copy, %d failed, "
         "%d without a text layer, %d without usable sections, %d not attempted, "
@@ -192,6 +216,13 @@ def _report(counters: Mapping[str, int], max_papers: int, budget: float) -> None
         counters["no_sections"], counters["not_attempted"],
         counters["already_indexed"],
     )
+    if failure_kinds:
+        # Separately, because they need different fixes and only one is worth
+        # retrying: a refusal is not a missing file, and neither is weather.
+        logger.info(
+            "Of the failures: %s.",
+            ", ".join(f"{n} {kind}" for kind, n in sorted(failure_kinds.items())),
+        )
     if counters["not_attempted"]:
         # Silence here would read as "there is no OA copy".
         logger.warning(

@@ -6,6 +6,8 @@ under test here is the whole failure matrix, because this is the only place it
 exists now: a second copy of it would drift from this one in silence.
 """
 
+import logging
+
 import pytest
 
 from academic_hunter.core.evaluation.qrels import doc_id_for
@@ -413,3 +415,100 @@ def test_the_time_budget_stops_the_batch(monkeypatch):
 
     assert counters["not_attempted"] > 0, "the budget never triggered"
     assert sum(counters.values()) == len(papers)
+
+
+# ── why it failed, as a value and not as prose ──────────────────────────────
+#
+# The three causes of `download_failed` need different fixes and only one of
+# them is worth retrying, but they all landed in one bucket described by a free
+# text message truncated to 300 characters — uncountable without reading prose,
+# and cut off mid-sentence in the longest case.
+
+
+def test_an_http_status_is_classified_by_what_it_means():
+    """403 is a decision, 404 is a fact, 5xx is weather."""
+    blocked = [401, 403, 406]
+    for status in blocked:
+        assert FullTextTransientError.for_status(status, "x").kind == (
+            FullTextTransientError.BLOCKED
+        ), f"{status} should be a refusal"
+
+    assert FullTextTransientError.for_status(404, "x").kind == FullTextTransientError.NOT_FOUND
+    for status in (429, 500, 503, 0):
+        assert FullTextTransientError.for_status(status, "x").kind == (
+            FullTextTransientError.TRANSIENT
+        ), f"{status} should be retryable"
+
+
+def test_a_body_that_is_not_a_pdf_is_its_own_cause():
+    """A landing page and a refusal send the reader to different places."""
+    error = FullTextTransientError("…did not return a PDF", FullTextTransientError.NO_PDF)
+
+    assert error.kind == FullTextTransientError.NO_PDF
+
+
+def test_the_ingest_records_the_kind_beside_the_message():
+    papers = [paper()]
+    fetch = fetcher_returning(
+        FullTextTransientError("sciencedirect refused", FullTextTransientError.BLOCKED)
+    )
+
+    ingest_full_text(papers, fetch, FakeChunkStore(), config())
+
+    assert papers[0]["_full_text_status"] == "download_failed"
+    assert papers[0]["_full_text_error_kind"] == "blocked"
+
+
+def test_the_kind_survives_the_truncation_that_cuts_the_message():
+    """The message is capped at 300 characters; the kind is not prose.
+
+    A long reason is exactly where the field is needed and exactly where the
+    text stops being readable.
+    """
+    papers = [paper()]
+    fetch = fetcher_returning(
+        FullTextTransientError("x" * 5_000, FullTextTransientError.TRANSIENT)
+    )
+
+    ingest_full_text(papers, fetch, FakeChunkStore(), config())
+
+    assert len(papers[0]["_full_text_error"]) == 300, "the message cap moved"
+    assert papers[0]["_full_text_error_kind"] == "transient"
+
+
+def test_the_report_counts_the_failures_by_cause(caplog):
+    """One bucket for three causes is what made them uncountable.
+
+    The run's own summary should say how many were refused, how many had no PDF
+    to find, and how many are worth a second pass — without anyone reading the
+    dataset column by column.
+    """
+    papers = [paper("A", "10.1/a"), paper("B", "10.1/b"), paper("C", "10.1/c")]
+    fetch = fetcher_returning(
+        FullTextTransientError("refused", FullTextTransientError.BLOCKED),
+        FullTextTransientError("landing page", FullTextTransientError.NO_PDF),
+        FullTextTransientError("timeout", FullTextTransientError.TRANSIENT),
+    )
+
+    with caplog.at_level(logging.INFO):
+        ingest_full_text(papers, fetch, FakeChunkStore(), config())
+
+    summary = next(
+        (r.getMessage() for r in caplog.records if "Of the failures" in r.getMessage()), ""
+    )
+    assert "1 blocked" in summary, summary
+    assert "1 no_pdf" in summary, summary
+    assert "1 transient" in summary, summary
+
+
+def test_configuration_and_store_failures_are_not_confused_with_downloads():
+    papers = [paper("Needs config", "10.1/a"), paper("Store refuses", "10.1/b")]
+    fetch = fetcher_returning(
+        FullTextConfigError("Unpaywall rejected the e-mail"),
+        document(),
+    )
+
+    ingest_full_text(papers, fetch, FakeChunkStore(result=False), config())
+
+    assert papers[0]["_full_text_error_kind"] == "config"
+    assert papers[1]["_full_text_error_kind"] == "store"

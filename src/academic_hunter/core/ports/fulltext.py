@@ -25,7 +25,35 @@ class NoOpenAccessVersion(FullTextError):
 
 
 class FullTextTransientError(FullTextError):
-    """This document could not be fetched; the run continues without it."""
+    """This document could not be fetched; the run continues without it.
+
+    ``kind`` says which of the several causes it was, because they need
+    different fixes and only one of them is worth retrying. The message already
+    carried the cause, as free text truncated to 300 characters; a field makes
+    it countable without reading prose, and survives the truncation.
+    """
+
+    #: The server refused this client (401/403/406) — a retry gets the same answer.
+    BLOCKED = "blocked"
+    #: The DOI is gone (404).
+    NOT_FOUND = "not_found"
+    #: A 200 that was not a PDF — a landing page, so no file was ever there.
+    NO_PDF = "no_pdf"
+    #: Network trouble or a 5xx: the only kind a second pass can plausibly recover.
+    TRANSIENT = "transient"
+
+    def __init__(self, message: str, kind: str = TRANSIENT) -> None:
+        super().__init__(message)
+        self.kind = kind
+
+    @classmethod
+    def for_status(cls, status: int, message: str) -> "FullTextTransientError":
+        """Classify an HTTP failure by the status that caused it."""
+        if status in (401, 403, 406):
+            return cls(message, cls.BLOCKED)
+        if status == 404:
+            return cls(message, cls.NOT_FOUND)
+        return cls(message, cls.TRANSIENT)
 
 
 class FullTextConfigError(FullTextError):

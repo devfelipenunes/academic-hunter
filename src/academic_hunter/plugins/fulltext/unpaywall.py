@@ -204,7 +204,10 @@ class UnpaywallSource:
             response = requests.get(location.url, timeout=self.timeout, stream=True)
             response.raise_for_status()
         except requests.RequestException as e:
-            raise FullTextTransientError(f"Download failed for {location.url}: {e}") from e
+            status = getattr(getattr(e, "response", None), "status_code", 0) or 0
+            raise FullTextTransientError.for_status(
+                status, f"Download failed for {location.url}: {e}"
+            ) from e
 
         declared = response.headers.get("Content-Length", "")
         if declared.isdigit() and int(declared) > max_bytes:
@@ -226,6 +229,7 @@ class UnpaywallSource:
 
         if not payload.startswith(b"%PDF-"):
             raise FullTextTransientError(
-                f"{location.url} did not return a PDF (a landing page, most likely)"
+                f"{location.url} did not return a PDF (a landing page, most likely)",
+                FullTextTransientError.NO_PDF,
             )
         return bytes(payload)
