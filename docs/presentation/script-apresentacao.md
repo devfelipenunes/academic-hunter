@@ -342,6 +342,15 @@
 >
 > **7.5× mais rápido que cross-encoder** — o centroide é calculado em 0.5 segundos, cada artigo leva 0.01ms. O gap cresce com o volume de papers. E o resultado é consistente em 3 modelos diferentes: MiniLM, BGE-base e GTE-small."
 
+> **[Proveniência — resolver antes de apresentar]** Os três números deste slide não são
+> reproduzíveis a partir deste repositório. O "96.8%" e o "-0.75" coincidem com os _defaults_
+> do `validate_innovation_claims.py` (`.get(campo, 0.968)` e `.get(campo, -0.75)`) — valores
+> que o script imprimia quando o dado não existia — e os ρ=0.915/0.952/0.939 coincidem com
+> literais do próprio código (`wb_rho`). Uma auditoria de 14/09/2026 classificou esse script
+> como validador falso (`docs/audits/2026-09-14.md`, achado A20), e ele saiu do repositório
+> junto com `papers/` em `6a48f1c`, levando os artefatos de origem
+> (`additional_experiments.json`). Ou remedir, ou retirar o slide.
+
 **[Avançar — Parte 5]**
 
 ---

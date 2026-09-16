@@ -31,21 +31,36 @@ copiar, o que aprofundar e o que ninguém faz ainda.
 
 Ordenadas por **ganho ÷ esforço**:
 
-### 2.1 Ensemble de embeddings com consenso ⭐ maior ganho barato
+### 2.1 Ensemble de embeddings com consenso — medido, e não compensa
 
 **A descoberta:** o EmbedSLR v2.0 mediu que publicações escolhidas **por consenso entre
-modelos** superam as escolhidas por modelo individual. É um resultado publicado, com métrica.
+modelos** superam as escolhidas por modelo individual. É um resultado publicado, com métrica —
+mas sobre **seleção de publicações** (a decisão de triagem), não sobre ordenar um pool fixo e
+já julgado, que é o que este projeto mede.
 
-**O que fazer:** rodar 3–4 modelos (MiniLM, BGE-small, GTE-small, SPECTER2) sobre o mesmo
-corpus e combinar por consenso ou média de ranks. O `benchmark_baselines.py` já testa MiniLM,
-BGE e GTE — falta o passo de **combinar em vez de comparar**.
+**O que mudou desde que isto foi escrito:** a linha abaixo dizia que "o `benchmark_baselines.py`
+já testa MiniLM, BGE e GTE". Esse script não existe mais — saiu com `papers/` em `6a48f1c`, e
+nenhum script de experimento sobreviveu no repositório.
 
-**Por que é forte:** ganho imediato de qualidade, custo arquitetural baixo, e é a mesma família
-do Weight-Bleeding (que já opera por interpolação de embeddings). Extensão natural: em vez de
-um centroide, um **centroide por modelo** com consenso.
+**Por que não fazer:** as medições que este repositório tem apontam para o lado oposto.
 
-**Inovação possível:** ninguém combinou _consenso entre modelos_ (EmbedSLR) com _ponderação
-por termos_ (Weight-Bleeding). É uma interseção não explorada.
+- O bi-encoder isolado perde do BM25 por **0,47 de nDCG@10** (0,1991 contra 0,6728 — 11
+  consultas, 108 documentos).
+- Somar o embedding ao keyword **piora**: `keyword_only` 0,3364 contra `shipped` 0,3223. O
+  embedding não está apenas perdendo isolado; ele atrapalha quando somado.
+- A explicação é estrutural, não do modelo: o candidato já passou pelo filtro de âncoras, então
+  proximidade ao vocabulário do domínio tem pouco a discriminar. Trocar de bi-encoder muda a
+  representação, não esse fato.
+- E a alternativa medida vence: o cross-encoder do segundo estágio levou 0,6728 → **0,7668**,
+  com um modelo já baixado e já integrado (`core/nlp/reranker.py`).
+
+Um ensemble de 3–4 bi-encoders fracos precisaria superar 0,7668 para valer alguma coisa, e o
+componente mais forte dele perde por 0,47. Os números estão em `evaluation/README.md`.
+
+**Se ainda assim for medido:** o custo não é o obstáculo — MiniLM, BGE-base e GTE-small já
+estão no cache local, e o qrels embute os seus 108 documentos, então nada da coleção de
+produção (10.790 vetores) precisa ser reindexado. O que falta é o ponto de entrada que ligue
+BM25 → qrels → métricas, que o `core/evaluation/` não tem hoje.
 
 ### 2.2 Full-text via Unpaywall
 

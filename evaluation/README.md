@@ -50,7 +50,10 @@ título e abstract.
 ## O que os números mostram
 
 `fusion_comparison.py` fixa os dois sinais e varia apenas a regra de combinação,
-então qualquer diferença é atribuível à fusão e não aos componentes:
+então qualquer diferença é atribuível à fusão e não aos componentes. **Esse script não
+está neste repositório** — ele saiu junto com `papers/` em `6a48f1c`. A tabela abaixo é
+o registro do que ele mediu; para reproduzi-la é preciso reescrevê-lo contra
+`core/nlp/fusion.py`, que é o código que efetivamente roda.
 
 | Estratégia                                | nDCG@5 | nDCG@10 |    MRR |     AP |
 | ----------------------------------------- | -----: | ------: | -----: | -----: |
@@ -161,7 +164,18 @@ relatório de cobertura diz qual perna entregou cada documento.
   anotadores. Não há medida de concordância entre anotadores — a
   reprodutibilidade dos _números_ é alta, a das _etiquetas_ é desconhecida.
   **Pendente: revisão pelo autor do projeto**, que passa a ser o anotador de
-  fato; até então, trate como preliminar.
+  fato; até então, trate como preliminar. O que a revisão encontra hoje:
+  - São **598 julgamentos** sobre 108 documentos e 11 consultas — 458 com grau 0,
+    65 com 1 e 75 com 2; o limiar de relevância é 1 (`RELEVANT_THRESHOLD`), então
+    140 pares contam como relevantes.
+  - **95 dos 108 documentos** trazem título e abstract embutidos no próprio
+    qrels, e podem ser revisados sem rede. **13 têm abstract vazio** — 76
+    julgamentos, 66 deles em `genre_analysis` e 10 em `blockchain_governance` —
+    e exigiriam resolver o DOI. **25 não têm DOI nenhum** e só podem ser
+    julgados pelo título.
+  - Não há ferramenta de revisão no projeto: o formato é editável à mão, e
+    `save_qrels` preserva a ordem e os blocos que não interpreta, de modo que
+    revisar e salvar produz um diff só com o que mudou.
 - **Nenhum ranqueador usa o texto da consulta.** Todas as estratégias são scores
   por documento, independentes da consulta — o Academic Hunter não tem ranking
   condicional à consulta. O que se mede é a capacidade de _discriminar entre

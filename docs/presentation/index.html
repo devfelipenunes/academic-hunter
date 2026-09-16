@@ -758,6 +758,10 @@ code{font-family:monospace;background:var(--bg);padding:.08rem .25rem;border-rad
   <div class="callout" style="text-align:center;background:linear-gradient(135deg,rgba(63,185,80,.08),transparent);border-color:rgba(63,185,80,.2)">
     <p style="font-size:.72rem;color:var(--text);margin:0"><strong>Resultado consistente em 3 modelos:</strong> MiniLM (&rho;=0.915), BGE-base (&rho;=0.952), GTE-small (&rho;=0.939). O m&eacute;todo n&atilde;o depende de um modelo espec&iacute;fico.</p>
   </div>
+
+  <div class="callout" style="margin-top:.6rem;background:linear-gradient(135deg,rgba(210,153,34,.10),transparent);border-color:rgba(210,153,34,.35)">
+    <p style="font-size:.62rem;color:var(--text-secondary);margin:0"><strong>Proveni&ecirc;ncia &mdash; resolver antes de apresentar.</strong> Os tr&ecirc;s n&uacute;meros deste slide n&atilde;o s&atilde;o reproduz&iacute;veis a partir deste reposit&oacute;rio. O &ldquo;96.8%&rdquo; e o &ldquo;-0.75&rdquo; coincidem com os <em>defaults</em> do <code>validate_innovation_claims.py</code> (<code>.get(campo, 0.968)</code> e <code>.get(campo, -0.75)</code>), valores que o script imprimia quando o dado n&atilde;o existia; os &rho;=0.915/0.952/0.939 coincidem com literais do pr&oacute;prio c&oacute;digo (<code>wb_rho</code>). A auditoria de 14/09/2026 classificou esse script como validador falso (<code>docs/audits/2026-09-14.md</code>, achado A20) e ele saiu com <code>papers/</code> em <code>6a48f1c</code>, levando os artefatos de origem. Ou remedir, ou retirar o slide.</p>
+  </div>
 </div>
 </div>
 <!-- ===== SLIDE 14: COMPARISON ===== -->
