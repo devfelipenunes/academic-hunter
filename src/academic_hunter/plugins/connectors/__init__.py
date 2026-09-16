@@ -22,7 +22,6 @@ _CONNECTOR_NAMES: dict[str, str] = {
     "openalex": "OpenAlex",
     "semanticscholar": "Semantic Scholar",
     "core_ac": "CORE",
-    "dblp": "DBLP",
     "doaj": "DOAJ",
 }
 

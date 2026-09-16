@@ -1,7 +1,7 @@
 import os
 import logging
 from typing import List, Dict, Any
-from .base import BaseConnector
+from .base import BaseConnector, quoted_ors
 
 logger = logging.getLogger("academic_hunter.connectors")
 
@@ -28,9 +28,13 @@ class CoreConnector(BaseConnector):
         return headers
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 30) -> List[Dict[str, Any]]:
-        anchor_group = ' OR '.join([f'"{t}"' for t in anchors])
-        tech_group = ' OR '.join([f'"{t}"' for t in tech_strings])
-        query = f"title:({anchor_group}) AND abstract:({tech_group})"
+        # No `title:`/`abstract:` prefixes. With them CORE's backend answers
+        # HTTP 500 — "Azure search failed with status code: 400 …
+        # OperationNotAllowed" — and `_make_request` reads any non-200 as None,
+        # so the connector returned an empty list and the PRISMA published
+        # "CORE: 0" as though the source had been searched and had nothing.
+        # The same two groups with no field prefix: HTTP 200 and 21 hits.
+        query = f"({quoted_ors(anchors)}) AND ({quoted_ors(tech_strings)})"
         with self.lock:
             self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
 

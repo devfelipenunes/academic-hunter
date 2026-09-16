@@ -35,35 +35,33 @@ def _distinct(terms: List[str]) -> List[str]:
     return list(seen.values())
 
 
-def keyword_query(
+def keyword_terms(
     anchors: List[str],
     tech_strings: List[str],
     max_terms: int = KEYWORD_QUERY_MAX_TERMS,
-) -> str:
-    """The free-text query for a keyword-only source: the anchors, and only those.
+) -> List[str]:
+    """Which terms a keyword-only source should search for — not how to join them.
 
-    The three keyword-only connectors each joined `anchors[:3]` and
-    `tech_strings[:2]`. Two things were wrong with that. The slices were silent
-    and unnamed, so an operator configuring four anchors and ten fallback terms
-    got three and two with no way to find out — and the PRISMA then printed the
-    cut query as though it were the configuration.
+    The selection, separated from the syntax, because the sources disagree about
+    the syntax and agree about the terms. Measured on the same four Stellar
+    anchors, against the live APIs:
 
-    The other was spending part of the query on the fallback terms. On these
-    endpoints a fallback term does not broaden a search, it narrows it. Measured
-    twice each against Semantic Scholar with the Stellar anchors:
+        Semantic Scholar    the phrases as written        51 results
+                            them quoted and OR-joined      0
+        DOAJ                quoted and OR-joined          21
+                            the phrases as written         0
 
-        the four anchors alone                     51 results
-        the anchors plus one fallback term          6 results
-        three anchors plus two fallback terms      41 results — but both
-                                                   fallback terms duplicated
-                                                   anchors, so this was the
-                                                   anchors too
+    One helper that also joined them could only ever be right for one of the two.
 
-    One non-anchor phrase took 51 down to 6, reproducibly. So the anchors carry
-    the query, and `keyword_only_terms` does what its name says: it is the
-    fallback for a topic configured with no anchors at all.
+    The anchors carry the search and the fallback terms do not join them, because
+    on these endpoints a fallback term narrows rather than broadens: one added to
+    the Stellar anchors took 51 results down to 6, reproducibly. So
+    `keyword_only_terms` does what its name says — it is the fallback for a topic
+    configured with no anchors at all.
 
-    The bound still applies, and anything it drops is named in the log.
+    The three connectors this replaced joined `anchors[:3]` and `tech_strings[:2]`
+    silently, so an operator configuring four anchors got three and no way to
+    find out. The bound is still here, and anything it drops is named in the log.
     """
     selected = _distinct(anchors)
     if not selected:
@@ -76,7 +74,12 @@ def keyword_query(
             max_terms, len(selected), ", ".join(selected[max_terms:]),
         )
         selected = selected[:max_terms]
-    return " ".join(selected)
+    return selected
+
+
+def quoted_ors(terms: List[str]) -> str:
+    """`"a" OR "b"` — the query syntax DOAJ and CORE's field prefixes expect."""
+    return " OR ".join(f'"{term}"' for term in terms)
 
 
 class BaseConnector:

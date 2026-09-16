@@ -62,7 +62,7 @@ def run_output(tmp_path, monkeypatch):
 
     for name in (
         "fetch_arxiv", "fetch_crossref", "fetch_semantic_scholar", "fetch_openalex",
-        "fetch_core_ac", "fetch_dblp", "fetch_doaj",
+        "fetch_core_ac", "fetch_doaj",
     ):
         monkeypatch.setattr(
             AcademicHunter, name, lambda *a, **k: [p.copy() for p in PAPERS]

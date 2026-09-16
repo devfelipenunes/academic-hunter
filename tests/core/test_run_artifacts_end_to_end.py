@@ -27,7 +27,7 @@ CONFIG = {
 
 CONNECTORS = (
     "fetch_arxiv", "fetch_crossref", "fetch_semantic_scholar", "fetch_openalex",
-    "fetch_core_ac", "fetch_dblp", "fetch_doaj",
+    "fetch_core_ac", "fetch_doaj",
 )
 
 #: O DOI canônico de cada um, depois de `normalize_doi`: sem prefixo, minúsculo.

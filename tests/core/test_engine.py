@@ -39,7 +39,6 @@ def test_threaded_execution_integrity(tmp_path, monkeypatch):
     monkeypatch.setattr(AcademicHunter, "fetch_semantic_scholar", lambda *args, **kwargs: [dummy_paper.copy()])
     monkeypatch.setattr(AcademicHunter, "fetch_openalex", lambda *args, **kwargs: [dummy_paper.copy()])
     monkeypatch.setattr(AcademicHunter, "fetch_core_ac", lambda *args, **kwargs: [dummy_paper.copy()])
-    monkeypatch.setattr(AcademicHunter, "fetch_dblp", lambda *args, **kwargs: [dummy_paper.copy()])
     monkeypatch.setattr(AcademicHunter, "fetch_doaj", lambda *args, **kwargs: [dummy_paper.copy()])
 
     # Run the pipeline

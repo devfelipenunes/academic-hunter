@@ -338,9 +338,10 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
         self.hunter.anchors["Pagamentos2"] = ["Zelle"]
         self.hunter.tech_strings["Infra2"] = ["interoperability"]
         
-        # DBLP (keyword-only) should be called 2 times (once per anchor category)
+        # DOAJ (keyword-only) should be called 2 times (once per anchor category).
+        # Was DBLP, which is retired: its endpoint serves an anti-bot page.
         calls.clear()
-        self.hunter._api_worker("DBLP", mock_fetch, limit_per_source=5)
+        self.hunter._api_worker("DOAJ", mock_fetch, limit_per_source=5)
         self.assertEqual(len(calls), 2)
         
         # Crossref (grid search) should be called 2 * 2 = 4 times

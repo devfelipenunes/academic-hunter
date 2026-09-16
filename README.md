@@ -43,7 +43,7 @@ Veja o [tutorial passo a passo](docs/tutorial.md) — 10 minutos para fazer sua 
 
 ### 🔍 Busca Multi-Fonte
 
-O pipeline consulta **7 fontes acadêmicas em paralelo**: arXiv, Crossref, Semantic Scholar, OpenAlex, CORE, DBLP e DOAJ — com deduplicação entre todas. Outras 8 ficam disponíveis sob demanda pelas tools MCP: Europe PMC, OpenCitations, Unpaywall, Lens.org, OpenAIRE, bioRxiv, medRxiv e DataCite.
+O pipeline consulta **6 fontes acadêmicas em paralelo**: arXiv, Crossref, Semantic Scholar, OpenAlex, CORE e DOAJ — com deduplicação entre todas. Outras 8 ficam disponíveis sob demanda pelas tools MCP: Europe PMC, OpenCitations, Unpaywall, Lens.org, OpenAIRE, bioRxiv, medRxiv e DataCite.
 
 ### 🧠 Weight-Bleeding Scoring
 

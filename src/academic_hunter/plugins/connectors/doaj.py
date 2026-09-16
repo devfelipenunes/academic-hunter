@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from typing import List, Dict, Any
-from .base import BaseConnector, keyword_query
+from .base import BaseConnector, keyword_terms, quoted_ors
 
 logger = logging.getLogger("academic_hunter.connectors")
 
@@ -28,7 +28,10 @@ class DoajConnector(BaseConnector):
         return ""
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
-        query = keyword_query(anchors, tech_strings)
+        # Quoted and OR-joined: DOAJ's search reads a space-separated bag as a
+        # conjunction, so the same four anchors that return 21 results this way
+        # return none as plain phrases.
+        query = quoted_ors(keyword_terms(anchors, tech_strings))
         with self.lock:
             self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
 

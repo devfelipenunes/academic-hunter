@@ -1,7 +1,7 @@
 import logging
 from typing import List, Dict, Any
 from academic_hunter.core.infra.config import semantic_scholar_key
-from .base import BaseConnector, keyword_query
+from .base import BaseConnector, keyword_terms
 
 logger = logging.getLogger("academic_hunter.connectors")
 
@@ -33,7 +33,9 @@ class SemanticScholarConnector(BaseConnector):
         return headers
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
-        query = keyword_query(anchors, tech_strings)
+        # Plain phrases, not quoted ORs: this endpoint reads the OR-joined form
+        # as matching nothing at all — measured 0 against 51 for the same terms.
+        query = " ".join(keyword_terms(anchors, tech_strings))
         with self.lock:
             self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
         start_year = self.settings.get('start_year', 2021)
