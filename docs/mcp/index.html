@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MCP Tools Reference — Academic Hunter</title>
-  <meta name="description" content="Complete reference documentation for the 21 MCP tools of Academic Hunter. Parameters, types, examples, resources, prompts, and setup guide.">
+  <meta name="description" content="Complete reference documentation for the 44 MCP tools of Academic Hunter. Parameters, types, examples, resources, prompts, and setup guide.">
   <meta name="theme-color" content="#0d1117">
   <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
   <link rel="stylesheet" href="../assets/css/main.css">
@@ -61,10 +61,10 @@
       <h1>MCP Tools Reference</h1>
       <p>
         Academic Hunter exposes 44 tools via the Model Context Protocol (MCP),
-        along with Resources and Prompts. This page documents the ones you will
-        reach for most; the full list comes from the server itself. Any
-        MCP-compatible client — Claude Desktop, Cursor, or custom agents — can
-        drive the research pipeline autonomously.
+        along with Resources and Prompts. All 44 are documented below, grouped by
+        category, with parameters, types and examples. Any MCP-compatible client
+        — Claude Desktop, Cursor, or custom agents — can drive the research
+        pipeline autonomously.
       </p>
     </div>
 
@@ -198,6 +198,7 @@ academic-mcp</code></pre>
         <button class="filter-btn" data-category="discovery" role="tab">Discovery</button>
         <button class="filter-btn" data-category="export" role="tab">Export</button>
         <button class="filter-btn" data-category="rag" role="tab">RAG</button>
+        <button class="filter-btn" data-category="writing" role="tab">Writing</button>
         <button class="filter-btn" data-category="fulltext" role="tab">Full Text</button>
         <button class="filter-btn" data-category="system" role="tab">System</button>
       </div>
@@ -505,10 +506,41 @@ Report saved to results/FLUXO_PRISMA_20260715_103022.md"</code></pre>
           <p class="tool-desc">
             Reads the latest Markdown report from the <code>results/</code> directory.
             Automatically finds the most recent file by creation time.
-            Content is truncated to 10,000 characters for practical LLM consumption.
+            The content is returned in slices — an offset to start from and a cap
+            on how much to return — so a long report can be read in parts instead
+            of being cut off in one piece.
           </p>
-          <div class="tool-sig">read_latest_report() &rarr; str</div>
-          <p class="tool-returns"><strong>Returns:</strong> Content of the latest report (Markdown, truncated to 10k chars).</p>
+          <div class="tool-sig">read_latest_report(max_chars: int = 10000, offset: int = 0) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">max_chars</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">10000</td>
+                <td>Maximum number of characters to return</td>
+              </tr>
+              <tr>
+                <td class="param-name">offset</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">0</td>
+                <td>Character offset to start reading from</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Content of the latest report (Markdown, from <code>offset</code> up to <code>max_chars</code>).</p>
           <pre><code># Example — ask your MCP client:
 "Read the latest search report and summarize the findings."
 
@@ -530,7 +562,7 @@ Report saved to results/FLUXO_PRISMA_20260715_103022.md"</code></pre>
     <section class="cat-section" id="discovery">
       <div class="cat-header">
         <h2>Discovery / Citation Graph</h2>
-        <span class="cat-count">6 tools</span>
+        <span class="cat-count">16 tools</span>
       </div>
 
       <!-- Tool 7: explore_citation_graph -->
@@ -750,19 +782,251 @@ TOP PAPERS:
       <!-- Tool 11: trending_topics -->
       <article class="tool-card" id="trending_topics" data-category="discovery"
         data-name="trending_topics"
-        data-description="Discovers trending research topics and emerging trends in a field">
+        data-description="Ranks the keyword bigrams that recur across the titles of the indexed papers">
         <div class="tool-card-header">
           <h3><a href="#trending_topics">trending_topics</a></h3>
           <span class="tool-category cat-discovery">Discovery</span>
         </div>
         <div class="tool-card-body">
           <p class="tool-desc">
-            Discovers trending research topics and emerging trends in a given field.
-            Uses Semantic Scholar API to return papers with the highest recent
-            citation velocity — ideal for identifying hot topics before committing
-            to a full search.
+            Analyses the papers you have already indexed — no API call. Extracts
+            keyword bigrams from their titles, excluding stopwords, and ranks those
+            shared by at least <code>min_papers</code> papers. The
+            <code>days</code> window is accepted but not applied yet: the vector
+            store does not filter by date.
           </p>
-          <div class="tool-sig">trending_topics(query: str, limit: int = 10) &rarr; str</div>
+          <div class="tool-sig">trending_topics(days: int = 30, min_papers: int = 3) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">days</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">30</td>
+                <td>Lookback window in days — currently unused, since the vector store does not filter by date</td>
+              </tr>
+              <tr>
+                <td class="param-name">min_papers</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">3</td>
+                <td>Minimum papers sharing a bigram for it to count as a trend</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> The 10 most frequent bigrams (at most), each with its paper count and up to 5 example titles.</p>
+          <pre><code># Example — ask your MCP client:
+"What are the trending topics across my indexed papers?"
+
+# Result:
+"# Trending Research Topics
+**Total papers analyzed:** 47
+**Minimum papers per topic:** 3
+---
+## 1. "Payment Channel" (6 papers)
+- Atomic Settlement in DLT Networks
+- Cross-Chain Routing for Payment Channels
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 12: compare_papers -->
+      <article class="tool-card" id="compare_papers" data-category="discovery"
+        data-name="compare_papers"
+        data-description="Compares two papers by DOI and lists the keywords their abstracts share">
+        <div class="tool-card-header">
+          <h3><a href="#compare_papers">compare_papers</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Compares two papers by DOI. Metadata comes from Semantic Scholar, falling
+            back to the local abstract fetcher for the DOIs it does not know — arXiv
+            ones, for instance. Reports a field-by-field table, both abstract
+            previews, and the keywords the two abstracts have in common.
+          </p>
+          <div class="tool-sig">compare_papers(doi_a: str, doi_b: str) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">doi_a</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>DOI of the first paper</td>
+              </tr>
+              <tr>
+                <td class="param-name">doi_b</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>DOI of the second paper</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> A field table (DOI, title, year), both abstract previews, and the shared keywords — or a note when the two abstracts have no significant overlap.</p>
+          <pre><code># Example — ask your MCP client:
+"Compare doi:10.1109/ACCESS.2023.3267890 with doi:10.1016/j.future.2023.01.005"
+
+# Result:
+"# Paper Comparison
+
+| Field | Paper A | Paper B |
+|-------|---------|---------|
+| **DOI** | `10.1109/ACCESS.2023.3267890` | `10.1016/j.future.2023.01.005` |
+| **Title** | CBDC Architectures | Atomic Settlement in DLT Networks |
+| **Year** | 2024 | 2023 |
+
+## Shared Keywords (4)
+atomic, latency, settlement, throughput"</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 13: get_citation_count -->
+      <article class="tool-card" id="get_citation_count" data-category="discovery"
+        data-name="get_citation_count"
+        data-description="Returns the citation count for a DOI, from OpenCitations">
+        <div class="tool-card-header">
+          <h3><a href="#get_citation_count">get_citation_count</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            The number of citations a paper has received, read from OpenCitations/COCI —
+            a free, open index of 2B+ citation links that needs no API key. Use it when
+            the count is all you need, instead of walking the citation graph.
+          </p>
+          <div class="tool-sig">get_citation_count(doi: str) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">doi</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>DOI of the paper to look up</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> One line with the count, e.g. <code>DOI 10.1234/atomic has 47 citations according to OpenCitations.</code></p>
+          <pre><code># Example — ask your MCP client:
+"How many citations does doi:10.1234/atomic have?"
+
+# Result:
+"DOI 10.1234/atomic has 47 citations according to OpenCitations."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 14: get_citing_papers -->
+      <article class="tool-card" id="get_citing_papers" data-category="discovery"
+        data-name="get_citing_papers"
+        data-description="Lists the papers that cite a given DOI, via OpenCitations">
+        <div class="tool-card-header">
+          <h3><a href="#get_citing_papers">get_citing_papers</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Lists the works that cite a DOI, each with the timespan it cited over and the
+            date the link was indexed. Reports how many citations it found in total, then
+            shows the first <code>limit</code> of them.
+          </p>
+          <div class="tool-sig">get_citing_papers(doi: str, limit: int = 10) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">doi</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>DOI of the paper</td>
+              </tr>
+              <tr>
+                <td class="param-name">limit</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">10</td>
+                <td>Max citing papers to show (capped at 50)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown list of citing DOIs with their citation timespan and index date, plus the total count.</p>
+          <pre><code># Example — ask your MCP client:
+"Which papers cite doi:10.1109/ACCESS.2023.3267890?"
+
+# Result:
+"# Citing Papers for 10.1109/ACCESS.2023.3267890
+
+**Total citations:** 47
+
+---
+
+1. `10.1016/j.future.2024.01.005` (cited after P1Y2M, indexed 2024-03-11)
+2. `10.1145/3611234` (cited after P8M, indexed 2024-01-22)
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 15: search_biorxiv -->
+      <article class="tool-card" id="search_biorxiv" data-category="discovery"
+        data-name="search_biorxiv"
+        data-description="Searches bioRxiv or medRxiv preprints by title and abstract">
+        <div class="tool-card-header">
+          <h3><a href="#search_biorxiv">search_biorxiv</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Searches bioRxiv (life sciences) or medRxiv (health sciences) for recent
+            preprints. That API answers by date range rather than by keyword, so the last
+            90 days are fetched and filtered client-side against titles and abstracts —
+            up to five pages of them, which is where the search stops.
+          </p>
+          <div class="tool-sig">search_biorxiv(query: str, server: str = "bio", limit: int = 10) &rarr; str</div>
 
           <table class="params-table">
             <thead>
@@ -780,46 +1044,60 @@ TOP PAPERS:
                 <td class="param-type">str</td>
                 <td class="param-req yes">Yes</td>
                 <td class="param-default">—</td>
-                <td>Research field or topic to find trends for</td>
+                <td>Search term, matched against the title and abstract</td>
+              </tr>
+              <tr>
+                <td class="param-name">server</td>
+                <td class="param-type">str</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">"bio"</td>
+                <td>"bio" for bioRxiv or "med" for medRxiv</td>
               </tr>
               <tr>
                 <td class="param-name">limit</td>
                 <td class="param-type">int</td>
                 <td class="param-req no">No</td>
                 <td class="param-default">10</td>
-                <td>Number of trending topics to return (max 25)</td>
+                <td>Maximum number of results to return</td>
               </tr>
             </tbody>
           </table>
 
-          <p class="tool-returns"><strong>Returns:</strong> Trending papers with citation counts, publication year, and relevance indicators.</p>
+          <p class="tool-returns"><strong>Returns:</strong> Markdown list of matching preprints — authors, date, category, DOI and a 200-character abstract preview.</p>
           <pre><code># Example — ask your MCP client:
-"What are the trending topics in CBDC research?"
+"Search medRxiv for recent preprints about long COVID."
 
 # Result:
-"TRENDING TOPICS in 'CBDC':
-1. 'Privacy-Preserving CBDC' (2025) — 47 citations in last 6 months
-2. 'Offline CBDC Payments' (2024) — 38 citations
-3. 'Interoperability Standards' (2025) — 29 citations
+"# medRxiv Preprints: long COVID
+
+**Results:** 4
+
+---
+
+## 1. Persistent Symptoms After SARS-CoV-2 Infection
+- **Authors:** Silva, M.; Okonkwo, A.
+- **Date:** 2026-08-30 | **Category:** epidemiology
+- **DOI:** `10.1101/2026.08.30.24312654`
 ..."</code></pre>
         </div>
       </article>
 
-      <!-- Tool 12: compare_papers -->
-      <article class="tool-card" id="compare_papers" data-category="discovery"
-        data-name="compare_papers"
-        data-description="Compares multiple papers side by side across selected aspects">
+      <!-- Tool 16: search_datasets -->
+      <article class="tool-card" id="search_datasets" data-category="discovery"
+        data-name="search_datasets"
+        data-description="Searches datasets and software DOIs via DataCite">
         <div class="tool-card-header">
-          <h3><a href="#compare_papers">compare_papers</a></h3>
+          <h3><a href="#search_datasets">search_datasets</a></h3>
           <span class="tool-category cat-discovery">Discovery</span>
         </div>
         <div class="tool-card-body">
           <p class="tool-desc">
-            Compares multiple papers side by side across selected aspects such as
-            methodology, findings, limitations, or venue. Useful for building a
-            literature review matrix or deciding which papers to include.
+            Searches DataCite, which indexes DOIs from Zenodo, Figshare, Dryad and 1000+
+            other repositories — datasets, software and other research outputs, not only
+            articles. Results are sorted by publication year, newest first, and each entry
+            says how many related DOIs it carries.
           </p>
-          <div class="tool-sig">compare_papers(dois: list[str], aspects: list[str] | None = None) &rarr; str</div>
+          <div class="tool-sig">search_datasets(query: str, limit: int = 10, resource_type: str = "") &rarr; str</div>
 
           <table class="params-table">
             <thead>
@@ -833,33 +1111,423 @@ TOP PAPERS:
             </thead>
             <tbody>
               <tr>
-                <td class="param-name">dois</td>
-                <td class="param-type">list[str]</td>
+                <td class="param-name">query</td>
+                <td class="param-type">str</td>
                 <td class="param-req yes">Yes</td>
                 <td class="param-default">—</td>
-                <td>DOIs of the papers to compare (2–10 papers)</td>
+                <td>Search term</td>
               </tr>
               <tr>
-                <td class="param-name">aspects</td>
-                <td class="param-type">list[str] | None</td>
+                <td class="param-name">limit</td>
+                <td class="param-type">int</td>
                 <td class="param-req no">No</td>
-                <td class="param-default">all</td>
-                <td>Aspects to compare: methodology, findings, limitations, venue, year</td>
+                <td class="param-default">10</td>
+                <td>Max results (capped at 50)</td>
+              </tr>
+              <tr>
+                <td class="param-name">resource_type</td>
+                <td class="param-type">str</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">""</td>
+                <td>Filter by type: "dataset", "software", "text", etc. Empty string means all types</td>
               </tr>
             </tbody>
           </table>
 
-          <p class="tool-returns"><strong>Returns:</strong> Formatted comparison table with papers as columns and aspects as rows.</p>
+          <p class="tool-returns"><strong>Returns:</strong> Markdown list of matching DOIs with type, year, authors, publisher and related-DOI count.</p>
           <pre><code># Example — ask your MCP client:
-"Compare these two papers on CBDC latency."
+"Find datasets about payment channel latency."
 
 # Result:
-"| Aspect       | Paper 1 (2024)             | Paper 2 (2023)             |
-|--------------|---------------------------|---------------------------|
-| Methodology  | Simulation + queuing      | Empirical / testbed       |
-| Findings     | Sub-second settlement     | &lt;500ms retail tx         |
-| Venue        | IEEE Access               | Future Gen. CS            |
-| Limitations  | Single-shard assumption   | Small sample size         |"</code></pre>
+"# DataCite Results: payment channel latency
+
+**Total:** 6
+
+---
+
+## 1. Payment Channel Latency Measurements
+- **Type:** Dataset | **Year:** 2025
+- **Authors:** Nunes, F.; Garcia, L.
+- **DOI:** `10.5281/zenodo.1234567`
+-  (related to 3 DOIs)
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 17: search_europepmc -->
+      <article class="tool-card" id="search_europepmc" data-category="discovery"
+        data-name="search_europepmc"
+        data-description="Searches Europe PMC across abstracts, full text and preprints">
+        <div class="tool-card-header">
+          <h3><a href="#search_europepmc">search_europepmc</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Searches Europe PMC — 42M+ abstracts and 9M+ full-text articles, including
+            bioRxiv, medRxiv and ChemRxiv preprints. Entries are badged
+            <code>[PREPRINT]</code> and <code>[OA]</code> from the record's own source and
+            open-access flags, so an open paper is not confused with a closed one.
+          </p>
+          <div class="tool-sig">search_europepmc(query: str, limit: int = 10) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">query</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Search query (supports Europe PMC query syntax)</td>
+              </tr>
+              <tr>
+                <td class="param-name">limit</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">10</td>
+                <td>Max results (capped at 50)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown list with authors, year, source, DOI, badges and a 300-character abstract preview.</p>
+          <pre><code># Example — ask your MCP client:
+"Search Europe PMC for CRISPR off-target screening."
+
+# Result:
+"# Europe PMC Results: CRISPR off-target screening
+
+**Total results:** 1284
+
+---
+
+## 1. Genome-wide Off-Target Screening [OA]
+- **Authors:** Zhang, L.; et al.
+- **Year:** 2025 | **Source:** MED
+- **DOI:** `10.1038/s41587-025-01234-5`
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 18: search_patents -->
+      <article class="tool-card" id="search_patents" data-category="discovery"
+        data-name="search_patents"
+        data-description="Searches Lens.org for patents matching a research topic">
+        <div class="tool-card-header">
+          <h3><a href="#search_patents">search_patents</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Searches the Lens.org patent corpus, which links 150M+ patents to the academic
+            literature. Requires a token — from <code>LENS_API_KEY</code> in the environment
+            or <code>settings.api_keys.lens</code> in <code>config.json</code>. It is checked
+            before the request, so a missing key names the variable instead of surfacing a
+            bare 401.
+          </p>
+          <div class="tool-sig">search_patents(query: str, limit: int = 10) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">query</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Search query (e.g., "blockchain consensus")</td>
+              </tr>
+              <tr>
+                <td class="param-name">limit</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">10</td>
+                <td>Max results (capped at 25)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown list of patents with inventors, year and IPC classification codes.</p>
+          <pre><code># Example — ask your MCP client:
+"Are there patents on atomic settlement for interbank transfers?"
+
+# Result:
+"# Patent Search: atomic settlement interbank
+
+**Results:** 5
+
+---
+
+## 1. System and Method for Atomic Settlement of Interbank Transfers
+- **Inventors:** Tanaka, H.; Mbeki, S. | **Year:** 2024
+- **IPC:** G06Q 20/40, G06Q 20/38
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 19: search_openaire -->
+      <article class="tool-card" id="search_openaire" data-category="discovery"
+        data-name="search_openaire"
+        data-description="Searches OpenAIRE for publications linked to funding grants">
+        <div class="tool-card-header">
+          <h3><a href="#search_openaire">search_openaire</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Searches the OpenAIRE Graph — 198M+ publications linked to 3.7M+ grants. The
+            field that sets it apart from the other sources is the funder: each entry names
+            the funding body behind the work, which is how you read a field by who paid for
+            it.
+          </p>
+          <div class="tool-sig">search_openaire(query: str, limit: int = 10) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">query</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Search query</td>
+              </tr>
+              <tr>
+                <td class="param-name">limit</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">10</td>
+                <td>Max results (capped at 50)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown list with authors, acceptance date, funder, DOI and an open-access marker.</p>
+          <pre><code># Example — ask your MCP client:
+"Which EU-funded projects published on CBDC privacy?"
+
+# Result:
+"# OpenAIRE Results: CBDC privacy
+
+**Total:** 12
+
+---
+
+## 1. Privacy-Preserving Digital Euro ✅ OA
+- **Authors:** Rossi, G.; et al.
+- **Date:** 2025-04-02
+- **Funder:** European Commission
+- **DOI:** `10.1007/s10207-025-00678-9`
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 20: lookup_orcid -->
+      <article class="tool-card" id="lookup_orcid" data-category="discovery"
+        data-name="lookup_orcid"
+        data-description="Looks up a researcher's profile and recent publications via ORCID">
+        <div class="tool-card-header">
+          <h3><a href="#lookup_orcid">lookup_orcid</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Looks up a researcher's ORCID record: name, up to five affiliations and up to
+            ten recent works with their DOIs. Uses the free public API v3.0, which needs no
+            key for public profiles.
+          </p>
+          <div class="tool-sig">lookup_orcid(orcid_id: str) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">orcid_id</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>ORCID identifier (e.g., "0000-0002-1825-0097")</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown profile with the display name, affiliations and recent publications.</p>
+          <pre><code># Example — ask your MCP client:
+"Look up ORCID 0000-0002-1825-0097."
+
+# Result:
+"# ORCID Profile: Maria Silva
+
+**ORCID:** https://orcid.org/0000-0002-1825-0097
+
+## Affiliations
+- University of Sao Paulo (Computer Science, Professor)
+
+## Recent Publications
+- **Atomic Settlement in DLT Networks** (2024)
+  DOI: `10.1234/atomic`
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 21: summarize_paper -->
+      <article class="tool-card" id="summarize_paper" data-category="discovery"
+        data-name="summarize_paper"
+        data-description="Summarizes a paper's abstract extractively, with MiniLM and MMR">
+        <div class="tool-card-header">
+          <h3><a href="#summarize_paper">summarize_paper</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Fetches the paper's abstract and selects the sentences that carry it: first the
+            one closest to the centroid, then Maximal Marginal Relevance for the rest, so
+            each new sentence adds something the chosen ones do not already say. Extractive
+            only — every sentence returned is the author's, which is what keeps the summary
+            free of invented claims.
+          </p>
+          <div class="tool-sig">summarize_paper(doi: str, num_sentences: int = 3) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">doi</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>DOI of the paper to summarize</td>
+              </tr>
+              <tr>
+                <td class="param-name">num_sentences</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">3</td>
+                <td>Number of sentences in the summary (capped at 8)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown with the selected sentences, in their original order. Needs <code>sentence-transformers</code>; an abstract with fewer sentences than requested is returned whole.</p>
+          <pre><code># Example — ask your MCP client:
+"Summarize doi:10.1234/atomic in three sentences."
+
+# Result:
+"# Extractive Summary
+
+**DOI:** 10.1234/atomic
+**Method:** Centroid + MMR (MiniLM)
+**Sentences:** 3
+---
+
+**1.** We measure settlement latency across four DLT networks.
+
+**2.** Median latency stays below one second for two-party transfers.
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 22: find_open_access -->
+      <article class="tool-card" id="find_open_access" data-category="discovery"
+        data-name="find_open_access"
+        data-description="Finds the open-access version of a paper by DOI, via Unpaywall">
+        <div class="tool-card-header">
+          <h3><a href="#find_open_access">find_open_access</a></h3>
+          <span class="tool-category cat-discovery">Discovery</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Asks Unpaywall for the paper's open-access status and the best location it
+            knows. Reads <code>url_for_pdf</code> and falls back to the landing
+            <code>url</code>, because Unpaywall sends a null PDF URL for the locations that
+            are landing pages — the choice it makes for reliability, not the one that names
+            a file.
+          </p>
+          <div class="tool-sig">find_open_access(doi: str, email: str = "me@example.com") &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">doi</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>DOI of the paper</td>
+              </tr>
+              <tr>
+                <td class="param-name">email</td>
+                <td class="param-type">str</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">"me@example.com"</td>
+                <td>Contact address for the Unpaywall API — a real one gets higher rate limits</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> OA status, best URL, host type, license and version — or a clear not-found record when Unpaywall has none.</p>
+          <pre><code># Example — ask your MCP client:
+"Is doi:10.1016/j.future.2023.01.005 open access?"
+
+# Result:
+"# Open Access Status: 10.1016/j.future.2023.01.005
+
+**OA:** ✅ Yes
+**Status:** gold
+**Best URL:** https://doi.org/10.1016/j.future.2023.01.005
+**Host:** publisher
+**License:** cc-by
+**Version:** publishedVersion
+"</code></pre>
         </div>
       </article>
     </section>
@@ -871,7 +1539,7 @@ TOP PAPERS:
         <span class="cat-count">2 tools</span>
       </div>
 
-      <!-- Tool 13: export_to_obsidian -->
+      <!-- Tool 23: export_to_obsidian -->
       <article class="tool-card" id="export_to_obsidian" data-category="export"
         data-name="export_to_obsidian"
         data-description="Exports a formatted Markdown report directly to the user's Obsidian vault">
@@ -934,21 +1602,21 @@ Obsidian/Academic_Hunter/CBDC_Latency_Review.md"</code></pre>
         </div>
       </article>
 
-      <!-- Tool 14: export_report -->
+      <!-- Tool 24: export_report -->
       <article class="tool-card" id="export_report" data-category="export"
         data-name="export_report"
-        data-description="Exports the latest search report in various formats">
+        data-description="Exports the latest search results as CSV, JSON, BibTeX, or RIS">
         <div class="tool-card-header">
           <h3><a href="#export_report">export_report</a></h3>
           <span class="tool-category cat-export">Export</span>
         </div>
         <div class="tool-card-body">
           <p class="tool-desc">
-            Exports the latest search report in various formats for external use.
-            Supports BibTeX, CSV, JSON, and Markdown summary. Saves to the
-            results directory or a custom output path.
+            Exports the latest consolidated search results in CSV, JSON, BibTeX, or
+            RIS. CSV is the default. Writes to <code>results/</code> unless a full
+            output path is given.
           </p>
-          <div class="tool-sig">export_report(format: str = "bibtex", output_path: str | None = None) &rarr; str</div>
+          <div class="tool-sig">export_report(format: str = "csv", output_path: str | None = None) &rarr; str</div>
 
           <table class="params-table">
             <thead>
@@ -965,29 +1633,29 @@ Obsidian/Academic_Hunter/CBDC_Latency_Review.md"</code></pre>
                 <td class="param-name">format</td>
                 <td class="param-type">str</td>
                 <td class="param-req no">No</td>
-                <td class="param-default">"bibtex"</td>
-                <td>Export format: "bibtex", "csv", "json", or "summary"</td>
+                <td class="param-default">"csv"</td>
+                <td>Export format: "csv", "json", "bibtex", or "ris"</td>
               </tr>
               <tr>
                 <td class="param-name">output_path</td>
                 <td class="param-type">str | None</td>
                 <td class="param-req no">No</td>
-                <td class="param-default">results/</td>
-                <td>Custom output path (optional; defaults to results directory)</td>
+                <td class="param-default">None</td>
+                <td>Full path for the output file; when omitted, the file is written to results/export_{timestamp}.{ext}</td>
               </tr>
             </tbody>
           </table>
 
-          <p class="tool-returns"><strong>Returns:</strong> Path to the exported file and confirmation message.</p>
+          <p class="tool-returns"><strong>Returns:</strong> Confirmation naming the exported file and how many papers went into it.</p>
           <pre><code># Example — ask your MCP client:
-"Export the latest results as BibTeX."
+"Export the latest results as CSV."
 
 # Or:
-"Export the report as CSV to my desktop."
+"Export the report as BibTeX."
 
 # Result:
-"Report exported successfully to:
-results/export_20260724_103022.bib (47 entries)"</code></pre>
+"Successfully exported 47 papers to
+/path/to/project/results/export_20260724_103022.csv"</code></pre>
         </div>
       </article>
     </section>
@@ -996,10 +1664,10 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
     <section class="cat-section" id="rag">
       <div class="cat-header">
         <h2>RAG / Vector Store</h2>
-        <span class="cat-count">4 tools</span>
+        <span class="cat-count">12 tools</span>
       </div>
 
-      <!-- Tool 15: semantic_search -->
+      <!-- Tool 25: semantic_search -->
       <article class="tool-card" id="semantic_search" data-category="rag"
         data-name="semantic_search"
         data-description="Performs embedding-based semantic search across all indexed papers">
@@ -1013,7 +1681,7 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
             papers using ChromaDB. Finds conceptually related papers even when exact
             keywords don't match. Uses ONNX-based <code>all-MiniLM-L6-v2</code> embeddings.
           </p>
-          <div class="tool-sig">semantic_search(query: str, top_k: int = 10, score_threshold: float = 0.0) &rarr; str</div>
+          <div class="tool-sig">semantic_search(query: str, top_k: int = 20, score_threshold: float = 0.0) &rarr; str</div>
 
           <table class="params-table">
             <thead>
@@ -1037,7 +1705,7 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
                 <td class="param-name">top_k</td>
                 <td class="param-type">int</td>
                 <td class="param-req no">No</td>
-                <td class="param-default">10</td>
+                <td class="param-default">20</td>
                 <td>Maximum number of results (max 50)</td>
               </tr>
               <tr>
@@ -1055,17 +1723,23 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
 "Search my indexed papers for 'cross-chain atomic settlement'"
 
 # Result:
-"1. 'Atomic Settlement Mechanisms' (2024) — Relevance: 89%
-   DOI: 10.1234/atomic — Venue: IEEE Access
-   Abstract: This paper proposes a novel atomic settlement...
+"# Semantic Search Results
+**Query:** cross-chain atomic settlement
+**Results found:** 2
+---
+## 1. Atomic Settlement Mechanisms
+- **Semantic Relevance:** 89.00% | **Year:** 2024
+- **Venue:** IEEE Access
+- **DOI:** `10.1234/atomic`
+- **Preview:** This paper proposes a novel atomic settlement...
 
-2. 'DvP Protocols' (2023) — Relevance: 76%
-   DOI: 10.5678/dvp — Venue: Future Generation CS
-   Abstract: Delivery-versus-payment mechanisms..."</code></pre>
+## 2. DvP Protocols
+- **Semantic Relevance:** 76.00% | **Year:** 2023
+- **Preview:** Delivery-versus-payment mechanisms..."</code></pre>
         </div>
       </article>
 
-      <!-- Tool 16: index_papers -->
+      <!-- Tool 26: index_papers -->
       <article class="tool-card" id="index_papers" data-category="rag"
         data-name="index_papers"
         data-description="Indexes the latest search results into ChromaDB for semantic queries">
@@ -1089,7 +1763,7 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
         </div>
       </article>
 
-      <!-- Tool 17: vector_store_stats -->
+      <!-- Tool 27: vector_store_stats -->
       <article class="tool-card" id="vector_store_stats" data-category="rag"
         data-name="vector_store_stats"
         data-description="Shows statistics about the ChromaDB vector store">
@@ -1113,7 +1787,7 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
         </div>
       </article>
 
-      <!-- Tool 18: ask_papers -->
+      <!-- Tool 28: ask_papers -->
       <article class="tool-card" id="ask_papers" data-category="rag"
         data-name="ask_papers"
         data-description="Answers a research question using semantically retrieved papers as context">
@@ -1127,7 +1801,7 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
             vector store and presenting their content as context. Designed for
             AI-powered answers grounded in your actual paper collection.
           </p>
-          <div class="tool-sig">ask_papers(question: str, top_k: int = 5) &rarr; str</div>
+          <div class="tool-sig">ask_papers(question: str, top_k: int = 15) &rarr; str</div>
 
           <table class="params-table">
             <thead>
@@ -1151,7 +1825,7 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
                 <td class="param-name">top_k</td>
                 <td class="param-type">int</td>
                 <td class="param-req no">No</td>
-                <td class="param-default">5</td>
+                <td class="param-default">15</td>
                 <td>Number of papers to retrieve for context (max 20)</td>
               </tr>
             </tbody>
@@ -1162,12 +1836,787 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
 "What do my indexed papers say about CBDC latency?"
 
 # Result:
-"Based on 5 relevant papers:
-- Paper 1 (Relevance: 0.92): 'CBDC Latency Analysis' (2024)
-  Abstract: Our measurements show sub-second settlement...
+"# Research Context
+**Question:** What do my indexed papers say about CBDC latency?
+**Retrieved 2 papers as context:**
+---
+## Paper 1: CBDC Latency Analysis
+**Relevance:** 92.00% | **Year:** 2024
+Our measurements show sub-second settlement...
 
-- Paper 2 (Relevance: 0.85): 'Digital Euro Performance' (2023)
-  Abstract: Latency remains below 500ms for retail transactions..."</code></pre>
+## Paper 2: Digital Euro Performance
+**Relevance:** 85.00% | **Year:** 2023
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 29: answer_question -->
+      <article class="tool-card" id="answer_question" data-category="rag"
+        data-name="answer_question"
+        data-description="Retrieves the closest papers and returns findings with their sources">
+        <div class="tool-card-header">
+          <h3><a href="#answer_question">answer_question</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            The full RAG shape: retrieves the nearest papers and assembles one key finding
+            per paper from its abstract, followed by a Sources list with titles and DOIs
+            where the corpus has them. No model is called — the agent writes the prose from
+            this material, which is what keeps the citations real.
+          </p>
+          <div class="tool-sig">answer_question(question: str, top_k: int = 15) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">question</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>The research question to answer</td>
+              </tr>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">15</td>
+                <td>Number of papers to retrieve for context (max 20)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown with a Key Findings section and a Sources section carrying titles and DOIs.</p>
+          <pre><code># Example — ask your MCP client:
+"Answer: what does the literature say about settlement latency?"
+
+# Result:
+"# Research Answer
+
+**Question:** what does the literature say about settlement latency?
+**Papers consulted:** 2
+---
+
+## Key Findings
+- We measure settlement latency across four DLT networks...
+
+## Sources
+- **Atomic Settlement in DLT Networks** — DOI: `10.1234/atomic`
+"</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 30: rerank_search -->
+      <article class="tool-card" id="rerank_search" data-category="rag"
+        data-name="rerank_search"
+        data-description="Semantic search followed by cross-encoder re-ranking">
+        <div class="tool-card-header">
+          <h3><a href="#rerank_search">rerank_search</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Retrieves with the bi-encoder (MiniLM) and then re-orders the candidates with a
+            cross-encoder when <code>sentence-transformers</code> is installed — the second
+            stage that pays where the bi-encoder does not. It is slower, so it only ever sees
+            the top candidates. Without it the tool says so and returns the bi-encoder order
+            rather than failing.
+          </p>
+          <div class="tool-sig">rerank_search(query: str, top_k: int = 20, rerank_k: int = 5) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">query</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Search query</td>
+              </tr>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">20</td>
+                <td>Initial candidates fetched from the bi-encoder</td>
+              </tr>
+              <tr>
+                <td class="param-name">rerank_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">5</td>
+                <td>Final results returned after re-ranking</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown list with relevance, year, DOI and a 200-character preview.</p>
+          <pre><code># Example — ask your MCP client:
+"Search cross-chain settlement, but re-rank the top results."
+
+# Result:
+"# Re-Ranked Search Results
+
+**Query:** cross-chain settlement
+**Results:** 5
+---
+
+## 1. Atomic Settlement in DLT Networks
+- **Relevance:** 89.0% | **Year:** 2024
+- **DOI:** `10.1234/atomic`
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 31: find_related_papers -->
+      <article class="tool-card" id="find_related_papers" data-category="rag"
+        data-name="find_related_papers"
+        data-description="Finds the papers nearest a text in the indexed corpus">
+        <div class="tool-card-header">
+          <h3><a href="#find_related_papers">find_related_papers</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Given a title, a DOI or free text, returns the indexed papers closest to it. A
+            thin wrapper over the same vector query the other RAG tools use, shaped for the
+            question what is like this.
+          </p>
+          <div class="tool-sig">find_related_papers(query: str, top_k: int = 20) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">query</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Search text (title, DOI, or free text)</td>
+              </tr>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">20</td>
+                <td>Number of results (capped at 20)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown list with relevance, year, DOI and a 200-character preview.</p>
+          <pre><code># Example — ask your MCP client:
+"What in my corpus is similar to Atomic Settlement in DLT Networks?"
+
+# Result:
+"# Related Papers
+
+**Query:** Atomic Settlement in DLT Networks
+**Results:** 3
+---
+
+## 1. DvP Protocols for Cross-Chain Transfers
+- **Relevance:** 84.0% | **Year:** 2023
+- **DOI:** `10.5678/dvp`
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 32: cluster_papers -->
+      <article class="tool-card" id="cluster_papers" data-category="rag"
+        data-name="cluster_papers"
+        data-description="Groups the indexed papers into topics with BERTopic">
+        <div class="tool-card-header">
+          <h3><a href="#cluster_papers">cluster_papers</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Clusters the corpus with BERTopic over MiniLM embeddings and reports each topic's
+            top words with sample titles. Outliers are counted but never listed as a topic.
+            Needs <code>bertopic</code>, <code>umap-learn</code> and <code>hdbscan</code>;
+            without them it names the installation that is missing.
+          </p>
+          <div class="tool-sig">cluster_papers(top_k: int = 500, min_cluster_size: int = 3) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">500</td>
+                <td>Number of papers to retrieve from the vector store</td>
+              </tr>
+              <tr>
+                <td class="param-name">min_cluster_size</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">3</td>
+                <td>Minimum papers required to form a topic cluster</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown report of topics with their top words, paper counts and up to 5 sample titles each.</p>
+          <pre><code># Example — ask your MCP client:
+"Cluster my indexed papers by topic."
+
+# Result:
+"# Topic Clusters
+
+**Papers analyzed:** 47
+**Topics found:** 3
+**Outliers (unassigned):** 6
+---
+
+## Topic 0: settlement, latency, atomic, cross-chain, payment, channel, routing, dvp
+
+**Papers:** 18
+- Atomic Settlement in DLT Networks
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 33: semantic_dedup -->
+      <article class="tool-card" id="semantic_dedup" data-category="rag"
+        data-name="semantic_dedup"
+        data-description="Groups near-duplicate papers by embedding similarity">
+        <div class="tool-card-header">
+          <h3><a href="#semantic_dedup">semantic_dedup</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Embeds the corpus and compares every pair by cosine similarity, grouping the
+            papers at or above <code>threshold</code>. Catches the near-duplicates that DOI
+            matching misses — the same work indexed twice under different identifiers, or a
+            preprint and the article it became.
+          </p>
+          <div class="tool-sig">semantic_dedup(threshold: float = 0.85, min_group_size: int = 2) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">threshold</td>
+                <td class="param-type">float</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">0.85</td>
+                <td>Cosine similarity above which two papers are grouped</td>
+              </tr>
+              <tr>
+                <td class="param-name">min_group_size</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">2</td>
+                <td>Minimum papers to form a group</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown groups, each member listed with its DOI and its similarity to the group's first paper.</p>
+          <pre><code># Example — ask your MCP client:
+"Are there duplicates in my indexed papers?"
+
+# Result:
+"# Semantic Dedup Results
+
+**Papers analyzed:** 47
+**Duplicate groups:** 1
+**Threshold:** 0.85
+---
+
+## Group 1 (2 papers)
+- Atomic Settlement in DLT Networks (DOI: `10.1234/atomic`, sim: 100.00%)
+- Atomic Settlement in DLT Networks (Preprint) (DOI: `10.48550/arXiv.2401.00001`, sim: 93.20%)
+"</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 34: find_novel_papers -->
+      <article class="tool-card" id="find_novel_papers" data-category="rag"
+        data-name="find_novel_papers"
+        data-description="Flags papers that sit far from the corpus centroid">
+        <div class="tool-card-header">
+          <h3><a href="#find_novel_papers">find_novel_papers</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Fits an <code>EllipticEnvelope</code> over the embeddings of the papers it
+            retrieves and returns the ones it calls outliers, most anomalous first. The
+            candidate set is the neighbourhood of a fixed query, not the whole collection —
+            and the verdict is a prompt to look, not a judgement: a paper can be an outlier
+            because it is novel or because it is off-topic.
+          </p>
+          <div class="tool-sig">find_novel_papers(top_k: int = 500, contamination: float = 0.1) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">500</td>
+                <td>Number of papers to analyze</td>
+              </tr>
+              <tr>
+                <td class="param-name">contamination</td>
+                <td class="param-type">float</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">0.1</td>
+                <td>Expected proportion of outliers</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown list of up to 10 outliers with their anomaly score and a preview. Needs <code>scikit-learn</code> and <code>sentence-transformers</code>.</p>
+          <pre><code># Example — ask your MCP client:
+"Which papers in my corpus are the odd ones out?"
+
+# Result:
+"# Novel/Outlier Papers
+
+**Papers analyzed:** 47
+**Outliers found:** 5
+---
+
+## Quantum-Resistant Signature Schemes (2025)
+- **Anomaly score:** -0.1812
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 35: visualize_landscape -->
+      <article class="tool-card" id="visualize_landscape" data-category="rag"
+        data-name="visualize_landscape"
+        data-description="Projects the corpus into 2D with UMAP and returns the coordinates">
+        <div class="tool-card-header">
+          <h3><a href="#visualize_landscape">visualize_landscape</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Reduces the embeddings of the retrieved papers to two dimensions with UMAP and
+            returns the points as JSON for the client to plot — the one tool here whose
+            output is not Markdown. Each point carries its coordinates plus enough metadata
+            (title, year, DOI, relevance) to label a plot without a second lookup.
+          </p>
+          <div class="tool-sig">visualize_landscape(top_k: int = 500, n_neighbors: int = 15) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">500</td>
+                <td>Max papers to include</td>
+              </tr>
+              <tr>
+                <td class="param-name">n_neighbors</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">15</td>
+                <td>UMAP neighborhood size</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> A JSON object with <code>papers</code> (x, y, title, year, doi, relevance) and <code>shape</code>. Needs <code>umap-learn</code> and <code>sentence-transformers</code>.</p>
+          <pre><code># Example — ask your MCP client:
+"Give me the coordinates to plot my paper landscape."
+
+# Result:
+{
+  "papers": [
+    {"x": -1.24, "y": 3.07, "title": "Atomic Settlement in DLT Networks",
+     "year": 2024, "doi": "10.1234/atomic", "relevance": 0.89}
+  ],
+  "shape": [47, 384]
+}</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 36: topic_evolution -->
+      <article class="tool-card" id="topic_evolution" data-category="rag"
+        data-name="topic_evolution"
+        data-description="Shows how topics recur across publication years with BERTopic">
+        <div class="tool-card-header">
+          <h3><a href="#topic_evolution">topic_evolution</a></h3>
+          <span class="tool-category cat-rag">RAG</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Runs BERTopic over the retrieved papers and groups its topics by publication
+            year, so a topic that appears in one year and not the next becomes visible.
+            Papers with no year, and papers in the outlier topic, are left out of the counts
+            rather than reported under a year they may not belong to.
+          </p>
+          <div class="tool-sig">topic_evolution(top_k: int = 500) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">500</td>
+                <td>Number of papers to analyze</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown with one section per year — its paper count and the three most frequent topics with their labels. Needs <code>bertopic</code> and <code>sentence-transformers</code>.</p>
+          <pre><code># Example — ask your MCP client:
+"How have the topics in my corpus changed by year?"
+
+# Result:
+"# Topic Evolution Over Time
+
+**Papers analyzed:** 47
+---
+
+### 2023 — 9 papers
+- settlement, latency, atomic (4)
+- zero-knowledge, proof, circuit (3)
+..."</code></pre>
+        </div>
+      </article>
+    </section>
+
+    <!-- ──────────────── WRITING ──────────────── -->
+    <section class="cat-section" id="writing">
+      <div class="cat-header">
+        <h2>Writing</h2>
+        <span class="cat-count">4 tools</span>
+      </div>
+
+      <!-- Tool 37: outline_paper -->
+      <article class="tool-card" id="outline_paper" data-category="writing"
+        data-name="outline_paper"
+        data-description="Builds an article skeleton from a completed search run, numbers included">
+        <div class="tool-card-header">
+          <h3><a href="#outline_paper">outline_paper</a></h3>
+          <span class="tool-category cat-writing">Writing</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Builds the section structure for a paper from a completed run, with every number
+            filled from that run's own statistics and explicit markers where prose still has
+            to be written. Nothing here calls a model — it is structure and data only, which
+            is what keeps fabricated figures out of the draft. After the outline, pull real
+            citations with <code>paper_context</code> and check them with
+            <code>verify_citations</code>.
+          </p>
+          <div class="tool-sig">outline_paper(paper_type: str = "method", topic: str = "", source_run: str | None = None) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">paper_type</td>
+                <td class="param-type">str</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">"method"</td>
+                <td>Paper template: "method" (contribution), "software" (JOSS format) or "survey" (landscape mapping)</td>
+              </tr>
+              <tr>
+                <td class="param-name">topic</td>
+                <td class="param-type">str</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">""</td>
+                <td>Article title/subject; falls back to the run's anchors when empty</td>
+              </tr>
+              <tr>
+                <td class="param-name">source_run</td>
+                <td class="param-type">str | None</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">None</td>
+                <td>Run directory name or path; defaults to the most recent run</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown skeleton with a header naming the run it came from, plus any warnings — a run predating <code>run_stats_*.json</code> yields an outline without numbers and says why.</p>
+        </div>
+      </article>
+
+      <!-- Tool 38: paper_context -->
+      <article class="tool-card" id="paper_context" data-category="writing"
+        data-name="paper_context"
+        data-description="Returns indexed papers carrying the citation key the project uses">
+        <div class="tool-card-header">
+          <h3><a href="#paper_context">paper_context</a></h3>
+          <span class="tool-category cat-writing">Writing</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Retrieves papers from the indexed corpus for a topic and a section, each with a
+            citation key in the project's own convention. The point is that the agent cites
+            papers that exist: it copies the key instead of recalling a reference, which is
+            the failure mode that produces fabricated ones. Verify the result with
+            <code>verify_citations</code>.
+          </p>
+          <div class="tool-sig">paper_context(topic: str, section: str = "", top_k: int = 20) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">topic</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>What the section is about</td>
+              </tr>
+              <tr>
+                <td class="param-name">section</td>
+                <td class="param-type">str</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">""</td>
+                <td>Section name (e.g. "Related Work"), to steer retrieval</td>
+              </tr>
+              <tr>
+                <td class="param-name">top_k</td>
+                <td class="param-type">int</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">20</td>
+                <td>How many papers to return (max 50)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Markdown list of citable papers with key, year, venue, DOI, source and a 400-character abstract.</p>
+          <pre><code># Example — ask your MCP client:
+"Give me citable papers for the Related Work section on cross-chain settlement."
+
+# Result:
+"# Citable papers for: cross-chain settlement
+
+12 papers retrieved from the indexed corpus. Use the `key` verbatim in `[@key]` citations — it matches the project's convention.
+
+## 1. Atomic Settlement in DLT Networks
+- **key:** `atomic2024`
+- **year:** 2024
+- **doi:** `10.1234/atomic`
+..."</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 39: verify_citations -->
+      <article class="tool-card" id="verify_citations" data-category="writing"
+        data-name="verify_citations"
+        data-description="Checks that every citation in a text points to a real reference">
+        <div class="tool-card-header">
+          <h3><a href="#verify_citations">verify_citations</a></h3>
+          <span class="tool-category cat-writing">Writing</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Runs the existence layer over every <code>[@key]</code> citation in the text.
+            Three probes are attempted, each only when the information to answer it exists:
+            the bibliography, the DOI resolving at Crossref, and the local corpus. A citation
+            is NOT_FOUND as soon as an available probe fails, and UNKNOWN when nothing could
+            be checked — could-not-verify is never reported as fabricated.
+          </p>
+          <div class="tool-sig">verify_citations(text: str, bib_path: str | None = None) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">text</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Manuscript text containing the <code>[@key]</code> citations</td>
+              </tr>
+              <tr>
+                <td class="param-name">bib_path</td>
+                <td class="param-type">str | None</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">None</td>
+                <td>Path to the .bib file; relative paths resolve against the project root. Without it, only the corpus probe runs</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Per-citation report grouped by verdict — not found, unverifiable, verified — plus the counts.</p>
+          <pre><code># Example — ask your MCP client:
+"Verify the citations in this section: ... [@atomic2024] ..."
+
+# Result:
+"# Citation verification (layer 1 — existence)
+
+Checked 2 citation(s): **1 verified**, **1 not found**, 0 unverifiable.
+
+## Not found
+
+- `chain2023` — not in the bibliography given
+  - used in: _...prior work on channel routing [@chain2023]..._
+"</code></pre>
+        </div>
+      </article>
+
+      <!-- Tool 40: verify_numbers -->
+      <article class="tool-card" id="verify_numbers" data-category="writing"
+        data-name="verify_numbers"
+        data-description="Checks the figures in a text against the experiment result files">
+        <div class="tool-card-header">
+          <h3><a href="#verify_numbers">verify_numbers</a></h3>
+          <span class="tool-category cat-writing">Writing</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Extracts every checkable number from the text — percentages, correlations,
+            p-values, counts of papers — and confronts each with the values actually present
+            in the result JSONs. A figure reported UNSOURCED has no counterpart there, which
+            is a prompt to look rather than a verdict: manuscripts legitimately quote figures
+            from cited literature.
+          </p>
+          <div class="tool-sig">verify_numbers(text: str, results_dir: str | None = None) &rarr; str</div>
+
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="param-name">text</td>
+                <td class="param-type">str</td>
+                <td class="param-req yes">Yes</td>
+                <td class="param-default">—</td>
+                <td>Manuscript text to check</td>
+              </tr>
+              <tr>
+                <td class="param-name">results_dir</td>
+                <td class="param-type">str | None</td>
+                <td class="param-req no">No</td>
+                <td class="param-default">None</td>
+                <td>Directory of result files; defaults to <code>results/</code> in the project root</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="tool-returns"><strong>Returns:</strong> Per-figure report grouped by status — unsourced, close, matched — plus the directory searched and how many distinct values were indexed.</p>
+          <pre><code># Example — ask your MCP client:
+"Check the figures in this draft against the result files."
+
+# Result:
+"# Figure verification (layer 3 — against result files)
+
+Checked 4 figure(s): **3 matched**, **0 close**, **1 unsourced**.
+
+Source: `/path/to/project/results` (126 distinct values indexed).
+
+## Unsourced — no matching value in the result files
+
+_Not necessarily wrong: figures quoted from cited literature will also land here._
+
+- `42%` (percentage)
+"</code></pre>
         </div>
       </article>
     </section>
@@ -1179,7 +2628,7 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
         <span class="cat-count">3 tools</span>
       </div>
 
-      <!-- Tool 19: fulltext_status -->
+      <!-- Tool 41: fulltext_status -->
       <article class="tool-card" id="fulltext_status" data-category="fulltext"
         data-name="fulltext_status"
         data-description="Reports how much full text the corpus has, and where each part of the number came from">
@@ -1201,7 +2650,7 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
         </div>
       </article>
 
-      <!-- Tool 20: index_fulltext -->
+      <!-- Tool 42: index_fulltext -->
       <article class="tool-card" id="index_fulltext" data-category="fulltext"
         data-name="index_fulltext"
         data-description="Downloads, extracts and indexes the full text of the latest run's papers">
@@ -1252,7 +2701,7 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
         </div>
       </article>
 
-      <!-- Tool 21: chunk_search -->
+      <!-- Tool 43: chunk_search -->
       <article class="tool-card" id="chunk_search" data-category="fulltext"
         data-name="chunk_search"
         data-description="Searches inside the full text and returns passages grouped by paper">
@@ -1314,6 +2763,49 @@ results/export_20260724_103022.bib (47 entries)"</code></pre>
           </table>
 
           <p class="tool-returns"><strong>Returns:</strong> Passages grouped by paper, each with its section, chunk index, character offsets and relevance.</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- ──────────────── SYSTEM ──────────────── -->
+    <section class="cat-section" id="system">
+      <div class="cat-header">
+        <h2>System</h2>
+        <span class="cat-count">1 tool</span>
+      </div>
+
+      <!-- Tool 44: server_status -->
+      <article class="tool-card" id="server_status" data-category="system"
+        data-name="server_status"
+        data-description="Reports server health: configuration, vector store and indexed paper count">
+        <div class="tool-card-header">
+          <h3><a href="#server_status">server_status</a></h3>
+          <span class="tool-category cat-system">System</span>
+        </div>
+        <div class="tool-card-body">
+          <p class="tool-desc">
+            Checks whether the configuration loads, whether the vector store answers and how
+            many papers it holds, and when the last configuration backup was taken. The same
+            probe backs the SSE <code>GET /health</code> endpoint, which is what a container
+            orchestrator polls — so a store that cannot be read reports a status rather than
+            answering ok.
+          </p>
+          <div class="tool-sig">server_status() &rarr; str</div>
+          <p class="tool-returns"><strong>Returns:</strong> A JSON string with the overall <code>status</code> (<code>ok</code>, <code>degraded</code> or <code>error</code>) and per-component detail.</p>
+          <pre><code># Example — ask your MCP client:
+"Is the Academic Hunter server healthy?"
+
+# Result:
+{
+  "status": "ok",
+  "server": "academic-hunter",
+  "config_loaded": true,
+  "vector_store": {
+    "available": true,
+    "paper_count": 47
+  },
+  "last_config_backup": "2026-07-15 14:32:01"
+}</code></pre>
         </div>
       </article>
     </section>

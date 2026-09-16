@@ -60,7 +60,7 @@
 
         <div class="badges">
           <span class="badge badge-accent">MCP Server</span>
-          <span class="badge badge-accent">18 Tools</span>
+          <span class="badge badge-accent">44 Tools</span>
           <span class="badge">Python 3.10+</span>
           <span class="badge badge-green">MIT License</span>
           <span class="badge">7 Connectors</span>
@@ -68,7 +68,7 @@
         </div>
 
         <div class="btn-group">
-          <a href="#tools" class="btn btn-primary">See the 18 Tools</a>
+          <a href="#tools" class="btn btn-primary">See the 44 Tools</a>
           <a href="#setup" class="btn">Connect Your AI</a>
           <a href="https://github.com/devfelipenunes/academic-hunter" target="_blank" rel="noopener" class="btn">GitHub</a>
         </div>
@@ -117,12 +117,12 @@
       </div>
     </section>
 
-    <!-- ═══ THE 18 TOOLS ═══ -->
+    <!-- ═══ THE 44 TOOLS ═══ -->
     <section class="section" id="tools">
       <div class="container">
-        <h2 class="section-title">The 18 MCP Tools</h2>
+        <h2 class="section-title">The 44 MCP Tools</h2>
         <p class="section-subtitle">
-          Six categories covering the full research workflow.
+          Eight categories covering the full research workflow.
           <a href="mcp/">Full reference with parameters and examples &rarr;</a>
         </p>
 
@@ -162,7 +162,7 @@
               <span class="cat-tools-icon">&#8623;</span>
               <div>
                 <h3>Discovery</h3>
-                <span class="cat-tools-count">4 tools</span>
+                <span class="cat-tools-count">16 tools</span>
               </div>
             </div>
             <ul class="cat-tools-list">
@@ -170,6 +170,18 @@
               <li><code>fetch_paper_by_doi</code> <span>Get abstract and metadata</span></li>
               <li><code>fetch_multiple_abstracts</code> <span>Batch-read papers for review matrices</span></li>
               <li><code>quick_topic_discovery</code> <span>Identify jargon in a research area</span></li>
+              <li><code>trending_topics</code> <span>Rank the title bigrams that recur in your corpus</span></li>
+              <li><code>compare_papers</code> <span>Compare two papers by DOI</span></li>
+              <li><code>get_citation_count</code> <span>Citation count straight from OpenCitations</span></li>
+              <li><code>get_citing_papers</code> <span>List the papers that cite a DOI</span></li>
+              <li><code>search_biorxiv</code> <span>bioRxiv and medRxiv preprints</span></li>
+              <li><code>search_datasets</code> <span>Datasets and software DOIs via DataCite</span></li>
+              <li><code>search_europepmc</code> <span>Life sciences and biomedical literature</span></li>
+              <li><code>search_patents</code> <span>Patent search via Lens.org</span></li>
+              <li><code>search_openaire</code> <span>Publications linked to funding grants</span></li>
+              <li><code>lookup_orcid</code> <span>A researcher's profile and publications</span></li>
+              <li><code>summarize_paper</code> <span>Extractive summary of an abstract</span></li>
+              <li><code>find_open_access</code> <span>Locate the open-access copy of a paper</span></li>
             </ul>
           </div>
 
@@ -178,11 +190,12 @@
               <span class="cat-tools-icon">&#9641;</span>
               <div>
                 <h3>Export</h3>
-                <span class="cat-tools-count">1 tool</span>
+                <span class="cat-tools-count">2 tools</span>
               </div>
             </div>
             <ul class="cat-tools-list">
               <li><code>export_to_obsidian</code> <span>Save note to your vault with frontmatter</span></li>
+              <li><code>export_report</code> <span>Export results as CSV, JSON, BibTeX, or RIS</span></li>
             </ul>
           </div>
 
@@ -191,7 +204,7 @@
               <span class="cat-tools-icon">&#9670;</span>
               <div>
                 <h3>RAG / Vector Store</h3>
-                <span class="cat-tools-count">4 tools</span>
+                <span class="cat-tools-count">12 tools</span>
               </div>
             </div>
             <ul class="cat-tools-list">
@@ -199,6 +212,30 @@
               <li><code>index_papers</code> <span>Index papers into ChromaDB</span></li>
               <li><code>vector_store_stats</code> <span>Check indexed paper count</span></li>
               <li><code>ask_papers</code> <span>Ask questions grounded in your collection</span></li>
+              <li><code>answer_question</code> <span>Findings and sources, ready to cite</span></li>
+              <li><code>rerank_search</code> <span>Semantic search plus cross-encoder re-ranking</span></li>
+              <li><code>find_related_papers</code> <span>What in the corpus is similar to this</span></li>
+              <li><code>cluster_papers</code> <span>Group the corpus into topics</span></li>
+              <li><code>semantic_dedup</code> <span>Find near-duplicate papers</span></li>
+              <li><code>find_novel_papers</code> <span>Flag the papers that do not fit</span></li>
+              <li><code>visualize_landscape</code> <span>2D UMAP coordinates for a plot</span></li>
+              <li><code>topic_evolution</code> <span>How the topics shift year by year</span></li>
+            </ul>
+          </div>
+
+          <div class="cat-tools-row">
+            <div class="cat-tools-header">
+              <span class="cat-tools-icon">&#9998;</span>
+              <div>
+                <h3>Writing</h3>
+                <span class="cat-tools-count">4 tools</span>
+              </div>
+            </div>
+            <ul class="cat-tools-list">
+              <li><code>outline_paper</code> <span>Article skeleton, with real run numbers</span></li>
+              <li><code>paper_context</code> <span>Citable papers with project citation keys</span></li>
+              <li><code>verify_citations</code> <span>Check every [@key] against real records</span></li>
+              <li><code>verify_numbers</code> <span>Check figures against the result files</span></li>
             </ul>
           </div>
 
@@ -214,6 +251,19 @@
               <li><code>fulltext_status</code> <span>How much full text the corpus has, and why</span></li>
               <li><code>index_fulltext</code> <span>Download and index full text of the last run</span></li>
               <li><code>chunk_search</code> <span>Search inside the papers, passage by passage</span></li>
+            </ul>
+          </div>
+
+          <div class="cat-tools-row">
+            <div class="cat-tools-header">
+              <span class="cat-tools-icon">&#9889;</span>
+              <div>
+                <h3>System</h3>
+                <span class="cat-tools-count">1 tool</span>
+              </div>
+            </div>
+            <ul class="cat-tools-list">
+              <li><code>server_status</code> <span>Server health, configuration and vector store</span></li>
             </ul>
           </div>
         </div>
