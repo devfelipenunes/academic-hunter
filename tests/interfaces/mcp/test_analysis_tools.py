@@ -110,18 +110,18 @@ async def test_trending_topics_below_threshold(mock_ctx):
 # ── compare_papers ────────────────────────────────────────────────────────
 
 
-async def test_compare_papers(mock_ctx):
-    """Success path — both papers retrieved from Semantic Scholar."""
-    mock_response_a = {
-        "title": "Paper Alpha",
-        "year": 2023,
-        "abstract": "This paper explores deep reinforcement learning for robotics navigation.",
-    }
-    mock_response_b = {
-        "title": "Paper Beta",
-        "year": 2024,
-        "abstract": "Recent advances in deep reinforcement learning for autonomous systems.",
-    }
+async def test_compare_papers(mock_ctx, mock_openalex, openalex_work, openalex_response):
+    """Success path — both papers retrieved from OpenAlex."""
+    work_a = openalex_work(
+        "Paper Alpha",
+        2023,
+        "This paper explores deep reinforcement learning for robotics navigation.",
+    )
+    work_b = openalex_work(
+        "Paper Beta",
+        2024,
+        "Recent advances in deep reinforcement learning for autonomous systems.",
+    )
 
     with patch("academic_hunter.interfaces.mcp.tools.comparison.AcademicHunter") as m_hunter:
         hunter_instance = m_hunter.return_value
@@ -133,10 +133,10 @@ async def test_compare_papers(mock_ctx):
             def _side_effect(url, **kwargs):
                 resp = MagicMock()
                 resp.raise_for_status.return_value = None
-                if "DOI:10.1000/alpha" in url:
-                    resp.json.return_value = mock_response_a
-                elif "DOI:10.1000/beta" in url:
-                    resp.json.return_value = mock_response_b
+                if "doi:10.1000/alpha" in url:
+                    resp.json.return_value = work_a
+                elif "doi:10.1000/beta" in url:
+                    resp.json.return_value = work_b
                 else:
                     resp.json.return_value = {}
                 return resp
@@ -155,13 +155,9 @@ async def test_compare_papers(mock_ctx):
             mock_ctx.info.assert_called()
 
 
-async def test_compare_papers_one_not_found(mock_ctx):
+async def test_compare_papers_one_not_found(mock_ctx, mock_openalex, openalex_work):
     """Graceful handling when one paper's metadata cannot be retrieved."""
-    mock_response_a = {
-        "title": "Paper Alpha",
-        "year": 2023,
-        "abstract": "Deep learning methods for NLP.",
-    }
+    work_a = openalex_work("Paper Alpha", 2023, "Deep learning methods for NLP.")
 
     with patch("academic_hunter.interfaces.mcp.tools.comparison.AcademicHunter") as m_hunter:
         hunter_instance = m_hunter.return_value
@@ -173,8 +169,8 @@ async def test_compare_papers_one_not_found(mock_ctx):
             def _side_effect(url, **kwargs):
                 resp = MagicMock()
                 resp.raise_for_status.return_value = None
-                if "DOI:10.1000/alpha" in url:
-                    resp.json.return_value = mock_response_a
+                if "doi:10.1000/alpha" in url:
+                    resp.json.return_value = work_a
                 else:
                     # Simulate empty response for missing paper
                     resp.json.return_value = {}
@@ -189,7 +185,7 @@ async def test_compare_papers_one_not_found(mock_ctx):
             mock_ctx.info.assert_called()
 
 
-async def test_compare_papers_api_error(mock_ctx):
+async def test_compare_papers_api_error(mock_ctx, mock_openalex):
     """API failures propagate as DiscoveryError."""
     with patch(
         "requests.get"

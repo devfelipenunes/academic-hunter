@@ -1,4 +1,4 @@
-"""MCP tool for side-by-side paper comparison using Semantic Scholar metadata.
+"""MCP tool for side-by-side paper comparison using OpenAlex metadata.
 
 Accepts a ``ctx: Context`` parameter (auto-injected by FastMCP)
 for logging and progress reporting.
@@ -7,12 +7,13 @@ for logging and progress reporting.
 import logging
 import re
 
-import asyncio
 import requests
+from urllib.parse import quote
 from mcp.server.fastmcp import Context
 
 from academic_hunter import AcademicHunter
-from ._utils import _STOPWORDS, run_blocking
+from academic_hunter.plugins.connectors.openalex import decode_abstract
+from ._utils import _STOPWORDS, openalex_get, run_blocking
 from ..exceptions import DiscoveryError
 from ..validation import validate_doi
 
@@ -20,10 +21,11 @@ logger = logging.getLogger("academic_hunter.mcp.comparison")
 
 
 async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
-    """Compares two papers side by side using Semantic Scholar metadata.
+    """Compares two papers side by side using OpenAlex metadata.
 
     Fetches title, year, and abstract for both DOIs, computes shared keywords
-    from their abstracts, and presents a formatted comparison.
+    from their abstracts, and presents a formatted comparison. Both lookups are
+    DOI singletons, which OpenAlex does not charge for.
 
     Args:
         ctx: FastMCP Context (auto-injected).
@@ -37,21 +39,28 @@ async def compare_papers(ctx: Context, doi_a: str, doi_b: str) -> str:
         doi_b = validate_doi(doi_b)
 
         async def _fetch_meta(doi: str) -> dict:
-            """Fetch paper metadata — tries Semantic Scholar, falls back to AcademicHunter."""
+            """Fetch paper metadata — tries OpenAlex, falls back to AcademicHunter."""
             last_error = None
-            # Try Semantic Scholar API
+            # A DOI lookup is OpenAlex's free call type: it costs no credits,
+            # where the `search` endpoint costs ten.
             try:
-                url = (
-                    f"https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}"
-                    "?fields=title,year,abstract"
-                )
-                resp = await asyncio.to_thread(requests.get, url, timeout=10)
-                resp.raise_for_status()
-                return resp.json()
+                # `or {}`: a 200 with nothing in it is a degenerate answer, not
+                # a failure — the comparison degrades to "Unknown Title" rather
+                # than aborting. An HTTP error is the failure, and that falls
+                # through to the hunter below.
+                work = await openalex_get(
+                    f"/works/doi:{quote(doi, safe='/')}",
+                    {"select": "display_name,publication_year,abstract_inverted_index"},
+                ) or {}
+                return {
+                    "title": work.get("display_name"),
+                    "year": work.get("publication_year"),
+                    "abstract": decode_abstract(work.get("abstract_inverted_index")),
+                }
             except requests.RequestException as e:
                 last_error = e
 
-            # Fallback: arXiv DOIs (10.48550/arXiv.xxxx) not found by Semantic Scholar
+            # Fallback: DOIs OpenAlex does not hold, arXiv's included.
             try:
                 hunter = await run_blocking(AcademicHunter)
                 abstract = hunter.fetch_abstract_by_doi(doi)

@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "academic-hunter": {
-      "command": "academic-mcp",
+      "command": "/l/disk0/fnunes/Documentos/me/pesquisa_academica/venv/bin/academic-mcp",
       "args": ["--transport", "stdio"]
     }
   }

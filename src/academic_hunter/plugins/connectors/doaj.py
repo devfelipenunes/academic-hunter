@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from typing import List, Dict, Any
-from .base import BaseConnector
+from .base import BaseConnector, keyword_query
 
 logger = logging.getLogger("academic_hunter.connectors")
 
@@ -28,7 +28,7 @@ class DoajConnector(BaseConnector):
         return ""
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
-        query = f"{' '.join(anchors[:3])} {' '.join(tech_strings[:2])}"
+        query = keyword_query(anchors, tech_strings)
         with self.lock:
             self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
 

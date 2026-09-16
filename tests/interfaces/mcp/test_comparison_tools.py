@@ -3,26 +3,27 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 
-async def test_compare_papers_both_found(mock_ctx):
-    """Returns comparison with metadata from Semantic Scholar."""
+async def test_compare_papers_both_found(mock_ctx, mock_openalex, openalex_work, openalex_response):
+    """Returns comparison with metadata from OpenAlex."""
     from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
 
-    mock_response_a = MagicMock()
-    mock_response_a.json.return_value = {
-        "title": "Paper A Title",
-        "year": 2024,
-        "abstract": "This paper discusses blockchain technology for payments.",
-    }
-
-    mock_response_b = MagicMock()
-    mock_response_b.json.return_value = {
-        "title": "Paper B Title",
-        "year": 2023,
-        "abstract": "A study on blockchain and distributed ledger systems payments.",
-    }
+    response_a = openalex_response(
+        openalex_work(
+            "Paper A Title",
+            2024,
+            "This paper discusses blockchain technology for payments.",
+        )
+    )
+    response_b = openalex_response(
+        openalex_work(
+            "Paper B Title",
+            2023,
+            "A study on blockchain and distributed ledger systems payments.",
+        )
+    )
 
     with patch("academic_hunter.interfaces.mcp.tools.comparison.requests.get") as m_get:
-        m_get.side_effect = [mock_response_a, mock_response_b]
+        m_get.side_effect = [response_a, response_b]
         result = await compare_papers(mock_ctx, "10.1000/a", "10.1000/b")
 
     assert "Paper A Title" in result
@@ -34,8 +35,8 @@ async def test_compare_papers_both_found(mock_ctx):
     assert "payment" in result or "payments" in result
 
 
-async def test_compare_papers_fallback_arxiv(mock_ctx):
-    """Falls back to AcademicHunter when Semantic Scholar fails for arXiv DOI."""
+async def test_compare_papers_fallback_arxiv(mock_ctx, mock_openalex):
+    """Falls back to AcademicHunter when OpenAlex fails for an arXiv DOI."""
     from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
 
     mock_fail = MagicMock()
@@ -66,7 +67,7 @@ async def test_compare_papers_invalid_doi(mock_ctx):
         await compare_papers(mock_ctx, "not-a-doi", "10.1000/valid")
 
 
-async def test_compare_papers_not_found(mock_ctx):
+async def test_compare_papers_not_found(mock_ctx, mock_openalex):
     """Raises DiscoveryError when neither source finds the paper."""
     from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
     from academic_hunter.interfaces.mcp.exceptions import DiscoveryError
@@ -82,41 +83,35 @@ async def test_compare_papers_not_found(mock_ctx):
                 await compare_papers(mock_ctx, "10.1000/missing", "10.1000/also_missing")
 
 
-async def test_compare_papers_no_overlap(mock_ctx):
+async def test_compare_papers_no_overlap(mock_ctx, mock_openalex, openalex_work, openalex_response):
     """Shows no-shared-keywords message when there's no overlap."""
     from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
 
-    mock_a = MagicMock()
-    mock_a.json.return_value = {
-        "title": "Quantum Computing",
-        "year": 2024,
-        "abstract": "Qubits superposition quantum gates entanglement.",
-    }
-    mock_b = MagicMock()
-    mock_b.json.return_value = {
-        "title": "Ancient Rome",
-        "year": 2023,
-        "abstract": "Roman empire colosseum gladiators latin literature.",
-    }
+    response_a = openalex_response(
+        openalex_work("Quantum Computing", 2024, "Qubits superposition quantum gates entanglement.")
+    )
+    response_b = openalex_response(
+        openalex_work("Ancient Rome", 2023, "Roman empire colosseum gladiators latin literature.")
+    )
 
     with patch("academic_hunter.interfaces.mcp.tools.comparison.requests.get") as m_get:
-        m_get.side_effect = [mock_a, mock_b]
+        m_get.side_effect = [response_a, response_b]
         result = await compare_papers(mock_ctx, "10.1000/quantum", "10.1000/rome")
 
     assert "No significant keyword overlap" in result
 
 
-async def test_compare_papers_shared_keywords_empty_abstract(mock_ctx):
-    """Handles empty abstracts gracefully."""
+async def test_compare_papers_shared_keywords_empty_abstract(
+    mock_ctx, mock_openalex, openalex_work, openalex_response
+):
+    """Handles a work OpenAlex holds without an abstract."""
     from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
 
-    mock_a = MagicMock()
-    mock_a.json.return_value = {"title": "Paper A", "year": 2024, "abstract": ""}
-    mock_b = MagicMock()
-    mock_b.json.return_value = {"title": "Paper B", "year": 2023, "abstract": None}
+    response_a = openalex_response(openalex_work("Paper A", 2024))
+    response_b = openalex_response(openalex_work("Paper B", 2023))
 
     with patch("academic_hunter.interfaces.mcp.tools.comparison.requests.get") as m_get:
-        m_get.side_effect = [mock_a, mock_b]
+        m_get.side_effect = [response_a, response_b]
         with patch("academic_hunter.interfaces.mcp.tools.comparison.AcademicHunter") as m_h:
             m_h.return_value.fetch_abstract_by_doi.return_value = ""
             result = await compare_papers(mock_ctx, "10.1000/a", "10.1000/b")

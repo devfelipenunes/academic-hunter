@@ -32,51 +32,135 @@ async def test_coci_request_raises_on_error(mock_ctx):
             await _coci_request("citation-count", "10.1234/test")
 
 
-# ── _request_with_retry ────────────────────────────────────────────
+# ── _openalex_get_sync ─────────────────────────────────────────────
 
 
-async def test_request_with_retry_success(mock_ctx):
-    """Retry succeeds on first attempt."""
-    from academic_hunter.interfaces.mcp.tools.discovery import _request_with_retry
-
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-
-    with patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get") as m_get:
-        m_get.return_value = mock_response
-        result = await _request_with_retry("http://test.com")
-        assert result == mock_response
+def _openalex_test_response(status_code=200, payload=None, retry_after=None):
+    response = MagicMock()
+    response.status_code = status_code
+    response.json.return_value = payload if payload is not None else {}
+    response.headers = {"Retry-After": retry_after} if retry_after else {}
+    return response
 
 
-async def test_request_with_retry_retries_on_429(mock_ctx):
-    """Retry retries on 429 then succeeds."""
-    from academic_hunter.interfaces.mcp.tools.discovery import _request_with_retry
+class _FakeClock:
+    """A stand-in for the ``time`` module, patched onto ``_utils.time`` only.
 
-    fail_response = MagicMock()
-    fail_response.status_code = 429
-    success_response = MagicMock()
-    success_response.status_code = 200
+    Patching the real module's ``time``/``sleep`` reaches every thread in the
+    process, and a ``side_effect`` list that runs out raises StopIteration inside
+    whatever called it next. ``sleep`` advancing the clock is also what makes the
+    pacing assertion arithmetic rather than a guess.
+    """
 
-    with patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get") as m_get:
-        m_get.side_effect = [fail_response, success_response]
-        result = await _request_with_retry("http://test.com", max_retries=2, base_delay=0.01)
-        assert result == success_response
-        assert m_get.call_count == 2
+    def __init__(self, now=1000.0):
+        self.now = now
+        self.slept: list = []
+
+    def time(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.slept.append(seconds)
+        self.now += seconds
 
 
-async def test_request_with_retry_exhausts_retries(mock_ctx):
-    """Retry raises after exhausting retries on persistent 429."""
-    from academic_hunter.interfaces.mcp.tools.discovery import _request_with_retry
+def test_openalex_get_returns_the_payload(mock_openalex):
+    """One request, and the parsed body comes back."""
+    from academic_hunter.interfaces.mcp.tools import _utils
+
+    with patch.object(_utils.requests, "get") as m_get:
+        m_get.return_value = _openalex_test_response(payload={"results": [1, 2]})
+        assert _utils._openalex_get_sync("/works", {"search": "x"}) == {"results": [1, 2]}
+
+    assert m_get.call_count == 1
+    assert m_get.call_args.kwargs["params"]["search"] == "x"
+    assert m_get.call_args.args[0] == "https://api.openalex.org/works"
+
+
+def test_openalex_get_retries_a_429_then_succeeds(mock_openalex):
+    from academic_hunter.interfaces.mcp.tools import _utils
+
+    clock = _FakeClock()
+    with patch.object(_utils, "time", clock), \
+         patch.object(_utils.requests, "get") as m_get:
+        m_get.side_effect = [
+            _openalex_test_response(429, retry_after="1"),
+            _openalex_test_response(200, {"ok": True}),
+        ]
+        assert _utils._openalex_get_sync("/works") == {"ok": True}
+
+    assert m_get.call_count == 2
+    # OpenAlex asked for 1s and was taken at its word, not at 2**attempt.
+    assert clock.slept == [1.0]
+
+
+def test_openalex_get_makes_at_most_attempts_requests(mock_openalex):
+    """A spent budget costs `attempts` requests, not one more.
+
+    The helper this replaced slept through its loop and then issued a further
+    request *outside* it, so an exhausted retry cost four calls where the
+    parameter promised three.
+    """
     import requests
 
-    fail_response = MagicMock()
-    fail_response.status_code = 429
-    fail_response.raise_for_status.side_effect = requests.HTTPError("429 Too Many Requests")
+    from academic_hunter.interfaces.mcp.tools import _utils
 
-    with patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get") as m_get:
-        m_get.return_value = fail_response
-        with pytest.raises(requests.RequestException):
-            await _request_with_retry("http://test.com", max_retries=2, base_delay=0.01)
+    spent = _openalex_test_response(429)
+    spent.raise_for_status.side_effect = requests.HTTPError("429 Too Many Requests")
+
+    clock = _FakeClock()
+    with patch.object(_utils, "time", clock), \
+         patch.object(_utils.requests, "get") as m_get:
+        m_get.return_value = spent
+        with pytest.raises(requests.HTTPError):
+            _utils._openalex_get_sync("/works", attempts=3)
+
+    assert m_get.call_count == 3
+    # Two backoffs, then the third attempt raises instead of asking again.
+    assert clock.slept == [1.0, 2.0]
+
+
+def test_openalex_get_paces_successive_calls():
+    """Two calls in a row are held apart by the minimum interval.
+
+    Deliberately without ``mock_openalex``: that fixture patches ``_pace_openalex``
+    away, which is exactly the behaviour under test here. Only the config read is
+    neutralised, and the clock is supplied so the wait is arithmetic, not wall
+    clock.
+    """
+    from academic_hunter.interfaces.mcp.tools import _utils
+
+    # The pacing cursor starts well before the clock, so the first call has
+    # nothing to wait for. Anchoring it level with the clock would make that
+    # first call look like it happened this instant, and it would wait too.
+    clock = _FakeClock()
+    with patch.object(_utils, "_openalex_credentials", return_value=({}, {})), \
+         patch.object(_utils, "time", clock), \
+         patch.object(_utils, "_openalex_last_call", 0.0), \
+         patch.object(_utils.requests, "get") as m_get:
+        m_get.return_value = _openalex_test_response()
+        _utils._openalex_get_sync("/works")
+        assert clock.slept == [], "the first call should not be paced"
+
+        # The second follows immediately, so it waits out the whole interval.
+        _utils._openalex_get_sync("/works")
+
+    assert clock.slept == [_utils._OPENALEX_MIN_INTERVAL]
+
+
+def test_openalex_key_prefers_the_environment(monkeypatch):
+    """The env var wins, so a key can be used without writing it to disk."""
+    from academic_hunter.core.infra.config import openalex_key
+
+    settings = {"api_keys": {"openalex": "from-file"}, "openalex_api_key": "flat"}
+    assert openalex_key(settings) == "from-file"
+
+    monkeypatch.setenv("OPENALEX_API_KEY", "from-env")
+    assert openalex_key(settings) == "from-env"
+
+    monkeypatch.delenv("OPENALEX_API_KEY")
+    assert openalex_key({"openalex_api_key": "flat"}) == "flat"
+    assert openalex_key({}) == ""
 
 
 # ── _extract_bigrams ───────────────────────────────────────────────

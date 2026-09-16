@@ -17,6 +17,68 @@ logger = logging.getLogger("academic_hunter.connectors")
 _RETRY_BACKOFF_SECONDS = 0.5
 
 
+#: How many phrases a keyword-only query may carry. A bound is necessary, not
+#: cosmetic: Semantic Scholar's `paper/search` is a relevance endpoint, not a
+#: boolean AND, and enough phrases in it match nothing at all. Measured against
+#: the live API with the Stellar anchors, same credentials: 15 words -> 2
+#: results, 17 -> 2, 18 -> 0.
+KEYWORD_QUERY_MAX_TERMS = 5
+
+
+def _distinct(terms: List[str]) -> List[str]:
+    """The terms, in order, without repeats — case-insensitively."""
+    seen: Dict[str, str] = {}
+    for term in terms:
+        text = str(term).strip()
+        if text:
+            seen.setdefault(text.lower(), text)
+    return list(seen.values())
+
+
+def keyword_query(
+    anchors: List[str],
+    tech_strings: List[str],
+    max_terms: int = KEYWORD_QUERY_MAX_TERMS,
+) -> str:
+    """The free-text query for a keyword-only source: the anchors, and only those.
+
+    The three keyword-only connectors each joined `anchors[:3]` and
+    `tech_strings[:2]`. Two things were wrong with that. The slices were silent
+    and unnamed, so an operator configuring four anchors and ten fallback terms
+    got three and two with no way to find out — and the PRISMA then printed the
+    cut query as though it were the configuration.
+
+    The other was spending part of the query on the fallback terms. On these
+    endpoints a fallback term does not broaden a search, it narrows it. Measured
+    twice each against Semantic Scholar with the Stellar anchors:
+
+        the four anchors alone                     51 results
+        the anchors plus one fallback term          6 results
+        three anchors plus two fallback terms      41 results — but both
+                                                   fallback terms duplicated
+                                                   anchors, so this was the
+                                                   anchors too
+
+    One non-anchor phrase took 51 down to 6, reproducibly. So the anchors carry
+    the query, and `keyword_only_terms` does what its name says: it is the
+    fallback for a topic configured with no anchors at all.
+
+    The bound still applies, and anything it drops is named in the log.
+    """
+    selected = _distinct(anchors)
+    if not selected:
+        selected = _distinct(tech_strings)
+
+    if len(selected) > max_terms:
+        logger.warning(
+            "Keyword-only query keeps %d of %d configured terms; dropped: %s. "
+            "A longer query is not a broader one on these sources.",
+            max_terms, len(selected), ", ".join(selected[max_terms:]),
+        )
+        selected = selected[:max_terms]
+    return " ".join(selected)
+
+
 class BaseConnector:
     """Base API connector handling domain pacing, concurrency limits, retries, and caching."""
     fetch_suffix = ""

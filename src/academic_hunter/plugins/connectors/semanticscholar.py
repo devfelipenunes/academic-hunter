@@ -1,7 +1,7 @@
-import os
 import logging
 from typing import List, Dict, Any
-from .base import BaseConnector
+from academic_hunter.core.infra.config import semantic_scholar_key
+from .base import BaseConnector, keyword_query
 
 logger = logging.getLogger("academic_hunter.connectors")
 
@@ -22,21 +22,18 @@ class SemanticScholarConnector(BaseConnector):
         return "N/A"
 
     def setup_pacing(self):
-        api_keys = self.settings.get('api_keys', {})
-        s2_key = os.environ.get('SEMANTIC_SCHOLAR_API_KEY') or api_keys.get('semantic_scholar') or self.settings.get('semantic_scholar_api_key')
-        if s2_key and self.domain in self.pacing_delays:
+        if semantic_scholar_key(self.settings) and self.domain in self.pacing_delays:
             self.pacing_delays[self.domain] = 1.0
 
     def get_headers(self) -> Dict[str, str]:
         headers = super().get_headers()
-        api_keys = self.settings.get('api_keys', {})
-        s2_key = os.environ.get('SEMANTIC_SCHOLAR_API_KEY') or api_keys.get('semantic_scholar') or self.settings.get('semantic_scholar_api_key')
+        s2_key = semantic_scholar_key(self.settings)
         if s2_key:
             headers["x-api-key"] = s2_key
         return headers
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
-        query = f'{" ".join(anchors[:3])} {" ".join(tech_strings[:2])}'
+        query = keyword_query(anchors, tech_strings)
         with self.lock:
             self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
         start_year = self.settings.get('start_year', 2021)

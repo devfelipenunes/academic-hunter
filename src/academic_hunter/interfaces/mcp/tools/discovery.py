@@ -4,44 +4,44 @@ All tools accept a ``ctx`` parameter (auto-injected by FastMCP as ``Context``)
 for logging and error reporting.
 """
 
-import asyncio
 import requests
+from urllib.parse import quote
 from academic_hunter import AcademicHunter
 from ..cache import cached, discovery_cache
-from ._utils import run_blocking
+from ._utils import openalex_get, run_blocking
 from ..exceptions import DiscoveryError
 from ..validation import validate_doi
 from mcp.server.fastmcp import Context
 
 
-async def _request_with_retry(url, max_retries=3, base_delay=2.0, **kwargs):
-    """GET request with exponential backoff on 429 rate-limit responses.
+#: OpenAlex returns a work's references as bare OpenAlex IDs, which then have to
+#: be resolved in a second call. Its `filter` takes at most 100 OR values, and
+#: the tool's own contract is a list of ten, so that is the ceiling here.
+_REFERENCE_LIMIT = 10
 
-    Uses ``asyncio.sleep()`` and ``run_in_executor`` to avoid blocking
-    the async event loop during retry delays.
+
+def _rate_limit_error() -> DiscoveryError:
+    """The error for a spent OpenAlex budget, in OpenAlex's own terms.
+
+    A 429 here is a cost ceiling, not a burst limit: OpenAlex accepts 100
+    requests a second and meters by the credit a call type costs. Saying so
+    matters because the remedy is different — a key, or waiting for midnight
+    UTC, never "slow down".
     """
-    loop = asyncio.get_event_loop()
-    for attempt in range(max_retries):
-        response = await loop.run_in_executor(
-            None, lambda: requests.get(url, timeout=10, **kwargs)
-        )
-        if response.status_code == 429:
-            delay = base_delay * (2 ** attempt)
-            await asyncio.sleep(delay)
-            continue
-        response.raise_for_status()
-        return response
-    # Last attempt — let exception propagate
-    response = await loop.run_in_executor(
-        None, lambda: requests.get(url, timeout=10, **kwargs)
+    return DiscoveryError(
+        "OpenAlex returned 429 — the daily credit budget is spent (about 1000 "
+        "credits without a key; a `search` costs 10). Set `api_keys.openalex` "
+        "for ten times the budget, or retry after midnight UTC."
     )
-    response.raise_for_status()
-    return response
 
 
 @cached(discovery_cache)
 async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Context = None) -> str:
-    """Explore the citation graph of a paper using its DOI via Semantic Scholar.
+    """Explore the citation graph of a paper using its DOI via OpenAlex.
+
+    Both directions are answered from OpenAlex: "citations" filters works by
+    `cites:<id>`, and "references" resolves the IDs the work carries. The DOI
+    lookup itself is free; each direction costs one credit.
 
     Args:
         doi: The DOI of the paper to explore.
@@ -54,30 +54,66 @@ async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Co
 
     try:
         doi = validate_doi(doi)
-        paper_id = f"DOI:{doi}"
-        url = (
-            f"https://api.semanticscholar.org/graph/v1/paper/{paper_id}"
-            f"/{direction}?fields=title,year,authors&limit=10"
+        # The singleton is free, and for `references` it is the only way in:
+        # a work carries its references as IDs, not as resolvable records.
+        work = await openalex_get(
+            f"/works/doi:{quote(doi, safe='/')}",
+            {"select": "id,display_name,publication_year,cited_by_count,referenced_works"},
         )
-        response = await _request_with_retry(url)
-        response.raise_for_status()
+        if not work:
+            return f"No record for DOI {doi} in OpenAlex."
 
-        data = response.json().get("data", [])
-        if not data:
+        if direction == "citations":
+            work_id = (work.get("id") or "").rsplit("/", 1)[-1]
+            if not work_id:
+                return f"No OpenAlex ID for DOI {doi}."
+            data = await openalex_get(
+                "/works",
+                {
+                    "filter": f"cites:{work_id}",
+                    "per_page": _REFERENCE_LIMIT,
+                    "select": "display_name,publication_year,type",
+                },
+            )
+            items = data.get("results") or []
+        else:
+            referenced = work.get("referenced_works") or []
+            if not referenced:
+                # OpenAlex has the work but no parsed reference list for it,
+                # which is common for conference papers. Saying so is the point:
+                # an empty answer here is not "nothing cites this".
+                await ctx.info(f"OpenAlex has no indexed references for {doi}")
+                return (
+                    f"OpenAlex holds no indexed reference list for DOI {doi} "
+                    f"(it is cited by {work.get('cited_by_count', 0)} works)."
+                )
+            ids = "|".join(ref.rsplit("/", 1)[-1] for ref in referenced[:_REFERENCE_LIMIT])
+            data = await openalex_get(
+                "/works",
+                {
+                    "filter": f"openalex_id:{ids}",
+                    "per_page": _REFERENCE_LIMIT,
+                    "select": "display_name,publication_year,type",
+                },
+            )
+            items = data.get("results") or []
+
+        if not items:
             await ctx.info(f"No {direction} found for DOI {doi}")
             return f"No {direction} found for DOI {doi}."
 
-        key = "citingPaper" if direction == "citations" else "citedPaper"
         results = [f"--- {direction.capitalize()} for {doi} ---"]
-        for item in data:
-            paper = item.get(key)
-            if not paper:
-                continue
-            title = paper.get("title", "Unknown Title")
-            year = paper.get("year", "Unknown Year")
-            results.append(f"- {title} ({year})")
+        for item in items:
+            title = item.get("display_name") or "Unknown Title"
+            year = item.get("publication_year") or "Unknown Year"
+            # OpenAlex indexes a paper's preprint and its published version as
+            # two works with the same title, so the same line appeared twice
+            # with nothing to tell them apart. Naming the preprint is what makes
+            # the pair readable rather than looking like a duplicate bug.
+            marker = " [preprint]" if item.get("type") == "preprint" else ""
+            results.append(f"- {title} ({year}){marker}")
 
-        await ctx.info(f"Found {len(data)} {direction}")
+        await ctx.info(f"Found {len(items)} {direction}")
         return "\n".join(results)
     except DiscoveryError:
         raise
@@ -86,15 +122,9 @@ async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Co
     except requests.RequestException as e:
         status = getattr(getattr(e, "response", None), "status_code", 0)
         if status == 429:
-            # A bare 429 sends the reader to the wrong place: the API is rate
-            # limiting this client, and a configured key raises the ceiling.
-            await ctx.error("Semantic Scholar is rate limiting this client.")
-            raise DiscoveryError(
-                "Semantic Scholar returned 429 (rate limit). Set "
-                "`api_keys.semantic_scholar` in config.json for a higher quota, "
-                "or retry later."
-            )
-        await ctx.error(f"Semantic Scholar API error: {e}")
+            await ctx.error("OpenAlex is over its daily budget for this client.")
+            raise _rate_limit_error()
+        await ctx.error(f"OpenAlex API error: {e}")
         raise DiscoveryError(str(e))
     except Exception as e:
         await ctx.error(f"Unexpected error exploring citation graph: {e}")
@@ -150,47 +180,50 @@ async def fetch_multiple_abstracts(dois: list[str], ctx: Context) -> str:
 
 @cached(discovery_cache)
 async def quick_topic_discovery(topic: str, ctx: Context) -> str:
-    """Performs a quick topic search via the Semantic Scholar API.
+    """Performs a quick topic search via OpenAlex.
 
     Returns the titles of the most relevant papers to help identify jargon
     before configuring the full search.
+
+    A `search` is OpenAlex's most expensive call type — 10 of the roughly 1000
+    daily credits a keyless caller gets — so the result is cached.
     """
     await ctx.info(f"Running quick topic discovery for '{topic}'...")
-    try:
-        url = (
-            f"https://api.semanticscholar.org/graph/v1/paper/search"
-            f"?query={topic}&limit=10&fields=title,year"
-        )
-        response = await _request_with_retry(url)
-        response.raise_for_status()
 
-        data = response.json().get("data", [])
-        if not data:
+    try:
+        # Keyword arguments rather than a pasted query string: a topic is
+        # operator input, and building the URL by hand let an `&` in it add a
+        # parameter of its own.
+        data = await openalex_get(
+            "/works",
+            {
+                "search": topic,
+                "per_page": 10,
+                "select": "display_name,publication_year",
+            },
+        )
+
+        items = data.get("results") or []
+        if not items:
             await ctx.info(f"No results found for topic: {topic}")
             return f"No results found for topic: {topic}"
 
         results = [f"--- Quick Discovery for '{topic}' ---"]
-        for paper in data:
-            title = paper.get("title", "Unknown Title")
-            year = paper.get("year", "Unknown Year")
+        for work in items:
+            title = work.get("display_name") or "Unknown Title"
+            year = work.get("publication_year") or "Unknown Year"
             results.append(f"- {title} ({year})")
 
-        await ctx.info(f"Found {len(data)} papers for '{topic}'")
+        await ctx.info(f"Found {len(items)} papers for '{topic}'")
         return "\n".join(results)
     except DiscoveryError:
         raise
     except requests.RequestException as e:
         status = getattr(getattr(e, "response", None), "status_code", 0)
         if status == 429:
-            # A bare 429 sends the reader to the wrong place: the API is rate
-            # limiting this client, and a configured key raises the ceiling.
-            await ctx.error("Semantic Scholar is rate limiting this client.")
-            raise DiscoveryError(
-                "Semantic Scholar returned 429 (rate limit). Set "
-                "`api_keys.semantic_scholar` in config.json for a higher quota, "
-                "or retry later."
-            )
-        await ctx.error(f"Semantic Scholar API error: {e}")
+            await ctx.error("OpenAlex is over its daily budget for this client.")
+            raise _rate_limit_error()
+        await ctx.error(f"OpenAlex API error: {e}")
         raise DiscoveryError(str(e))
     except Exception as e:
         await ctx.error(f"Unexpected error discovering topic: {e}")

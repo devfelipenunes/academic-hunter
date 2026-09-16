@@ -1,12 +1,32 @@
-import os
 import logging
 from typing import List, Dict, Any
 
+from ...core.infra.config import openalex_key
 from ...core.models.utils import normalize_doi
 
 from .base import BaseConnector
 
 logger = logging.getLogger("academic_hunter.connectors")
+
+
+def decode_abstract(inverted_index) -> str:
+    """Rebuild an OpenAlex abstract from its inverted index.
+
+    OpenAlex ships abstracts as ``{word: [positions]}`` rather than as text; the
+    MCP tools read the same field, so the decoder lives at module level rather
+    than on the connector they would otherwise have to instantiate to reach it.
+    """
+    if not inverted_index:
+        return ""
+    try:
+        max_pos = max(max(pos) for pos in inverted_index.values())
+        words = [""] * (max_pos + 1)
+        for word, positions in inverted_index.items():
+            for pos in positions:
+                words[pos] = word
+        return " ".join(words).strip()
+    except Exception:
+        return ""
 
 
 class OpenAlexConnector(BaseConnector):
@@ -25,10 +45,9 @@ class OpenAlexConnector(BaseConnector):
 
     def get_headers(self) -> Dict[str, str]:
         headers = super().get_headers()
-        api_keys = self.settings.get('api_keys', {})
-        openalex_key = os.environ.get('OPENALEX_API_KEY') or api_keys.get('openalex') or self.settings.get('openalex_api_key')
-        if openalex_key:
-            headers["Authorization"] = f"Bearer {openalex_key}"
+        key = openalex_key(self.settings)
+        if key:
+            headers["Authorization"] = f"Bearer {key}"
         return headers
 
     def resolve_abstract_by_doi(self, doi: str) -> str:
@@ -37,21 +56,10 @@ class OpenAlexConnector(BaseConnector):
             email = self.settings.get('user_email', 'academic_hunter@example.com')
             data = self._make_request(url, params={"mailto": email}, timeout=10)
             if data:
-                return self._decode_openalex_abstract(data.get('abstract_inverted_index', {}))
+                return decode_abstract(data.get('abstract_inverted_index', {}))
         except Exception as e:
             logger.warning("OpenAlex abstract lookup failed for %s: %s", doi, e)
         return ""
-
-    def _decode_openalex_abstract(self, inverted_index) -> str:
-        if not inverted_index: return ""
-        try:
-            max_pos = max(max(pos) for pos in inverted_index.values())
-            words = [""] * (max_pos + 1)
-            for word, positions in inverted_index.items():
-                for pos in positions: words[pos] = word
-            return " ".join(words).strip()
-        except Exception:
-            return ""
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
         email = self.settings.get('user_email', 'academic_hunter@example.com')
@@ -88,7 +96,7 @@ class OpenAlexConnector(BaseConnector):
                 # One normaliser for the whole project: this copy missed the
                 # `dx.doi.org` forms, and a second rule drifts from the first.
                 doi_clean = normalize_doi(raw_doi)
-                abstract_text = self._decode_openalex_abstract(i.get('abstract_inverted_index', {}))
+                abstract_text = decode_abstract(i.get('abstract_inverted_index', {}))
 
                 primary_loc = i.get('primary_location') or {}
                 source_info = primary_loc.get('source') or {}

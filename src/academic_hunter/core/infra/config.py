@@ -37,6 +37,43 @@ def positive_int(value: Any, default: int) -> int:
     return parsed if parsed > 0 else default
 
 
+def _source_api_key(
+    settings: Dict[str, Any], env_var: str, nested_name: str, secret_setting: str
+) -> str:
+    """A source's API key from whichever of the three places holds it.
+
+    The environment wins so a key can be supplied without writing it to disk.
+    Both config spellings are accepted because the project has used both:
+    ``api_keys.<name>`` and the flat ``SECRET_SETTINGS`` entry.
+    """
+    api_keys = settings.get("api_keys") or {}
+    nested = api_keys.get(nested_name) if isinstance(api_keys, dict) else ""
+    return os.environ.get(env_var) or nested or settings.get(secret_setting) or ""
+
+
+def semantic_scholar_key(settings: Dict[str, Any]) -> str:
+    """The Semantic Scholar API key, or ``""`` when none is configured.
+
+    Single source of truth, read by the connector and — until they were moved to
+    OpenAlex — by the MCP discovery tools. Those tools built their S2 URLs by
+    hand and sent no key at all, so a configured credential bought them nothing,
+    and the 429 they then raised told the operator to set a key already set.
+    """
+    return _source_api_key(
+        settings, "SEMANTIC_SCHOLAR_API_KEY", "semantic_scholar", "semantic_scholar_api_key"
+    )
+
+
+def openalex_key(settings: Dict[str, Any]) -> str:
+    """The OpenAlex API key, or ``""`` when none is configured.
+
+    Optional: OpenAlex serves keyless callers. A key raises the daily credit
+    budget tenfold, which is the difference between roughly 100 and roughly 1000
+    searches a day.
+    """
+    return _source_api_key(settings, "OPENALEX_API_KEY", "openalex", "openalex_api_key")
+
+
 class HunterConfig:
     """Handles JSON configuration loading, environment variables, pacing delays, and default fallback parameters.
 

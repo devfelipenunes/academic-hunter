@@ -3,9 +3,13 @@
 import asyncio
 import logging
 import re
+import threading
+import time
 from pathlib import Path
 from typing import Any, Callable
+import requests
 from academic_hunter import AcademicHunter
+from academic_hunter.core.infra.config import HunterConfig, openalex_key
 from academic_hunter.core.ports.vector_store import PaperListingPort
 from academic_hunter.plugins.vector_stores import ChromaVectorStore
 import academic_hunter as pkg
@@ -61,6 +65,94 @@ def _get_vector_store():
 def _make_hunter() -> AcademicHunter:
     """Create an AcademicHunter rooted at the project directory."""
     return AcademicHunter(output_dir=str(get_project_root() / "results"))
+
+
+OPENALEX_BASE = "https://api.openalex.org"
+
+#: Seconds between OpenAlex requests from this process. The service accepts 100
+#: a second; the ceiling that actually binds is the daily credit budget, so a
+#: burst buys nothing and only spends the margin a 429 would need.
+_OPENALEX_MIN_INTERVAL = 0.5
+_openalex_pace_lock = threading.Lock()
+_openalex_last_call = 0.0
+
+
+def _openalex_credentials() -> tuple[dict, dict]:
+    """Headers and query parameters for an OpenAlex request.
+
+    A key is optional — the data is free and keyless use works — but it raises
+    the daily budget tenfold, so it is sent whenever one is configured. The
+    contact address is what puts a caller in OpenAlex's polite pool.
+    """
+    try:
+        settings = HunterConfig(str(get_project_root() / "config.json")).settings
+    except Exception as e:
+        logger.warning("Could not read the config for OpenAlex credentials: %s", e)
+        return {}, {}
+
+    key = openalex_key(settings)
+    headers = {"Authorization": f"Bearer {key}"} if key else {}
+    email = settings.get("user_email") or ""
+    return headers, ({"mailto": email} if email else {})
+
+
+def _pace_openalex() -> None:
+    """Block until the minimum interval since the last OpenAlex call has passed."""
+    global _openalex_last_call
+    with _openalex_pace_lock:
+        wait = _OPENALEX_MIN_INTERVAL - (time.time() - _openalex_last_call)
+        if wait > 0:
+            time.sleep(wait)
+        _openalex_last_call = time.time()
+
+
+def _retry_after_seconds(response) -> float | None:
+    """The wait OpenAlex asked for, when it asks for one."""
+    raw = response.headers.get("Retry-After")
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _openalex_get_sync(path: str, params: dict | None = None, attempts: int = 3) -> dict:
+    """Blocking GET against OpenAlex: paced, keyed, and at most `attempts` calls.
+
+    The last attempt falls through to `raise_for_status` rather than looping
+    again, so a spent budget surfaces as the 429 it is — callers can tell "the
+    day's credits are gone" apart from "this query matched nothing".
+    """
+    headers, credentials = _openalex_credentials()
+    merged = {**credentials, **(params or {})}
+
+    response = None
+    for attempt in range(attempts):
+        _pace_openalex()
+        response = requests.get(
+            OPENALEX_BASE + path, params=merged, headers=headers, timeout=20
+        )
+        if response.status_code == 429 and attempt < attempts - 1:
+            delay = _retry_after_seconds(response) or float(2 ** attempt)
+            logger.warning("OpenAlex is rate limiting; waiting %.1fs", delay)
+            time.sleep(min(delay, 30.0))
+            continue
+        break
+
+    response.raise_for_status()
+    return response.json()
+
+
+async def openalex_get(path: str, params: dict | None = None) -> dict:
+    """GET against OpenAlex, off the event loop.
+
+    OpenAlex meters by cost, not by request: a singleton such as
+    ``/works/doi:<doi>`` is free, a filtered list is 1 credit, and a `search` is
+    10. A keyless caller gets about 1000 credits a day, so callers should reach
+    for a filter or a singleton over `search` whenever the question allows.
+    """
+    return await run_blocking(_openalex_get_sync, path, params)
 
 
 def _newest_run_artifact(paths):

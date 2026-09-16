@@ -44,6 +44,57 @@ def _clear_mcp_caches():
 
 
 @pytest.fixture
+def mock_openalex():
+    """Neutralise the OpenAlex plumbing: no config read, no pacing sleep.
+
+    ``_openalex_credentials`` reads the project's ``config.json``, so without
+    this a test would depend on the file that happens to sit on the machine and
+    on whether a real key is in it. ``_pace_openalex`` would otherwise hold each
+    call for the minimum interval, which is wall clock the suite does not need.
+    """
+    with patch(
+        "academic_hunter.interfaces.mcp.tools._utils._openalex_credentials",
+        return_value=({}, {}),
+    ), patch("academic_hunter.interfaces.mcp.tools._utils._pace_openalex"):
+        yield
+
+
+@pytest.fixture
+def openalex_work():
+    """Build an OpenAlex `/works` record, with the abstract given as text.
+
+    OpenAlex ships abstracts as ``{word: [positions]}``, so a test that wants to
+    state one in prose goes through here instead of hand-building the index.
+    """
+
+    def _work(title, year, abstract="", **extra):
+        index: dict = {}
+        for position, word in enumerate((abstract or "").split()):
+            index.setdefault(word, []).append(position)
+        return {
+            "display_name": title,
+            "publication_year": year,
+            "abstract_inverted_index": index or None,
+            **extra,
+        }
+
+    return _work
+
+
+@pytest.fixture
+def openalex_response():
+    """A mocked ``requests`` response carrying an OpenAlex JSON payload."""
+
+    def _response(payload, status_code=200):
+        response = MagicMock()
+        response.status_code = status_code
+        response.json.return_value = payload
+        return response
+
+    return _response
+
+
+@pytest.fixture
 def mock_hunter_rag():
     """Mock ``AcademicHunter`` specifically for RAG tool tests."""
     with patch("academic_hunter.interfaces.mcp.tools._utils.AcademicHunter") as m:
