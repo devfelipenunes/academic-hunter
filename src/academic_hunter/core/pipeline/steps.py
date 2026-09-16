@@ -302,6 +302,14 @@ class IndexResultsStep(PipelineStep):
         success = store.index_papers(papers)
         if success:
             logger.info("Indexed %d new papers. ChromaDB accumulates across runs.", len(papers))
+        else:
+            # Without this the failure branch is empty, and a run whose indexing
+            # failed reads exactly like one that indexed: the agent's next
+            # semantic search returns nothing, with nothing saying why.
+            logger.warning(
+                "Indexing failed for %d papers; semantic search will not see them.",
+                len(papers),
+            )
 
 
 class AutoExportObsidianStep(PipelineStep):
