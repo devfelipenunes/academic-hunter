@@ -12,6 +12,34 @@ this helper rather than open-coding the pragmas in each module.
 """
 
 import sqlite3
+from contextlib import contextmanager
+
+
+@contextmanager
+def connection(db_path: str, timeout: float = 10.0):
+    """A connection that is closed when the block ends, around a transaction.
+
+    ``with sqlite3.connect(...) as conn`` reads like it closes the database and
+    does not: that statement manages a *transaction*, and the handle lives on
+    until the garbage collector finalises it. Measured — after such a block the
+    ``-wal`` file is still on disk, and it disappears only at the collection
+    that finalises the connection.
+
+    Two consequences, both real. A cache that has served a thousand requests is
+    still holding every handle it ever opened. And the ``-wal`` vanishes at a
+    moment nothing controls, which is what made ``shutil.rmtree`` fail on a
+    temporary directory: the file was listed, and gone by the time it was
+    unlinked.
+
+    Use this rather than bare ``connect()`` whenever the caller reads like it is
+    done with the database at the end of the block.
+    """
+    conn = connect(db_path, timeout)
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
 
 
 def connect(db_path: str, timeout: float = 10.0) -> sqlite3.Connection:

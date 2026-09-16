@@ -1,16 +1,17 @@
 import logging
 import os
 
-from .sqlite_conn import connect
+from .sqlite_conn import connection
 
 logger = logging.getLogger("academic_hunter.cache")
 
 class SQLiteCache:
     """Thread-safe persistent request caching using SQLite3.
 
-    Connections go through ``sqlite_conn.connect`` so that WAL journalling and
-    a busy timeout are applied — without them this cache is not in fact safe
-    for the concurrent access its callers make.
+    Connections go through ``sqlite_conn.connection`` so that WAL journalling
+    and a busy timeout are applied — without them this cache is not in fact safe
+    for the concurrent access its callers make — and so that each one is closed
+    at the end of its block rather than whenever the collector gets to it.
     """
     def __init__(self, db_path="results/request_cache.db"):
         self.db_path = db_path
@@ -18,7 +19,7 @@ class SQLiteCache:
         self._init_db()
 
     def _init_db(self):
-        with connect(self.db_path) as conn:
+        with connection(self.db_path) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS cache (
                     key TEXT PRIMARY KEY,
@@ -35,7 +36,7 @@ class SQLiteCache:
         a cache answering None to everything just looks like a slow run.
         """
         try:
-            with connect(self.db_path) as conn:
+            with connection(self.db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT value FROM cache WHERE key = ?", (key,))
                 row = cursor.fetchone()
@@ -46,7 +47,7 @@ class SQLiteCache:
 
     def set(self, key: str, value: str):
         try:
-            with connect(self.db_path) as conn:
+            with connection(self.db_path) as conn:
                 conn.execute(
                     "INSERT OR REPLACE INTO cache (key, value, timestamp) VALUES (?, ?, CURRENT_TIMESTAMP)",
                     (key, value)
