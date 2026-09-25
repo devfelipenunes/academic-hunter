@@ -252,6 +252,30 @@ class SemanticScreener(BaseScreener):
         """
         return isinstance(self._embedding_function, _ZeroEmbedding)
 
+    def warm(self) -> bool:
+        """Load the embedding model before the run opens its worker threads.
+
+        ChromaDB fetches the ONNX model on the first call that embeds, and it
+        tests for the file and downloads it without a lock. The pipeline opens
+        one thread per source, so on a machine that has never embedded several
+        threads pass that test together and write the same 79 MB to the same
+        paths; the ones that lose read a model that is still being written,
+        which onnxruntime reports as INVALID_PROTOBUF, and each of those falls
+        through to zero vectors for every paper it scores. Measured on a cold
+        cache: two of six workers did, while the report read like any other run.
+
+        Calling this first makes the download serial and puts it in front of
+        the run rather than in the middle of it. Returns whether the model is
+        usable; a False leaves the pipeline on the keyword-only path it would
+        have taken anyway.
+        """
+        try:
+            self.embedding_function(["warmup"])
+        except Exception as e:
+            logger.warning("Could not load the embedding model up front: %s", e)
+            return False
+        return not self.degraded
+
 
 class _ZeroEmbedding:
     """Fallback embedding that returns zero vectors.

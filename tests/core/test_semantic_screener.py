@@ -567,3 +567,48 @@ class TestDegradedFlag:
             "every semantic score is now 0.0 and the run would still report "
             "numbers as if the model had worked"
         )
+
+
+class TestWarm:
+    """The model has to be loaded before the run opens a thread per source."""
+
+    def test_warm_exercises_the_model_and_not_just_the_constructor(self):
+        """Constructing `DefaultEmbeddingFunction` fetches nothing.
+
+        The 79 MB download happens on the first call that embeds, so a warm-up
+        that stopped at construction would leave the download exactly where it
+        was -- inside whichever worker thread embeds first.
+        """
+        screener = SemanticScreener()
+        calls = []
+
+        def fake(texts):
+            calls.append(list(texts))
+            return np.zeros((len(texts), 384), dtype=np.float32)
+
+        screener._embedding_function = fake
+
+        assert screener.warm() is True
+        assert calls == [["warmup"]], "the embedding was never actually called"
+
+    def test_warm_reports_false_when_the_fallback_is_in_place(self):
+        """The pipeline reads this to decide whether the run is comparable."""
+        from academic_hunter.plugins.screeners.semantic import _ZeroEmbedding
+
+        screener = SemanticScreener()
+        screener._embedding_function = _ZeroEmbedding()
+
+        assert screener.warm() is False
+
+    def test_warm_survives_a_failing_download(self, monkeypatch):
+        """A cold machine with no network must not take the run down with it."""
+        from unittest.mock import MagicMock
+
+        screener = SemanticScreener()
+        monkeypatch.setattr(
+            "chromadb.utils.embedding_functions.DefaultEmbeddingFunction",
+            MagicMock(side_effect=RuntimeError("onnx unavailable")),
+        )
+
+        assert screener.warm() is False
+        assert screener.degraded is True

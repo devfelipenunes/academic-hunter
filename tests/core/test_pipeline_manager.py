@@ -20,6 +20,52 @@ def _make_hunter_with_results(results_dict):
     return hunter
 
 
+# ── the embedding model is loaded before the threads ────────────────────────
+
+
+def test_the_model_is_warmed_before_any_worker_starts():
+    """The download has to be serial, and it has to happen before the threads.
+
+    ChromaDB fetches the ONNX model on the first call that embeds, and it tests
+    for the file and downloads it without a lock. With one thread per source,
+    several raced the same 79 MB into the same paths; measured on a cold cache,
+    the two that lost read a model still being written and fell through to zero
+    vectors for every paper they scored.
+    """
+    from academic_hunter.core.pipeline.manager import SearchPipeline
+
+    hunter = MagicMock()
+    hunter.settings = {"ablation": {"mode": "hybrid"}}
+    warmed = []
+    hunter.semantic_screener.warm.side_effect = lambda: warmed.append(True)
+
+    SearchPipeline(hunter)._warm_semantic_screener()
+
+    assert warmed == [True], "the download was left to the worker threads"
+
+
+def test_a_keyword_only_run_does_not_fetch_the_model():
+    """79 MB is a real cost, and a keyword-only run never calls the screener."""
+    from academic_hunter.core.pipeline.manager import SearchPipeline
+
+    hunter = MagicMock()
+    hunter.settings = {"ablation": {"mode": "keyword"}}
+
+    SearchPipeline(hunter)._warm_semantic_screener()
+
+    hunter.semantic_screener.warm.assert_not_called()
+
+
+def test_a_hunter_without_a_screener_is_left_alone():
+    from academic_hunter.core.pipeline.manager import SearchPipeline
+
+    hunter = MagicMock()
+    hunter.settings = {"ablation": {"mode": "hybrid"}}
+    hunter.semantic_screener = None
+
+    SearchPipeline(hunter)._warm_semantic_screener()
+
+
 # ── state reset between runs ────────────────────────────────────────────────
 
 

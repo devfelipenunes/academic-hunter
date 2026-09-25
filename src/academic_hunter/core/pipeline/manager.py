@@ -113,12 +113,27 @@ class SearchPipeline:
         self.hunter.state.reset(list(self.hunter.connectors.keys()))
         self.hunter.blocked_sources.clear()
 
+    def _warm_semantic_screener(self) -> None:
+        """Load the embedding model here, before a worker thread can race it.
+
+        `SemanticScreener.warm` has the measurements. The model is only needed
+        when the ablation mode scores semantically, and a keyword-only run
+        should not pay 79 MB for something it will not call.
+        """
+        screener = getattr(self.hunter, "semantic_screener", None)
+        if screener is None:
+            return
+        if self.hunter.settings.get("ablation", {}).get("mode", "hybrid") == "keyword":
+            return
+        screener.warm()
+
     def run(self, limit_per_source: int = 100):
         logger.info("🚀 Initializing Multi-Threaded Academic Hunter V2 Pipeline...")
         timestamp = time.strftime("%Y%m%d_%H%M%S")
 
         self._reset_run_state()
         self.hunter.last_request_time = time.time()
+        self._warm_semantic_screener()
 
         threads = []
         for src, conn in self.hunter.connectors.items():
