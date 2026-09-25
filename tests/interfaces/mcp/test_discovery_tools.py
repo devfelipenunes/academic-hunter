@@ -246,6 +246,11 @@ async def test_quick_topic_discovery_drafts_a_config_from_the_titles(
     ``technical_strings`` for a topic it had only just been told about. An empty
     or guessed mapping leaves four of the six sources unqueried, so the draft
     gives it something to correct instead of something to recall.
+
+    The anchors have to come from the titles for the same reason, and the cost
+    of not doing it is higher. Measured on a real run: the draft put the topic
+    verbatim in as its only anchor, no title carried that phrase, and all 11
+    papers were dropped at the anchor gate before anything scored them.
     """
     mock_get.return_value = openalex_response(
         {
@@ -268,7 +273,13 @@ async def test_quick_topic_discovery_drafts_a_config_from_the_titles(
     draft = json.loads(result[result.index("{") :])
 
     assert draft["topic"] == "tokenised settlement rails"
-    assert draft["anchors"] == {"Topic": ["tokenised settlement rails"]}
+
+    anchors = draft["anchors"]["Topic"]
+    assert anchors[0] == "tokenised settlement rails"
+    assert "distributed ledger" in anchors, (
+        "the anchors are the gate every paper passes before it is scored, and "
+        "the topic verbatim matches no title"
+    )
 
     terms = draft["technical_strings"]["tokenised settlement rails"]
     assert "distributed ledger" in terms, "the recurring phrase from the titles is missing"

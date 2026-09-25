@@ -182,6 +182,9 @@ async def fetch_multiple_abstracts(dois: list[str], ctx: Context) -> str:
         raise DiscoveryError(str(e))
 
 
+_ANCHOR_TERM_LIMIT = 8
+
+
 def _draft_config(topic: str, titles: list) -> dict:
     """A starting configuration built from the words the field's titles use.
 
@@ -189,6 +192,14 @@ def _draft_config(topic: str, titles: list) -> dict:
     of the field. That distinction is the point: writing ``technical_strings``
     for a topic one has only just been told about is guesswork, and an empty or
     guessed mapping is what leaves four of the six sources unqueried.
+
+    ``anchors`` is drawn from the same counts, and it is the field that decides
+    whether a paper is looked at at all: a paper whose title and abstract match
+    no anchor is dropped before anything scores it. An anchor matches as a
+    whole phrase, so the topic verbatim is an anchor only when the topic is one
+    distinctive word -- as a multi-word phrase it fires on nothing, and the run
+    ends with every paper excluded. The topic stays in the set for the cases
+    where it does fire, and the corpus supplies the rest.
     """
     counts: Counter = Counter()
     for title in titles:
@@ -199,9 +210,10 @@ def _draft_config(topic: str, titles: list) -> dict:
                 counts[word] += 1
 
     terms = [term for term, _ in counts.most_common(30)]
+    anchors = [topic] + [t for t in terms if t != topic.lower()][:_ANCHOR_TERM_LIMIT]
     return {
         "topic": topic,
-        "anchors": {"Topic": [topic]},
+        "anchors": {"Topic": anchors},
         "technical_strings": {topic: terms},
         "technical_weights": {term: 1.5 for term in terms},
     }
