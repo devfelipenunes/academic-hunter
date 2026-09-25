@@ -52,7 +52,7 @@ async def test_cluster_papers_without_bertopic_says_how_to_install_it(mock_ctx):
         ):
             result = await cluster_papers(mock_ctx, top_k=100)
 
-    assert "pip install bertopic" in result
+    assert "academic-hunter[ml]" in result
     mock_ctx.error.assert_called()
 
 

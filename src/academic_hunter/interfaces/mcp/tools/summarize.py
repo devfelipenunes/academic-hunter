@@ -63,10 +63,12 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
 
         # Embed sentences. The model comes from the shared cache — loading
         # MiniLM takes seconds and this tool used to pay it on every call.
-        # Raising ImportError keeps the existing handler's message intact.
         model = await run_blocking(get_sentence_transformer)
         if model is None:
-            raise ImportError("sentence-transformers")
+            raise ImportError(
+                "sentence-transformers is missing. Install the extra: "
+                "pip install 'academic-hunter[ml]'"
+            )
         emb = await run_blocking(model.encode, sentences)
 
         # Centroid

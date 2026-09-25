@@ -44,7 +44,10 @@ async def semantic_dedup(ctx: Context, threshold: float = 0.85, min_group_size: 
     model = await run_blocking(get_sentence_transformer)
     if model is None:
         await ctx.error("sentence-transformers not installed")
-        return "Error: sentence-transformers not installed."
+        return (
+            "Error: sentence-transformers not installed. "
+            "Install the extra: pip install 'academic-hunter[ml]'"
+        )
 
     try:
         texts = [f"{p.get('title', '')} {p.get('abstract_preview', '')}" for p in results]

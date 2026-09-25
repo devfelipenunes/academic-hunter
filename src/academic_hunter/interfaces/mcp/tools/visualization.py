@@ -60,12 +60,18 @@ async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int =
         umap = await run_blocking(_load_umap)
     except ImportError:
         await ctx.error("UMAP is not installed")
-        return "Required library not installed: umap-learn. Install with: pip install umap-learn"
+        return (
+            "Required library not installed: umap-learn. Install the extra: "
+            "pip install 'academic-hunter[ml]'"
+        )
 
     model = await run_blocking(get_sentence_transformer)
     if model is None:
         await ctx.error("SentenceTransformer is not installed")
-        return "Required library not installed: sentence-transformers"
+        return (
+            "Required library not installed: sentence-transformers. "
+            "Install the extra: pip install 'academic-hunter[ml]'"
+        )
 
     try:
         texts = [f"{p.get('title','')} {p.get('abstract_preview','')}" for p in results]
@@ -124,14 +130,17 @@ async def topic_evolution(ctx: Context, top_k: int = 500) -> str:
     except ImportError:
         await ctx.error("BERTopic is not installed")
         return (
-            "BERTopic not installed. "
-            "Install it with: pip install bertopic umap-learn hdbscan"
+            "BERTopic not installed. Install the extra: "
+            "pip install 'academic-hunter[ml]'"
         )
 
     model = await run_blocking(get_sentence_transformer)
     if model is None:
         await ctx.error("SentenceTransformer is not installed")
-        return "Required library not installed: sentence-transformers"
+        return (
+            "Required library not installed: sentence-transformers. "
+            "Install the extra: pip install 'academic-hunter[ml]'"
+        )
 
     try:
         from collections import defaultdict

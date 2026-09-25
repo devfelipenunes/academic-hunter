@@ -68,8 +68,8 @@ async def cluster_papers(
     except ImportError:
         await ctx.error("BERTopic is not installed")
         return (
-            "BERTopic is not installed. "
-            "Install it with: pip install bertopic umap-learn hdbscan"
+            "BERTopic is not installed. Install the extra: "
+            "pip install 'academic-hunter[ml]'"
         )
 
     await ctx.info(f"Retrieved {len(results)} papers, running BERTopic...")

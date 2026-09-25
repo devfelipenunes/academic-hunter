@@ -101,7 +101,7 @@ async def test_summarize_paper_import_error(mock_ctx):
             m_st.side_effect = ImportError("No sentence-transformers")
             result = await summarize_paper(mock_ctx, "10.1000/test")
 
-    assert "Required library" in result or "not installed" in result
+    assert "academic-hunter[ml]" in result
 
 
 async def test_summarize_paper_invalid_doi(mock_ctx):

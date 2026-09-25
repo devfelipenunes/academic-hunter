@@ -127,7 +127,7 @@ async def test_visualize_landscape_import_error(mock_ctx):
                 )
 
                 result = await visualize_landscape(mock_ctx, top_k=10)
-                assert "not installed" in result.lower() or "Required library" in result
+                assert "academic-hunter[ml]" in result
 
 
 # ── topic_evolution tests ──────────────────────────────────────────────────────
@@ -227,6 +227,7 @@ async def test_topic_evolution_bertopic_not_installed(mock_ctx):
 
             result = await topic_evolution(mock_ctx, top_k=10)
             assert "BERTopic not installed" in result
+            assert "academic-hunter[ml]" in result
 
 
 async def test_topic_evolution_no_year(mock_ctx):
