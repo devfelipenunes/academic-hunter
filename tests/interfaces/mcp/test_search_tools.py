@@ -28,6 +28,7 @@ async def test_run_search(mock_hunter_class, mock_ctx):
     mock_instance.stats = {"identified": {}, "included_final": 0}
     mock_instance.query_history = []
     mock_instance.connectors = {}
+    mock_instance.semantic_screener.degraded = False
     mock_hunter_class.return_value = mock_instance
 
     result = await run_search(mock_ctx, limit_per_source=2)
@@ -159,6 +160,7 @@ async def test_run_search_proceeds_when_there_is_a_topic(mock_hunter_class, mock
     mock_instance.stats = {"identified": {}, "included_final": 0}
     mock_instance.query_history = []
     mock_instance.connectors = {}
+    mock_instance.semantic_screener.degraded = False
     mock_hunter_class.return_value = mock_instance
 
     result = await run_search(mock_ctx, limit_per_source=2)
@@ -193,6 +195,7 @@ async def test_run_search_separates_a_skipped_source_from_an_empty_one(mock_hunt
         "Crossref": _FakeConnector(False),
         "Semantic Scholar": _FakeConnector(True),
     }
+    mock_instance.semantic_screener.degraded = False
     mock_hunter_class.return_value = mock_instance
 
     result = await run_search(mock_ctx, limit_per_source=2)
@@ -214,6 +217,7 @@ async def test_run_search_stays_quiet_when_every_source_was_queried(mock_hunter_
     mock_instance.query_history = [{"Source": "ArXiv", "Query": "CBDC"}, {"Source": "Crossref", "Query": "CBDC"}]
     mock_instance.stats = {"identified": {"ArXiv": 12, "Crossref": 8}, "included_final": 3}
     mock_instance.connectors = {"ArXiv": _FakeConnector(False), "Crossref": _FakeConnector(False)}
+    mock_instance.semantic_screener.degraded = False
     mock_hunter_class.return_value = mock_instance
 
     result = await run_search(mock_ctx, limit_per_source=2)
@@ -275,9 +279,34 @@ async def test_run_search_stays_quiet_when_the_scorer_did_run(mock_hunter_class,
         "included_final": 6,
     }
     mock_instance.connectors = {"Crossref": _FakeConnector(False)}
+    mock_instance.semantic_screener.degraded = False
     mock_hunter_class.return_value = mock_instance
 
     result = await run_search(mock_ctx, limit_per_source=2)
 
     assert "Identified: 20 | Included: 6" in result
     assert "Nothing reached the scorer" not in result
+    assert "Semantic scoring was degraded" not in result
+
+
+@patch("academic_hunter.interfaces.mcp.tools.search.AcademicHunter")
+async def test_run_search_says_when_the_semantic_scoring_degraded(mock_hunter_class, mock_ctx):
+    """The pipeline logs this at the end of the run; the agent reads the reply.
+
+    A run whose embedding fell back to zero vectors still finishes and still
+    reports scores -- every semantic one of them 0.0. Without this the caller
+    has a report that looks like any other.
+    """
+    mock_instance = MagicMock()
+    mock_instance.config.is_scorable.return_value = True
+    mock_instance.run.return_value = os.path.join(os.getcwd(), "results", "RELATORIO_ELITE_1.md")
+    mock_instance.query_history = [{"Source": "Crossref", "Query": "CBDC"}]
+    mock_instance.stats = {"identified": {"Crossref": 20}, "included_final": 6}
+    mock_instance.connectors = {"Crossref": _FakeConnector(False)}
+    mock_instance.semantic_screener.degraded = True
+    mock_hunter_class.return_value = mock_instance
+
+    result = await run_search(mock_ctx, limit_per_source=2)
+
+    assert "Semantic scoring was degraded" in result
+    assert "keyword-only" in result

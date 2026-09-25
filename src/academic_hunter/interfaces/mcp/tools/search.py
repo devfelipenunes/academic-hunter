@@ -20,6 +20,10 @@ def _coverage(hunter) -> str:
     ``Identified: 11 | Included: 0`` reads as an empty field, and it is the
     moment the agent needs to hear otherwise: when nothing reaches the scorer,
     the anchors are what failed, and that is a thing the caller can fix.
+
+    A degraded embedding is the other number that looks like a finding and is
+    not. The pipeline logs it at the end of the run, which the agent never
+    reads, so a run scored on keywords alone arrives looking like any other.
     """
     queried = {item.get("Source") for item in hunter.query_history}
     identified = hunter.stats.get("identified", {})
@@ -69,6 +73,15 @@ def _coverage(hunter) -> str:
             f"{', '.join(skipped)} never ran a query, so their zeros are not "
             "findings. They were skipped with a non-empty technical_strings, so "
             "something else stopped them -- the server log says what."
+        )
+
+    screener = getattr(hunter, "semantic_screener", None)
+    if screener is not None and getattr(screener, "degraded", False):
+        lines.append(
+            "Semantic scoring was degraded: the embedding model did not load, so "
+            "every semantic score in this run is 0.0 and the ranking is "
+            "keyword-only. These numbers are not comparable to a run with a "
+            "working model, and the model is a one-time 79 MB download."
         )
     return "\n".join(lines)
 
