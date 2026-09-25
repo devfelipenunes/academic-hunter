@@ -1,0 +1,12 @@
+[mcp_servers.academic-hunter]
+# Caminho absoluto, como no .mcp.json: chamado pelo nome nu, o binário não está
+# no PATH de quem inicia o cliente e o servidor não conecta (ENOENT).
+#
+# O `.example` versionado traz um placeholder no lugar deste caminho, e o
+# `install.py` o troca pelo deste checkout. Não versione o `config.toml` de
+# verdade: quem o lê é o cliente, e ele só está certo numa máquina.
+command = "/absolute/path/to/academic-hunter/venv/bin/academic-mcp"
+args = [
+    "--transport",
+    "stdio",
+]

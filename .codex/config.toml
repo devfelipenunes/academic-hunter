@@ -1,8 +1,0 @@
-[mcp_servers.academic-hunter]
-# Caminho absoluto, como no .mcp.json: chamado pelo nome nu, o binário não está
-# no PATH de quem inicia o cliente e o servidor não conecta (ENOENT).
-command = "/l/disk0/fnunes/Documentos/me/pesquisa_academica/venv/bin/academic-mcp"
-args = [
-    "--transport",
-    "stdio",
-]

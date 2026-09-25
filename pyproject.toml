@@ -54,7 +54,7 @@ dev = [
     "ruff>=0.11.0",
     "pre-commit>=4.0.0",
 ]
-all = ["academic-hunter[ml]"]
+all = ["academic-hunter[ml,fulltext]"]
 
 [project.scripts]
 academic-mcp = "academic_hunter.interfaces.mcp.server:run_mcp_server"
@@ -66,12 +66,25 @@ Documentation = "https://devfelipenunes.github.io/academic-hunter"
 
 [tool.hatch.build.targets.sdist]
 exclude = [
-    "config*.json",
-    "!config.example.json",
+    # Anchored. Unanchored, this also stripped
+    # `src/academic_hunter/core/infra/config.default.json` — the neutral fallback
+    # the server reads when it finds no config. Measured: the file was missing
+    # from the sdist *and* from the wheel, because `python -m build` builds the
+    # wheel from the sdist, so one exclusion here costs both artifacts. The
+    # symptom is a FileNotFoundError on the first tool call of an installed
+    # package only, which is exactly the install path this is meant to fix.
+    "/config*.json",
+    "!/config.example.json",
+    # Same reasoning as `config.json` above, and it was not covered by it: the
+    # `.mcp.json` on disk names the checkout that generated it, so the sdist
+    # shipped an MCP client config pointing at a path no user has. The
+    # `.example` is the versioned template and stays in.
+    ".mcp.json",
     ".claude",
     ".gemini",
     ".cursor",
     ".codex",
+    "!.codex/config.toml.example",
 ]
 
 [tool.hatch.version]
@@ -114,12 +127,20 @@ quote-style = "double"
 # test reaches is the finding, not a line to skip.
 #
 # `also_copy` is not optional — mutmut copies only `source_paths` into its
-# sandbox, and four test files read the repository root (pyproject.toml,
-# install.py, evaluation/*.json). Without them the baseline fails and nothing
-# runs.
+# sandbox, and several test files read the repository root (pyproject.toml,
+# install.py, evaluation/*.json, and the two versioned MCP client templates).
+# Without them the baseline fails and nothing runs.
 [tool.mutmut]
 source_paths = ["src/academic_hunter"]
 only_mutate = ["*core/nlp/fusion.py"]
-also_copy = ["tests", "evaluation", "pyproject.toml", "install.py", "config.example.json"]
+also_copy = [
+    "tests",
+    "evaluation",
+    "pyproject.toml",
+    "install.py",
+    "config.example.json",
+    ".mcp.json.example",
+    ".codex",
+]
 pytest_add_cli_args = ["-p", "no:cov"]
 max_children = 4
