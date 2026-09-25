@@ -9,19 +9,31 @@ RUFF = $(VENV)/bin/ruff
 
 # `ml` carries sentence-transformers and the clustering stack. Without it the
 # tools that need them degrade quietly, which is what the Dockerfile documents
-# having fixed for itself. The integration tests are already deselected by
-# `addopts` in pyproject.toml, so nothing here has to name them.
+# having fixed for itself. `fulltext` (pypdf) is the same story for the PDF leg
+# of full-text. `rag` is gone: its only entry, chromadb, is already a base
+# dependency. The integration tests are already deselected by `addopts` in
+# pyproject.toml, so nothing here has to name them.
+#
+# `$(VENV)/bin/pip`, not a bare `pip`: on Ubuntu 24.04 the bare name resolves to
+# the system pip and dies on PEP 668 (`externally-managed-environment`) while
+# every other target here already uses the venv.
 install:
-	pip install -e ".[ml,rag,dev]"
+	$(VENV)/bin/pip install -e ".[ml,fulltext,dev]"
 
 install-dev:
-	pip install -e ".[ml,rag,dev]"
-	pip install ruff pre-commit pytest-cov pytest-xdist pytest-benchmark
+	$(VENV)/bin/pip install -e ".[ml,fulltext,dev]"
+	$(VENV)/bin/pip install ruff pre-commit pytest-cov pytest-xdist pytest-benchmark
 	pre-commit install
 
 test:
 	$(PYTEST) tests/ -v --tb=short
 
+# Not a faster `test`: `-n auto` reports failures that are not there. Measured on
+# this checkout, the same suite is 15 failed / 1046 passed run serially and 47
+# failed under `-n auto`. The extra 32 are workers racing on state they share —
+# the ChromaDB store and its ONNX model cache, which fails to load with
+# `InvalidProtobuf` only when several workers touch it at once. Use this for a
+# quick signal, and re-run anything it reports serially before believing it.
 test-fast:
 	$(PYTEST) tests/ -n auto -q --tb=short
 
