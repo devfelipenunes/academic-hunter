@@ -399,7 +399,7 @@
 >
 > **O que vocês podem fazer:**
 >
-> - Instalar: `pip install git+https://github.com/devfelipenunes/academic-hunter.git`
+> - Instalar: `pip install "academic-hunter[ml,fulltext] @ git+https://github.com/devfelipenunes/academic-hunter.git"`
 > - Testar, reportar bugs, contribuir
 > - Citar nos seus papers — os dois estão em preparação
 >

@@ -110,8 +110,8 @@
             <p>Claude Desktop, Cursor, VS Code, Gemini, custom agents — anything that speaks MCP can drive Academic Hunter.</p>
           </div>
           <div class="feature-card">
-            <h3>Also a Python CLI</h3>
-            <p>Prefer the terminal? Run <code>academic-hunter</code> directly. The same engine powers both interfaces.</p>
+            <h3>Also a Python library</h3>
+            <p>Prefer to script it? <code>AcademicHunter</code> is importable from <code>academic_hunter.app.main</code>; the MCP server is a thin layer over it.</p>
           </div>
         </div>
       </div>
@@ -301,34 +301,75 @@
     <section class="section" id="setup">
       <div class="container">
         <h2 class="section-title">Connect in 30 Seconds</h2>
-        <p class="section-subtitle">Claude Desktop, Cursor, VS Code, or any MCP client.</p>
+        <p class="section-subtitle">Claude Desktop, Cursor, VS Code, or any MCP client. No clone and no virtualenv.</p>
 
         <div class="mcp-setup-mini">
-          <pre><code>{
-  "mcpServers": {
-    "academic-hunter": {
-      "command": "/path/to/venv/bin/python",
-      "args": ["-m", "academic_hunter.interfaces.mcp.server"],
-      "env": { "PYTHONPATH": "/path/to/src" }
-    }
-  }
-}</code></pre>
+          <pre><code># 1. Install uv, once per machine
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Warm the cache OUTSIDE the client — this downloads 439 MB with [fulltext]
+uvx --from 'academic-hunter[fulltext]' academic-mcp --help
+
+# 3. Register it (user scope: connects without an approval prompt)
+claude mcp add --scope user academic-hunter -- \
+  uvx --from 'academic-hunter[fulltext]' academic-mcp</code></pre>
           <p class="mcp-setup-note">
-            Or run <code>python install.py</code> — the auto-installer injects the config for you.
+            Step 2 is not optional. Skip it and the client spawns
+            <code>uvx</code> itself and waits, with no progress bar, while
+            439 MB downloads — then gives up with a generic
+            "failed to connect".
           </p>
         </div>
 
         <div style="margin-top: var(--space-md);">
-          <pre style="background: var(--bg-secondary);"><code># Clone and install
-git clone https://github.com/devfelipenunes/academic-hunter.git
+          <pre style="background: var(--bg-secondary);"><code>{
+  "mcpServers": {
+    "academic-hunter": {
+      "command": "uvx",
+      "args": ["--from", "academic-hunter[fulltext]", "academic-mcp"]
+    }
+  }
+}</code></pre>
+          <p class="mcp-setup-note">
+            <code>--from '&lt;distribution&gt;[extras]' &lt;script&gt;</code> is
+            required: the distribution is <code>academic-hunter</code> and the
+            console script inside it is <code>academic-mcp</code>, so a bare
+            <code>academic-mcp</code> resolves to nothing. Registering at
+            <em>user</em> scope is what connects without an approval prompt —
+            only a project-scoped <code>.mcp.json</code> waits as
+            <code>⏸ Pending approval</code>. <code>ml</code> is optional and
+            the search does not need it: the semantic screener embeds with
+            ChromaDB's ONNX model, which comes with this install. What
+            <code>ml</code> adds is the analysis tools (clustering,
+            visualisation, semantic deduplication, novelty detection,
+            summarization); without it those tools return a message naming the
+            extra instead of failing silently. It costs
+            <strong>3.15 GB measured</strong>, so add it only if you want
+            them: <code>'academic-hunter[ml,fulltext]'</code>.
+          </p>
+        </div>
+
+        <div class="mcp-setup-mini" style="margin-top: var(--space-md);">
+          <h3>Development / from source</h3>
+          <p class="mcp-setup-note">
+            A clone and a virtualenv, as before. <code>python install.py</code>
+            creates the venv, installs the package and writes the client config
+            for you.
+          </p>
+          <pre><code>git clone https://github.com/devfelipenunes/academic-hunter.git
 cd academic-hunter
 python install.py
 
 # Start the MCP server
-academic-mcp
-
-# Or use the CLI directly
-academic-hunter --limit 10</code></pre>
+venv/bin/academic-mcp</code></pre>
+          <pre><code>{
+  "mcpServers": {
+    "academic-hunter": {
+      "command": "/absolute/path/to/academic-hunter/venv/bin/academic-mcp",
+      "args": ["--transport", "stdio"]
+    }
+  }
+}</code></pre>
         </div>
       </div>
     </section>

@@ -25,10 +25,17 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Install the package with its development extras — the same set `make
-# install-dev` installs. Add `fulltext` for PDF ingestion (pypdf):
-# pip install -e ".[ml,rag,fulltext,dev]"
-pip install -e ".[ml,rag,dev]"
+# install-dev` installs, and the same extras `install.py`, the Dockerfile and
+# the CI workflows use:
+pip install -e ".[ml,fulltext,dev]"
 ```
+
+This is the contributor path. Users install the published package with `uvx`
+instead — no clone, no virtualenv, and no absolute path in their client config —
+which is what `docs/mcp_setup.md` documents first. Changes to the config or data
+search order have to work in both, and `tests/core/test_paths.py` is where that
+is pinned: the `installed` fixture stands in for the case where no
+`pyproject.toml` sits above the package.
 
 ### 2. Running Tests
 

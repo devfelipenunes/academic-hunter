@@ -13,6 +13,43 @@ Este tutorial guia você por uma Revisão Sistemática da Literatura completa us
 
 ## 1. Instalação
 
+Sem clone e sem venv — o `uvx` monta o ambiente a partir do pacote publicado.
+
+```bash
+# 1. uv, uma vez por máquina
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Aqueça o cache AQUI, fora do cliente: é neste passo que os 439 MB
+#    (medidos) são baixados. Deixando o cliente fazer isso, ele espera sem
+#    barra de progresso e desiste com "failed to connect".
+uvx --from 'academic-hunter[fulltext]' academic-mcp --help
+
+# 3. Registre no Claude Code (escopo user: conecta sem prompt de aprovação)
+claude mcp add --scope user academic-hunter -- \
+  uvx --from 'academic-hunter[fulltext]' academic-mcp
+```
+
+O `--from` não é enfeite: a distribuição chama `academic-hunter` e o script
+chama `academic-mcp`, então o nome pelado não resolve nada. O `fulltext` é o
+extra padrão documentado; o `ml` é opcional — a busca funciona sem ele, e as
+tools de análise avisam nomeando o extra em vez de falhar em silêncio.
+Adicioná-lo custa 3,15 GB (medidos, ~2,5 GB de build CUDA que máquina sem GPU
+nunca carrega).
+
+Não é preciso criar `config.json`. O servidor sobe com um default neutro e avisa
+no log que nenhum config foi encontrado; o tópico você define pelo agente. Ele
+começa por `quick_topic_discovery`, que devolve os títulos mais relevantes e um
+rascunho de config montado com o jargão deles, e aplica o rascunho revisado com
+`update_config`.
+
+Sem âncoras, `run_search` se recusa a rodar em vez de consultar todas as fontes
+para nada. Sem `technical_strings`, ele roda e avisa quais fontes ficaram de
+fora — as quatro que consultam por âncora × termo técnico não são chamadas, e o
+`0` delas no relatório não é um resultado.
+
+<details>
+<summary>Instalar a partir do clone (desenvolvimento)</summary>
+
 ```bash
 # Clone o repositório
 git clone https://github.com/devfelipenunes/academic-hunter.git
@@ -21,18 +58,17 @@ cd academic-hunter
 # Crie um ambiente virtual e instale
 python3 -m venv venv
 source venv/bin/activate
-pip install -e .
+pip install -e ".[fulltext]"
 
-# (Opcional) Para funcionalidades avançadas de ML
-pip install -e ".[ml]"
-
-# Crie seu config a partir do exemplo — o servidor não funciona sem ele
+# Opcional: um config seu, no lugar do default neutro
 cp config.example.json config.json
 ```
 
+</details>
+
 ## 2. Uso via MCP (recomendado)
 
-O Academic Hunter é um **servidor MCP** — a forma de usá-lo é conectá-lo a um agente de IA:
+O Academic Hunter é um **servidor MCP** — a forma de usá-lo é conectá-lo a um agente de IA. Com `uvx`, é o passo 3 acima; a partir do clone:
 
 ```bash
 academic-mcp          # stdio
@@ -80,10 +116,15 @@ Após a busca, você pode usar as ferramentas MCP para análises mais profundas.
 Inicie o servidor MCP:
 
 ```bash
-academic-mcp
+uvx --from 'academic-hunter[fulltext]' academic-mcp
 ```
 
-Conecte qualquer cliente MCP (Claude Desktop, LangChain, etc.) e use as ferramentas:
+As ferramentas de análise desta seção são as que usam o extra opcional `ml`;
+sem ele, cada uma avisa nomeando o extra.
+
+Conecte qualquer cliente MCP — Claude Code, Claude Desktop, Cursor — e use as
+ferramentas. O passo a passo de cada cliente está no
+[guia de conexão MCP](mcp_setup.md):
 
 | Tool                  | Para que serve             | Exemplo                                                        |
 | --------------------- | -------------------------- | -------------------------------------------------------------- |
@@ -114,8 +155,8 @@ O `chunk_search` responde o que o abstract não responde — qual dataset usaram
 quantos anotadores, o que o método realmente fez — devolvendo os trechos
 agrupados sob o paper de origem, com a seção e os offsets no texto extraído
 (não há número de página: o PDF tem páginas, a fonte JATS do Europe PMC não).
-Requer o extra `pip install academic-hunter[fulltext]`; sem ele só o Europe PMC
-consegue entregar texto, e o `fulltext_status` avisa.
+Requer o extra `fulltext`, já incluído na instalação acima; sem ele só o Europe
+PMC consegue entregar texto, e o `fulltext_status` avisa.
 
 ## 5. Exemplo de Fluxo Completo via MCP
 

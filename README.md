@@ -18,11 +18,51 @@ Academic Hunter is an open-source Systematic Literature Review (SLR) tool that c
 O Academic Hunter é um **servidor MCP**: conecte-o a um agente de IA e peça a revisão em linguagem natural.
 
 ```bash
-# Instale
-pip install git+https://github.com/devfelipenunes/academic-hunter.git
+# 1. uv, uma vez por máquina
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Crie o config a partir do exemplo — o servidor não funciona sem ele
-curl -fsSL https://raw.githubusercontent.com/devfelipenunes/academic-hunter/main/config.example.json -o config.json
+# 2. Aqueça o cache AQUI, fora do cliente — é neste passo que os 439 MB
+#    (medidos) são baixados. Se o cliente fizer isso sozinho, ele espera
+#    sem barra de progresso e desiste com um "failed to connect" genérico.
+uvx --from 'academic-hunter[fulltext]' academic-mcp --help
+
+# 3. Registre no Claude Code (escopo user: conecta sem prompt de aprovação)
+claude mcp add --scope user academic-hunter -- \
+  uvx --from 'academic-hunter[fulltext]' academic-mcp
+```
+
+Sem clone, sem venv, sem caminho absoluto. O `--from` não é enfeite: a
+distribuição chama `academic-hunter` e o script chama `academic-mcp`, então o
+nome pelado não resolve nada.
+
+Para outros clientes — Claude Desktop, Codex, Cursor — use `uvx` como `command` e
+`["--from", "academic-hunter[fulltext]", "academic-mcp"]` como `args` no lugar
+do bloco de §2 do [guia de conexão MCP](docs/mcp_setup.md).
+
+O servidor sobe sem config, com um default neutro, e avisa no log que fez isso.
+O primeiro pedido ao agente deve ser o tópico:
+
+> _"Faça uma revisão sobre X."_
+
+O agente começa por `quick_topic_discovery`, que devolve os títulos mais
+relevantes **e um rascunho de config** montado com o jargão que esses títulos
+usam. Ele revisa o rascunho, aplica com `update_config` e roda `run_search`.
+
+Sem âncoras, `run_search` se recusa a rodar — em vez de consultar todas as fontes
+para nada e dizer que deu certo. Sem `technical_strings`, ele roda, mas avisa
+quais fontes ficaram de fora: as quatro que consultam por âncora × termo técnico
+não chegam a ser chamadas, e o `0` delas no relatório não é um resultado.
+
+Para conferir antes de rodar, o retorno de `update_config` diz o que a config vai
+consultar e o de `run_search` diz o que foi consultado de fato.
+
+<details>
+<summary>Instalar a partir do clone (desenvolvimento)</summary>
+
+```bash
+# O `ml` é opcional: a busca funciona sem ele, e as tools de análise avisam
+# nomeando o extra. O `fulltext` é o extra padrão documentado.
+pip install -e ".[fulltext]"
 
 # Inicie o servidor MCP (stdio)
 academic-mcp
@@ -30,6 +70,11 @@ academic-mcp
 # Ou em modo HTTP (SSE) para acesso remoto
 academic-mcp -t sse --host 0.0.0.0 --port 8080
 ```
+
+`python install.py` faz tudo isso, escreve o config do cliente com o caminho
+deste checkout e confirma que o servidor responde.
+
+</details>
 
 Conectado ao agente, basta pedir — _"rode uma revisão sistemática sobre X"_ — e ele orquestra as tools (`run_search`, `semantic_search`, `cluster_papers`).
 
@@ -71,13 +116,9 @@ Método original de ponderação semântica configurável via centroide ponderad
 
 O Academic Hunter expõe **44 ferramentas, 3 recursos (e um template de URI) e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
 
-```bash
-# Inicia o servidor (stdio)
-academic-mcp
-
-# Ou em modo HTTP (SSE) para acesso remoto
-academic-mcp -t sse --host 0.0.0.0 --port 8080
-```
+Os comandos de lançamento estão na tabela de comandos, mais abaixo, e a conexão
+de cada cliente no [guia de conexão MCP](docs/mcp_setup.md) — o README não
+repetiu nenhum dos dois.
 
 ### 📦 Exportação Multi-Formato
 
