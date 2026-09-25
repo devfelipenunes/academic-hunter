@@ -1,3 +1,13 @@
+# SSE-mode deployment: `docker compose up` (or `make docker-run`) builds the
+# Dockerfile's `sse` stage and serves the MCP server on http://127.0.0.1:8080,
+# with the health check at GET /health.
+#
+# The server itself starts without a config: it falls back to the packaged
+# neutral default and says on the log that it did. What requires the file is the
+# bind mount below — Docker creates a *directory* on the host for a mount whose
+# source is missing, so skipping this step does not fail here; it fails on the
+# next run, with a message about a directory where the mount expected a file.
+# Copy `config.example.json` to `config.json` before the first `up`.
 services:
   academic-hunter:
     build:

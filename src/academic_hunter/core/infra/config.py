@@ -10,6 +10,7 @@ import time
 from pathlib import Path
 from typing import Dict, Any, List, Set, Optional
 
+from . import paths
 from .atomic import write_json_atomically
 from .history import ConfigHistory
 
@@ -84,22 +85,25 @@ class HunterConfig:
     - Type-validated accessors for all config sections
     """
 
-    def __init__(self, config_path: str = 'config.json',
+    def __init__(self, config_path: Optional[str] = None,
                  pacing_defaults: Optional[Dict[str, float]] = None):
         """
         Args:
-            config_path: Path to the JSON configuration file.
+            config_path: Path to the JSON configuration file. ``None`` — which is
+                what every caller should pass — resolves through
+                ``paths.resolve_config_path()``, so the search order lives in one
+                place instead of once per caller.
             pacing_defaults: Domain-to-delay mapping derived from the connector
                 set by the composition root. Defaults to empty, so a config built
                 without it simply has no pacing entries.
         """
-        self.config_path = Path(config_path)
-        if not self.config_path.exists():
-            # Fallback for MCP servers running from different CWDs
-            project_root = Path(__file__).parent.parent.parent.parent.parent
-            fallback_path = project_root / 'config.json'
-            if fallback_path.exists():
-                self.config_path = fallback_path
+        if config_path is None:
+            resolved = paths.resolve_config_path()
+            self.config_path = resolved.path
+            self.config_origin = resolved.origin
+        else:
+            self.config_path = Path(config_path)
+            self.config_origin = paths.ORIGIN_EXPLICIT
 
         self._mtime: float = 0.0
         self._raw: Dict[str, Any] = {}
@@ -139,8 +143,10 @@ class HunterConfig:
 
         if not self.config_path.exists():
             raise FileNotFoundError(
-                f"Configuration file not found at '{self.config_path}'. "
-                "Copy config.example.json to config.json and customize it."
+                f"Configuration file not found at '{self.config_path}' "
+                f"(chosen by: {self.config_origin}). "
+                "Write a config there, or set ACADEMIC_HUNTER_CONFIG to a file "
+                "that exists, or start the server with --config PATH."
             )
 
         try:
@@ -194,8 +200,9 @@ class HunterConfig:
         Uses double underscore as path separator (compatible with systemd env files).
         """
         prefix = "ACADEMIC_HUNTER_"
+        reserved = (paths.CONFIG_ENV, paths.DATA_ENV)
         for key, value in sorted(os.environ.items()):
-            if not key.startswith(prefix):
+            if not key.startswith(prefix) or key in reserved:
                 continue
             path = key[len(prefix):].lower().split("__")
             target = self._raw
@@ -265,6 +272,16 @@ class HunterConfig:
             "technical_weights": self.tech_weights,
         }
 
+    def is_scorable(self) -> bool:
+        """Whether the pipeline can query anything at all.
+
+        The pipeline iterates anchors -- ``for anchor_cat, anchor_list in
+        hunter.anchors.items()`` -- and the keyword-only branch sits inside that
+        loop, so no anchors means every connector is skipped. Technical weights
+        alone issue no query, which is why they are not part of this test.
+        """
+        return bool(self.anchors)
+
     #: Settings keys that hold credentials. They are read by the connectors
     #: straight from `settings`, so they must stay in the live config — but they
     #: must never be serialised back out to a caller.
@@ -330,6 +347,11 @@ class HunterConfig:
         for k in self._raw:
             if k not in config and k.startswith("_"):
                 config[k] = self._raw[k]
+
+        if paths.is_inside_package(self.config_path):
+            self.config_path = paths.user_config_file()
+            self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            self.config_origin = paths.ORIGIN_USER_CONFIG
 
         write_json_atomically(self.config_path, config, indent=4)
 
