@@ -7,6 +7,8 @@ for logging and progress reporting.
 import json
 from mcp.server.fastmcp import Context
 from academic_hunter.core import HunterConfig, get_config
+from academic_hunter.core.infra import paths
+from academic_hunter.plugins.connectors import CONNECTORS
 from ..schemas.config_schema import SearchConfigUpdate
 from ..memory.config_backup import MCPDatabaseManager
 from ..exceptions import ConfigError
@@ -21,6 +23,16 @@ async def read_config(ctx: Context) -> str:
     try:
         config = get_config()
         data = {
+            # Which file this came from. The path is resolved by a search order
+            # that depends on the environment the client spawned the server in,
+            # so without this "why is my config ignored" has no answer a caller
+            # can reach — and the packaged default looks like a config someone
+            # chose, only an empty one.
+            "config_source": {
+                "path": str(config.config_path),
+                "origin": str(config.config_origin),
+                "is_default": config.config_origin == paths.ORIGIN_PACKAGED,
+            },
             # Redacted: this goes to the MCP client, and a credential that
             # reaches the agent's context has leaked.
             "settings": config.public_settings(),
@@ -40,11 +52,58 @@ async def read_config(ctx: Context) -> str:
         raise ConfigError(str(e))
 
 
+def _search_plan(config) -> str:
+    """What this configuration will actually ask, before a run is spent on it.
+
+    ``technical_strings`` is what the four grid sources are queried with, and it
+    is easy to leave empty -- the config then saves, searches two of six
+    sources, and reports success. Saying so here is cheaper than finding it in
+    the report.
+    """
+    grid = [name for name, cls in CONNECTORS.items() if not cls.is_keyword_only]
+    keyword_only = [name for name, cls in CONNECTORS.items() if cls.is_keyword_only]
+
+    lines = ["", "What this configuration will do:"]
+    anchor_count = len(config.anchors)
+
+    if not anchor_count:
+        lines.append(
+            "  Query nothing. The pipeline asks once per anchor and there are "
+            "none, so run_search will refuse. Set anchors with update_config."
+        )
+        return "\n".join(lines)
+
+    if config.tech_strings:
+        grid_calls = anchor_count * len(config.tech_strings)
+        lines.append(
+            f"  Query {', '.join(grid)} once per anchor x technical-string "
+            f"category ({grid_calls} queries), and {', '.join(keyword_only)} once "
+            f"per anchor ({anchor_count} queries)."
+        )
+        return "\n".join(lines)
+
+    lines.append(
+        f"  Query only {', '.join(keyword_only)} ({anchor_count} queries). They "
+        "take anchors alone. The grid sources "
+        f"({', '.join(grid)}) need a technical string, so they will NOT be "
+        "queried and the zeros they report are not findings."
+    )
+    lines.append(
+        "  Add technical_strings -- a category per concept, with the terms the "
+        "field uses -- and call update_config again."
+    )
+    return "\n".join(lines)
+
+
 async def update_config(config_update: SearchConfigUpdate, ctx: Context) -> str:
     """Updates the Hunter search configuration.
 
     Use this tool WHENEVER the user asks to research a new topic.
     Automatically backs up the previous state before applying changes.
+
+    The reply states what the new configuration will query, and names the
+    sources that will be skipped, so an incomplete configuration is visible
+    before run_search rather than as zeros in the report.
 
     Args:
         config_update: The new configuration to apply.
@@ -106,7 +165,7 @@ async def update_config(config_update: SearchConfigUpdate, ctx: Context) -> str:
         db.save_config(topic=topic_name, config_data=new_state)
 
         await ctx.info("Configuration updated successfully")
-        return "Configuration updated and saved to history successfully!"
+        return "Configuration updated and saved to history successfully!" + _search_plan(config)
     except ConfigError:
         raise
     except Exception as e:

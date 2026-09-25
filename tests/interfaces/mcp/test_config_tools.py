@@ -258,3 +258,123 @@ async def test_restoring_removes_what_was_added_after_the_backup(
     assert "rerank" not in mock_hunter_config.settings, (
         "a setting added after the backup survived the restore"
     )
+
+
+# ── o que a configuração vai consultar ─────────────────────────────────────
+
+
+async def _apply(config_update, mock_ctx, tmp_path, initial):
+    from academic_hunter.core.infra.config import HunterConfig
+
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(initial), encoding="utf-8")
+
+    with (
+        patch(
+            "academic_hunter.interfaces.mcp.tools.configuration.get_config",
+            return_value=HunterConfig(config_path=str(path)),
+        ),
+        patch("academic_hunter.interfaces.mcp.tools.configuration.MCPDatabaseManager") as m_db,
+    ):
+        m_db.return_value.save_config.return_value = None
+        return await update_config(config_update, mock_ctx)
+
+
+async def test_update_config_names_the_sources_an_empty_technical_strings_skips(mock_ctx, tmp_path):
+    """Anchors alone leave four of the six sources unqueried, and the reply said
+    nothing about it.
+
+    The call answered "successfully", the run that followed searched two sources
+    of six, and the missing four reported 0 as though they had been asked and
+    found nothing. Naming them here is what makes it visible before the run.
+    """
+    result = await _apply(
+        SearchConfigUpdate(topic="CBDC", anchors={"Topic": ["central bank digital currency"]}),
+        mock_ctx,
+        tmp_path,
+        {"settings": {}, "anchors": {}, "technical_strings": {}},
+    )
+
+    assert "successfully" in result.lower()
+    assert "will NOT be queried" in result
+    assert "technical_strings" in result
+    for grid_source in ("ArXiv", "Crossref", "OpenAlex", "CORE"):
+        assert grid_source in result, f"{grid_source} was not named as skipped"
+
+
+async def test_update_config_counts_the_queries_a_complete_config_will_run(mock_ctx, tmp_path):
+    """One anchor x two technical categories is two grid queries, and no warning."""
+    result = await _apply(
+        SearchConfigUpdate(
+            topic="CBDC",
+            anchors={"Topic": ["cbdc"]},
+            technical_strings={"Ledger": ["distributed ledger"], "Policy": ["monetary policy"]},
+        ),
+        mock_ctx,
+        tmp_path,
+        {"settings": {}, "anchors": {}, "technical_strings": {}},
+    )
+
+    assert "2 queries" in result
+    assert "will NOT be queried" not in result
+
+
+async def test_update_config_says_when_the_config_will_query_nothing(mock_ctx, tmp_path):
+    """Weights with no anchors are not a searchable config, and `run_search`
+    would refuse. Saying so here is cheaper than the refusal later."""
+    result = await _apply(
+        SearchConfigUpdate(topic="CBDC", technical_weights={"iso 20022": 2.0}),
+        mock_ctx,
+        tmp_path,
+        {"settings": {}, "anchors": {}, "technical_weights": {}},
+    )
+
+    assert "Query nothing" in result
+    assert "anchors" in result
+
+
+async def test_read_config_says_which_file_it_read(mock_ctx, tmp_path, monkeypatch):
+    """The search order is environment-dependent, so the caller has to be told
+    which rung won — otherwise "my config is being ignored" has no answer, and
+    the packaged default looks like a config someone chose, only an empty one."""
+    from academic_hunter.core.infra import paths
+    from academic_hunter.core.infra.config import HunterConfig
+
+    target = tmp_path / paths.CONFIG_FILENAME
+    target.write_text(
+        json.dumps({"settings": {"start_year": 2016}, "anchors": {"T": ["x"]}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv(paths.CONFIG_ENV, str(target))
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.configuration.get_config",
+        side_effect=HunterConfig,
+    ):
+        data = json.loads(await read_config(mock_ctx))
+
+    assert data["config_source"]["path"] == str(target)
+    assert data["config_source"]["origin"] == paths.ORIGIN_ENV
+    assert data["config_source"]["is_default"] is False
+    assert data["settings"]["start_year"] == 2016
+
+
+async def test_read_config_flags_the_packaged_default(mock_ctx, tmp_path, monkeypatch):
+    from academic_hunter.core.infra import paths
+    from academic_hunter.core.infra.config import HunterConfig
+
+    monkeypatch.setattr(paths, "checkout_root", lambda: None)
+    for name in (paths.CONFIG_ENV, paths.DATA_ENV, paths.PROJECT_ENV, "XDG_CONFIG_HOME"):
+        monkeypatch.delenv(name, raising=False)
+    neutral = tmp_path / "neutral"
+    neutral.mkdir()
+    monkeypatch.chdir(neutral)
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.configuration.get_config",
+        side_effect=HunterConfig,
+    ):
+        data = json.loads(await read_config(mock_ctx))
+
+    assert data["config_source"]["is_default"] is True
+    assert data["config_source"]["origin"] == paths.ORIGIN_PACKAGED

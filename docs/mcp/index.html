@@ -72,33 +72,74 @@
     <section class="setup-box">
       <h2>Setup</h2>
       <p>
-        Add the following server configuration to your MCP client.
-        The auto-installer (<code>python install.py</code>) can do this for you.
+        No clone and no virtualenv: <code>uvx</code> builds the environment from
+        the published package. Three commands, in this order.
       </p>
 
       <h3>Stdio mode (default)</h3>
 
+      <pre><code># 1. Install uv, once per machine
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Warm the cache OUTSIDE the client — this downloads 439 MB with [fulltext]
+uvx --from 'academic-hunter[fulltext]' academic-mcp --help
+
+# 3. Register it (user scope: connects without an approval prompt)
+claude mcp add --scope user academic-hunter -- \
+  uvx --from 'academic-hunter[fulltext]' academic-mcp</code></pre>
+
+      <p>
+        Every client needs the same two strings — there is no path and no
+        placeholder to fill in:
+      </p>
+
       <pre><code>{
   "mcpServers": {
     "academic-hunter": {
-      "command": "academic-mcp"
+      "command": "uvx",
+      "args": ["--from", "academic-hunter[fulltext]", "academic-mcp"]
     }
   }
 }</code></pre>
 
-      <p><em>Or, if running from source without installing the CLI entry point:</em></p>
+      <p>
+        <strong>Step 2 is not optional.</strong> Skip it and the <em>client</em>
+        runs <code>uvx</code> for the first time, inside its own spawn and with
+        no progress bar, while it fetches the dependencies
+        (<strong>439 MB measured</strong>): most clients give up
+        long before that finishes and report it as a generic
+        "failed to connect". One more download is possible, and the client would
+        be waiting on it too: ChromaDB's embedding model,
+        <strong>79 MB measured</strong>, into
+        <code>~/.cache/chroma/onnx_models/</code>. It is built lazily, on the
+        first operation that actually embeds — measured twice, a search on the
+        default config did <strong>not</strong> trigger it. <code>--from
+        '&lt;distribution&gt;[extras]' &lt;script&gt;</code> is required, not
+        decoration: the distribution is
+        <code>academic-hunter</code> and the console script is
+        <code>academic-mcp</code>, so the bare name resolves to nothing. And
+        <code>claude mcp add --scope user</code> writes to
+        <code>~/.claude.json</code>, which connects without a prompt — only a
+        project-scoped <code>.mcp.json</code> is held back as
+        <code>⏸ Pending approval</code>. See the
+        <a href="../mcp_setup.md">MCP connection guide</a> for Claude Code,
+        Claude Desktop and Cursor.
+      </p>
 
-      <pre><code>{
-  "mcpServers": {
-    "academic-hunter": {
-      "command": "/path/to/venv/bin/python",
-      "args": ["-m", "academic_hunter.interfaces.mcp.server"],
-      "env": {
-        "PYTHONPATH": "/path/to/academic-hunter/src"
-      }
-    }
-  }
-}</code></pre>
+      <p>
+        <code>ml</code> is optional, and the search does not need it: the
+        semantic screener embeds with ChromaDB's ONNX model, which comes with
+        this install, so scoring, ranking and indexing work without it. What
+        <code>ml</code> adds is <code>sentence-transformers</code>,
+        <code>scikit-learn</code>, <code>umap-learn</code> and
+        <code>bertopic</code>, for the analysis tools: clustering,
+        visualisation, semantic deduplication, novelty detection and
+        summarization. Without it those tools return a message naming the
+        extra — they do not fail silently, and nothing else changes. Adding it
+        costs <strong>3.15 GB measured</strong> (about 2.5 GB of that is the
+        CUDA build and the NVIDIA runtime, which a CPU-only machine never
+        loads); to add it, use <code>'academic-hunter[ml,fulltext]'</code>.
+      </p>
 
       <p>
         After connecting, the tools appear automatically in your MCP client.
@@ -106,6 +147,28 @@
         then configure your search via <code>update_config</code>, and run it with
         <code>run_search</code>.
       </p>
+
+      <h3>From a clone, for development</h3>
+
+      <p>
+        Every client needs the <strong>absolute path to the console script
+        inside the virtualenv</strong>. Not a bare <code>academic-mcp</code>: an
+        MCP client starts the server without activating any environment, so the
+        bare name is resolved against the <em>client's</em> <code>PATH</code> —
+        and its only symptom is the same generic "failed to connect". There is
+        also no <code>PYTHONPATH</code> to set: an editable install already
+        resolves the package. <code>python install.py</code> creates the venv,
+        installs the package and writes this file for you.
+      </p>
+
+      <pre><code>{
+  "mcpServers": {
+    "academic-hunter": {
+      "command": "/absolute/path/to/academic-hunter/venv/bin/academic-mcp",
+      "args": ["--transport", "stdio"]
+    }
+  }
+}</code></pre>
 
       <hr style="margin: var(--space-lg) 0; border: none; border-top: 1px solid var(--border);">
 
@@ -455,8 +518,15 @@ ID: 5 | 2026-07-12 18:00:22 | DeFi Cross-Chain</code></pre>
           <p class="tool-desc">
             Executes the full academic search pipeline. Spawns concurrent workers
             for each API connector (Semantic Scholar, OpenAlex, Crossref, ArXiv,
-            CORE, DBLP, DOAJ), deduplicates results, scores them, generates reports,
+            CORE, DOAJ), deduplicates results, scores them, generates reports,
             and indexes papers into the vector store.
+          </p>
+          <p class="tool-desc">
+            Refuses a configuration with no anchors, since the pipeline queries
+            once per anchor. The reply then lists every source with what it
+            returned, marking the ones that were never queried &mdash; a skipped
+            source reports <code>0</code> just like a source that was asked and
+            found nothing, and only this tells them apart.
           </p>
           <div class="tool-sig">run_search(limit_per_source: int | None = None) &rarr; str</div>
 
@@ -733,10 +803,13 @@ Abstract: ..."</code></pre>
         </div>
         <div class="tool-card-body">
           <p class="tool-desc">
-            Performs a quick search on Semantic Scholar API for a topic.
-            Returns paper titles and years to help identify the jargon and
-            key terms used in that research area — essential before configuring
-            a full search.
+            Performs a quick search on the OpenAlex API for a topic.
+            Returns paper titles and years, plus a draft configuration of
+            <code>anchors</code>, <code>technical_strings</code> and
+            <code>technical_weights</code> built from the words those titles
+            use — essential before configuring a full search, because the
+            terminology comes from the field rather than from the model's
+            memory of it.
           </p>
           <div class="tool-sig">quick_topic_discovery(topic: str) &rarr; str</div>
 
@@ -761,21 +834,27 @@ Abstract: ..."</code></pre>
             </tbody>
           </table>
 
-          <p class="tool-returns"><strong>Returns:</strong> Top 10 paper titles and years with identified key terms.</p>
+          <p class="tool-returns"><strong>Returns:</strong> Top 10 paper titles and years, followed by a draft configuration to review and pass to <code>update_config</code>.</p>
           <pre><code># Example — ask your MCP client:
 "Discover jargon for 'atomic settlement in blockchain'"
 
 # Result:
-"DISCOVERED JARGON:
-- atomic settlement
-- delivery-versus-payment (DvP)
-- payment-versus-payment (PvP)
-- hash time locked contracts (HTLC)
+--- Quick Discovery for 'atomic settlement in blockchain' ---
+- Atomic Settlement in DLT Networks (2024)
+- DvP in Cross-Chain Transactions (2023)
+...
 
-TOP PAPERS:
-1. 'Atomic Settlement in DLT Networks' (2024)
-2. 'DvP in Cross-Chain Transactions' (2023)
-..."</code></pre>
+Draft configuration built from these titles. It is a starting point, not a
+finished one: it carries a single technical category, and update_config wants
+at least four. Keep the terms that fit, add the concepts you know the field
+uses, then pass the whole object to update_config.
+
+{
+  "topic": "atomic settlement in blockchain",
+  "anchors": {"Topic": ["atomic settlement in blockchain"]},
+  "technical_strings": {"atomic settlement in blockchain": ["atomic settlement", "cross-chain", ...]},
+  "technical_weights": {"atomic settlement": 1.5, "cross-chain": 1.5, ...}
+}</code></pre>
         </div>
       </article>
 

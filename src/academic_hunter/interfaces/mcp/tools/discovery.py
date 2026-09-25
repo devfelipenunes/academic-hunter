@@ -4,11 +4,15 @@ All tools accept a ``ctx`` parameter (auto-injected by FastMCP as ``Context``)
 for logging and error reporting.
 """
 
+import json
+import re
 import requests
+from collections import Counter
 from urllib.parse import quote
 from academic_hunter import AcademicHunter
 from ..cache import cached, discovery_cache
-from ._utils import openalex_get, run_blocking
+from ._utils import _STOPWORDS, openalex_get, run_blocking
+from .trending import _extract_bigrams
 from ..exceptions import DiscoveryError
 from ..validation import validate_doi
 from mcp.server.fastmcp import Context
@@ -178,12 +182,40 @@ async def fetch_multiple_abstracts(dois: list[str], ctx: Context) -> str:
         raise DiscoveryError(str(e))
 
 
+def _draft_config(topic: str, titles: list) -> dict:
+    """A starting configuration built from the words the field's titles use.
+
+    The terms come from the retrieved corpus rather than from the model's memory
+    of the field. That distinction is the point: writing ``technical_strings``
+    for a topic one has only just been told about is guesswork, and an empty or
+    guessed mapping is what leaves four of the six sources unqueried.
+    """
+    counts: Counter = Counter()
+    for title in titles:
+        for bigram in _extract_bigrams(title, _STOPWORDS):
+            counts[bigram] += 1
+        for word in re.findall(r"[a-zA-Z][a-zA-Z\-]{1,}", title.lower()):
+            if word not in _STOPWORDS and len(word) > 2:
+                counts[word] += 1
+
+    terms = [term for term, _ in counts.most_common(30)]
+    return {
+        "topic": topic,
+        "anchors": {"Topic": [topic]},
+        "technical_strings": {topic: terms},
+        "technical_weights": {term: 1.5 for term in terms},
+    }
+
+
 @cached(discovery_cache)
 async def quick_topic_discovery(topic: str, ctx: Context) -> str:
     """Performs a quick topic search via OpenAlex.
 
-    Returns the titles of the most relevant papers to help identify jargon
-    before configuring the full search.
+    Returns the titles of the most relevant papers, plus a draft configuration
+    of anchors, technical_strings and technical_weights derived from those
+    titles. Review the draft, add what you know of the field, and pass it to
+    `update_config` — an empty technical_strings leaves four of the six sources
+    unqueried.
 
     A `search` is OpenAlex's most expensive call type — 10 of the roughly 1000
     daily credits a keyless caller gets — so the result is cached.
@@ -213,6 +245,19 @@ async def quick_topic_discovery(topic: str, ctx: Context) -> str:
             title = work.get("display_name") or "Unknown Title"
             year = work.get("publication_year") or "Unknown Year"
             results.append(f"- {title} ({year})")
+
+        titles = [work.get("display_name") or "" for work in items]
+        draft = _draft_config(topic, titles)
+        results.append("")
+        results.append(
+            "Draft configuration built from these titles. It is a starting point, "
+            "not a finished one: it carries a single technical category, and "
+            "update_config wants at least four. Keep the terms that fit, add the "
+            "concepts you know the field uses, then pass the whole object to "
+            "update_config."
+        )
+        results.append("")
+        results.append(json.dumps(draft, indent=2, ensure_ascii=False))
 
         await ctx.info(f"Found {len(items)} papers for '{topic}'")
         return "\n".join(results)

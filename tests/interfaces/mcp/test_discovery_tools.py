@@ -3,6 +3,7 @@
 Uses mock_ctx from conftest and patches requests or AcademicHunter.
 """
 
+import json
 import pytest
 from unittest.mock import patch
 from academic_hunter.interfaces.mcp.tools.discovery import (
@@ -233,6 +234,45 @@ async def test_quick_topic_discovery(mock_get, mock_ctx, mock_openalex, openalex
     assert "2021" in result
     mock_ctx.info.assert_called()
     mock_get.assert_called_once()
+
+
+@patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
+async def test_quick_topic_discovery_drafts_a_config_from_the_titles(
+    mock_get, mock_ctx, mock_openalex, openalex_response
+):
+    """The jargon comes from the field's own titles, not from the model's memory.
+
+    That is the step that used to be invented: the agent was asked to write
+    ``technical_strings`` for a topic it had only just been told about. An empty
+    or guessed mapping leaves four of the six sources unqueried, so the draft
+    gives it something to correct instead of something to recall.
+    """
+    mock_get.return_value = openalex_response(
+        {
+            "results": [
+                {
+                    "display_name": "Distributed ledger settlement in central banks",
+                    "publication_year": 2021,
+                },
+                {
+                    "display_name": "Distributed ledger and monetary policy",
+                    "publication_year": 2022,
+                },
+            ]
+        }
+    )
+
+    result = await quick_topic_discovery("tokenised settlement rails", mock_ctx)
+
+    assert "Draft configuration" in result
+    draft = json.loads(result[result.index("{") :])
+
+    assert draft["topic"] == "tokenised settlement rails"
+    assert draft["anchors"] == {"Topic": ["tokenised settlement rails"]}
+
+    terms = draft["technical_strings"]["tokenised settlement rails"]
+    assert "distributed ledger" in terms, "the recurring phrase from the titles is missing"
+    assert set(draft["technical_weights"]) == set(terms), "every drafted term needs a weight"
 
 
 @patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")

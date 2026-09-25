@@ -13,11 +13,21 @@ from academic_hunter.interfaces.mcp.exceptions import MCPToolError
 # ── run_search ─────────────────────────────────────────────────────────────────
 
 
+class _FakeConnector:
+    """Enough of a connector for the coverage report to classify it."""
+
+    def __init__(self, keyword_only):
+        self.is_keyword_only = keyword_only
+
+
 @patch("academic_hunter.interfaces.mcp.tools.search.AcademicHunter")
 async def test_run_search(mock_hunter_class, mock_ctx):
     mock_instance = MagicMock()
     fake_report_path = os.path.join(os.getcwd(), "results", "RELATORIO_ELITE_123.md")
     mock_instance.run.return_value = fake_report_path
+    mock_instance.stats = {"identified": {}, "included_final": 0}
+    mock_instance.query_history = []
+    mock_instance.connectors = {}
     mock_hunter_class.return_value = mock_instance
 
     result = await run_search(mock_ctx, limit_per_source=2)
@@ -116,3 +126,98 @@ async def test_read_latest_report_custom_max_chars(mock_get_project_root, tmp_pa
     assert len(result) == 100
     assert result == "A" * 100
     mock_ctx.info.assert_called()
+
+
+@patch("academic_hunter.interfaces.mcp.tools.search.AcademicHunter")
+async def test_run_search_refuses_an_empty_config(mock_hunter_class, mock_ctx, tmp_path):
+    """The neutral default has no anchors, so a run would query for nothing.
+
+    That is silent degradation: every source is called, nothing scores above the
+    threshold, and the tool reports success. The guard turns it into a message
+    naming the file and the rung that chose it.
+    """
+    target = tmp_path / "config.json"
+    mock_instance = MagicMock()
+    mock_instance.config.is_scorable.return_value = False
+    mock_instance.config.config_path = str(target)
+    mock_instance.config.config_origin = "packaged_default"
+    mock_hunter_class.return_value = mock_instance
+
+    with pytest.raises(MCPToolError) as raised:
+        await run_search(mock_ctx, limit_per_source=2)
+
+    assert "packaged_default" in str(raised.value)
+    assert str(target) in str(raised.value)
+    mock_instance.run.assert_not_called()
+
+
+@patch("academic_hunter.interfaces.mcp.tools.search.AcademicHunter")
+async def test_run_search_proceeds_when_there_is_a_topic(mock_hunter_class, mock_ctx):
+    mock_instance = MagicMock()
+    mock_instance.config.is_scorable.return_value = True
+    mock_instance.run.return_value = os.path.join(os.getcwd(), "results", "RELATORIO_ELITE_1.md")
+    mock_instance.stats = {"identified": {}, "included_final": 0}
+    mock_instance.query_history = []
+    mock_instance.connectors = {}
+    mock_hunter_class.return_value = mock_instance
+
+    result = await run_search(mock_ctx, limit_per_source=2)
+
+    assert "Search completed successfully" in result
+    mock_instance.run.assert_called_once_with(limit_per_source=2)
+
+
+@patch("academic_hunter.interfaces.mcp.tools.search.AcademicHunter")
+async def test_run_search_separates_a_skipped_source_from_an_empty_one(mock_hunter_class, mock_ctx):
+    """Both kinds of source report 0, and they are not the same thing.
+
+    In the run that prompted this, ArXiv and Semantic Scholar both showed 0.
+    ArXiv was never called -- technical_strings was empty, so the inner loop
+    never executed -- while Semantic Scholar was called and found nothing. The
+    reply said both had returned zero, and only one of those was a finding.
+    """
+    mock_instance = MagicMock()
+    mock_instance.config.is_scorable.return_value = True
+    mock_instance.config.tech_strings = {}
+    mock_instance.run.return_value = os.path.join(os.getcwd(), "results", "RELATORIO_ELITE_1.md")
+    mock_instance.query_history = [
+        {"Source": "Semantic Scholar", "Query": "CBDC"},
+        {"Source": "Crossref", "Query": "CBDC"},
+    ]
+    mock_instance.stats = {
+        "identified": {"ArXiv": 0, "Crossref": 20, "Semantic Scholar": 0},
+        "included_final": 5,
+    }
+    mock_instance.connectors = {
+        "ArXiv": _FakeConnector(False),
+        "Crossref": _FakeConnector(False),
+        "Semantic Scholar": _FakeConnector(True),
+    }
+    mock_hunter_class.return_value = mock_instance
+
+    result = await run_search(mock_ctx, limit_per_source=2)
+
+    assert "ArXiv: NOT QUERIED" in result
+    assert "Semantic Scholar: 0" in result
+    assert "Crossref: 20" in result
+    assert "Identified: 20 | Included: 5" in result
+    assert "ArXiv never ran a query" in result
+    assert "technical_strings is empty" in result
+
+
+@patch("academic_hunter.interfaces.mcp.tools.search.AcademicHunter")
+async def test_run_search_stays_quiet_when_every_source_was_queried(mock_hunter_class, mock_ctx):
+    """The warning has to mean something, so it cannot fire on a healthy run."""
+    mock_instance = MagicMock()
+    mock_instance.config.is_scorable.return_value = True
+    mock_instance.run.return_value = os.path.join(os.getcwd(), "results", "RELATORIO_ELITE_1.md")
+    mock_instance.query_history = [{"Source": "ArXiv", "Query": "CBDC"}, {"Source": "Crossref", "Query": "CBDC"}]
+    mock_instance.stats = {"identified": {"ArXiv": 12, "Crossref": 8}, "included_final": 3}
+    mock_instance.connectors = {"ArXiv": _FakeConnector(False), "Crossref": _FakeConnector(False)}
+    mock_hunter_class.return_value = mock_instance
+
+    result = await run_search(mock_ctx, limit_per_source=2)
+
+    assert "NOT QUERIED" not in result
+    assert "never ran a query" not in result
+    assert "Identified: 20 | Included: 3" in result
