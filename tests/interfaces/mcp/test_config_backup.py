@@ -1,5 +1,7 @@
 import os
 import sqlite3
+from pathlib import Path
+
 import pytest
 from academic_hunter.interfaces.mcp.memory.config_backup import MCPDatabaseManager
 
@@ -64,3 +66,29 @@ def test_get_config_not_found(temp_db):
     # Tentar recuperar um ID que não existe
     result = manager.get_config(999)
     assert result is None
+
+
+def test_the_default_database_lives_in_the_resolved_data_dir(tmp_path, monkeypatch):
+    """It used to be written five levels up from ``__file__``.
+
+    In an installed package that path is inside the environment: under ``uvx`` it
+    is a cache that is rebuilt at will, so the config history — the thing
+    ``restore_config_by_id`` restores from — disappeared with it.
+    """
+    from academic_hunter.core.infra import paths
+
+    monkeypatch.setenv(paths.DATA_ENV, str(tmp_path / "project"))
+
+    manager = MCPDatabaseManager()
+
+    assert manager.db_path == str(paths.resolve_location().history_db)
+    assert os.path.exists(manager.db_path)
+    assert str(tmp_path) in manager.db_path
+
+
+def test_the_default_database_is_never_inside_the_package(tmp_path, monkeypatch):
+    from academic_hunter.core.infra import paths
+
+    monkeypatch.setenv(paths.DATA_ENV, str(tmp_path / "project"))
+
+    assert not paths.is_inside_package(Path(MCPDatabaseManager().db_path))

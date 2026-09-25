@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import Any, Callable
 import requests
 from academic_hunter import AcademicHunter
+from academic_hunter.core.infra import paths
 from academic_hunter.core.infra.config import HunterConfig, openalex_key
 from academic_hunter.core.ports.vector_store import PaperListingPort
 from academic_hunter.plugins.vector_stores import ChromaVectorStore
-import academic_hunter as pkg
 
 logger = logging.getLogger("academic_hunter.mcp._utils")
 
@@ -40,12 +40,8 @@ async def run_blocking(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any
 
 
 def get_project_root() -> Path:
-    """Resolve the project root from the package location."""
-    pkg_init = Path(pkg.__file__).resolve()
-    for parent in [pkg_init] + list(pkg_init.parents):
-        if (parent / "pyproject.toml").exists():
-            return parent
-    return Path.cwd()
+    """The directory the resolved state belongs to."""
+    return paths.resolve_location().base
 
 
 def _get_vector_store():
@@ -55,7 +51,7 @@ def _get_vector_store():
     built a whole hunter per call just to compute a path.
     """
     try:
-        db_dir = str(get_project_root() / ".academic_hunter" / "chroma_db")
+        db_dir = str(get_project_root() / paths.DATA_DIRNAME / "chroma_db")
         return ChromaVectorStore(db_dir=db_dir)
     except Exception as e:
         logger.warning("Could not initialize vector store: %s", e)
@@ -63,8 +59,8 @@ def _get_vector_store():
 
 
 def _make_hunter() -> AcademicHunter:
-    """Create an AcademicHunter rooted at the project directory."""
-    return AcademicHunter(output_dir=str(get_project_root() / "results"))
+    """Create an AcademicHunter rooted at the resolved location."""
+    return AcademicHunter(output_dir=str(get_project_root() / paths.RESULTS_DIRNAME))
 
 
 OPENALEX_BASE = "https://api.openalex.org"
@@ -85,7 +81,7 @@ def _openalex_credentials() -> tuple[dict, dict]:
     contact address is what puts a caller in OpenAlex's polite pool.
     """
     try:
-        settings = HunterConfig(str(get_project_root() / "config.json")).settings
+        settings = HunterConfig().settings
     except Exception as e:
         logger.warning("Could not read the config for OpenAlex credentials: %s", e)
         return {}, {}
@@ -178,7 +174,7 @@ def _latest_run_dir() -> Path | None:
     asking once answers for both; looking them up independently would mix two
     runs whenever one of them is missing.
     """
-    results_dir = get_project_root() / "results"
+    results_dir = get_project_root() / paths.RESULTS_DIRNAME
     candidates = [
         path
         for pattern in ("academic_dataset_*.csv", "run_stats_*.json")
@@ -220,7 +216,7 @@ def _load_latest_papers() -> list:
     empty, so this is the normal way to reach "the papers", not a fallback.
     Recursive because the exporter writes into a per-run subdirectory.
     """
-    results_dir = get_project_root() / "results"
+    results_dir = get_project_root() / paths.RESULTS_DIRNAME
     csv_path = _newest_run_artifact(results_dir.rglob("academic_dataset_*.csv"))
     if csv_path is None:
         return []

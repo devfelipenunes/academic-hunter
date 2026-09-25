@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 from ..core.infra import SQLiteCache, HunterConfig, SearchState
+from ..core.infra import paths
 from ..core.nlp import AcademicScorer
 from .facades import HunterFacadeMixin
 from .exporters import HunterExporterMixin
@@ -23,15 +24,17 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
     on ``plugins`` or ``interfaces``.
     """
 
-    def __init__(self, config_path: str = 'config.json', output_dir: str = 'results',
+    def __init__(self, config_path: Optional[str] = None, output_dir: Optional[str] = None,
                  use_cache: bool = True, connectors: Optional[Dict[str, Any]] = None,
                  semantic_screener: Any = None,
                  exporters: Optional[list] = None,
                  vector_store_factory: Any = None,
                  obsidian_export: Any = None,
                  full_text_fetcher: Any = None):
+        if output_dir is None:
+            output_dir = str(paths.resolve_location().results_dir)
         self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
         import sys
         is_testing = 'pytest' in sys.modules or 'unittest' in sys.modules or 'test' in str(config_path).lower()

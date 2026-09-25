@@ -32,6 +32,7 @@ from academic_hunter.core.writing.numbers import (
     summarize_numbers,
     verify_numbers as check_numbers,
 )
+from academic_hunter.core.infra import paths
 from ._utils import get_project_root, _get_vector_store
 from ..exceptions import CitationError, WritingError
 
@@ -42,7 +43,7 @@ def _resolve_run_dir(project_root: Path, source_run: Optional[str]) -> Path:
     Accepts either a run name ("run_20260910_011631") or a path. Without an
     explicit choice, uses the most recent run.
     """
-    results_dir = project_root / "results"
+    results_dir = project_root / paths.RESULTS_DIRNAME
 
     if source_run:
         candidate = Path(source_run)
@@ -466,7 +467,9 @@ async def verify_numbers(
         return "No checkable figures found. Nothing to verify."
 
     project_root = get_project_root()
-    results_path = Path(results_dir) if results_dir else project_root / "results"
+    results_path = (
+        Path(results_dir) if results_dir else project_root / paths.RESULTS_DIRNAME
+    )
     if not results_path.is_absolute():
         results_path = project_root / results_path
 

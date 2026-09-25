@@ -38,9 +38,11 @@ async def get_latest_report_resource() -> str:
 
     URI: ``academic-hunter://reports/latest``
     """
+    from academic_hunter.core.infra import paths
+
     from .tools._utils import _latest_report_path, get_project_root
 
-    results_dir = get_project_root() / "results"
+    results_dir = get_project_root() / paths.RESULTS_DIRNAME
     if not results_dir.exists():
         return "No report available"
 

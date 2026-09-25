@@ -3,6 +3,7 @@
 import json
 import logging
 
+from academic_hunter.core.infra import paths
 from mcp.server.fastmcp import Context
 
 logger = logging.getLogger("academic_hunter.mcp")
@@ -92,6 +93,11 @@ def _probe_components() -> dict:
         "status": status,
         "server": "academic-hunter",
         "config_loaded": config_loaded,
+        # Where the two things the server cannot start without came from. Both
+        # are chosen by an environment-dependent search order, so a caller
+        # asking "is this server reading my project or its own default" has no
+        # other way to find out.
+        "paths": paths.describe(),
         "vector_store": {
             "available": vector_store_available,
             "paper_count": paper_count,

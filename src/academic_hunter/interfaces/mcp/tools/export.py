@@ -12,6 +12,7 @@ from typing import Optional
 from mcp.server.fastmcp import Context
 
 from academic_hunter import AcademicHunter
+from academic_hunter.core.infra import paths
 from academic_hunter.core.writing.style import BibtexKeyAllocator
 from academic_hunter.plugins.exporters.bibtex import escape_bibtex
 from academic_hunter.plugins.exporters.csv import neutralise_formula
@@ -41,7 +42,7 @@ async def export_report(
         # opens the cache — measured near 0.3 s on a real config, which is a
         # third of a second that every other tool would spend waiting.
         hunter = await run_blocking(
-            AcademicHunter, output_dir=str(project_root / "results")
+            AcademicHunter, output_dir=str(project_root / paths.RESULTS_DIRNAME)
         )
         papers = list(hunter.consolidated_results.values())
 
@@ -68,7 +69,7 @@ async def export_report(
         ext = ext_map[format_lower]
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        results_dir = project_root / "results"
+        results_dir = project_root / paths.RESULTS_DIRNAME
         results_dir.mkdir(parents=True, exist_ok=True)
 
         if output_path is None:

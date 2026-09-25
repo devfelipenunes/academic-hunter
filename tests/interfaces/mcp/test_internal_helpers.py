@@ -226,38 +226,25 @@ def test_extract_meta_empty_fallback():
 # ── _utils: get_project_root ──────────────────────────────────────
 
 
-def test_get_project_root_finds_pyproject(tmp_path):
-    """get_project_root returns the parent of pyproject.toml."""
+def test_get_project_root_is_the_resolved_data_dir(tmp_path, monkeypatch):
+    """The explicit data dir wins, so get_project_root is the resolver's answer."""
+    from academic_hunter.core.infra import paths
     from academic_hunter.interfaces.mcp.tools import _utils
 
-    pkg_init = tmp_path / "src" / "academic_hunter" / "__init__.py"
-    pkg_init.parent.mkdir(parents=True)
-    pkg_init.write_text("")
-    pyproject = tmp_path / "pyproject.toml"
-    pyproject.write_text("[project]")
-
-    with patch.object(_utils, "pkg") as mock_pkg:
-        mock_pkg.__file__ = str(pkg_init)
-        root = _utils.get_project_root()
-    assert root == tmp_path
+    monkeypatch.setenv(paths.DATA_ENV, str(tmp_path))
+    assert _utils.get_project_root() == tmp_path
 
 
-def test_get_project_root_fallback_cwd():
-    """get_project_root falls back to cwd when no pyproject.toml."""
-    from pathlib import Path
+def test_get_project_root_honours_a_project_marker(tmp_path, monkeypatch):
+    """A directory holding .academic_hunter is the project, not the checkout."""
+    from academic_hunter.core.infra import paths
     from academic_hunter.interfaces.mcp.tools import _utils
-    import os
 
-    tmp = __import__("tempfile").mkdtemp()
-    fake_pkg = __import__("types").SimpleNamespace()
-    fake_pkg.__file__ = os.path.join(tmp, "pkg", "__init__.py")
-    os.makedirs(os.path.dirname(fake_pkg.__file__), exist_ok=True)
-    with open(fake_pkg.__file__, "w"):
-        pass
-
-    with patch.object(_utils, "pkg", fake_pkg):
-        root = _utils.get_project_root()
-    assert root == Path.cwd()
+    monkeypatch.delenv(paths.DATA_ENV, raising=False)
+    monkeypatch.delenv(paths.PROJECT_ENV, raising=False)
+    (tmp_path / paths.DATA_DIRNAME).mkdir()
+    monkeypatch.chdir(tmp_path)
+    assert _utils.get_project_root() == tmp_path
 
 
 # ── _utils: which run is "the latest" ────────────────────────────

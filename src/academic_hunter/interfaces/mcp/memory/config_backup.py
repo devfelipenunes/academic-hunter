@@ -1,20 +1,15 @@
-import os
 import json
 from datetime import datetime
 from typing import Optional, Dict, List, Any
 
+from ....core.infra import paths
 from ....core.infra.sqlite_conn import connect
 
 class MCPDatabaseManager:
     def __init__(self, db_path: Optional[str] = None):
         if not db_path:
-            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
-            db_dir = os.path.join(project_root, ".academic_hunter")
-            if not os.path.exists(db_dir):
-                os.makedirs(db_dir, exist_ok=True)
-            self.db_path = os.path.join(db_dir, "mcp_history.db")
-        else:
-            self.db_path = db_path
+            db_path = str(paths.ensure_data_dir() / "mcp_history.db")
+        self.db_path = db_path
         self._init_db()
 
     def _init_db(self):
