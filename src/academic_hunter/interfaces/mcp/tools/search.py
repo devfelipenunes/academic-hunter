@@ -16,6 +16,10 @@ def _coverage(hunter) -> str:
     A source the pipeline skipped and a source that was queried and found
     nothing both read as 0 everywhere else. They are not the same thing, and
     without this the agent has no way to tell them apart.
+
+    ``Identified: 11 | Included: 0`` reads as an empty field, and it is the
+    moment the agent needs to hear otherwise: when nothing reaches the scorer,
+    the anchors are what failed, and that is a thing the caller can fix.
     """
     queried = {item.get("Source") for item in hunter.query_history}
     identified = hunter.stats.get("identified", {})
@@ -31,7 +35,27 @@ def _coverage(hunter) -> str:
         else:
             lines.append(f"  {name}: NOT QUERIED")
             skipped.append(name)
-    lines.append(f"Identified: {sum(identified.values())} | Included: {hunter.stats.get('included_final', 0)}")
+    identified_total = sum(identified.values())
+    included = hunter.stats.get("included_final", 0)
+    lines.append(f"Identified: {identified_total} | Included: {included}")
+
+    dropped_at_anchor = hunter.stats.get("excluded_anchors", 0)
+    if (
+        identified_total
+        and not included
+        and dropped_at_anchor
+        and not hunter.stats.get("excluded_technical_score", 0)
+    ):
+        anchors = [term for group in hunter.config.anchors.values() for term in group]
+        lines.append(
+            f"Nothing reached the scorer: {dropped_at_anchor} of the "
+            f"{identified_total} identified papers were dropped at the anchor "
+            f"gate, whose terms are {', '.join(anchors)}, and none were dropped "
+            "for a low score. An anchor matches as a whole phrase, so a "
+            "multi-word anchor fires only on a title or abstract carrying it "
+            "verbatim. This run is a statement about the anchors and not about "
+            "the field -- widen them with update_config and run the search again."
+        )
 
     if skipped and not hunter.config.tech_strings:
         lines.append(

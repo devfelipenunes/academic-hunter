@@ -221,3 +221,63 @@ async def test_run_search_stays_quiet_when_every_source_was_queried(mock_hunter_
     assert "NOT QUERIED" not in result
     assert "never ran a query" not in result
     assert "Identified: 20 | Included: 3" in result
+
+
+@patch("academic_hunter.interfaces.mcp.tools.search.AcademicHunter")
+async def test_run_search_names_the_anchor_gate_when_nothing_reaches_the_scorer(
+    mock_hunter_class, mock_ctx
+):
+    """``Identified: 11 | Included: 0`` reads as an empty field, and it is not one.
+
+    Measured on a real run: the draft put the topic verbatim in as its only
+    anchor, no title carried that phrase, and all 11 papers were dropped at the
+    anchor gate. The reply reported the two numbers and stopped, leaving the
+    caller to conclude the field was empty.
+    """
+    mock_instance = MagicMock()
+    mock_instance.config.is_scorable.return_value = True
+    mock_instance.config.anchors = {"Topic": ["CBDC financial stability"]}
+    mock_instance.config.tech_strings = {"CBDC financial stability": ["cbdc"]}
+    mock_instance.run.return_value = os.path.join(os.getcwd(), "results", "RELATORIO_ELITE_1.md")
+    mock_instance.query_history = [{"Source": "Crossref", "Query": "CBDC"}]
+    mock_instance.stats = {
+        "identified": {"Crossref": 11},
+        "excluded_anchors": 11,
+        "excluded_technical_score": 0,
+        "included_final": 0,
+    }
+    mock_instance.connectors = {"Crossref": _FakeConnector(False)}
+    mock_hunter_class.return_value = mock_instance
+
+    result = await run_search(mock_ctx, limit_per_source=2)
+
+    assert "Identified: 11 | Included: 0" in result
+    assert "Nothing reached the scorer" in result
+    assert "CBDC financial stability" in result, "the terms to widen are not in the reply"
+    assert "11 of the 11 identified papers" in result
+
+
+@patch("academic_hunter.interfaces.mcp.tools.search.AcademicHunter")
+async def test_run_search_stays_quiet_when_the_scorer_did_run(mock_hunter_class, mock_ctx):
+    """Anchors that drop some papers are the normal case, not the warning.
+
+    These are the numbers from the same field with the anchors widened: 20
+    identified, 7 dropped at the anchor gate, 5 for a low score, 6 included.
+    """
+    mock_instance = MagicMock()
+    mock_instance.config.is_scorable.return_value = True
+    mock_instance.run.return_value = os.path.join(os.getcwd(), "results", "RELATORIO_ELITE_1.md")
+    mock_instance.query_history = [{"Source": "Crossref", "Query": "CBDC"}]
+    mock_instance.stats = {
+        "identified": {"Crossref": 20},
+        "excluded_anchors": 7,
+        "excluded_technical_score": 5,
+        "included_final": 6,
+    }
+    mock_instance.connectors = {"Crossref": _FakeConnector(False)}
+    mock_hunter_class.return_value = mock_instance
+
+    result = await run_search(mock_ctx, limit_per_source=2)
+
+    assert "Identified: 20 | Included: 6" in result
+    assert "Nothing reached the scorer" not in result
