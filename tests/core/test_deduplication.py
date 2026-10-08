@@ -1,9 +1,11 @@
-import unittest
 import json
-import tempfile
 import shutil
+import tempfile
+import unittest
 from pathlib import Path
+
 from academic_hunter import AcademicHunter
+
 
 class TestDedupBug(unittest.TestCase):
     def setUp(self):
@@ -32,7 +34,6 @@ class TestDedupBug(unittest.TestCase):
         Verify that a paper previously excluded due to low score is included
         if a better version of it is found later.
         """
-        # Version 1: Has anchor in abstract, but low score (1.0 < 5.0)
         paper1 = {
             "Title": "Research",
             "Abstract": "Nothing interesting here, just an anchor.",
@@ -44,8 +45,6 @@ class TestDedupBug(unittest.TestCase):
             "Venue": "Venue1"
         }
 
-        # Version 2: Same title, has tech in abstract, high score (10.0 >= 5.0)
-        # MUST also match anchor to pass anchor filtering!
         paper2 = {
             "Title": "Research",
             "Abstract": "This is about tech and anchor.",
@@ -57,11 +56,7 @@ class TestDedupBug(unittest.TestCase):
             "Venue": "Venue2"
         }
 
-        # Mock fetch_arxiv to return paper1, and others to return nothing
-        # Then mock fetch_crossref to return paper2 on the next iteration or something.
-        # Actually, it's easier to mock all fetchers and control what they return.
         
-        # We'll use a side_effect to return different results
         self.hunter.fetch_arxiv = lambda a, t, limit: [paper1] if "anchor" in a else []
         self.hunter.fetch_crossref = lambda a, t, limit: [paper2] if "anchor" in a else []
         self.hunter.fetch_semantic_scholar = lambda a, t, limit: []
@@ -70,28 +65,11 @@ class TestDedupBug(unittest.TestCase):
         self.hunter.fetch_dblp = lambda a, t, limit: []
         self.hunter.fetch_doaj = lambda a, t, limit: []
         
-        # In the current implementation of run():
-        # raw_results = fetch_arxiv + fetch_crossref + ...
-        # If they are in the same raw_results list:
-        # paper1 comes first, it is processed, seen_ids.add(), excluded_technical_score += 1
-        # paper2 comes second, it is in seen_ids, duplicates_removed += 1, continue.
-        # RESULT: paper is lost.
 
-        # Let's run it
         self.hunter.run(limit_per_source=10)
 
-        # Verification
         print(f"Stats: {self.hunter.stats}")
 
-        # The two versions are the same paper (duplicates_removed == 1), so the
-        # collection holds exactly one. The promotion worked: that paper is
-        # present and passes the threshold.
-        #
-        # `included_final` is derived from the final collection by
-        # RecomputeRanksStep, so it counts papers rather than ingest events. It
-        # used to report 2 here — the excluded-then-merged duplicate was counted
-        # alongside the paper it merged into, so the stat exceeded the number of
-        # papers that actually existed.
         self.assertEqual(len(self.hunter.consolidated_results), 1,
                          "The duplicate merge leaves exactly one paper")
         self.assertEqual(self.hunter.stats["included_final"], 1,
@@ -104,7 +82,6 @@ class TestDedupBug(unittest.TestCase):
         Verify that a paper previously excluded due to anchor mismatch is included
         if a better version matches anchors and score.
         """
-        # Version 1: NO anchor, NO tech. Fails anchor filtering.
         paper1 = {
             "Title": "Research",
             "Abstract": "Nothing interesting here.",
@@ -116,7 +93,6 @@ class TestDedupBug(unittest.TestCase):
             "Venue": "Venue1"
         }
 
-        # Version 2: Same title, has tech AND anchor.
         paper2 = {
             "Title": "Research",
             "Abstract": "This is about tech and anchor.",
@@ -140,7 +116,6 @@ class TestDedupBug(unittest.TestCase):
 
         print(f"Stats (Anchor Mismatch Case): {self.hunter.stats}")
         
-        # excluded_technical_score should NOT be negative!
         self.assertGreaterEqual(self.hunter.stats["excluded_technical_score"], 0)
         self.assertEqual(self.hunter.stats["included_final"], 1)
 

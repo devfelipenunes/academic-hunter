@@ -11,7 +11,7 @@ def test_reset_keeps_the_objects_the_connectors_hold():
     section of every run, and never reset the per-domain pacing.
     """
     state = SearchState()
-    history = state.query_history  # what a connector was handed at construction
+    history = state.query_history
     pacing = state.last_request_by_domain
 
     history.append({"Source": "arXiv", "Query": "ledgers"})

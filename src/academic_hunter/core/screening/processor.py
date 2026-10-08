@@ -1,10 +1,18 @@
+import logging
 import threading
-from typing import Dict, Any, List
-from ..infra import SearchState, HunterConfig
-from ..nlp import AcademicScorer
+import time
+from typing import Any, Dict, List
+
+from ..infra import HunterConfig, SearchState
 from ..models import Paper
 from ..models.utils import collapse_whitespace
+from ..nlp import AcademicScorer
 from .resolvers import PaperResolver
+
+logger = logging.getLogger("academic_hunter")
+
+REGISTRATION_TIMEOUT = 120.0
+
 
 class PaperProcessor:
     """Handles duplicate checking, temporal filtering, anchor matching, scoring, and metadata merging for mined papers."""
@@ -15,7 +23,62 @@ class PaperProcessor:
         self.connectors = connectors
         self.lock = lock
         self.semantic_screener = semantic_screener
+        self.settled = threading.Condition(lock)
         self.resolver = PaperResolver(state, scorer, config, connectors, lock, semantic_screener)
+
+    def _settle(self, dedup_id: str) -> None:
+        """Announce that the copy claiming ``dedup_id`` has finished with it."""
+        with self.settled:
+            self.state.pending_registrations.discard(dedup_id)
+            self.settled.notify_all()
+
+    def _await_registration(self, dedup_id: str) -> Any:
+        """The entry the copy that claimed ``dedup_id`` is about to publish, or None.
+
+        Two databases are mined at once, so two records of one study are
+        routinely in flight together. The id is claimed before the copy holding
+        it has finished scoring itself -- the embedding is computed outside the
+        lock deliberately, so that a model call does not serialise every
+        connector thread -- and a copy arriving inside that window found the id
+        taken, nothing under it, and no exclusion recorded. It was dropped as if
+        it were a third record of a promotion somebody else was already
+        handling, on a ``debug`` line, and its metadata never reached the paper.
+
+        That is not a duplicate being discarded, it is a paper being discarded,
+        and it was measured: with two sources returning one study between them,
+        half the runs lost the copy whose abstract matched the technical terms
+        -- and the surviving abstract's term count is what decides inclusion.
+
+        The wait is bounded so that a copy whose claim is never settled -- a
+        crash between the two -- cannot block a worker thread for the rest of
+        the run.
+        """
+        deadline = time.monotonic() + REGISTRATION_TIMEOUT
+        with self.settled:
+            while dedup_id in self.state.pending_registrations:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    logger.warning(
+                        "Waited %ss for the copy of %r that claimed it and gave up; "
+                        "this record is not merged into anything.",
+                        REGISTRATION_TIMEOUT, dedup_id,
+                    )
+                    return None
+                self.settled.wait(remaining)
+            return self.state.consolidated_results.get(dedup_id)
+
+    def _claim_promotion(self, dedup_id: str) -> bool:
+        """Whether this call takes responsibility for re-screening ``dedup_id``.
+
+        Atomic on purpose: two copies of a paper that was screened out can
+        arrive together, and both would otherwise re-screen it and write the
+        result twice.
+        """
+        with self.lock:
+            if dedup_id in self.state.exclusion_reasons and dedup_id not in self.state.pending_promotions:
+                self.state.pending_promotions.add(dedup_id)
+                return True
+        return False
 
     def process(self, paper: Dict[str, Any], anchor_cat: str, tech_cat: str, anchor_list: List[str], tech_list: List[str]):
         """Deduplicates, scores, filters, and merges metadata for mined papers (thread-safe)."""
@@ -24,10 +87,6 @@ class PaperProcessor:
         with self.lock:
             self.state.stats["identified"][source] = self.state.stats["identified"].get(source, 0) + 1
 
-        # Normalised here, at the boundary, because scoring reads this dict and
-        # not the `Paper` built from it: a title wrapped across lines carried the
-        # indentation of the next line, and a two-word term straddling the wrap
-        # failed to match. Doing it per connector means the next one repeats it.
         paper["Title"] = collapse_whitespace(paper.get("Title"))
         paper["Abstract"] = collapse_whitespace(paper.get("Abstract"))
         title = paper["Title"]
@@ -36,10 +95,6 @@ class PaperProcessor:
 
         doi_clean = Paper.normalize_doi(paper.get('DOI') or "")
 
-        # Decide new-vs-duplicate and, when new, claim the identifiers in the
-        # *same* critical section. Checking under one lock acquisition and
-        # recording under another left a window in which two threads both
-        # concluded "new" for the same paper and registered it twice.
         with self.lock:
             dedup_id = self.scorer.generate_slug(title)
             is_duplicate = dedup_id in self.state.seen_ids
@@ -49,37 +104,33 @@ class PaperProcessor:
 
             if is_duplicate:
                 self.state.stats["duplicates_removed"] += 1
-                # Read under the same lock: the dict is mutated by other threads.
                 existing = self.state.consolidated_results.get(dedup_id)
-                # Claim the right to promote an excluded duplicate, in this same
-                # critical section. Validation happens outside the lock and is
-                # slow, so without the claim every thread holding the same
-                # duplicate passed it and wrote the same paper.
-                # `existing is None` alone does not mean "excluded": the first
-                # copy of this paper may still be mid-validation and simply not
-                # written yet. Only a recorded rejection makes this a promotion;
-                # otherwise the copy is a duplicate of a paper already being
-                # registered and has nothing to do.
-                claim_promotion = (
-                    existing is None
-                    and dedup_id in self.state.exclusion_reasons
-                    and dedup_id not in self.state.pending_promotions
-                )
-                if claim_promotion:
-                    self.state.pending_promotions.add(dedup_id)
             else:
                 self.state.seen_ids.add(dedup_id)
+                self.state.pending_registrations.add(dedup_id)
+                existing = None
                 if doi_clean:
                     self.state.seen_dois.add(doi_clean)
                     self.state.doi_to_slug[doi_clean] = dedup_id
 
-        # The expensive work (scoring, merging, connector lookups) stays outside
-        # the lock; the claim above is what makes that safe.
         if is_duplicate:
+            if existing is None and dedup_id in self.state.pending_registrations:
+                existing = self._await_registration(dedup_id)
+
             if existing is not None:
-                self.resolver.resolve_existing_duplicate(existing, paper, anchor_cat, tech_cat, source)
-            elif claim_promotion:
+                self.resolver.resolve_existing_duplicate(existing, paper, anchor_cat, tech_cat, source, tech_list)
+            elif self._claim_promotion(dedup_id):
                 self.resolver.resolve_excluded_duplicate(paper, dedup_id, title, doi_clean, tech_cat, tech_list, source)
+            else:
+                logger.debug(
+                    "Dropped %r from %s: the same work was seen before, is not in "
+                    "the collection, and another copy already holds its promotion "
+                    "claim. Its metadata is not merged into the copy that won.",
+                    dedup_id, source,
+                )
             return
 
-        self.resolver.register_new_paper(paper, dedup_id, title, doi_clean, tech_cat, tech_list, source)
+        try:
+            self.resolver.register_new_paper(paper, dedup_id, title, doi_clean, tech_cat, tech_list, source)
+        finally:
+            self._settle(dedup_id)

@@ -137,3 +137,40 @@ def test_a_two_word_term_split_by_the_wrap_still_matches():
 
     assert scorer.calculate_score(wrapped, "", 0) == scorer.calculate_score(flat, "", 0)
     assert scorer.calculate_score(flat, "", 0) > 0, "the term matched nothing at all"
+
+
+def test_a_duplicate_that_loses_the_promotion_race_is_reported(caplog):
+    """The drop is deliberate — and it was also silent.
+
+    When a work was excluded, is not in the collection, and a second copy of it
+    arrives, only one copy may re-open the case: `pending_promotions` is the
+    claim, and the losers are dropped without merging their metadata into the
+    copy that won. That is a real loss of information, and the run reported
+    nothing at all about it.
+    """
+    import logging
+
+    processor = _processor()
+    title = "A study of blockchain interoperability"
+    dedup_id = processor.scorer.generate_slug(title)
+
+    processor.state.seen_ids.add(dedup_id)
+    processor.state.exclusion_reasons[dedup_id] = "year"
+    processor.state.pending_promotions.add(dedup_id)
+    processor.state.stats["identified"]["Mock"] = 0
+
+    with caplog.at_level(logging.DEBUG, logger="academic_hunter"):
+        processor.process(
+            paper={
+                "Title": title, "Abstract": "chain interoperability",
+                "Year": "2024", "Source": "Mock", "Citations": 0,
+                "Type": "article", "Venue": "V", "URL": "u",
+            },
+            anchor_cat="cat", tech_cat="cat",
+            anchor_list=["blockchain interoperability"], tech_list=[],
+        )
+
+    assert dedup_id not in processor.state.consolidated_results
+    assert any("promotion" in r.getMessage() for r in caplog.records), (
+        "the paper vanished from the run with nothing said about it"
+    )

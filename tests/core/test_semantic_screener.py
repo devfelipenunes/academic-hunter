@@ -7,8 +7,8 @@ Run:
     pytest tests/core/test_semantic_screener.py -v
 """
 
-import sys
 import math
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -18,10 +18,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from academic_hunter.plugins.screeners.semantic import SemanticScreener
 
-
-# ---------------------------------------------------------------------------
-# Shared fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
 def screener():
@@ -46,10 +42,6 @@ def base_paper():
     }
 
 
-# ===========================================================================
-# PART 1 — Score range & basic contracts
-# ===========================================================================
-
 class TestScoreRange:
     """Score must always be a float in [0, 1]."""
 
@@ -73,10 +65,6 @@ class TestScoreRange:
         on_topic = {"Title": "Blockchain Distributed Ledger", "Abstract": "Smart contract consensus."}
         assert screener.evaluate(on_topic, base_config) > screener.evaluate(off_topic, base_config)
 
-
-# ===========================================================================
-# PART 2 — Determinism & caching
-# ===========================================================================
 
 class TestDeterminism:
     """Same inputs must always produce the same score."""
@@ -117,10 +105,6 @@ class TestDeterminism:
         assert len(s._cached_base) == 2
 
 
-# ===========================================================================
-# PART 3 — Weight-Bleeding: centroid math
-# ===========================================================================
-
 class TestWeightBleedingMath:
     """Verify the weighted centroid pulls the reference toward high-weight terms."""
 
@@ -142,13 +126,12 @@ class TestWeightBleedingMath:
         """
         import numpy as np
 
-        dim = 3
         v_base = np.array([1.0, 0.0, 0.0], dtype=np.float32)
         v_alpha = np.array([0.0, 1.0, 0.0], dtype=np.float32)
         v_paper = np.array([0.0, 1.0, 0.0], dtype=np.float32)
 
         embed_map = {
-            "anchor_base alpha_term": v_base,  # base text (join of anchors + tech_strings)
+            "anchor_base alpha_term": v_base,
             "alpha_term": v_alpha,
         }
 
@@ -224,16 +207,9 @@ class TestWeightBleedingMath:
 
         score_empty = s.evaluate(paper, cfg_empty_w)
         score_zero = s.evaluate(paper, cfg_zero_w)
-        # Note: 0-weight term still triggers an embedding call and shifts the
-        # centroid by 0; scores may differ slightly due to vector normalization.
-        # Both should be valid floats in [0,1].
         assert 0.0 <= score_empty <= 1.0
         assert 0.0 <= score_zero <= 1.0
 
-
-# ===========================================================================
-# PART 4 — Numeric precision & golden scores
-# ===========================================================================
 
 class TestGoldenScores:
     """Lock down exact score values so any change in the formula is visible.
@@ -254,15 +230,12 @@ class TestGoldenScores:
         """
         dim = 384
 
-        # Precomputed unit vectors
         v_base = np.zeros(dim, dtype=np.float32); v_base[0] = 1.0
         v_blockchain = np.zeros(dim, dtype=np.float32); v_blockchain[0] = 1.0
         v_smart = np.zeros(dim, dtype=np.float32); v_smart[1] = 1.0
-        v_paper = np.zeros(dim, dtype=np.float32); v_paper[0] = 0.6; v_paper[1] = 0.8  # already unit
+        v_paper = np.zeros(dim, dtype=np.float32); v_paper[0] = 0.6; v_paper[1] = 0.8
 
-        # Map each possible text to its fake embedding
         embed_map = {
-            # base text = join of all anchors + tech_strings
             "blockchain distributed ledger smart contract consensus protocol": v_base,
             "blockchain": v_blockchain,
             "smart contract": v_smart,
@@ -275,7 +248,6 @@ class TestGoldenScores:
                     if t in embed_map:
                         result.append(embed_map[t])
                     else:
-                        # paper text → v_paper
                         result.append(v_paper)
                 return result
 
@@ -314,7 +286,6 @@ class TestGoldenScores:
 
         score = mock_screener.evaluate(paper, config)
 
-        # Recompute expected
         v_ref_raw = np.array([9.0, 3.0] + [0.0] * 382, dtype=np.float32)
         v_ref = v_ref_raw / 12.0
         v_paper = np.zeros(384, dtype=np.float32)
@@ -337,9 +308,6 @@ class TestGoldenScores:
 
         score = mock_screener.evaluate(paper, config)
 
-        # v_sum = v_blockchain*5 + v_smart*3 = [5,0,...] + [0,3,...] = [5,3,...]
-        # total_w = 8
-        # v_ref = [5/8, 3/8, ...] = [0.625, 0.375, ...]
         v_ref_raw = np.array([5.0, 3.0] + [0.0] * 382, dtype=np.float32)
         v_ref = v_ref_raw / 8.0
         v_paper = np.zeros(384, dtype=np.float32); v_paper[0] = 0.6; v_paper[1] = 0.8
@@ -350,10 +318,6 @@ class TestGoldenScores:
             f"No-base golden score {score:.6f} != expected {expected:.6f}"
         )
 
-
-# ===========================================================================
-# PART 5 — Paper text extraction
-# ===========================================================================
 
 class TestPaperTextExtraction:
     """Verify that title/abstract are extracted from both snake_case and Title_Case keys."""
@@ -386,10 +350,6 @@ class TestPaperTextExtraction:
         score = screener.evaluate(paper, base_config)
         assert 0.0 <= score <= 1.0
 
-
-# ===========================================================================
-# PART 6 — _cosine helper
-# ===========================================================================
 
 class TestCosineHelper:
     """Unit tests for the _cosine() method."""
@@ -435,13 +395,10 @@ class TestCosineHelper:
 
 
 if __name__ == "__main__":
-    import pytest, sys
+    import sys
+
+    import pytest
     sys.exit(pytest.main([__file__, "-v", "--tb=short"]))
-
-
-# ===========================================================================
-# Paper embedding cache
-# ===========================================================================
 
 
 class TestPaperEmbeddingCache:
@@ -532,7 +489,7 @@ class TestPaperEmbeddingCache:
 
         counting_screener.evaluate(keep, base_config)
         counting_screener.evaluate({"Title": "B", "Abstract": "b"}, base_config)
-        counting_screener.evaluate(keep, base_config)          # refreshes `keep`
+        counting_screener.evaluate(keep, base_config)
         counting_screener.evaluate({"Title": "C", "Abstract": "c"}, base_config)
 
         assert keep_text(keep) in counting_screener._paper_cache
@@ -561,7 +518,7 @@ class TestDegradedFlag:
             MagicMock(side_effect=RuntimeError("onnx unavailable")),
         )
 
-        screener.embedding_function  # triggers the lazy load
+        screener.embedding_function
 
         assert screener.degraded is True, (
             "every semantic score is now 0.0 and the run would still report "
@@ -612,3 +569,30 @@ class TestWarm:
 
         assert screener.warm() is False
         assert screener.degraded is True
+
+    def test_a_warmup_that_fails_on_the_call_installs_the_fallback(self):
+        """The constructor can succeed and the call still fail.
+
+        That is the shape of the cold-cache race: `DefaultEmbeddingFunction()`
+        builds fine, and the first call to it reads an ONNX file another thread
+        is still writing and raises INVALID_PROTOBUF. Catching that and
+        returning False left the broken embedder installed, so `degraded` stayed
+        False — the end-of-run warning never fired — and every paper from then
+        on raised inside `_embed_paper` rather than scoring 0.0.
+        """
+        from academic_hunter.plugins.screeners.semantic import _ZeroEmbedding
+
+        screener = SemanticScreener()
+
+        def explode(texts):
+            raise RuntimeError("INVALID_PROTOBUF: model still being written")
+
+        screener._embedding_function = explode
+
+        assert screener.warm() is False
+        assert screener.degraded is True, "the broken embedder was left in place"
+        assert isinstance(screener._embedding_function, _ZeroEmbedding)
+        assert screener.evaluate(
+            {"Title": "t", "Abstract": "a"},
+            {"anchors": {"c": ["t"]}, "technical_weights": {}},
+        ) == 0.0

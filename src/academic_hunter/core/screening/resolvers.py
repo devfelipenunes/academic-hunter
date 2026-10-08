@@ -1,15 +1,27 @@
 import threading
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
+from ..infra import HunterConfig, SearchState
 from ..models import Paper
-from ..infra import SearchState, HunterConfig
 from ..nlp import AcademicScorer
+from .ablation import semantic_scoring_enabled
 from .validators import PaperValidator
 
-#: Why a paper was rejected -> the counter that recorded the rejection.
 EXCLUSION_COUNTERS = {"year": "excluded_year", "anchor": "excluded_anchors"}
 
 
 class PaperResolver:
+    """Validates, deduplicates and registers papers, updating PRISMA stats.
+
+    Diagnostic keys (``_hybrid_score``, ``_kw_score``, ``_sem_score``) must be
+    assigned after construction: ``Paper.__init__`` populates only the fields
+    declared in FIELD_SCHEMA and silently drops the rest. That is also what
+    made RecomputeRanksStep's recomputation fallback load-bearing rather than
+    defensive. ``Relevance_Score`` is intentionally never written here —
+    RecomputeRanksStep is its only writer, and it overwrites the key with the
+    rank-normalised score across the finished collection.
+    """
+
     def __init__(self, state: SearchState, scorer: AcademicScorer, config: HunterConfig, connectors: Dict[str, Any], lock: threading.RLock, semantic_screener=None):
         self.state = state
         self.scorer = scorer
@@ -19,7 +31,6 @@ class PaperResolver:
         self.semantic_screener = semantic_screener
         self.validator = PaperValidator(config, scorer, semantic_screener)
         
-        # Precompute normalized connector names for O(1) lookup
         self._norm_connectors = {self._norm(name): conn for name, conn in connectors.items()}
 
     @staticmethod
@@ -38,44 +49,67 @@ class PaperResolver:
             return connector.detect_peer_review(paper.get("Type", ""))
         return "N/A"
 
-    def resolve_existing_duplicate(self, existing: Any, paper: Dict[str, Any], anchor_cat: str, tech_cat: str, source: str) -> None:
+    def resolve_existing_duplicate(self, existing: Any, paper: Dict[str, Any], anchor_cat: str, tech_cat: str, source: str, tech_list: List[str] = None) -> None:
         """Merges metadata and updates score/stats for an existing duplicate in results (thread-safe).
 
         The abstract choice and the embedding happen *before* the lock. The
         screener call is the most expensive step in the ingest, and this lock is
         the global one shared by every connector thread — holding it across a
         model call serialised the whole run.
+
+        Three rules met here and disagreed about the abstract, and the paper
+        could hold the worst of them. The choice below decided which text the
+        semantic probe was computed on; ``Paper.merge`` then overwrote it with
+        the longest; and the score stored beside it was the first copy's, kept
+        because it already existed. One copy of the pair could therefore carry
+        the abstract of the other, with a ``_sem_score`` probed on the third.
+
+        The rule is now single and stated once: **the abstract that scores
+        higher, length only as a tie-break**, applied after the merge and before
+        anything is measured on it. Nobody merges a duplicate to keep the copy
+        that mentions fewer domain terms -- and that tally is now the inclusion
+        predicate, so choosing it by length alone decides inclusion by how
+        verbose a publisher is.
+
+        Everything measured on the abstract -- ``_sem_score``, ``_hybrid_score``,
+        ``_kw_score`` -- is computed on the resolved one. ``_kw_score`` is
+        recomputed on every merge rather than only when absent; a stale value
+        describes text the paper no longer has, and now excludes papers that
+        qualify.
+
+        The incoming copy's matched terms are filled in here, before the merge,
+        the same way ``Peer_Reviewed`` is: this path never ran the validator, so
+        the match the copy earned was dropped, and ``Anchor_Terms`` could only
+        ever hold the terms of the copy that arrived first while
+        ``Anchor_Category`` accumulated every group the work was found under.
         """
         old_abs = existing.get('Abstract', '')
         new_abs = paper.get('Abstract', '')
         chosen_abs = old_abs
         if new_abs and new_abs != old_abs:
-            # Prefer the longer abstract, or the one that scores better.
             title = existing.get('Title', '')
             citations = existing.get('Citations', 0)
-            if (self.scorer.calculate_score(title, new_abs, citations)
-                    > self.scorer.calculate_score(title, old_abs, citations)
-                    or len(new_abs) > len(old_abs)):
+            old_rank = self.scorer.calculate_score(title, old_abs, citations)
+            new_rank = self.scorer.calculate_score(title, new_abs, citations)
+            if new_rank > old_rank or (new_rank == old_rank and len(new_abs) > len(old_abs)):
                 chosen_abs = new_abs
 
         sem_score = None
-        if self.semantic_screener is not None:
-            mode = self.config.settings.get('ablation', {}).get('mode', 'hybrid')
-            if mode != 'keyword':
-                probe = {**dict(existing), "Abstract": chosen_abs}
-                sem_score = round(
-                    self.semantic_screener.evaluate(probe, self.config.screener_config()), 4)
+        if semantic_scoring_enabled(self.config.settings, self.semantic_screener):
+            probe = {**dict(existing), "Abstract": chosen_abs}
+            sem_score = round(
+                self.semantic_screener.evaluate(probe, self.config.screener_config()), 4)
 
         with self.lock:
             min_score = self.config.min_inclusion_score()
-            old_score = existing.get("_hybrid_score", 0.0)
+            old_score = existing.get("_kw_score", 0.0)
 
-            if chosen_abs != old_abs:
-                existing['Abstract'] = chosen_abs
-
-            # Ensure Peer_Reviewed is populated in the new paper dictionary if missing
             if "Peer_Reviewed" not in paper:
                 paper["Peer_Reviewed"] = self.detect_peer_review(paper)
+            if "Anchor_Terms" not in paper:
+                _, paper["Anchor_Terms"] = self.validator.match_anchor(paper)
+            if "Tech_Terms" not in paper and tech_list:
+                paper["Tech_Terms"] = self.validator.match_tech_terms(paper, tech_list)
 
             if not isinstance(existing, Paper):
                 p = Paper(existing)
@@ -84,23 +118,19 @@ class PaperResolver:
             else:
                 existing.merge(paper, anchor_cat, tech_cat)
 
+            if existing.get('Abstract', '') != chosen_abs:
+                existing['Abstract'] = chosen_abs
+
             if sem_score is not None:
                 existing["_sem_score"] = sem_score
 
-            # Recalculate the inclusion score after merging metadata (respects
-            # ablation mode). Written to `_hybrid_score`, never to
-            # `Relevance_Score` — the latter is owned solely by
-            # RecomputeRanksStep, which overwrites it with the rank-normalised
-            # score across the finished collection. Writing an inclusion score
-            # there put two scales behind one key.
-            new_score = self.validator.compute_hybrid_score(existing)
-            existing["_hybrid_score"] = new_score
-            # Store raw scores for rank normalization
-            if "_kw_score" not in existing:
-                existing["_kw_score"] = self.scorer.calculate_score(
-                    existing.get("Title", ""), existing.get("Abstract", ""), existing.get("Citations", 0))
+            existing["_hybrid_score"] = self.validator.compute_hybrid_score(existing)
+            new_score = self.scorer.calculate_score(
+                existing.get("Title", ""), existing.get("Abstract", ""),
+                existing.get("Citations", 0),
+            )
+            existing["_kw_score"] = new_score
 
-            # Correct the stats if the paper is now promoted
             if old_score < min_score and new_score >= min_score:
                 self.state.stats["included_final"] += 1
                 if self.state.stats["excluded_technical_score"] > 0:
@@ -115,9 +145,6 @@ class PaperResolver:
         """Processes a duplicate that was previously excluded (passes filters and updates stats)."""
         passed, reason, anchor_cat, anchor_terms, relevance_score, tech_terms = self.validator.validate_and_score(paper, title, tech_list)
         if not passed:
-            # Release the claim. `processor` took it before calling, and leaving
-            # it held made the slug unclaimable for the rest of the run — so a
-            # third, valid version of the same paper was never validated.
             with self.lock:
                 self.state.pending_promotions.discard(dedup_id)
             return
@@ -125,11 +152,13 @@ class PaperResolver:
         min_score = self.config.min_inclusion_score()
         paper_metadata = Paper({
             "Title": title,
+            "Authors": paper.get('Authors', ''),
             "Abstract": paper.get('Abstract', ''),
             "Year": paper.get("Year"),
             "URL": paper.get('URL', ''),
             "Source": source,
             "Citations": paper.get('Citations', 0),
+            "Citations_Source": paper.get('Citations_Source', ''),
             "DOI": doi_clean,
             "Peer_Reviewed": paper.get("Peer_Reviewed") or self.detect_peer_review(paper),
             "Venue": paper.get('Venue', 'Unknown Venue'),
@@ -138,24 +167,15 @@ class PaperResolver:
             "Tech_Category": tech_cat,
             "Tech_Terms": tech_terms,
         })
-        # `Paper.__init__` populates only the fields declared in FIELD_SCHEMA, so
-        # diagnostic keys must be assigned after construction — passing them to
-        # the constructor silently drops them. `Relevance_Score` is intentionally
-        # left unset: RecomputeRanksStep is its only writer.
         paper_metadata["_hybrid_score"] = relevance_score
         paper_metadata["_kw_score"] = paper.get("_kw_score", 0.0)
         paper_metadata["_sem_score"] = paper.get("_sem_score", 0.0)
-        
+
         with self.lock:
             self.state.consolidated_results[dedup_id] = paper_metadata
             self.state.pending_promotions.discard(dedup_id)
-            if relevance_score >= min_score:
+            if paper_metadata["_kw_score"] >= min_score:
                 self.state.stats["included_final"] += 1
-                # Undo the exclusion this very paper caused, which the rejection
-                # recorded. Guessing instead — "decrement whichever counter is
-                # non-zero" — took the count from other papers: a run with two
-                # genuine anchor rejections ended with `excluded_anchors` at zero
-                # as soon as any duplicate was promoted.
                 counter = EXCLUSION_COUNTERS.get(self.state.exclusion_reasons.pop(dedup_id, None))
                 if counter and self.state.stats.get(counter, 0) > 0:
                     self.state.stats[counter] -= 1
@@ -167,8 +187,6 @@ class PaperResolver:
         """Registers a new unique paper, filtering and scoring it, and updating stats (thread-safe)."""
         passed, reason, anchor_cat, anchor_terms, relevance_score, tech_terms = self.validator.validate_and_score(paper, title, tech_list)
         if not passed:
-            # track_exclusion mutates `exclusions_by_source`, so it belongs
-            # inside the lock with the rest of the stats it updates.
             with self.lock:
                 self.state.track_exclusion(source, reason)
                 self.state.exclusion_reasons[dedup_id] = reason
@@ -179,21 +197,22 @@ class PaperResolver:
 
         min_score = self.config.min_inclusion_score()
 
-        # Compute raw keyword and semantic scores for rank normalization
         kw_score = self.scorer.calculate_score(title, paper.get('Abstract', ''), paper.get('Citations', 0))
         sem_score = 0.0
-        if self.semantic_screener is not None:
+        if semantic_scoring_enabled(self.config.settings, self.semantic_screener):
             sem_config = self.config.screener_config()
             sem_score = self.semantic_screener.evaluate(paper, sem_config)
-            sem_score = round(sem_score, 4)  # keep precision for rank comparison
+            sem_score = round(sem_score, 4)
 
         paper_metadata = Paper({
             "Title": title,
+            "Authors": paper.get('Authors', ''),
             "Abstract": paper.get('Abstract', ''),
             "Year": paper.get("Year"),
             "URL": paper.get('URL', ''),
             "Source": source,
             "Citations": paper.get('Citations', 0),
+            "Citations_Source": paper.get('Citations_Source', ''),
             "DOI": doi_clean,
             "Peer_Reviewed": paper.get("Peer_Reviewed") or self.detect_peer_review(paper),
             "Venue": paper.get('Venue', 'Unknown Venue'),
@@ -202,19 +221,13 @@ class PaperResolver:
             "Tech_Category": tech_cat,
             "Tech_Terms": tech_terms,
         })
-        # `Paper.__init__` populates only the fields declared in FIELD_SCHEMA, so
-        # diagnostic keys must be assigned after construction — passing them to
-        # the constructor silently drops them (which is what made
-        # RecomputeRanksStep's recomputation fallback load-bearing rather than
-        # defensive). `Relevance_Score` is intentionally left unset:
-        # RecomputeRanksStep is its only writer.
         paper_metadata["_hybrid_score"] = relevance_score
         paper_metadata["_kw_score"] = kw_score
         paper_metadata["_sem_score"] = sem_score
 
         with self.lock:
             self.state.consolidated_results[dedup_id] = paper_metadata
-            if relevance_score >= min_score:
+            if kw_score >= min_score:
                 self.state.stats["included_final"] += 1
             else:
                 self.state.stats["excluded_technical_score"] += 1

@@ -1,20 +1,30 @@
-from typing import Dict, Any
-from .utils import collapse_whitespace, normalize_doi
+from typing import Any, Dict
+
+from .authors import normalize_authors
 from .strategies import (
-    strategy_max,
+    strategy_anchor_category,
+    strategy_authors,
     strategy_first_non_empty,
     strategy_longest_string,
+    strategy_max,
+    strategy_peer_reviewed,
     strategy_set_join,
-    strategy_anchor_category,
     strategy_tech_category,
+    strategy_url,
     strategy_venue,
-    strategy_peer_reviewed
+    strategy_year,
 )
+from .utils import collapse_whitespace, normalize_doi
 
 FIELD_SCHEMA: Dict[str, Dict[str, Any]] = {
     "Title": {
         "default": "",
         "normalize": collapse_whitespace,
+    },
+    "Authors": {
+        "default": "",
+        "normalize": normalize_authors,
+        "strategy": strategy_authors
     },
     "Abstract": {
         "default": "",
@@ -23,12 +33,13 @@ FIELD_SCHEMA: Dict[str, Dict[str, Any]] = {
     },
     "Year": {
         "default": "N/A",
-        "normalize": lambda x: x if x is not None else "N/A"
+        "normalize": lambda x: x if x is not None else "N/A",
+        "strategy": strategy_year
     },
     "URL": {
         "default": "",
         "normalize": lambda x: str(x or "").strip(),
-        "strategy": strategy_first_non_empty
+        "strategy": strategy_url
     },
     "Source": {
         "default": "",
@@ -39,6 +50,11 @@ FIELD_SCHEMA: Dict[str, Dict[str, Any]] = {
         "default": 0,
         "normalize": lambda x: int(x or 0),
         "strategy": strategy_max
+    },
+    "Citations_Source": {
+        "default": "",
+        "normalize": lambda x: str(x or "").strip(),
+        "strategy": strategy_set_join
     },
     "DOI": {
         "default": "",
@@ -62,7 +78,8 @@ FIELD_SCHEMA: Dict[str, Dict[str, Any]] = {
     },
     "Anchor_Terms": {
         "default": "",
-        "normalize": lambda x: str(x or "").strip()
+        "normalize": lambda x: str(x or "").strip(),
+        "strategy": strategy_set_join
     },
     "Tech_Category": {
         "default": "",
@@ -71,7 +88,8 @@ FIELD_SCHEMA: Dict[str, Dict[str, Any]] = {
     },
     "Tech_Terms": {
         "default": "",
-        "normalize": lambda x: str(x or "").strip()
+        "normalize": lambda x: str(x or "").strip(),
+        "strategy": strategy_set_join
     },
     "Relevance_Score": {
         "default": 0.0,

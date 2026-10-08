@@ -1,14 +1,16 @@
+from .authors import join_authors, normalize_authors, split_authors
 from .paper import Paper
 from .schema import FIELD_SCHEMA
 from .strategies import (
-    strategy_max,
+    strategy_anchor_category,
+    strategy_authors,
     strategy_first_non_empty,
     strategy_longest_string,
+    strategy_max,
+    strategy_peer_reviewed,
     strategy_set_join,
-    strategy_anchor_category,
     strategy_tech_category,
     strategy_venue,
-    strategy_peer_reviewed
 )
 
 __all__ = [
@@ -21,5 +23,9 @@ __all__ = [
     'strategy_anchor_category',
     'strategy_tech_category',
     'strategy_venue',
-    'strategy_peer_reviewed'
+    'strategy_peer_reviewed',
+    'strategy_authors',
+    'join_authors',
+    'normalize_authors',
+    'split_authors'
 ]
