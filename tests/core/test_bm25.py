@@ -5,7 +5,6 @@ importantly the IDF, whose plain form goes negative for a term present in every
 document and would turn a match into a penalty.
 """
 
-import math
 
 import pytest
 
@@ -17,9 +16,6 @@ DOCS = [
     "e-government transparency accountability public administration",
     "IPFS off-chain storage integrated with blockchain systems",
 ]
-
-
-# ── tokenizer ───────────────────────────────────────────────────────────────
 
 
 def test_tokenize_lowercases_and_splits_on_punctuation():
@@ -35,9 +31,6 @@ def test_tokenize_keeps_digits():
 
 def test_tokenize_of_empty_text():
     assert tokenize("") == []
-
-
-# ── ranking behaviour ───────────────────────────────────────────────────────
 
 
 def test_retrieves_the_document_containing_the_query_terms():
@@ -127,9 +120,6 @@ def test_constant_b_removes_length_normalisation():
     scores = index.score("blockchain")
 
     assert scores[0] == pytest.approx(scores[1])
-
-
-# ── the wrapper ─────────────────────────────────────────────────────────────
 
 
 def test_wrapper_matches_the_index():

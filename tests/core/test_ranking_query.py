@@ -10,8 +10,6 @@ lowered the score monotonically in that measurement.
 """
 
 import threading
-
-import pytest
 from unittest.mock import MagicMock
 
 from academic_hunter.core.pipeline.steps import RecomputeRanksStep
@@ -108,7 +106,6 @@ def test_query_mode_defaults_to_bm25_alone():
         "strong_embedding": {"Title": "other", "Abstract": "other"},
     }
     step = make_step(papers, {"ranking_query": "blockchain"})
-    # The embedding likes the non-matching paper; BM25 must still win.
     step.hunter.semantic_screener = MagicMock()
     step.hunter.semantic_screener.evaluate.side_effect = lambda p, _c: (
         0.9 if p is papers["strong_embedding"] else 0.0
@@ -136,8 +133,6 @@ def test_explicit_weights_override_the_query_default():
 
     step.run()
 
-    # Weighted entirely on the embedding, so the paper it likes wins despite
-    # matching nothing lexically.
     assert papers["other"]["Relevance_Score"] > papers["match"]["Relevance_Score"]
 
 
@@ -168,3 +163,71 @@ def test_scores_collapse_when_nothing_matches():
     step.run()
 
     assert [p["Relevance_Score"] for p in papers.values()] == [0.0, 0.0]
+
+
+def test_the_citation_signal_does_not_move_the_query_ranking():
+    """Query mode is the configuration that ships, and its ordering is pinned here.
+
+    The citation component exists and is computed on every run; with the default
+    weight of zero it must leave ``Relevance_Score`` exactly as it was, paper by
+    paper. A run that reorders without anyone touching ``fusion_weights`` is a
+    regression, not a feature.
+    """
+    def scored(citations, weights=None):
+        papers = sample_papers()
+        for slug, count in citations.items():
+            papers[slug]["Citations"] = count
+        settings = {"ranking_query": "self-sovereign identity"}
+        if weights:
+            settings["fusion_weights"] = weights
+        make_step(papers, settings).run()
+        return {slug: paper["Relevance_Score"] for slug, paper in papers.items()}
+
+    baseline = scored({})
+    assert scored({"a": 410, "b": 75, "c": 0}) == baseline
+    assert scored({"a": 410, "b": 75, "c": 0}, {"keyword": 1.0, "embedding": 0.0}) == baseline
+
+
+def test_query_mode_records_the_citation_signal_for_calibration():
+    papers = sample_papers()
+    papers["a"]["Citations"] = 9
+    step = make_step(papers, {"ranking_query": "self-sovereign identity"})
+
+    step.run()
+
+    assert papers["a"]["_citation_score"] == 1.0
+    assert papers["b"]["_citation_score"] == 0.0
+
+
+def test_query_mode_records_the_weights_it_forced():
+    """The 1.0/0.0 above is a decision taken here, and the run has to admit it.
+
+    ``ranking_query`` set and ``fusion_weights`` absent is the configuration
+    that ships, and it silently overrides the config's defaults. The recorded
+    weights are the applied ones, so the artifact alone answers "why is this
+    ordering keyword-only?".
+    """
+    step = make_step(sample_papers(), {"ranking_query": "self-sovereign identity"})
+
+    step.run()
+
+    fusion = step.hunter.state.stats["fusion"]
+    assert fusion["weights"] == {"keyword": 1.0, "embedding": 0.0, "citation": 0.0}
+    assert fusion["strategy"] == "weighted_norm"
+
+
+def test_an_explicit_weight_in_query_mode_overrides_the_forced_pair():
+    """A configured weight wins, which is why the key's absence is not neutral."""
+    papers = sample_papers()
+    for slug, sem in (("a", 0.1), ("b", 0.9), ("c", 0.2)):
+        papers[slug]["_sem_score"] = sem
+    step = make_step(papers, {
+        "ranking_query": "self-sovereign identity",
+        "fusion_weights": {"keyword": 0.5, "embedding": 0.5},
+    })
+
+    step.run()
+
+    fusion = step.hunter.state.stats["fusion"]
+    assert fusion["weights"]["embedding"] == 0.5
+    assert "embedding" not in fusion["discarded"]

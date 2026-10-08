@@ -12,13 +12,10 @@ from .model_cache import DEFAULT_CE_MAX_LENGTH, DEFAULT_CE_MODEL, get_cross_enco
 
 logger = logging.getLogger("academic_hunter.reranker")
 
-#: Fallback precision for the reported score. Must match the rounding the
-#: pipeline writes with — see :func:`rerank_scores`.
 SCORE_DECIMALS = 1
 
 MAX_SCORE = 10.0
 
-#: Head size. Measured: captures 97% of the ceiling the whole pool reaches.
 DEFAULT_TOP_N = 20
 
 
@@ -57,8 +54,6 @@ def rerank_scores(
     if len(candidates) < 2:
         return out
 
-    # Pruning drops from the bottom of the base order, so that order decides who
-    # survives a narrow band. One per pass, so the loop is bounded.
     by_base = sorted(candidates, key=lambda i: (-out[i], i))
     hi = on_lattice(out[by_base[0]])
     k = len(by_base)
@@ -73,8 +68,6 @@ def rerank_scores(
     for j, index in enumerate(i for i in candidates if i in kept):
         position = int(round(hi - j * span / (k - 1)))
         if positions and position >= positions[-1]:
-            # Rounding can collide two neighbours; the exported order has to be
-            # exactly the cross-encoder's.
             position = positions[-1] - 1
         positions.append(position)
         out[index] = position / unit
@@ -109,8 +102,6 @@ def rerank_config(settings: Dict[str, Any]) -> Dict[str, Any]:
     cfg = raw if isinstance(raw, dict) else {}
 
     return {
-        # `is True`, not truthiness: `bool("false")` is True, so `"enabled":
-        # "false"` would switch on a ~6 s model load.
         "enabled": cfg.get("enabled", False) is True,
         "model": str(cfg.get("model", DEFAULT_CE_MODEL)),
         "top_n": positive_int(cfg.get("top_n"), DEFAULT_TOP_N),

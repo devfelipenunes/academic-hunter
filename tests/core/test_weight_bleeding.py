@@ -6,8 +6,8 @@ scoring system across all ablation modes and edge cases.
 Run:  pytest tests/core/test_weight_bleeding.py -v
 """
 
-import sys
 import math
+import sys
 from pathlib import Path
 
 import pytest
@@ -17,10 +17,6 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 EXAMPLE_CONFIG = str(REPO_ROOT / "config.example.json")
 
-
-# =============================================================================
-# PART 1: SemanticScreener — Core formula tests
-# =============================================================================
 
 class TestWeightBleedingFormula:
     """Verify the core Weight-Bleeding formula:
@@ -97,8 +93,6 @@ class TestWeightBleedingFormula:
 
         paper = {"Title": "Blockchain Interoperability Framework", "Abstract": ""}
 
-        # Must include a BASE (anchors) to see the weight effect.
-        # The centroid shifts from base_parts toward "blockchain" as W increases.
         scores = []
         for weight in [1, 3, 5, 10]:
             cfg = {
@@ -109,7 +103,6 @@ class TestWeightBleedingFormula:
             score = screener.evaluate(paper, cfg)
             scores.append(score)
 
-        # Different weights produce different centroid positions (base→term shift)
         unique_scores = set(round(s, 4) for s in scores)
         assert len(unique_scores) >= 2, (
             f"Expected at least 2 distinct scores across weights {scores}"
@@ -134,10 +127,6 @@ class TestWeightBleedingFormula:
         assert 0.0 <= score <= 1.0
 
 
-# =============================================================================
-# PART 2: PaperValidator — Ablation mode integration tests
-# =============================================================================
-
 class TestAblationModes:
     """Verify PaperValidator correctly applies each ablation mode."""
 
@@ -146,19 +135,16 @@ class TestAblationModes:
         from academic_hunter.core.infra.config import HunterConfig
         from academic_hunter.core.nlp import AcademicScorer
         from academic_hunter.plugins.screeners.semantic import SemanticScreener
-        from academic_hunter.core.screening.validators import PaperValidator
 
         cfg = HunterConfig(EXAMPLE_CONFIG)
         cfg.load(force=True)
 
-        # Use a controlled test config (not dependent on current config.json)
         test_settings = dict(cfg.settings)
         test_settings.update({
             "title_multiplier": 2.5,
             "score_precision": 1,
         })
 
-        # Minimal config for reproducible tests
         test_anchors = {"Test": ["blockchain", "sentence embedding"]}
         test_tech_strings = {"Retrieval": ["information retrieval", "search"]}
         test_tech_weights = {"blockchain": 5.0, "sentence embedding": 5.0, "information retrieval": 3.0}
@@ -168,7 +154,6 @@ class TestAblationModes:
                                 test_context_rules, test_settings)
         screener = SemanticScreener()
 
-        # Create a patched config with test data
         cfg.anchors = test_anchors
         cfg.tech_strings = test_tech_strings
         cfg.tech_weights = test_tech_weights
@@ -196,8 +181,6 @@ class TestAblationModes:
             paper, paper["Title"], cfg.tech_strings["Retrieval"]
         )
 
-        # Keyword score for: blockchain×2.5(título) + sentence embedding×2.5(título) +
-        #                    information retrieval(abstract) + log10(6) ≈ 12.5+12.5+3.0+0.8 = 28.8
         keyword_only = scorer.calculate_score(paper["Title"], paper["Abstract"], paper["Citations"])
 
         assert passed
@@ -216,14 +199,11 @@ class TestAblationModes:
             paper, paper["Title"], cfg.tech_strings["Retrieval"]
         )
 
-        # Embedding formula: (keyword * 0.0) + (semantic * 10.0 * 1.0) = semantic * 10.0
-        # Max possible = 10.0 (since semantic ∈ [0, 1])
         assert 0.0 <= score <= 10.0, (
             f"Embedding mode score {score} should be ≤ 10.0"
             f" (formula: semantic × 10)"
         )
 
-        # Should be lower than keyword score (semantic is dampened vs exact matches)
         keyword_only = scorer.calculate_score(paper["Title"], paper["Abstract"], paper["Citations"])
         assert score < keyword_only, (
             f"Embedding {score} should be < keyword {keyword_only}"
@@ -241,7 +221,6 @@ class TestAblationModes:
             paper, paper["Title"], cfg.tech_strings["Retrieval"]
         )
 
-        # Compute expected
         import math
         keyword_score = scorer.calculate_score(paper["Title"], paper["Abstract"], paper["Citations"])
         sem_config = {
@@ -255,11 +234,10 @@ class TestAblationModes:
         assert score == expected, (
             f"Hybrid score {score} should equal {expected}"
         )
-        # Hybrid should be >= sqrt(WB-only) since keyword adds bonus
         assert score >= round(math.sqrt(semantic_score) * 10.0, 1), (
             f"Hybrid {score} should be >= sqrt(WB) {round(math.sqrt(semantic_score) * 10.0, 1)}"
         )
-        assert score >= 0, f"Hybrid score should be ≥ 0"
+        assert score >= 0, "Hybrid score should be ≥ 0"
 
     def test_hybrid_between_keyword_and_embedding(self, setup):
         """Hybrid score should be between keyword-only and embedding-only."""
@@ -275,16 +253,11 @@ class TestAblationModes:
             )
             scores[mode] = score
 
-        # Ordering: embedding <= hybrid (WB is base, keyword adds bonus)
         assert scores["embedding"] <= scores["hybrid"], (
             f"Expected embedding({scores['embedding']}) <= hybrid({scores['hybrid']}) "
             f"(hybrid = WB + keyword bonus)"
         )
 
-
-# =============================================================================
-# PART 3: compute_hybrid_score — Duplicate resolution tests
-# =============================================================================
 
 class TestComputeHybridScore:
     """Verify compute_hybrid_score (used for duplicate resolution)."""
@@ -293,8 +266,8 @@ class TestComputeHybridScore:
     def setup(self):
         from academic_hunter.core.infra.config import HunterConfig
         from academic_hunter.core.nlp import AcademicScorer
-        from academic_hunter.plugins.screeners.semantic import SemanticScreener
         from academic_hunter.core.screening.validators import PaperValidator
+        from academic_hunter.plugins.screeners.semantic import SemanticScreener
 
         cfg = HunterConfig(EXAMPLE_CONFIG)
         cfg.load(force=True)
@@ -323,12 +296,10 @@ class TestComputeHybridScore:
 
         paper_dict = {"Title": "Quantum Cryptography", "Abstract": "Quantum computing advances.", "Citations": 3}
 
-        # From validate_and_score
         _, _, _, _, score_v, _ = validator.validate_and_score(
             paper_dict, paper_dict["Title"], cfg.tech_strings["Tech"]
         )
 
-        # From compute_hybrid_score
         score_c = validator.compute_hybrid_score(paper_dict)
 
         assert score_v == score_c, (
@@ -368,10 +339,6 @@ class TestComputeHybridScore:
         )
 
 
-# =============================================================================
-# PART 4: Config propagation — Verify ablation mode reaches validator
-# =============================================================================
-
 class TestConfigPropagation:
     """Verify that the ablation mode from config.json reaches PaperValidator."""
 
@@ -391,16 +358,13 @@ class TestConfigPropagation:
         from academic_hunter import AcademicHunter
         from academic_hunter.core.infra.config import HunterConfig
 
-        # Read config directly
         cfg = HunterConfig(EXAMPLE_CONFIG)
         cfg.load(force=True)
         config_mode = cfg.settings.get("ablation", {}).get("mode", "hybrid")
 
-        # Read via hunter
         hunter = AcademicHunter(config_path=EXAMPLE_CONFIG)
         hunter_mode = hunter.config.settings.get("ablation", {}).get("mode", "hybrid")
 
-        # Both should be the same
         assert hunter_mode == config_mode, (
             f"Hunter mode ({hunter_mode}) != direct config ({config_mode})"
         )
@@ -409,8 +373,8 @@ class TestConfigPropagation:
         """Changing the mode should change the score."""
         from academic_hunter.core.infra.config import HunterConfig
         from academic_hunter.core.nlp import AcademicScorer
-        from academic_hunter.plugins.screeners.semantic import SemanticScreener
         from academic_hunter.core.screening.validators import PaperValidator
+        from academic_hunter.plugins.screeners.semantic import SemanticScreener
 
         cfg = HunterConfig(EXAMPLE_CONFIG)
         cfg.load(force=True)
@@ -448,10 +412,6 @@ class TestConfigPropagation:
         )
 
 
-# =============================================================================
-# PART 5: AcademicScorer — Keyword score tests
-# =============================================================================
-
 class TestAcademicScorer:
     """Verify the keyword scoring component."""
 
@@ -467,9 +427,7 @@ class TestAcademicScorer:
             {"title_multiplier": 2.5, "score_precision": 1}
         )
 
-        # Term in title
         title_score = scorer.calculate_score("Blockchain Technology", "", 0)
-        # Term in abstract
         abstract_score = scorer.calculate_score("", "Blockchain technology paper", 0)
 
         assert title_score == abstract_score * 2.5, (
@@ -486,9 +444,8 @@ class TestAcademicScorer:
         score_10 = scorer.calculate_score("Test", "", 10)
         score_100 = scorer.calculate_score("Test", "", 100)
 
-        assert score_10 > score_0, f"With citations should score higher"
-        assert score_100 > score_10, f"More citations should score higher"
-        # log10(11) ≈ 1.0, log10(101) ≈ 2.0
+        assert score_10 > score_0, "With citations should score higher"
+        assert score_100 > score_10, "More citations should score higher"
         assert abs((score_100 - score_10) - (math.log10(101) - math.log10(11))) < 0.1
 
     def test_no_match_returns_baseline(self):
@@ -506,17 +463,12 @@ class TestAcademicScorer:
         score = scorer.calculate_score("Common words only", "", 0)
         assert score == 0.0, f"No matching terms should score 0, got {score}"
 
-        # With citations, should get log10(citations+1)
         score_with_cit = scorer.calculate_score("Common words only", "", 99)
         expected_cit = round(math.log10(100), 1)
         assert score_with_cit == expected_cit, (
             f"Score {score_with_cit} should be just citation bonus {expected_cit}"
         )
 
-
-# =============================================================================
-# PART 6: Cross-encoder correlation tests
-# =============================================================================
 
 class TestCrossEncoderCorrelation:
     """Verify cross-encoder (CE) scoring is distinct from Weight-Bleeding."""
@@ -535,7 +487,6 @@ class TestCrossEncoderCorrelation:
 
         assert len(results) >= 3, f"Need at least 3 results, got {len(results)}"
 
-        # Verify scores are not identical across methods
         for r in results:
             assert not (r["bi_encoder_vanilla"] == r["weight_bleeding"] == r["cross_encoder"]), (
                 f"All scores identical for {r['query']}"
@@ -556,19 +507,13 @@ class TestCrossEncoderCorrelation:
         if len(results) < 2:
             pytest.skip("Need at least 2 results for ranking comparison")
 
-        # Rank by vanilla vs weight-bleeding
         rank_vanilla = sorted(range(len(results)), key=lambda i: results[i]["bi_encoder_vanilla"])
         rank_wb = sorted(range(len(results)), key=lambda i: results[i]["weight_bleeding"])
 
-        # Rankings should differ (centroid shift)
         assert rank_vanilla != rank_wb, (
             "Weight-Bleeding should change rankings from vanilla bi-encoder"
         )
 
-
-# =============================================================================
-# PART 7: End-to-end pipeline integration tests
-# =============================================================================
 
 class TestPipelineIntegration:
     """Verify scoring through the full pipeline."""
@@ -578,14 +523,12 @@ class TestPipelineIntegration:
         from academic_hunter import AcademicHunter
         from academic_hunter.core.infra.config import HunterConfig
 
-        # Read current config
         cfg = HunterConfig(EXAMPLE_CONFIG)
         mode = cfg.settings.get("ablation", {}).get("mode", "hybrid")
 
         hunter = AcademicHunter(config_path=EXAMPLE_CONFIG)
         scores = [p.get("Relevance_Score", -1) for p in hunter.state.consolidated_results.values()]
 
-        # If there are results, verify scores
         if scores:
             assert all(s >= 0 for s in scores), "All scores should be ≥ 0"
 
@@ -593,21 +536,3 @@ class TestPipelineIntegration:
                 assert all(s <= 10.0 for s in scores), (
                     f"Embedding mode: all scores should be ≤ 10.0, got max {max(scores)}"
                 )
-
-
-# =============================================================================
-# Main: Run tests and print summary
-# =============================================================================
-
-if __name__ == "__main__":
-    import pytest
-    import sys
-
-    print("=" * 60)
-    print("  Weight-Bleeding Test Suite")
-    print("  Validating scoring formulas and integration")
-    print("=" * 60)
-
-    # Run all tests with verbose output
-    exit_code = pytest.main([__file__, "-v", "--tb=short", "--no-header"] + sys.argv[1:])
-    sys.exit(exit_code)

@@ -70,14 +70,11 @@ def run_with_stub(papers, step, side_effect):
     return m
 
 
-# ── off by default, and inert when it cannot work ───────────────────────────
-
-
 def test_disabled_by_default_leaves_every_score_untouched():
     """Guard, not a regression test: it passes with the stage absent entirely."""
     papers = sample_papers()
 
-    make_step(papers, QUERY).run()  # no `rerank` key at all
+    make_step(papers, QUERY).run()
 
     assert {k: p["Relevance_Score"] for k, p in papers.items()} == baseline()
     assert all("_rerank_score" not in p for p in papers.values())
@@ -100,7 +97,7 @@ def test_an_unavailable_model_leaves_the_scores_untouched():
     papers = sample_papers()
     step = make_step(papers, ENABLED)
 
-    m = run_with_stub(papers, step, lambda *a, **k: None)  # returns None when absent
+    m = run_with_stub(papers, step, lambda *a, **k: None)
 
     m.assert_called_once()
     assert {k: p["Relevance_Score"] for k, p in papers.items()} == baseline()
@@ -119,7 +116,7 @@ def test_a_failing_model_leaves_the_scores_untouched():
         "academic_hunter.core.pipeline.steps.rerank_texts",
         side_effect=RuntimeError("CUDA on fire"),
     ):
-        step.run()  # must not raise
+        step.run()
 
     assert {k: p["Relevance_Score"] for k, p in papers.items()} == baseline()
     assert step.hunter.state.stats["reranked"] == 0
@@ -149,16 +146,12 @@ def test_too_few_papers_skips_the_rerank():
     assert step.hunter.state.stats["reranked"] == 0
 
 
-# ── when it does run ────────────────────────────────────────────────────────
-
-
 def test_enabled_with_a_query_reranks_the_head():
     """The document the cross-encoder prefers must end up on top."""
     papers = sample_papers()
     step = make_step(papers, ENABLED)
     before = baseline()
 
-    # BM25 likes "b" (it matches the query); the cross-encoder overrules it.
     run_with_stub(papers, step, prefer("astrophysics"))
 
     after = {k: p["Relevance_Score"] for k, p in papers.items()}
@@ -258,7 +251,6 @@ def test_invalid_top_n_falls_back_to_the_default():
 
     run_with_stub(papers, step, prefer("astrophysics"))
 
-    # Falls back to 20, which exceeds the three papers here, so all are scored.
     scored = [k for k, p in papers.items() if "_rerank_score" in p]
     assert len(scored) == 3
 

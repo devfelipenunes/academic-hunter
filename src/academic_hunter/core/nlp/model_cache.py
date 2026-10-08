@@ -14,11 +14,8 @@ logger = logging.getLogger("academic_hunter.model_cache")
 
 _ST_CACHE: Dict[str, Any] = {}
 
-#: ``max_length`` is part of the key — same weights, different truncation, two
-#: different models.
 _CE_CACHE: Dict[Tuple[str, int], Any] = {}
 
-#: Guards both caches. See `_load_cached` for what it does and does not cover.
 _LOCK = threading.Lock()
 
 DEFAULT_ST_MODEL = "all-MiniLM-L6-v2"
@@ -50,7 +47,7 @@ def _load_cached(
     except ImportError as e:
         logger.info("sentence-transformers not installed (%s); %s unavailable.", e, label)
         return None
-    except Exception as e:  # noqa: BLE001 — a broken load must not kill the caller
+    except Exception as e:  # noqa: BLE001
         logger.warning("Failed to load %s: %s", label, e)
         return None
 

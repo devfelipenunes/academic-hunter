@@ -23,13 +23,9 @@ def _ce_order(scores):
     return sorted(range(len(scores)), key=lambda i: (-scores[i], i))
 
 
-# ── the remap rule ──────────────────────────────────────────────────────────
-
-
 class TestRerankScores:
     def test_reorders_the_candidates_along_the_new_order(self):
         base = [8.0, 7.0, 6.0, 5.0]
-        # The cross-encoder prefers the last document, then the second.
         out = rerank_scores(base, _ce_order([0.1, 0.4, 0.2, 0.9]))
 
         assert out[3] > out[1] > out[2] > out[0]
@@ -37,7 +33,7 @@ class TestRerankScores:
     def test_outsiders_are_untouched(self):
         """A document outside the reranked head keeps its exact score."""
         base = [9.0, 8.0, 7.0, 2.5]
-        out = rerank_scores(base, [1, 0])  # only the first two are candidates
+        out = rerank_scores(base, [1, 0])
 
         assert out[3] == 2.5
         assert out[2] == 7.0
@@ -52,11 +48,9 @@ class TestRerankScores:
         lattice keeps consecutive ranks distinct *at export precision*.
         """
         base = [7.4, 7.24, 7.21, 7.1]
-        ce = _ce_order([0.1, 0.2, 0.3, 0.9])  # reversed: 3, 2, 1, 0
+        ce = _ce_order([0.1, 0.2, 0.3, 0.9])
         out = rerank_scores(base, ce)
 
-        # The naive rule would produce rounded values [7.1, 7.2, 7.2, 7.4]:
-        # ranks 1 and 2 tie and the order is lost.
         rounded = [round(out[i], 1) for i in ce]
         assert rounded == sorted(rounded, reverse=True), "export order must descend"
         assert len(set(rounded)) == len(ce), "each rank needs a distinct exported score"
@@ -122,9 +116,6 @@ class TestRerankScores:
         assert out[1] == 5.0
 
 
-# ── the model cache ─────────────────────────────────────────────────────────
-
-
 class TestModelCache:
     def test_the_cross_encoder_is_loaded_once(self):
         with patch("sentence_transformers.CrossEncoder") as m_ce:
@@ -184,9 +175,6 @@ class TestModelCache:
 
             assert model_cache.get_cross_encoder() is None
             assert model_cache.get_cross_encoder() is not None
-
-
-# ── settings.rerank, which has no schema ────────────────────────────────────
 
 
 class TestRerankConfig:

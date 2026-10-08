@@ -26,7 +26,6 @@ import re
 from collections import Counter
 from typing import Dict, List, Sequence
 
-#: Match the tokenizer used elsewhere in the project: lowercase alphanumeric runs.
 _TOKEN = re.compile(r"[a-z0-9]+")
 
 DEFAULT_K1 = 1.5
