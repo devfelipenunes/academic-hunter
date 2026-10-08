@@ -9,10 +9,30 @@ This package supplies the missing criterion:
 - ``metrics`` — nDCG@k, recall@k, precision@k, MRR and MAP over graded qrels.
 - ``qrels`` — the judged-collection format, its loader and its validator.
 - ``runner`` — score a ranked list (or a callable retriever) against the qrels.
+- ``calibration`` — sweep the inclusion threshold over a run's own papers and
+  measure what each candidate would admit.
+- ``comparison`` — measure the fusion rules themselves over a run's own signals,
+  so the weights can be chosen with numbers instead of taste.
 
 Everything here is pure: no network, no model, no LLM.
 """
 
+from .calibration import (
+    Calibration,
+    Sweep,
+    candidate_thresholds,
+    sweep_threshold,
+)
+from .comparison import (
+    DEFAULT_STRATEGIES,
+    NOT_REPRODUCIBLE,
+    Result,
+    Row,
+    Strategy,
+    compare,
+    load_distribution,
+    render,
+)
 from .metrics import (
     average_precision,
     dcg_at_k,
@@ -43,7 +63,6 @@ from .runner import (
 )
 
 __all__ = [
-    # metrics
     "dcg_at_k",
     "ndcg_at_k",
     "recall_at_k",
@@ -52,7 +71,6 @@ __all__ = [
     "average_precision",
     "evaluate_ranking",
     "mean_metrics",
-    # qrels
     "Judgment",
     "Qrels",
     "QrelsError",
@@ -60,12 +78,23 @@ __all__ = [
     "doc_id_for",
     "documents_for",
     "topics",
-    # runner
     "Ranking",
     "EvaluationReport",
     "evaluate_run",
+    "Calibration",
+    "Sweep",
+    "candidate_thresholds",
+    "sweep_threshold",
     "build_rankings",
     "build_rankings_timed",
     "Timing",
     "unjudged_in_pool",
+    "DEFAULT_STRATEGIES",
+    "NOT_REPRODUCIBLE",
+    "Result",
+    "Row",
+    "Strategy",
+    "compare",
+    "load_distribution",
+    "render",
 ]

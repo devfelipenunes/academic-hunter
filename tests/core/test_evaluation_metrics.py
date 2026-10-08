@@ -20,16 +20,11 @@ from academic_hunter.core.evaluation import (
     reciprocal_rank,
 )
 
-# Three relevant documents at grades 3, 2, 1, plus one judged irrelevant.
 REL = {"a": 3, "b": 2, "c": 1, "d": 0}
-
-
-# ── DCG ─────────────────────────────────────────────────────────────────────
 
 
 def test_dcg_first_position_is_undiscounted():
     """Position 1 divides by log2(2) == 1, so its gain passes through whole."""
-    # grade 3 -> gain 2^3 - 1 == 7
     assert dcg_at_k(["a"], REL, 1) == pytest.approx(7.0)
 
 
@@ -51,9 +46,6 @@ def test_dcg_linear_gain_option():
 
 def test_dcg_zero_k_is_zero():
     assert dcg_at_k(["a"], REL, 0) == 0.0
-
-
-# ── nDCG ────────────────────────────────────────────────────────────────────
 
 
 def test_ndcg_is_one_for_the_ideal_ranking():
@@ -93,9 +85,6 @@ def test_ndcg_counts_unjudged_as_not_relevant():
     assert ndcg_at_k(["zzz", "yyy"], REL, 2) == 0.0
 
 
-# ── recall ──────────────────────────────────────────────────────────────────
-
-
 def test_recall_at_k_counts_judged_relevant():
     """2 of the 3 relevant documents found in the top 2."""
     assert recall_at_k(["a", "b"], REL, 2) == pytest.approx(2 / 3)
@@ -112,7 +101,6 @@ def test_recall_full_when_all_relevant_retrieved():
 
 def test_recall_threshold_excludes_low_grades():
     """With threshold 2, the grade-1 document no longer counts as relevant."""
-    # Only 'a' and 'b' qualify, and both are retrieved.
     assert recall_at_k(["a", "b"], REL, 2, threshold=2) == pytest.approx(1.0)
 
 
@@ -122,9 +110,6 @@ def test_recall_without_relevant_documents_is_zero():
 
 def test_recall_zero_k_is_zero():
     assert recall_at_k(["a"], REL, 0) == 0.0
-
-
-# ── precision ───────────────────────────────────────────────────────────────
 
 
 def test_precision_divides_by_k_not_by_returned_count():
@@ -143,9 +128,6 @@ def test_precision_zero_k_is_zero():
     assert precision_at_k(["a"], REL, 0) == 0.0
 
 
-# ── rank-based ──────────────────────────────────────────────────────────────
-
-
 def test_reciprocal_rank_of_first_hit():
     assert reciprocal_rank(["d", "b", "a"], REL) == pytest.approx(1 / 2)
 
@@ -160,8 +142,6 @@ def test_reciprocal_rank_without_hits_is_zero():
 
 def test_average_precision_is_normalised_by_total_relevant():
     """Finding only the easy documents does not earn a perfect AP."""
-    # 'a' at rank 1 -> 1/1; 'b' at rank 3 -> 2/3. Missing 'c' entirely.
-    # AP = (1/1 + 2/3) / 3, NOT / 2.
     assert average_precision(["a", "d", "b"], REL) == pytest.approx((1.0 + 2 / 3) / 3)
 
 
@@ -171,9 +151,6 @@ def test_average_precision_perfect_ranking_is_one():
 
 def test_average_precision_without_relevant_is_zero():
     assert average_precision(["d"], {"d": 0}) == 0.0
-
-
-# ── aggregate ───────────────────────────────────────────────────────────────
 
 
 def test_evaluate_ranking_reports_all_requested_cutoffs():
@@ -210,9 +187,6 @@ def test_mean_metrics_only_averages_shared_keys():
     mean = mean_metrics([{"a": 1.0, "b": 0.0}, {"a": 0.0}])
 
     assert mean == {"a": 0.5}
-
-
-# ── a ranking lists a document once ─────────────────────────────────────────
 
 
 def test_a_repeated_document_is_not_a_second_hit_in_average_precision():

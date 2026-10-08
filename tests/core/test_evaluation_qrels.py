@@ -11,7 +11,7 @@ from academic_hunter.core.evaluation import (
     evaluate_run,
     load_qrels,
 )
-from academic_hunter.core.evaluation.qrels import documents_for, doc_id_for, save_qrels, topics
+from academic_hunter.core.evaluation.qrels import doc_id_for, documents_for, save_qrels, topics
 from academic_hunter.core.evaluation.runner import (
     build_rankings,
     build_rankings_timed,
@@ -33,9 +33,6 @@ def _write(tmp_path, payload):
     return path
 
 
-# ── doc ids ─────────────────────────────────────────────────────────────────
-
-
 def test_doc_id_prefers_doi():
     assert doc_id_for("Some Title", "10.1234/ABC") == "doi:10.1234/abc"
 
@@ -53,16 +50,13 @@ def test_doc_id_of_blank_is_empty_title():
     assert doc_id_for("") == "title:"
 
 
-# ── loading ─────────────────────────────────────────────────────────────────
-
-
 def test_load_valid_qrels(tmp_path):
     qrels = load_qrels(_write(tmp_path, VALID))
 
     assert len(qrels) == 2
     assert qrels.description == "pilot"
     assert qrels.n_judgments == 5
-    assert qrels.n_relevant == 4  # d3 is grade 0
+    assert qrels.n_relevant == 4
     assert qrels["q1"].relevant_ids == ["d1", "d2"]
 
 
@@ -142,9 +136,6 @@ def test_stats_summarises_the_collection(tmp_path):
     assert stats["relevant"] == 4
 
 
-# ── runner ──────────────────────────────────────────────────────────────────
-
-
 def _qrels():
     return Qrels(
         queries={
@@ -195,7 +186,7 @@ def test_min_coverage_surfaces_the_weakest_query():
 def test_report_as_dict_is_serialisable():
     report = evaluate_run(_qrels(), {"q1": ["a"], "q2": ["c"]}, ks=[1])
 
-    json.dumps(report.as_dict())  # must not raise
+    json.dumps(report.as_dict())
 
 
 def test_build_rankings_sorts_by_score_descending():
@@ -281,13 +272,45 @@ def test_build_rankings_uses_the_same_pool_for_every_query():
     assert set(rankings["q1"]) == set(rankings["q2"]) == {"a", "b"}
 
 
+def test_ties_break_by_document_id_not_by_arrival_order():
+    """Arrival order made a ranking depend on how the caller sorted its input.
+
+    Two runs of the same comparison could then differ in the third decimal, and
+    the difference would read as a finding. `sort` is stable, so this held only
+    as long as the input did — and the input is a dict, a set, or a CSV read.
+    """
+    first = [{"id": "b"}, {"id": "a"}, {"id": "c"}]
+    second = [{"id": "c"}, {"id": "a"}, {"id": "b"}]
+
+    ranked = build_rankings(
+        first, {"q": "text"}, scorer=lambda doc, q: 1.0, doc_id=lambda doc: doc["id"]
+    )
+    reordered = build_rankings(
+        second, {"q": "text"}, scorer=lambda doc, q: 1.0, doc_id=lambda doc: doc["id"]
+    )
+
+    assert ranked["q"] == reordered["q"] == ["a", "b", "c"]
+
+
+def test_build_rankings_timed_breaks_ties_the_same_way():
+    """The two entry points must not disagree about a ranking."""
+    corpus = [{"id": "b"}, {"id": "a"}]
+    scores = {"a": 1.0, "b": 1.0}
+
+    plain = build_rankings(
+        corpus, {"q": "text"}, scorer=lambda doc, q: scores[doc["id"]], doc_id=lambda doc: doc["id"]
+    )
+    timed, _ = build_rankings_timed(
+        corpus, {"q": "text"}, scorer=lambda doc, q: scores[doc["id"]], doc_id=lambda doc: doc["id"]
+    )
+
+    assert plain == timed
+
+
 def test_unjudged_in_pool_lists_unjudged_documents():
     qrels = _qrels()
 
     assert unjudged_in_pool(qrels, ["a", "c", "zzz"]) == {"zzz"}
-
-
-# ── per-query pools and topics ──────────────────────────────────────────────
 
 
 def test_pool_and_topic_round_trip(tmp_path):
@@ -425,3 +448,49 @@ def test_topics_puts_untagged_queries_under_empty_string():
     qrels = Qrels(queries={"q1": Judgment("q1", "t", {})})
 
     assert topics(qrels) == {"": ["q1"]}
+
+
+def test_a_pool_written_as_one_id_is_one_document(tmp_path):
+    """``[str(d) for d in "10.1/abc"]`` is twelve single-character ids.
+
+    A hand-written qrels is a plausible place to write a single-document pool
+    without a list, and the loader then ranked and reported twelve ids that no
+    corpus contains as unjudged misses.
+    """
+    payload = {
+        "queries": {
+            "q1": {"text": "t", "pool": "10.1/abc", "judgments": {"10.1/abc": 2}},
+        }
+    }
+
+    qrels = load_qrels(_write(tmp_path, payload))
+
+    assert qrels["q1"].pool == ["10.1/abc"]
+
+
+def test_the_reported_counts_describe_the_queries_that_were_scored(tmp_path):
+    """The mean is over the scored queries, so the counts have to be too.
+
+    They were taken from the whole collection while the denominator was the
+    scored subset, so a run that scored one query of three reported the
+    judgments of all three next to a mean computed from one.
+    """
+    from academic_hunter.core.evaluation import evaluate_run
+
+    qrels = load_qrels(
+        _write(
+            tmp_path,
+            {
+                "queries": {
+                    "q1": {"text": "t", "judgments": {"d1": 2, "d2": 1}},
+                    "q2": {"text": "t", "judgments": {"d3": 3, "d4": 1, "d5": 2}},
+                }
+            },
+        )
+    )
+
+    report = evaluate_run(qrels, {"q1": ["d1", "d2"]})
+
+    assert report.n_queries == 1
+    assert report.n_judgments == 2, "the counts describe a query that was never scored"
+    assert report.n_relevant == 2

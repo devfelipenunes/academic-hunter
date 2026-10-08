@@ -8,10 +8,15 @@ comparava-se score com score, sem nada que dissesse se a ordenação ficou melho
 
 ## Arquivos
 
-| Arquivo                           | O que é                                                              |
-| --------------------------------- | -------------------------------------------------------------------- |
-| `qrels_pilot_genre_analysis.json` | 108 documentos julgados, 11 consultas, 598 julgamentos, dois tópicos |
-| `fulltext_coverage.json`          | O desfecho de cada documento julgado na busca por full text          |
+| Arquivo                                    | O que é                                                              |
+| ------------------------------------------ | -------------------------------------------------------------------- |
+| `qrels_pilot_genre_analysis.json`          | 108 documentos julgados, 11 consultas, 598 julgamentos, dois tópicos |
+| `fulltext_coverage.json`                   | O desfecho de cada documento julgado na busca por full text          |
+| `pool_candidates_blockchain_ai.json`       | 50 documentos do run `20261006_153320`, **ainda sem julgamentos**    |
+| `pool_grading_page.html`                   | Página gerada que apresenta esses 50 e exporta os julgamentos        |
+| `build_pool_grading_page.py`               | O gerador da página                                                  |
+| `rebuild_pool.py`                          | Re-chaveia um pool existente sob as regras de identidade atuais      |
+| `fusion_comparison.py`                     | Mede as regras de fusão contra um qrels, sobre um run real           |
 
 Formato e semântica estão em `src/academic_hunter/core/evaluation/qrels.py`.
 
@@ -47,26 +52,142 @@ recebeu. Ver `documents_for` em `core/evaluation/qrels.py`.
 1 = parcialmente relevante, 2 = diretamente relevante), atribuídos por leitura de
 título e abstract.
 
+## Um terceiro tópico: blockchain × IA, pronto a julgar
+
+`pool_candidates_blockchain_ai.json` é um pool novo, de um tópico novo e de um
+run que ainda não tem julgamento nenhum: 50 documentos do run `20261006_153320`,
+blockchain × inteligência artificial, escolhidos como os 25 melhores por
+`Relevance_Score` **união** 25 aleatórios (semente `20261006`) — a mesma receita
+dos dois pools acima, e pelo mesmo motivo.
+
+Ele existe por um motivo específico e medido. O único qrels do repositório
+(`qrels_pilot_genre_analysis.json`) **não tem um único id em comum** com este
+corpus, e `calibrate_inclusion_threshold` mede um corte contra ids julgados. Sem
+julgamentos deste pool, a ferramenta não tem contra o que medir, e
+`min_inclusion_score` continua sendo um número escolhido a dedo — hoje em 5, um
+corte que **não decide nada**: 310 dos 311 papers avaliados passam por ele.
+
+### Como julgar
+
+    ./venv/bin/python evaluation/build_pool_grading_page.py \
+        evaluation/pool_candidates_blockchain_ai.json \
+        evaluation/pool_grading_page.html
+
+Depois abra a página **por HTTP**, não por `file://`:
+
+    ./venv/bin/python -m http.server 8000
+    # http://localhost:8000/evaluation/pool_grading_page.html
+
+Servir importa: navegadores recusam armazenamento local em origem `file://`, e é
+lá que os julgamentos ficam entre uma visita e outra. A página detecta a recusa e
+avisa em vez de perdê-los em silêncio; o botão de exportar funciona de qualquer
+forma.
+
+A página apresenta os 50 documentos **em ordem fixa derivada do id**, e não na
+ordem do arquivo — que é exatamente "os 25 melhores primeiro". Mostrar essa ordem
+convida o julgador a concordar com a ordenação que ele existe para testar, e a
+concordância seria então medida e reportada como acurácia. A pontuação do
+pipeline fica atrás de um botão, desligada por omissão, pelo mesmo motivo.
+
+Ao terminar, **Exportar qrels** produz o JSON. Salve como
+`evaluation/qrels_blockchain_ai.json` — é esse arquivo que
+`calibrate_inclusion_threshold` lê.
+
+### A consulta fica registrada no pool
+
+O pool nomeia o run de origem mas não a pergunta. `ranking_query` foi acrescentado
+ao arquivo, lido do backup de configuração que o banco de histórico guarda às
+`2026-10-06T15:32:29` — a última escrita antes do run das `15:33:20`, e idêntica
+em todos os backups desde as `13:10`. A proveniência exata está em
+`ranking_query_provenance`, dentro do próprio arquivo. Julgar sem a consulta
+declarada é julgar contra o que o julgador lembra do tema, e a precisão resultante
+mede uma pergunta diferente da que ordenou o run.
+
+### O que este pool permite, e o que não permite
+
+- **Permite calibrar o corte de inclusão.** É para isso que ele existe.
+- **Permite escolher os pesos** (citações, embedding). `fusion_comparison.py`
+  refunde os sinais que o run gravou sob cada regra e mede as ordenações contra
+  os julgamentos — ver «O que os números mostram», abaixo. Como o pool ainda não
+  tem julgamentos, a ferramenta responde «sem julgamentos» em vez de inventar uma
+  tabela; é o julgamento que a põe a funcionar, e é a razão para julgar.
+- **Um julgador, leitura de título e abstract.** Os mesmos limites da coleção
+  piloto, e valem igualmente aqui.
+
+`tests/test_pool_collection.py` checa, a cada execução da suíte, que o pool é
+chaveado pelos ids que `doc_id_for` deriva, que declara a consulta, e que a página
+embute exatamente o pool que ela julga — a falha silenciosa seria uma página
+gerada de um pool mais antigo, coletando julgamentos para documentos que já
+saíram. Ele checa também que os ids correspondem ao que o run de origem produz
+**hoje**: um pool escrito antes de o pipeline começar a gravar o DOI do arXiv
+continua internamente coerente e, ao mesmo tempo, aponta para chaves que a
+distribuição de pontuações já não tem.
+
+### O pool foi re-chaveado uma vez, e o motivo importa
+
+O pipeline passou a gravar o DOI que o `URL` de um arXiv implica (`ResolveDoiStep`).
+O id de um documento é `doc_id_for(title, doi)`, então **16 dos 50 ids mudaram** —
+todos de `title:…` para `doi:10.48550/arxiv.…`. Julgar antes disso teria deixado
+32% dos julgamentos órfãos, e `calibrate_inclusion_threshold` conta um julgamento
+órfão como uma falha, em silêncio.
+
+`rebuild_pool.py` re-chaveia **no lugar** e não re-sorteia: os documentos são os
+que já estavam no arquivo, encontrados no CSV do próprio run pelo título. Um
+documento que não esteja nesse CSV aborta o arquivo inteiro em vez de adivinhar a
+chave — uma chave adivinhada é um julgamento perdido. O arquivo ganha um bloco
+`regeneration` com a data, a regra e a lista de renomeações.
+
+    ./venv/bin/python evaluation/rebuild_pool.py \
+        evaluation/pool_candidates_blockchain_ai.json
+    ./venv/bin/python evaluation/build_pool_grading_page.py \
+        evaluation/pool_candidates_blockchain_ai.json \
+        evaluation/pool_grading_page.html
+
+A página tem de ser reconstruída em seguida: ela embute os ids, e uma página
+antiga coleta julgamentos em chaves que já não existem.
+
 ## O que os números mostram
 
 `fusion_comparison.py` fixa os dois sinais e varia apenas a regra de combinação,
-então qualquer diferença é atribuível à fusão e não aos componentes. **Esse script não
-está neste repositório** — ele saiu junto com `papers/` em `6a48f1c`. A tabela abaixo é
-o registro do que ele mediu; para reproduzi-la é preciso reescrevê-lo contra
-`core/nlp/fusion.py`, que é o código que efetivamente roda.
+então qualquer diferença é atribuível à fusão e não aos componentes:
 
-| Estratégia                                | nDCG@5 | nDCG@10 |    MRR |     AP |
-| ----------------------------------------- | -----: | ------: | -----: | -----: |
-| `keyword_only`                            | 0,3234 |  0,3364 | 0,8008 | 0,3941 |
-| **`shipped (weighted_norm)`**             | 0,2782 |  0,3223 | 0,8056 | 0,3816 |
-| `max_rank`                                | 0,3046 |  0,2813 | 0,8160 | 0,3716 |
-| `weighted_norm_50_50`                     | 0,2901 |  0,2785 | 0,7803 | 0,3790 |
-| `rrf_60`                                  | 0,2076 |  0,2334 | 0,4538 | 0,3200 |
-| `arith_rank`                              | 0,1592 |  0,2068 | 0,3629 | 0,3012 |
-| `shipped (rank_geometric)` — regra antiga | 0,1527 |  0,2012 | 0,3389 | 0,2926 |
-| `embedding_only`                          | 0,1490 |  0,1991 | 0,6089 | 0,2908 |
-| `min_rank`                                | 0,1332 |  0,1954 | 0,3977 | 0,2965 |
-| `citations_baseline`                      | 0,0932 |  0,1037 | 0,3716 | 0,2598 |
+    ./venv/bin/python evaluation/fusion_comparison.py \
+        results/run_20261006_193350/score_distribution_20261006_193350.json \
+        evaluation/qrels_blockchain_ai.json    # o arquivo que a página de julgamento produz
+
+Reconstruído contra `core/nlp/fusion.py` — que é o código que efetivamente roda —,
+ele chama `fuse_scores` em vez de repetir a fórmula. A tabela abaixo foi medida pelo
+script anterior, que saiu do repositório com `papers/` em `6a48f1c`, e é mantida como
+registro do que **ele** mediu na coleção piloto (11 consultas, dois tópicos) — números
+que não são comparáveis a uma medição de hoje, porque a coleção não é a mesma.
+
+| Estratégia                                | nDCG@5 | nDCG@10 |    MRR |     AP | Reproduzível hoje |
+| ----------------------------------------- | -----: | ------: | -----: | -----: | ----------------- |
+| `keyword_only`                            | 0,3234 |  0,3364 | 0,8008 | 0,3941 | sim — `weighted_norm_1_0` |
+| **`shipped (weighted_norm)`**             | 0,2782 |  0,3223 | 0,8056 | 0,3816 | sim — `weighted_norm_70_30` |
+| `max_rank`                                | 0,3046 |  0,2813 | 0,8160 | 0,3716 | **não** |
+| `weighted_norm_50_50`                     | 0,2901 |  0,2785 | 0,7803 | 0,3790 | sim |
+| `rrf_60`                                  | 0,2076 |  0,2334 | 0,4538 | 0,3200 | **não** |
+| `arith_rank`                              | 0,1592 |  0,2068 | 0,3629 | 0,3012 | **não** |
+| `shipped (rank_geometric)` — regra antiga | 0,1527 |  0,2012 | 0,3389 | 0,2926 | sim — `rank_geometric` |
+| `embedding_only`                          | 0,1490 |  0,1991 | 0,6089 | 0,2908 | sim — `weighted_norm_0_1` |
+| `min_rank`                                | 0,1332 |  0,1954 | 0,3977 | 0,2965 | **não** |
+| `citations_baseline`                      | 0,0932 |  0,1037 | 0,3716 | 0,2598 | sim |
+
+As quatro linhas marcadas **não** são as que este repositório não consegue medir de
+novo, e não são reimplementadas aqui: `fuse_scores` implementa `IMPLEMENTED_STRATEGIES` — duas regras, não seis — e mapeia
+qualquer outra string para `weighted_norm` **sem avisar**, então pedir `rrf_60` pelo
+nome devolveria os números de `weighted_norm` sob o rótulo errado. O comparador
+recusa em vez de medir, e nomeia as quatro no relatório.
+
+**O que os runs gravaram, medido.** Nos sete `score_distribution_*.json` do
+repositório, a coluna `Relevance_Score` é reproduzível — uma casa decimal, a precisão
+com que é gravada — por **`weighted_norm` com peso 100% no keyword sobre
+`_bm25_score`**, e por mais nenhuma das regras padrão. Ou seja: nesses runs o embedding
+contribuiu zero. Não é um bug do comparador, é o ramo de `ranking_query` em
+`RecomputeRanksStep`: quando há consulta declarada e `fusion_weights` não está
+configurado, os pesos passam a ser 1,0/0,0. O default 70/30 vale para runs **sem**
+consulta declarada, e é por isso que o relatório nomeia qual sinal esparso leu.
 
 Cinco leituras:
 

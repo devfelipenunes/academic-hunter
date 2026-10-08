@@ -30,7 +30,6 @@ from typing import Any, Dict, List, Mapping, Union
 
 from academic_hunter.core.nlp.scorer import title_slug
 
-#: Grades at or above this are "relevant"; anything below is not.
 RELEVANT_THRESHOLD = 1
 
 
@@ -45,14 +44,7 @@ class Judgment:
     query_id: str
     text: str
     grades: Dict[str, int] = field(default_factory=dict)
-    #: Informational grouping, e.g. ``genre_analysis``. Lets a report show
-    #: per-topic means instead of one number over unrelated corpora.
     topic: str = ""
-    #: The documents this query was judged over. Rankings are built within a
-    #: pool, so a query from one topic is never scored against another topic's
-    #: documents — those are unjudged for it, and counting them as irrelevant
-    #: would penalise a ranker for a pool it was never given. Empty means "the
-    #: whole judged collection", which is what single-topic files want.
     pool: List[str] = field(default_factory=list)
 
     @property
@@ -70,11 +62,6 @@ class Qrels:
 
     queries: Dict[str, Judgment] = field(default_factory=dict)
     description: str = ""
-    #: Top-level blocks this module does not interpret — ``provenance`` and
-    #: ``documents`` in the shipped collection. Carried through a load/save
-    #: round-trip untouched: they are the record of how the grades were made
-    #: and the documents they were made against, and a review that dropped
-    #: them would delete the evidence for the labels it was reviewing.
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def __len__(self) -> int:
@@ -116,6 +103,20 @@ def doc_id_for(title: str = "", doi: str = "") -> str:
     if doi_clean:
         return f"doi:{doi_clean}"
     return f"title:{title_slug(title)}"
+
+
+def _pool_of(value: Any) -> List[str]:
+    """A query's declared pool, whether it was written as a list or as one id.
+
+    ``[str(d) for d in pool]`` over a bare string iterates its *characters*: a
+    hand-written ``"pool": "10.1/abc"`` became twelve single-character document
+    ids, and every one of them was ranked and reported as an unjudged miss.
+    """
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    return [str(d) for d in value]
 
 
 def load_qrels(path: Union[str, Path]) -> Qrels:
@@ -172,7 +173,7 @@ def load_qrels(path: Union[str, Path]) -> Qrels:
             text=str(entry.get("text", "")),
             grades=grades,
             topic=str(entry.get("topic", "")),
-            pool=[str(d) for d in (entry.get("pool") or [])],
+            pool=_pool_of(entry.get("pool")),
         )
 
     return qrels
@@ -226,8 +227,6 @@ def save_qrels(qrels: Qrels, path: Union[str, Path]) -> Path:
         "queries": {
             qid: {
                 "text": j.text,
-                # Omitted when unset, so single-topic files keep their old shape
-                # and a diff stays readable.
                 **({"topic": j.topic} if j.topic else {}),
                 **({"pool": list(j.pool)} if j.pool else {}),
                 "judgments": dict(j.grades.items()),

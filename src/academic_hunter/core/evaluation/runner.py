@@ -28,7 +28,6 @@ class EvaluationReport:
     n_queries: int
     n_judgments: int
     n_relevant: int
-    #: Query id -> fraction of the top-k retrieved documents that carry a judgment.
     judged_coverage: Dict[str, float] = field(default_factory=dict)
 
     @property
@@ -67,17 +66,26 @@ def evaluate_run(
         linear_gain: Use raw grades rather than ``2^grade - 1``.
 
     Returns:
-        An :class:`EvaluationReport` with per-query and mean metrics.
+        An :class:`EvaluationReport` with per-query and mean metrics. Its
+        ``n_judgments`` and ``n_relevant`` count the queries that were scored,
+        not the whole collection: a report over a subset of the qrels reported
+        the *collection's* judgment totals beside a per-query mean computed from
+        a handful of them, and the two denominators cannot both be right.
     """
     ks = sorted({int(k) for k in ks if int(k) > 0})
     top_k = max(ks) if ks else 0
 
     per_query: Dict[str, Dict[str, float]] = {}
     coverage: Dict[str, float] = {}
+    n_judgments = 0
+    n_relevant = 0
 
     for query_id, judgment in qrels.queries.items():
         if query_id not in rankings:
             continue
+
+        n_judgments += len(judgment)
+        n_relevant += len(judgment.relevant_ids)
 
         ranking = list(rankings[query_id])
         relevance = relevance_map(qrels, query_id)
@@ -87,9 +95,6 @@ def evaluate_run(
 
         if top_k:
             top = ranking[:top_k]
-            # A document with no judgment cannot contribute relevance, so a
-            # ranking full of unjudged documents produces a number that says
-            # more about the qrels than about the retriever.
             judged = sum(1 for d in top if d in relevance)
             coverage[query_id] = judged / len(top) if top else 0.0
 
@@ -97,8 +102,8 @@ def evaluate_run(
         mean=mean_metrics(list(per_query.values())),
         per_query=per_query,
         n_queries=len(per_query),
-        n_judgments=qrels.n_judgments,
-        n_relevant=qrels.n_relevant,
+        n_judgments=n_judgments,
+        n_relevant=n_relevant,
         judged_coverage=coverage,
     )
 
@@ -126,6 +131,13 @@ def build_rankings(
     The corpus is held constant across queries so that differences in the
     metrics come from the scorer and not from a different candidate set.
 
+    Ties are broken by document id, not by the order the corpus happened to be
+    in. Arrival order made the ranking — and therefore every metric computed on
+    it — depend on how the caller sorted its input: two runs of the same
+    comparison could differ in the third decimal, and the difference would read
+    as a finding. ``sort`` is stable, so this was deterministic only as long as
+    the input was, and the input is a dict, a set, or a CSV read.
+
     Args:
         corpus: Documents to rank.
         queries: Query id -> query text.
@@ -141,7 +153,7 @@ def build_rankings(
     rankings: Dict[str, List[str]] = {}
     for query_id, text in queries.items():
         scored = [(scorer(doc, text), doc_id(doc)) for doc in corpus]
-        scored.sort(key=lambda pair: pair[0], reverse=True)
+        scored.sort(key=lambda pair: (-pair[0], pair[1]))
         rankings[query_id] = [d for _, d in scored[:top_k]]
     return rankings
 
@@ -165,9 +177,7 @@ class Timing:
     positioning, and this is the measurable half of it.
     """
 
-    #: Query id -> seconds spent ranking that query's candidate set.
     per_query: Dict[str, float] = field(default_factory=dict)
-    #: Query id -> candidate-set size, so a per-document cost can be derived.
     pool_size: Dict[str, int] = field(default_factory=dict)
 
     @property
@@ -208,7 +218,8 @@ def build_rankings_timed(
     """``build_rankings`` plus the wall-clock cost of each query.
 
     The timer wraps only the scoring loop, so it measures the retriever and not
-    the harness around it.
+    the harness around it. Ties break the same way they do in ``build_rankings``
+    — by document id — so the two cannot disagree about a ranking.
     """
     _require_non_negative(top_k)
 
@@ -218,7 +229,7 @@ def build_rankings_timed(
     for query_id, text in queries.items():
         started = time.perf_counter()
         scored = [(scorer(doc, text), doc_id(doc)) for doc in corpus]
-        scored.sort(key=lambda pair: pair[0], reverse=True)
+        scored.sort(key=lambda pair: (-pair[0], pair[1]))
         timing.per_query[query_id] = time.perf_counter() - started
         timing.pool_size[query_id] = len(corpus)
         rankings[query_id] = [d for _, d in scored[:top_k]]
