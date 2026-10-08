@@ -229,6 +229,14 @@ async def test_every_tool_opens_the_store_off_the_event_loop(
     on one shared loop that stalls every other request, including the SSE
     heartbeat. The return value here is None, so each tool takes its
     "unavailable" path — what is asserted is only *where* it was called.
+
+    ``index_papers`` and ``index_fulltext`` reach the store only after
+    ``_load_latest_papers`` has found something to index, so without a run in
+    ``results/`` they answer "no papers found" and never get there. That made the
+    assertion depend on the developer's own ``results/`` directory: it held on
+    this checkout and failed on a fresh clone, which is the one environment the
+    suite has to pass in. The loader is stubbed to the one paper that gets them
+    past the guard.
     """
     import contextlib
     import importlib
@@ -241,7 +249,13 @@ async def test_every_tool_opens_the_store_off_the_event_loop(
         threads.append(threading.get_ident())
         return None
 
-    with patch.object(module, "_get_vector_store", recording_store):
+    loader = (
+        patch.object(module, "_load_latest_papers", lambda: [MagicMock(name="a paper")])
+        if hasattr(module, "_load_latest_papers")
+        else contextlib.nullcontext()
+    )
+
+    with patch.object(module, "_get_vector_store", recording_store), loader:
         with contextlib.suppress(Exception):
             await getattr(module, tool_name)(ctx=mock_ctx, **kwargs)
 
