@@ -68,7 +68,6 @@ def make_context(output_dir: Path) -> ExportContext:
             "exclusions_by_source": {},
         },
         settings={"min_relevance_score": 3.5, "start_year": 2021},
-        # The shape the connectors append (see `plugins/connectors/core_ac.py`).
         query_history=[{"Source": "OpenAlex", "Query": "ledgers"}],
         anchors={"Cat": ["ledger"]},
         tech_strings={"Tech": ["ledger"]},

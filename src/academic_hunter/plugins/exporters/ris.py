@@ -1,14 +1,11 @@
 import logging
-from typing import Any
+
+from academic_hunter.core.models.authors import split_authors
+from academic_hunter.core.models.utils import one_line, paper_order_key
+
 from .base import BaseExporter, ExportContext
 
 logger = logging.getLogger("academic_hunter.exporters")
-
-
-def one_line(value: Any) -> str:
-    """Collapse a value onto one line: RIS is line-oriented, and a newline in a
-    value ends the field and turns the rest into a tag the reader cannot place."""
-    return " ".join(str(value if value is not None else "").split())
 
 
 class RisExporter(BaseExporter):
@@ -20,13 +17,12 @@ class RisExporter(BaseExporter):
         run_dir = self._get_run_dir(timestamp, output_dir)
         ris_file = run_dir / f"academic_dataset_{timestamp}.ris"
 
-        # No early return on an empty list: the file is still written, empty, so
-        # the run leaves its own artifact instead of an older run's — or the
-        # unfiltered one written before the threshold was applied.
         with open(ris_file, 'w', encoding='utf-8') as f:
-            for row in papers:
+            for row in sorted(papers, key=paper_order_key):
                 f.write("TY  - JOUR\n")
                 f.write(f"TI  - {one_line(row.get('Title', ''))}\n")
+                for author in split_authors(row.get('Authors', '')):
+                    f.write(f"AU  - {one_line(author)}\n")
                 f.write(f"JO  - {one_line(row.get('Venue', 'Unknown'))}\n")
                 year = str(row.get('Year', ''))[:4]
                 if year:

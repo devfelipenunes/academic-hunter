@@ -47,9 +47,6 @@ def exported(tmp_path, exporter, papers):
     return [f for f in Path(tmp_path).rglob("*") if f.suffix in (".bib", ".ris")][0]
 
 
-# ── BibTeX ──────────────────────────────────────────────────────────────────
-
-
 def field_line(content, field):
     return next(
         line for line in content.splitlines() if line.strip().startswith(f"{field} = {{")
@@ -78,7 +75,6 @@ def test_every_field_is_escaped_not_only_the_abstract(tmp_path):
     for field in ("title", "journal"):
         assert "\\}" in field_line(content, field), f"{field} was written raw"
 
-    # The abstract spans lines (a value may), so it is checked over the record.
     assert "\\}" in content.split("abstract = ")[1]
 
 
@@ -109,9 +105,6 @@ def test_a_clean_record_is_left_alone(tmp_path):
     assert "\\{" not in content and "\\}" not in content
 
 
-# ── RIS ─────────────────────────────────────────────────────────────────────
-
-
 def test_a_newline_in_a_title_does_not_split_the_record(tmp_path):
     content = exported(
         tmp_path, RisExporter(), [{**paper(), "Title": "First line\nSecond line"}]
@@ -139,9 +132,6 @@ def test_the_record_ends_where_it_should(tmp_path):
 
     assert content.count("TY  - JOUR") == 1
     assert content.count("ER  - ") == 1
-
-
-# ── Obsidian frontmatter ────────────────────────────────────────────────────
 
 
 def frontmatter_of(path):
@@ -178,3 +168,36 @@ def test_a_clean_topic_is_written_as_given(tmp_path):
 
     assert parsed["title"] == "Quantum error correction"
     assert parsed["tags"] == ["academic-hunter", "research"]
+
+
+def test_a_percent_sign_cannot_comment_out_the_record(tmp_path):
+    """`%` starts a LaTeX comment, so the field's closing brace goes with it.
+
+    The record then does not parse at all — measured on
+    `title = {A 50% threshold},`, where everything from the `%` to the end of
+    the line is dropped and the entry is left without its `},`. A single
+    percentage in one title makes the whole `.bib` unreadable.
+    """
+    hostile = {**paper(), "Title": "Diagnosticity at the 50% threshold"}
+    content = exported(tmp_path, BibtexExporter(), [hostile]).read_text(encoding="utf-8")
+
+    assert r"50\% threshold" in field_line(content, "title")
+
+    unescaped = [
+        line for line in content.splitlines() if "%" in line.replace(r"\%", "")
+    ]
+    assert not unescaped, f"a bare % survived, and comments out the rest of its line: {unescaped}"
+
+
+def test_the_other_text_mode_errors_are_escaped_too(tmp_path):
+    """`&`, `#`, `_` and `^` stop a LaTeX compile where `}` stops a parse.
+
+    A publisher name with an ampersand, a bracketed issue number and an
+    identifier with an underscore are all ordinary bibliographic values, and
+    each one was written raw.
+    """
+    hostile = {**paper(), "Title": "R&D #1: a_b test", "Venue": "Smith & Sons_^"}
+    content = exported(tmp_path, BibtexExporter(), [hostile]).read_text(encoding="utf-8")
+
+    assert r"R\&D \#1: a\_b test" in field_line(content, "title")
+    assert r"Smith \& Sons\_\textasciicircum{}" in field_line(content, "journal")

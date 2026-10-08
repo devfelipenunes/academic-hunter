@@ -16,13 +16,11 @@ the logic is testable with no network, no corpus and no model.
 """
 
 import re
-from ._text import sentence_around
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, List, Optional
 
-# Pandoc-style citations: [@key] or [@key1; @key2]. Keys are word characters,
-# hyphens and dots (the project uses "sentence-transformers" and "10.1/x"-style
-# stems are not valid keys, but hyphens are).
+from ._text import sentence_around
+
 _CITATION = re.compile(r"\[@([^\]]+)\]")
 _KEY_SPLIT = re.compile(r"\s*;\s*")
 
@@ -68,12 +66,16 @@ def extract_citations(text: str) -> List[CitationCandidate]:
 
     Returns one candidate per key — a multi-key citation ``[@a; @b]`` yields two,
     because each must be verified independently.
+
+    A Pandoc locator is dropped: ``[@k, p. 33]`` cites ``k``. Keeping the comma
+    and what followed it made the key ``k, p. 33``, which no bibliography holds,
+    so a correctly cited page was reported as a fabricated reference.
     """
     candidates: List[CitationCandidate] = []
     for match in _CITATION.finditer(text):
         context = sentence_around(text, match.start())
         for raw in _KEY_SPLIT.split(match.group(1)):
-            key = raw.strip().lstrip("@").strip()
+            key = raw.split(",")[0].strip().lstrip("@").strip()
             if key:
                 candidates.append(
                     CitationCandidate(key=key, context=context, offset=match.start())
@@ -101,9 +103,9 @@ class ExistenceProbes:
     ``None`` never counts as a failure.
     """
 
-    in_bibliography: Optional[Callable[[str], Optional[bool]]] = None  # refuting
-    doi_resolves: Optional[Callable[[str], Optional[bool]]] = None     # refuting
-    in_corpus: Optional[Callable[[str], Optional[bool]]] = None        # confirming only
+    in_bibliography: Optional[Callable[[str], Optional[bool]]] = None
+    doi_resolves: Optional[Callable[[str], Optional[bool]]] = None
+    in_corpus: Optional[Callable[[str], Optional[bool]]] = None
     resolve_doi: Optional[Callable[[str], Optional[str]]] = None
     field: Dict[str, object] = field(default_factory=dict)
 
@@ -154,7 +156,6 @@ def verify_existence(
             if answer is True:
                 confirmed_by.append("DOI")
 
-        # Confirming only: not being in the local index is not a defect.
         if probes.in_corpus is not None:
             answer = probes.in_corpus(candidate.key)
             result.in_corpus = answer
@@ -173,6 +174,55 @@ def verify_existence(
     return results
 
 
+_ENTRY_START = re.compile(r"@(\w+)\s*(\{)\s*([^,\s]+)\s*,")
+_FIELD_START = re.compile(r"(\w+)\s*=\s*")
+
+
+def _balanced(text: str, start: int) -> tuple[str, int]:
+    """The content of the braced group opening at ``start``, and where it ends."""
+    depth = 0
+    for index in range(start, len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start + 1:index], index + 1
+    return text[start + 1:], len(text)
+
+
+def _read_value(body: str, start: int) -> tuple[str, int]:
+    """One field value, up to whatever closes it, and the position after it."""
+    if start >= len(body):
+        return "", start
+    opener = body[start]
+    if opener == "{":
+        return _balanced(body, start)
+    if opener == '"':
+        end = body.find('"', start + 1)
+        return (body[start + 1:end], end + 1) if end != -1 else (body[start + 1:], len(body))
+    end = start
+    while end < len(body) and body[end] not in ",\n":
+        end += 1
+    return body[start:end], end
+
+
+def _parse_fields(body: str) -> Dict[str, str]:
+    """Read ``name = value`` pairs, skipping over each value once read.
+
+    Scanning with a regex alone would find the ``=`` inside a value and read the
+    words around it as a field, so every value's span is stepped over whole.
+    """
+    fields: Dict[str, str] = {}
+    position = 0
+    for match in _FIELD_START.finditer(body):
+        if match.start() < position:
+            continue
+        value, position = _read_value(body, match.end())
+        fields[match.group(1).lower()] = " ".join(value.split())
+    return fields
+
+
 def parse_bibtex_keys(bibtex: str) -> set[str]:
     """Extract entry keys from BibTeX content.
 
@@ -183,28 +233,32 @@ def parse_bibtex_keys(bibtex: str) -> set[str]:
     return set(re.findall(r"@\w+\s*\{\s*([^,\s]+)\s*,", bibtex))
 
 
-_ENTRY = re.compile(r"@(\w+)\s*\{\s*([^,\s]+)\s*,(.*?)\n\}", re.DOTALL)
-_FIELD = re.compile(r"(\w+)\s*=\s*[{\"](.*?)[}\"]\s*,?\s*\n", re.DOTALL)
-
-
 def parse_bibtex_entries(bibtex: str) -> Dict[str, Dict[str, str]]:
     """Parse BibTeX into ``{key: {field: value}}``.
 
-    Regex-based and intentionally shallow: layer 1 only needs the key, its DOI
-    and its title in order to check that a reference exists. Nested braces and
-    multi-line values are flattened rather than preserved, which is fine for
-    that purpose and avoids a parse dependency.
+    Intentionally shallow: layer 1 only needs the key, its DOI and its title in
+    order to check that a reference exists. Values are flattened to one line and
+    no macro, ``@string`` or cross-reference is resolved, which is fine for that
+    purpose and avoids a parse dependency.
+
+    The entry runs to the brace that closes the one it opened with, counted, so
+    it does not matter whether that brace sits at the start of a line or is
+    indented, nor whether the entry is written on one line. The earlier pattern
+    required a ``}`` in column 0 and silently dropped everything else — a
+    bibliography whose entries are indented parsed to nothing, and every
+    citation against it would have been reported as not found.
 
     Returns an empty dict for malformed input — a bibliography that cannot be
     read yields no evidence, not a false accusation.
     """
     entries: Dict[str, Dict[str, str]] = {}
-    for entry in _ENTRY.finditer(bibtex):
-        entry_type, key, body = entry.group(1), entry.group(2), entry.group(3)
-        fields: Dict[str, str] = {"type": entry_type.lower()}
-        for field in _FIELD.finditer(body + "\n"):
-            fields[field.group(1).lower()] = " ".join(field.group(2).split())
-        entries[key] = fields
+    position = 0
+    for match in _ENTRY_START.finditer(bibtex):
+        if match.start() < position:
+            continue
+        entry_type, key = match.group(1), match.group(3)
+        body, position = _balanced(bibtex, match.start(2))
+        entries[key] = {"type": entry_type.lower(), **_parse_fields(body)}
     return entries
 
 

@@ -9,18 +9,38 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from mcp.server.fastmcp import Context
-
 from academic_hunter import AcademicHunter
 from academic_hunter.core.infra import paths
-from academic_hunter.core.writing.style import BibtexKeyAllocator
-from academic_hunter.plugins.exporters.bibtex import escape_bibtex
-from academic_hunter.plugins.exporters.csv import neutralise_formula
-from academic_hunter.plugins.exporters.ris import one_line
-from ._utils import _load_latest_papers, get_project_root, run_blocking
+from academic_hunter.core.models.authors import split_authors
+from academic_hunter.core.models.utils import (
+    bibtex_authors,
+    escape_bibtex,
+    neutralise_formula,
+    one_line,
+)
+from academic_hunter.core.writing.style import paper_citation_key
+from mcp.server.fastmcp import Context
+
 from ..exceptions import SearchError
+from ._utils import _load_latest_papers, get_project_root, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.export")
+
+
+def _free_path(directory, stem: str, ext: str):
+    """A path under ``directory`` that nothing has written yet.
+
+    The default name carried a second-resolution timestamp and nothing else, so
+    two exports of the same format inside one second resolved to the same file
+    and the second silently replaced the first — with both calls reporting
+    success and naming the same path.
+    """
+    candidate = directory / f"{stem}.{ext}"
+    counter = 2
+    while candidate.exists():
+        candidate = directory / f"{stem}_{counter}.{ext}"
+        counter += 1
+    return candidate
 
 
 async def export_report(
@@ -38,17 +58,11 @@ async def export_report(
 
     try:
         project_root = get_project_root()
-        # Building a hunter compiles every configured term into a regex and
-        # opens the cache — measured near 0.3 s on a real config, which is a
-        # third of a second that every other tool would spend waiting.
         hunter = await run_blocking(
             AcademicHunter, output_dir=str(project_root / paths.RESULTS_DIRNAME)
         )
         papers = list(hunter.consolidated_results.values())
 
-        # Fallback: load from the latest run's CSV when nothing is in memory.
-        # A tool call always builds its own hunter, so this is the normal path,
-        # not an edge case — see `_load_latest_papers`.
         if not papers:
             await ctx.info("No in-memory results, trying latest CSV...")
             papers = await run_blocking(_load_latest_papers)
@@ -73,10 +87,10 @@ async def export_report(
         results_dir.mkdir(parents=True, exist_ok=True)
 
         if output_path is None:
-            output_path = str(results_dir / f"export_{timestamp}.{ext}")
+            output_path = str(_free_path(results_dir, f"export_{timestamp}", ext))
 
         if format_lower == "csv":
-            import pandas as pd  # lazy import
+            import pandas as pd
 
             df = pd.DataFrame(papers)
             for column in df.columns:
@@ -108,22 +122,20 @@ def _write_bibtex(papers: list, output_path: str) -> None:
 
     Each paper produces an ``@article{...}`` entry with author, title,
     journal, year, url, doi, and abstract fields where available.
+
+    The key comes from ``paper_citation_key``, the same function
+    ``paper_context`` names keys with — the agent is told to cite a key
+    verbatim, so the two writers must not derive it differently.
     """
-    allocate_key = BibtexKeyAllocator()
     lines = []
     for paper in papers:
         doi = paper.get("DOI", "")
         title = paper.get("Title", "")
         year = paper.get("Year", "")
-        # The key `paper_context` hands the agent, so the citation it was told to
-        # use is one this file contains.
-        key = allocate_key(title, year)
+        key = paper_citation_key(paper)
 
-        authors = paper.get("Authors", paper.get("author", ""))
-        if isinstance(authors, list):
-            authors = " and ".join(authors)
+        authors = bibtex_authors(paper.get("Authors", paper.get("author", "")))
 
-        # `Venue` is the publication; `Source` is the database it was found in.
         journal = paper.get("Venue", "")
         url = paper.get("URL", "")
         abstract = paper.get("Abstract", "")
@@ -161,12 +173,8 @@ def _write_ris(papers: list, output_path: str) -> None:
         if title:
             entry.append(f"TI  - {one_line(title)}")
 
-        authors = paper.get("Authors", paper.get("author", ""))
-        if isinstance(authors, list):
-            for a in authors:
-                entry.append(f"AU  - {one_line(a)}")
-        elif authors:
-            entry.append(f"AU  - {one_line(authors)}")
+        for author in split_authors(paper.get("Authors", paper.get("author", ""))):
+            entry.append(f"AU  - {one_line(author)}")
 
         year = paper.get("Year", "")
         if year:

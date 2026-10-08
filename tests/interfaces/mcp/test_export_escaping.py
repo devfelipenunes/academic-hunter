@@ -8,7 +8,7 @@ o caminho que o agente usa — escrevendo os valores crus. O
 
 from unittest.mock import patch
 
-from academic_hunter.core.writing import format_bibtex_key
+from academic_hunter.core.writing import paper_citation_key
 
 PAPER = {
     "Title": "A study of {braces} in ledgers",
@@ -62,7 +62,7 @@ async def test_csv_neutralises_a_formula_in_a_title(tmp_path, mock_ctx):
 async def test_the_bibtex_key_is_the_one_the_agent_was_told(tmp_path, mock_ctx):
     """`paper_context` names a key and tells the agent to cite it verbatim."""
     text = await _export([PAPER], "bibtex", tmp_path, mock_ctx)
-    expected = format_bibtex_key(PAPER["Title"], PAPER["Year"])
+    expected = paper_citation_key(PAPER)
     assert f"@article{{{expected}," in text, text
 
 
@@ -85,5 +85,5 @@ def test_the_pipeline_exporter_writes_that_same_key(tmp_path):
     )
 
     text = (tmp_path / "academic_dataset_test_keys.bib").read_text(encoding="utf-8")
-    expected = format_bibtex_key(PAPER["Title"], PAPER["Year"])
+    expected = paper_citation_key(PAPER)
     assert f"@article{{{expected}," in text, text

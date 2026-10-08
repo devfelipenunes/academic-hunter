@@ -13,16 +13,6 @@ run's own data) and preserves the project's offline, zero-cost, reproducible
 character.
 """
 
-from .templates import ArticleTemplate, get_template, list_templates
-from .style import (
-    BibtexKeyAllocator,
-    format_bibtex_key,
-    format_citation,
-    format_equation,
-    format_statistical_claim,
-    format_table,
-)
-from .outline import RunData, build_outline
 from .citations import (
     CitationCandidate,
     ExistenceProbes,
@@ -30,34 +20,42 @@ from .citations import (
     extract_citations,
     parse_bibtex_entries,
     parse_bibtex_keys,
-    summarize as summarize_citations,
     verify_existence,
 )
+from .citations import (
+    summarize as summarize_citations,
+)
 from .numbers import (
-    NumericClaim,
     NumberResult,
+    NumericClaim,
     extract_claims,
     index_results,
     summarize_numbers,
     verify_numbers,
 )
+from .outline import RunData, build_outline
+from .style import (
+    format_bibtex_key,
+    format_citation,
+    format_equation,
+    format_statistical_claim,
+    format_table,
+    paper_citation_key,
+)
+from .templates import ArticleTemplate, get_template, list_templates
 
 __all__ = [
-    # templates
     "ArticleTemplate",
     "get_template",
     "list_templates",
-    # style
     "format_citation",
     "format_table",
     "format_equation",
-    "BibtexKeyAllocator",
     "format_bibtex_key",
+    "paper_citation_key",
     "format_statistical_claim",
-    # outline
     "RunData",
     "build_outline",
-    # citations
     "CitationCandidate",
     "ExistenceProbes",
     "ExistenceResult",
@@ -66,7 +64,6 @@ __all__ = [
     "parse_bibtex_keys",
     "summarize_citations",
     "verify_existence",
-    # numbers
     "NumericClaim",
     "NumberResult",
     "extract_claims",

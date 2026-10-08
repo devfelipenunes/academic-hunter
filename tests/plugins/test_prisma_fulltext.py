@@ -7,8 +7,6 @@ run — so listing it under "not obtained" understates the coverage.
 
 from pathlib import Path
 
-import pytest
-
 from academic_hunter.plugins.exporters.base import ExportContext
 from academic_hunter.plugins.exporters.prisma import PrismaExporter
 

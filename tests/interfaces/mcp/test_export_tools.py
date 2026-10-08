@@ -1,8 +1,7 @@
 """Tests for export_report tool."""
-import pytest
 import json
-from unittest.mock import patch, MagicMock
 from pathlib import Path
+from unittest.mock import patch
 
 
 async def _export_test(mock_ctx, tmp_path, fmt, papers, expected_content_check=None):
@@ -118,3 +117,35 @@ async def test_export_report_fallback_to_csv(mock_ctx, tmp_path):
         result = await export_report(mock_ctx, format="json")
 
     assert "Successfully exported" in result
+
+
+async def test_two_exports_in_the_same_second_do_not_replace_each_other(
+    mock_ctx, tmp_path
+):
+    """The default name carried a second-resolution timestamp and nothing else.
+
+    Two exports of the same format inside one second resolved to the same path,
+    and the second silently replaced the first — with both calls reporting
+    success and naming the same file.
+    """
+    from academic_hunter.interfaces.mcp.tools.export import export_report
+
+    papers = [{"Title": "Paper One", "DOI": "10.1000/one"}]
+
+    with patch("academic_hunter.interfaces.mcp.tools.export.AcademicHunter") as m_h, \
+         patch("academic_hunter.interfaces.mcp.tools.export.get_project_root") as m_root, \
+         patch(
+             "academic_hunter.interfaces.mcp.tools.export._load_latest_papers",
+             return_value=papers,
+         ):
+        m_h.return_value.consolidated_results = {"0": papers[0]}
+        m_root.return_value = tmp_path
+
+        first = await export_report(mock_ctx, format="csv")
+        second = await export_report(mock_ctx, format="csv")
+
+    written = sorted(tmp_path.glob("results/export_*.csv"))
+    assert len(written) == 2, "the second export replaced the first"
+    assert first != second, "both calls reported the same file"
+    for result, path in ((first, written[0]), (second, written[1])):
+        assert str(path) in result, f"the tool did not name the file it wrote: {result}"

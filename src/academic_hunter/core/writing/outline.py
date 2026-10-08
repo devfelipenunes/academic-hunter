@@ -133,13 +133,24 @@ def _render_data(keys: List[str], data: RunData) -> str:
                     f"Cite the numbers from these files, not from memory. -->"
                 )
         elif key == DATA_PROSE:
-            pass  # nothing to inject — the agent writes this section
+            pass
     return "\n\n".join(blocks)
 
 
-def _render_section(section: Section, data: RunData) -> str:
-    """Render one section, recursing into subsections."""
-    heading = f"## {section.number} {section.name}" if section.number else f"## {section.name}"
+def _render_section(section: Section, data: RunData, depth: int = 0) -> str:
+    """Render one section, recursing into subsections.
+
+    The heading level follows the nesting. Every section was emitted as ``##``,
+    so a subsection read as a sibling of the section it belongs to and the
+    document's shape — which the template spends its structure describing — was
+    flat in the one artefact that carries it out.
+    """
+    marker = "#" * min(depth + 1, 6)
+    heading = (
+        f"{marker} {section.number} {section.name}"
+        if section.number
+        else f"{marker} {section.name}"
+    )
 
     meta_bits = [f"purpose: {section.purpose}"]
     if section.target_words:
@@ -151,15 +162,12 @@ def _render_section(section: Section, data: RunData) -> str:
         lines.append(rendered)
         lines.append("")
 
-    # Every leaf section needs prose — a table without an interpretation
-    # paragraph is data, not an article. Container sections (those with
-    # subsections) carry no prose of their own, so they get no marker.
     if not section.subsections:
         lines.append(PROSE_MARKER)
         lines.append("")
 
     for sub in section.subsections:
-        lines.append(_render_section(sub, data))
+        lines.append(_render_section(sub, data, depth + 1))
 
     return "\n".join(lines).rstrip() + "\n"
 

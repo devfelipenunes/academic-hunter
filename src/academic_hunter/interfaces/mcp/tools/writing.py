@@ -11,30 +11,32 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from mcp.server.fastmcp import Context
-
 from academic_hunter import __version__
+from academic_hunter.core.infra import paths
 from academic_hunter.core.writing import (
     ExistenceProbes,
     build_outline,
     extract_citations,
-    format_bibtex_key,
     get_template,
     list_templates,
+    paper_citation_key,
     parse_bibtex_entries,
     summarize_citations,
     verify_existence,
 )
-from academic_hunter.core.writing.outline import RunData
 from academic_hunter.core.writing.numbers import (
     extract_claims,
     index_results,
     summarize_numbers,
+)
+from academic_hunter.core.writing.numbers import (
     verify_numbers as check_numbers,
 )
-from academic_hunter.core.infra import paths
-from ._utils import get_project_root, _get_vector_store
+from academic_hunter.core.writing.outline import RunData
+from mcp.server.fastmcp import Context
+
 from ..exceptions import CitationError, WritingError
+from ._utils import _get_vector_store, get_project_root, run_blocking
 
 
 def _resolve_run_dir(project_root: Path, source_run: Optional[str]) -> Path:
@@ -165,7 +167,6 @@ async def outline_paper(
             await ctx.warning(warning)
 
         if not data.topic:
-            # Fall back to the run's anchors so the title is never blank.
             anchors = _anchors_from(run_dir)
             data.topic = ", ".join(anchors) if anchors else run_dir.name
 
@@ -227,7 +228,7 @@ async def paper_context(
     Returns:
         Formatted list of citable papers with keys, DOIs and abstracts.
     """
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
         raise CitationError(
@@ -239,7 +240,7 @@ async def paper_context(
     await ctx.info(f"Retrieving up to {top_k} papers for: '{query}'")
 
     try:
-        results = store.query(query, top_k=top_k)
+        results = await run_blocking(store.query, query, top_k=top_k)
     except Exception as exc:
         await ctx.error(f"Corpus query failed: {exc}")
         raise CitationError(str(exc))
@@ -263,7 +264,7 @@ async def paper_context(
     for i, paper in enumerate(results, 1):
         title = str(paper.get("title", "")).strip()
         year = paper.get("year") or ""
-        key = format_bibtex_key(title, year) if title else f"ref{i}"
+        key = paper_citation_key(paper) if title else f"ref{i}"
         lines.append(f"## {i}. {title}")
         lines.append(f"- **key:** `{key}`")
         if year:
@@ -304,7 +305,10 @@ async def verify_citations(
         ctx: FastMCP Context (auto-injected).
         text: Manuscript text containing `[@key]` citations.
         bib_path: Path to the .bib file. Relative paths resolve against the
-            project root. Without it, only the corpus check can run.
+            project root, and it is required for any check to run: the corpus
+            probe searches by the entry's title, and the title only ever comes
+            from the bibliography. Without this path every citation is reported
+            UNKNOWN, not NOT_FOUND — nothing was checked, so nothing is accused.
 
     Returns:
         Per-citation report with verdicts, plus a summary count.
@@ -326,7 +330,7 @@ async def verify_citations(
         entries = parse_bibtex_entries(bib_file.read_text(encoding="utf-8"))
         await ctx.info(f"Loaded {len(entries)} bibliography entries")
 
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
 
     def in_bibliography(key: str):
         return key in entries if entries else None
@@ -393,7 +397,7 @@ async def verify_citations(
         in_corpus=in_corpus,
     )
 
-    results = verify_existence(candidates, probes)
+    results = await run_blocking(verify_existence, candidates, probes)
     counts = summarize_citations(results)
 
     lines = [

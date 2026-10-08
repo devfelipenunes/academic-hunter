@@ -21,46 +21,32 @@ this" is reported as its own verdict, never as "this is wrong".
 import json
 import math
 import re
-from ._text import sentence_around
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Set
+
+from ._text import sentence_around
 
 STATUS_MATCHED = "MATCHED"
 STATUS_CLOSE = "CLOSE"
 STATUS_UNSOURCED = "UNSOURCED"
 
-# A percentage: "93.0%", "92.7 %"
 _PERCENT = re.compile(r"(\d+(?:\.\d+)?)\s*%")
-# A correlation, in either markdown math or plain text: "ρ = 0.968", "$\\rho = -0.084$"
 _CORRELATION = re.compile(r"(?:ρ|\\rho)\s*=\s*(-?\d+(?:\.\d+)?)")
-# A p-value in the rendering `format_statistical_claim` produces:
-# "p = 1.57 × 10⁻⁷³". The superscript digits are translated, not parsed.
 _PVALUE_SCIENTIFIC = re.compile(
     r"p\s*[=<>]\s*(\d+(?:\.\d+)?)\s*[×x]\s*10\s*\^?\s*([⁻⁺-]?[⁰¹²³⁴⁵⁶⁷⁸⁹0-9]+)"
 )
-# A p-value: "p = 1.57e-73", "p < 0.0001", "p = 0.012"
 _PVALUE = re.compile(r"p\s*[=<>]\s*(\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
-# A count of things: "1,538 papers", "586 papers", "304 papers"
 _COUNT = re.compile(r"(\d[\d,]*)\s+(?:papers|titles|records|studies|documents)\b")
-# A bare decimal in prose — the weakest signal, only used when nothing else
-# matched. The sign is kept: dropping it made `-0.5` match a stored `+0.5`, and a
-# false match endorses a claim while a false miss only asks someone to look.
-_BARE = re.compile(r"(?<![\w.])(-?\d+\.\d+)")
+_BARE = re.compile(r"(?<![\w.])(-?\d+\.\d+(?:[eE][-+]?\d+)?)")
 
-# Numbers that are structural references, not findings: "§3.13", "Table 2.1",
-# "Section 3.2", "phase 0.5". Reporting these as unsourced figures buries the
-# real findings in noise — the first run produced 131 bogus "close" matches
-# from section numbers alone.
 _STRUCTURAL_REF = re.compile(
-    r"(?:§|\\S|Section|Sect\.|Table|Figure|Fig\.|Algorithm|Chapter|phase|Phase)"
+    r"(?:§|\\S|Section|Sect\.|Table|Figure|Fig\.|Algorithm|Chapter|Equation|Eq\.|Phase)"
     r"\s*(\d+(?:\.\d+)*)",
     re.IGNORECASE,
 )
-# Numbered markdown headings: "## 2.1 Bi-encoder Background". Without this the
-# heading numbers are extracted as findings — they have no § prefix to filter on.
 _HEADING = re.compile(r"^#{1,6}\s+\d+(?:\.\d+)+", re.MULTILINE)
-# Markdown table separator rows: "| ----: | ----: |"
 _TABLE_RULE = re.compile(r"^\s*\|[\s:|-]+\|\s*$", re.MULTILINE)
 
 
@@ -125,15 +111,10 @@ def extract_claims(text: str) -> List[NumericClaim]:
     def overlaps(start: int, end: int) -> bool:
         return any(start < e and end > s for s, e in taken)
 
-    # Reserve the spans of structural references first, so no later pattern can
-    # claim a section number as a finding.
     for pattern in (_STRUCTURAL_REF, _HEADING, _TABLE_RULE):
         for match in pattern.finditer(text):
             taken.append(match.span())
 
-    # Order matters: the first pattern to claim a span wins, so the superscript
-    # form is tried before the plain one, which would otherwise take "p = 1.57"
-    # and leave the exponent behind.
     patterns = [
         (_PERCENT, "percent", _plain),
         (_CORRELATION, "correlation", _plain),
@@ -204,8 +185,16 @@ def _decimals(value: float) -> int:
 
     This drives the comparison: a figure written as 92.7 must be checked at one
     decimal place, not against every nearby float.
+
+    The count comes from ``repr`` — the shortest text that round-trips the float
+    — expanded out of scientific notation. Above about 1e16 and below 1e-4,
+    ``repr`` switches to ``1.57e-73``, and splitting that on the ``.`` counts the
+    exponent as decimals: 6 places, so the target rounded to ``0.0`` and the
+    p-value matched any stored zero. ``Decimal`` holds the same digits while
+    ``format(..., "f")`` renders them positionally, so a value of 92.7 still
+    counts one place rather than the 49 an exact binary expansion would.
     """
-    text = repr(float(value))
+    text = format(Decimal(repr(float(value))), "f")
     if "." not in text:
         return 0
     return len(text.split(".")[1].rstrip("0"))
@@ -245,7 +234,6 @@ def verify_numbers(
         decimals = _decimals(claim.value)
         target = round(claim.value, decimals)
 
-        # A percentage may be stored either way: 92.7 in the text, 0.927 in JSON.
         scales = (1.0, 100.0) if claim.kind == "percent" else (1.0,)
 
         exact: Optional[float] = None

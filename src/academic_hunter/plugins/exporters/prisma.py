@@ -1,11 +1,20 @@
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 from academic_hunter.core.infra.atomic import write_json_atomically
+from academic_hunter.core.models.citations import citation_summary
 
 from .base import BaseExporter, ExportContext
 
 logger = logging.getLogger("academic_hunter.exporters")
+
+
+def _citation_weight(settings: Dict[str, Any]) -> Any:
+    """The citation weight in force, defaulted the way the fusion defaults it."""
+    weights = settings.get("fusion_weights")
+    if not isinstance(weights, dict):
+        return 0.0
+    return weights.get("citation", 0.0)
 
 
 def flow_counts(stats: Dict[str, Any]) -> Dict[str, Any]:
@@ -77,9 +86,6 @@ class PrismaExporter(BaseExporter):
         run_dir = self._get_run_dir(timestamp, output_dir)
         prisma_file = run_dir / f"FLUXO_PRISMA_{timestamp}.md"
 
-        # Machine-readable companion to the PRISMA markdown. The markdown is for
-        # humans; downstream consumers (article outline generation, reproducibility
-        # audits) need the same numbers without parsing prose out of a report.
         stats_file = run_dir / f"run_stats_{timestamp}.json"
         write_json_atomically(stats_file, {
             "timestamp": timestamp,
@@ -89,14 +95,16 @@ class PrismaExporter(BaseExporter):
             "excluded_anchors": excluded_anchors,
             "excluded_technical_score": excluded_tech,
             "included_final": final,
-            # Empty when the opt-in full-text step did not run. SLR methodology
-            # requires reporting how many full texts were not obtained, and why
-            # — a count that is absent is different from one that is zero.
+            "inclusion_predicate": stats.get("inclusion_predicate"),
+            "score_distribution": stats.get("score_distribution"),
             "full_text": stats.get("full_text", {}),
             "exclusions_by_source": stats.get("exclusions_by_source", {}),
+            "unavailable_sources": stats.get("unavailable_sources", {}),
+            "blocked_sources": stats.get("blocked_sources", []),
             "settings": {
                 "start_year": settings.get("start_year"),
                 "min_relevance_score": settings.get("min_relevance_score"),
+                "min_inclusion_score": settings.get("min_inclusion_score"),
                 "limit_per_query": settings.get("limit_per_query"),
             },
             "anchors": sorted(anchors) if isinstance(anchors, dict) else anchors,
@@ -131,13 +139,87 @@ graph TD
     H -->|Passed: {final}| J[Final Studies Included in Review]:::included
 ```"""
 
+        predicate = stats.get("inclusion_predicate")
+        closure = (
+            f"{evaluated} evaluated = {excluded_tech} excluded + {final} included"
+            + ("" if counts["closes"] else "  ⚠️ does not reconcile")
+        )
+
+        coverage = citation_summary(papers)
+        backfill = stats.get("citation_backfill") or {}
+        impact = stats.get("impact") or {}
+        citation_block = (
+            f"- **Citations Recorded:** {coverage['with_count']} of {coverage['papers']} "
+            f"({coverage['reported']} reported by their source, "
+            f"{coverage['resolved']} filled in by a lookup)\n"
+            f"- **Citations Not Recorded:** {coverage['confirmed_zero']} confirmed zero by a "
+            f"source, {coverage['unresolved']} unresolved, "
+            f"{coverage['without_identifier']} with no identifier to ask about, "
+            f"{coverage['not_asked']} never asked\n"
+        )
+        if backfill:
+            citation_block += (
+                f"- **Citation Backfill:** {backfill.get('papers_recovered', 0)} counts "
+                f"recovered over {backfill.get('requests', 0)} batched request(s) for "
+                f"{backfill.get('papers_asked', 0)} papers\n"
+            )
+        citation_block += (
+            f"- **Citation Weight:** {_citation_weight(settings)} "
+            "(0 means citations do not affect `Relevance_Score`)\n"
+        )
+        if impact:
+            citation_block += (
+                f"- **Impact Band:** {impact.get('cutoff', 0):g}+ citations, the "
+                f"{impact.get('percentile')}th percentile of this run's "
+                f"{impact.get('papers_measured', 0)} measured papers\n"
+            )
+
+        published = stats.get("published_version") or {}
+        published_block = ""
+        if published:
+            confirmed = published.get("promoted", 0) - published.get("promoted_on_title_alone", 0)
+            published_block = (
+                f"- **Preprints Examined:** {published.get('asked', 0)} of "
+                f"{published.get('preprints', 0)} — "
+                f"{published.get('without_identifier', 0)} without an identifier to "
+                f"be the preprint of\n"
+                f"- **Published Versions Found:** {published.get('promoted', 0)} — "
+                f"{confirmed} confirmed by a shared author, "
+                f"{published.get('promoted_on_title_alone', 0)} on the title alone; "
+                f"{published.get('unmatched', 0)} left as they were\n"
+            )
+            for entry in (published.get("promotions") or [])[:10]:
+                published_block += (
+                    f"  - *{entry.get('title', '')}* → {entry.get('venue') or 'unnamed venue'}"
+                    f" ({entry.get('year') or 'year unknown'}), `{entry.get('published_doi', '')}`\n"
+                )
+            published_block += (
+                "\nA preprint is recorded as `Likely` published, never as `Yes`: a "
+                "matching record is evidence that a published version exists, and "
+                "not evidence that anyone reviewed it. A paper with no match keeps "
+                "the venue and year it arrived with. The published DOI is reported "
+                "here and not written into `DOI`, which is this run's identity for "
+                "the paper.\n"
+            )
+
         config_metadata = f"""## 🔎 Reproducibility Metadata
 - **Start Year Filter:** {settings.get('start_year', 2021)}
-- **Minimum Relevance Score:** {settings.get('min_relevance_score', 5.0)}
+- **Inclusion Predicate:** `{predicate}`{"" if predicate else " (not recorded by this run)"}
+- **Technical Evaluation:** {closure}
 - **Title Multiplier Bonus:** {settings.get('title_multiplier', 1.5)}x
 - **Score Precision:** {settings.get('score_precision', 1)} decimal place(s)
 - **Grid Anchors:** {list(anchors.keys())}
 - **Grid Technical Domains:** {list(tech_strings.keys())}
+{citation_block}{published_block}
+The inclusion predicate is the criterion, stated as applied: a paper is in the
+review when its own weighted tally of the configured domain terms reaches the
+threshold. It is a property of the paper, so the same paper is included by two
+runs of the same configuration. `Relevance_Score` is the run's ordering and is
+reported separately in the results table; it is not the inclusion criterion.
+
+A citation count is listed with the source accountable for it. A `0` recorded as
+confirmed by a source and a `0` no source could answer for are different facts,
+and only the first is a measurement.
 """
 
         exclusion_table = """### 📊 Exclusions by Database Source
@@ -161,7 +243,6 @@ graph TD
         else:
             query_history_md += "*No queries recorded (mock run or empty search).*\n"
 
-        # Build Consensus & Rigor Statistics Tables
         consensus_counts = {}
         peer_review_counts = {}
         for paper in papers:
@@ -192,17 +273,13 @@ graph TD
             f.write(f"- **Duplicates Removed:** {duplicates}\n")
             f.write(f"- **Excluded (Publication Year < {settings.get('start_year', 2021)}):** {excluded_year}\n")
             f.write(f"- **Excluded (No Industry Anchors):** {excluded_anchors}\n")
-            f.write(f"- **Excluded (Low Relevance Score):** {excluded_tech}\n")
+            f.write(f"- **Excluded (Below the Inclusion Predicate):** {excluded_tech}\n")
             f.write(f"- **Final Included:** {final}\n\n")
 
-            # Only present when the opt-in step ran. SLR methodology requires
-            # saying how many full texts were *not* obtained, and "no OA copy"
-            # and "the download broke" are different findings.
             full_text = stats.get("full_text") or {}
             if full_text:
                 f.write("### Full Text Retrieval\n\n")
                 f.write(f"- **Obtained:** {full_text.get('obtained', 0)}\n")
-                # Not a failure to obtain: the corpus has the text already.
                 if full_text.get("already_indexed"):
                     f.write(
                         "- **Already indexed (not re-fetched):** "

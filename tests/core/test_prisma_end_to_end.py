@@ -19,8 +19,6 @@ CONFIG = {
     "technical_weights": {"blockchain": 5.0, "latency": 3.0, "consensus": 2.0},
 }
 
-#: `Passed` aparece três vezes no diagrama — uma por etapa de triagem — então a
-#: ordem é o que identifica cada uma.
 PASSED_STAGES = ("temporal filter", "anchor screening", "technical evaluation")
 
 
@@ -37,8 +35,6 @@ def paper(title, abstract, citations=0):
     }
 
 
-#: Metade passa no filtro de âncora; entre esses, a densidade técnica varia o
-#: bastante para o limiar de score cortar alguns.
 PAPERS = [
     paper("Blockchain latency in payment rails", "Blockchain latency consensus throughput.", 12),
     paper("Blockchain consensus protocols", "Blockchain consensus and latency trade-offs.", 9),
@@ -113,8 +109,6 @@ def test_the_stages_above_it_chain_without_gaps(run_output):
     passed = [value for label, value in edges if label == "Passed"]
     after_year, evaluated, _ = passed
 
-    # The temporal edge is labelled with the cutoff year, so it is matched by
-    # prefix rather than by name.
     out_of_range = next(value for label, value in edges if label.startswith("Published <"))
 
     assert after_year == evaluated + labels["No Core Anchors"]

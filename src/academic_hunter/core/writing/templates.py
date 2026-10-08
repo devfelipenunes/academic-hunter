@@ -18,15 +18,12 @@ Those manuscripts are not in this repository — it publishes the software only.
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-# What a section can be filled from. The outline generator resolves these
-# against the available run data; anything left unresolved becomes an explicit
-# TODO marker rather than an invented number.
-DATA_RUN_STATS = "run_stats"            # identified / duplicates / excluded / included
-DATA_SOURCE_BREAKDOWN = "source_breakdown"  # counts per source
+DATA_RUN_STATS = "run_stats"
+DATA_SOURCE_BREAKDOWN = "source_breakdown"
 DATA_EXCLUSIONS = "exclusions_by_source"
-DATA_CORPUS = "corpus"                  # papers retrieved in this run
-DATA_EXPERIMENTS = "experiments"        # results/*.json
-DATA_PROSE = "prose"                    # nothing to inject — agent writes it
+DATA_CORPUS = "corpus"
+DATA_EXPERIMENTS = "experiments"
+DATA_PROSE = "prose"
 
 
 @dataclass(frozen=True)
@@ -37,7 +34,7 @@ class Section:
     purpose: str
     target_words: int = 0
     data: List[str] = field(default_factory=list)
-    number: Optional[str] = None  # "1", "2.1", ... — None when unnumbered
+    number: Optional[str] = None
     subsections: List["Section"] = field(default_factory=list)
 
 

@@ -10,27 +10,21 @@ from academic_hunter import AcademicHunter
 
 class TestAcademicRigor(unittest.TestCase):
     def setUp(self):
-        # Create a temporary directory
         self.test_dir = tempfile.mkdtemp()
         self.config_path = Path(self.test_dir) / 'config.json'
-        
-        # Default test configuration
+
         config = {
             "settings": {"title_multiplier": 1.5, "score_precision": 1},
             "anchors": {},
             "technical_strings": {},
             "technical_weights": {}
         }
-        
-        # Write the config to the temporary file
+
         self.config_path.write_text(json.dumps(config))
-        
-        # Initialize AcademicHunter with the temporary config
-        # Also redirect output_dir to temp to avoid cluttering workspace
+
         self.hunter = AcademicHunter(config_path=str(self.config_path), output_dir=self.test_dir)
 
     def tearDown(self):
-        # Remove the temporary directory after the test
         shutil.rmtree(self.test_dir)
 
     def test_generate_slug(self):
@@ -55,17 +49,18 @@ class TestAcademicRigor(unittest.TestCase):
             "excluded_technical_score": 0,
             "excluded_year": 0,
             "excluded_anchors": 0,
-            "excluded_technical_score": 0,
             "included_final": 0,
             "reranked": 0,
             "full_text": {},
-            "exclusions_by_source": {}
+            "citation_backfill": {},
+            "published_version": {},
+            "exclusions_by_source": {},
+            "unavailable_sources": {}
         }
         self.assertEqual(self.hunter.stats, expected_stats)
 
     def test_deduplication_and_stats(self):
         """Verify title-slug deduplication, citation updates, and PRISMA stats."""
-        # Mock raw results from two different sources with same title but different citations
         mock_results = [
             {
                 "Title": "Duplicate Paper",
@@ -96,12 +91,9 @@ class TestAcademicRigor(unittest.TestCase):
             }
         ]
         
-        # We need to manually trigger the logic that would be in run()
-        # For this test, we'll mock the internal state and calls
         self.hunter.anchors = {"cat": ["duplicate", "low"]}
         self.hunter.settings["min_relevance_score"] = 5.0
         self.hunter.tech_weights = {"duplicate": 10.0, "low": 1.0}
-        # self.hunter.load_config = lambda: None # Skip actual loading - already initialized in setUp
         self.hunter.compiled_patterns = {
             "duplicate": (re.compile(r'\bduplicate\b'), 10.0),
             "low": (re.compile(r'\blow\b'), 1.0)
@@ -111,8 +103,6 @@ class TestAcademicRigor(unittest.TestCase):
             "low": re.compile(r'\blow\b')
         }
 
-        # Instead of calling run(), we'll implement a miniature version of the deduplication loop
-        # to verify the logic we intend to put in run().
         consolidated = {}
         
         for paper in mock_results:
@@ -128,7 +118,6 @@ class TestAcademicRigor(unittest.TestCase):
                     consolidated[dedup_id]['Citations'] = paper['Citations']
                 continue
             
-            # Simplified score and anchor check for test
             paper["Relevance_Score"] = self.hunter.calculate_score(title, paper.get('Abstract', ''))
             if paper["Relevance_Score"] >= self.hunter.settings["min_relevance_score"]:
                 consolidated[dedup_id] = paper
@@ -136,7 +125,6 @@ class TestAcademicRigor(unittest.TestCase):
             else:
                 self.hunter.stats["excluded_technical_score"] += 1
 
-        # Assertions
         self.assertEqual(len(consolidated), 1)
         self.assertEqual(consolidated[self.hunter.generate_slug("Duplicate Paper")]['Citations'], 20)
         self.assertEqual(self.hunter.stats["identified"]["SourceA"], 2)
@@ -152,11 +140,10 @@ class TestAcademicRigor(unittest.TestCase):
             {"Title": "Low Score Paper", "Abstract": "X", "Source": "SourceB", "Citations": 0}
         ]
         self.hunter.anchors = {"cat": ["X"]}
-        self.hunter.settings["min_relevance_score"] = 10.0 # Force exclusion
+        self.hunter.settings["min_relevance_score"] = 10.0
         self.hunter.compiled_patterns = {"X": (re.compile(r"\bX\b"), 1.0)}
         self.hunter.anchor_patterns = {"X": re.compile(r"\bX\b")}
 
-        # We will test the logic that should be in run()
         seen_ids = set()
         consolidated = {}
         self.hunter.stats = {"identified": {}, "duplicates_removed": 0, "excluded_technical_score": 0, "included_final": 0}
@@ -248,9 +235,10 @@ class TestAcademicRigor(unittest.TestCase):
             "excluded_year": 0,
             "excluded_anchors": 6,
             "excluded_technical_score": 4,
-            "included_final": 15
+            "included_final": 15,
+            "inclusion_predicate": "_kw_score >= 5",
         }
-        
+
         timestamp = "TEST_TS"
         self.hunter.generate_prisma_report(timestamp)
         
@@ -265,10 +253,55 @@ class TestAcademicRigor(unittest.TestCase):
         self.assertIn("Duplicates Removed:** 5", content)
         self.assertIn("Excluded (Publication Year < 2021):** 0", content)
         self.assertIn("Excluded (No Industry Anchors):** 6", content)
-        self.assertIn("Excluded (Low Relevance Score):** 4", content)
+        self.assertIn("Excluded (Below the Inclusion Predicate):** 4", content)
         self.assertIn("Final Included:** 15", content)
         self.assertIn("```mermaid", content)
         self.assertIn("graph TD", content)
+
+    def test_the_report_declares_the_predicate_and_what_it_admitted(self):
+        """A reviewer has to be able to see the criterion, not infer it.
+
+        The report used to name a threshold on ``min_relevance_score`` -- a
+        number the cut was no longer made with, on a scale normalised inside the
+        run. The criterion is stated as applied, with the count it produced.
+        """
+        self.hunter.stats = {
+            "identified": {"ArXiv": 10, "Crossref": 20},
+            "duplicates_removed": 5,
+            "excluded_year": 0,
+            "excluded_anchors": 6,
+            "excluded_technical_score": 4,
+            "included_final": 15,
+            "inclusion_predicate": "_kw_score >= 5",
+        }
+
+        timestamp = "TEST_PREDICATE"
+        self.hunter.generate_prisma_report(timestamp)
+
+        content = (Path(self.test_dir) / f"FLUXO_PRISMA_{timestamp}.md").read_text()
+        self.assertIn("**Inclusion Predicate:** `_kw_score >= 5`", content)
+        self.assertIn("19 evaluated = 4 excluded + 15 included", content)
+        self.assertNotIn("does not reconcile", content)
+
+    def test_a_flow_that_does_not_close_says_so_in_the_report(self):
+        """The diagram and the table are read as one document, so the
+        disagreement has to be visible in the document and not only in the log."""
+        self.hunter.stats = {
+            "identified": {"ArXiv": 10, "Crossref": 20},
+            "duplicates_removed": 5,
+            "excluded_year": 0,
+            "excluded_anchors": 6,
+            "excluded_technical_score": 4,
+            "included_final": 0,
+            "inclusion_predicate": "_kw_score >= 5",
+        }
+
+        timestamp = "TEST_HOLE"
+        self.hunter.generate_prisma_report(timestamp)
+
+        content = (Path(self.test_dir) / f"FLUXO_PRISMA_{timestamp}.md").read_text()
+        self.assertIn("19 evaluated = 4 excluded + 0 included", content)
+        self.assertIn("does not reconcile", content)
 
 if __name__ == "__main__":
     unittest.main()

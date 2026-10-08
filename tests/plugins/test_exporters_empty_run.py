@@ -82,3 +82,79 @@ def test_the_empty_csv_still_parses_as_a_dataset(tmp_path):
     frame = pd.read_csv(exported_paths(tmp_path)["csv"])
     assert len(frame) == 0
     assert "Title" in frame.columns
+
+
+def test_the_empty_csv_keeps_the_columns_of_a_populated_one(tmp_path):
+    """O caminho vazio escrevia ``Database_Count`` em primeiro lugar e o povoado
+    escrevia-o em último, logo o cabeçalho mudava com o resultado da corrida: um
+    leitor que indexa colunas por posição lia dois datasets diferentes conforme o
+    run tivesse qualificado algo ou não.
+    """
+    import pandas as pd
+
+    from academic_hunter.core.models import Paper
+
+    populated = tmp_path / "populated"
+    populated.mkdir()
+    CsvExporter().export(context(populated, [Paper(dict(p)) for p in EXCLUDED]))
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    CsvExporter().export(context(empty, []))
+
+    populated_columns = list(pd.read_csv(exported_paths(populated)["csv"]).columns)
+    empty_columns = list(pd.read_csv(exported_paths(empty)["csv"]).columns)
+
+    assert empty_columns == populated_columns, (
+        "the header of an empty run is not the header of a run with results: "
+        f"{empty_columns} != {populated_columns}"
+    )
+
+
+def test_a_paper_missing_a_derived_field_does_not_take_the_dataset_with_it(tmp_path):
+    """``df['Source']`` and the sort key are columns the *record* may not have.
+
+    A paper that never went through normalisation — the shape a caller gets
+    from ``export_report`` over a hand-built collection — raised ``KeyError``
+    here, and the CSV for the whole run disappeared.
+    """
+    import pandas as pd
+
+    CsvExporter().export(context(tmp_path, [{"Title": "Only a title"}]))
+
+    frame = pd.read_csv(exported_paths(tmp_path)["csv"])
+    assert list(frame["Title"]) == ["Only a title"]
+    assert frame["Database_Count"].iloc[0] == 1
+
+
+def test_a_failing_exporter_is_not_swallowed(tmp_path):
+    """The run ended "successfully" with an artifact missing and nothing said.
+
+    ``export_results`` logged the exception and moved on, so a dataset that
+    could not be written left its path empty and no caller ever knew.
+    """
+    from types import SimpleNamespace
+
+    import pytest
+
+    from academic_hunter.app.exporters import HunterExporterMixin
+
+    class Broken:
+        is_prisma = False
+
+        def export(self, ctx):
+            raise RuntimeError("no space left on device")
+
+    class Host(HunterExporterMixin):
+        exporters = [Broken()]
+        consolidated_results = {}
+        stats = {}
+        config = SimpleNamespace(settings={}, anchors={}, tech_strings={})
+        state = SimpleNamespace(query_history=[])
+        output_dir = tmp_path
+
+    hunter = Host()
+
+    with pytest.raises(RuntimeError, match="no space left"):
+        hunter.export_results(TIMESTAMP)
+

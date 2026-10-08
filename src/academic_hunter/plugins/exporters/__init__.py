@@ -1,8 +1,8 @@
-from .csv import CsvExporter
 from .bibtex import BibtexExporter
-from .ris import RisExporter
+from .csv import CsvExporter
 from .markdown_elite import MarkdownEliteExporter
 from .prisma import PrismaExporter
+from .ris import RisExporter
 
 EXPORTERS = [
     CsvExporter(),

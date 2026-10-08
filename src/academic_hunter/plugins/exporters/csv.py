@@ -1,29 +1,36 @@
 import logging
+
 import pandas as pd
-from typing import Any
 
 from academic_hunter.core.models.schema import FIELD_SCHEMA
+from academic_hunter.core.models.utils import neutralise_formula, paper_order_key
 
 from .base import BaseExporter, ExportContext
 
 logger = logging.getLogger("academic_hunter.exporters")
 
-_FORMULA_PREFIXES = ("=", "+", "-", "@")
-
-
-def neutralise_formula(value: Any) -> Any:
-    """Defuse a cell a spreadsheet would evaluate as a formula.
-
-    A title or abstract starting with ``=``, ``+``, ``-`` or ``@`` runs as a
-    formula when the file is opened in Excel or LibreOffice. These fields come
-    from third-party APIs, so the content is not ours to trust.
-    """
-    if isinstance(value, str) and value.startswith(_FORMULA_PREFIXES):
-        return "'" + value
-    return value
-
 
 class CsvExporter(BaseExporter):
+    """The dataset, one row per study.
+
+    Two columns are derived rather than copied — ``Database_Count`` from
+    ``Source``, and the row order from ``paper_order_key``. The schema knows what
+    every field defaults to, and filling from it is what keeps one partially
+    normalised paper from taking the whole dataset with it.
+
+    The rows are ordered before the frame is built rather than sorted afterwards:
+    ``DataFrame.sort_values`` defaults to an unstable quicksort, so the relative
+    order of papers sharing a ``Relevance_Score`` was undefined — and it stayed
+    undefined even with a stable sort, because the order the papers arrive in is
+    itself a product of concurrent mining. 287 of the 310 papers of the last run
+    sat inside a tie, which is why two runs of one corpus disagreed on 214 rows.
+
+    Both paths write the same header. The empty one used to put
+    ``Database_Count`` first and the populated one put it last, so a reader that
+    takes columns by position read a different dataset depending on whether the
+    run qualified anything.
+    """
+
     def export(self, context: ExportContext) -> None:
         papers = context.papers
         timestamp = context.timestamp
@@ -33,11 +40,7 @@ class CsvExporter(BaseExporter):
         csv_file = run_dir / f"academic_dataset_{timestamp}.csv"
 
         if not papers:
-            # Written empty, not skipped: a run that qualified nothing has to
-            # leave its own dataset behind, or the readers fall back to an older
-            # run's file — or to the unfiltered set this run wrote before the
-            # threshold was applied, which is the same defect wearing a hat.
-            pd.DataFrame(columns=["Database_Count", *FIELD_SCHEMA]).to_csv(
+            pd.DataFrame(columns=[*FIELD_SCHEMA, "Database_Count"]).to_csv(
                 csv_file, index=False, encoding="utf-8"
             )
             logger.info("No studies qualified; empty dataset: %s", csv_file)
@@ -47,13 +50,14 @@ class CsvExporter(BaseExporter):
             if not source_str: return 1
             return len([s.strip() for s in source_str.split(',') if s.strip()])
 
-        df = pd.DataFrame(papers)
+        df = pd.DataFrame(sorted(papers, key=paper_order_key))
+        for field, spec in FIELD_SCHEMA.items():
+            if field not in df.columns:
+                df[field] = spec["default"]
         df['Database_Count'] = df['Source'].apply(get_db_count)
 
         for column in df.columns:
             df[column] = df[column].map(neutralise_formula)
-
-        df = df.sort_values(by='Relevance_Score', ascending=False)
 
         df.to_csv(csv_file, index=False, encoding='utf-8')
         logger.info("Dataset: %s", csv_file)

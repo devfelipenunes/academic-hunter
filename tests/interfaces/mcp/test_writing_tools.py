@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from academic_hunter.core.writing import paper_citation_key
 from academic_hunter.interfaces.mcp.exceptions import CitationError, WritingError
 from academic_hunter.interfaces.mcp.tools.writing import (
     outline_paper,
@@ -79,9 +80,9 @@ async def test_each_paper_type_produces_its_own_structure(mock_ctx, project):
     software = await outline_paper(mock_ctx, paper_type="software")
     survey = await outline_paper(mock_ctx, paper_type="survey")
 
-    assert "## 2 Method" in method
-    assert "## Statement of Need" in software
-    assert "## 3 Taxonomy" in survey
+    assert "# 2 Method" in method
+    assert "# Statement of Need" in software
+    assert "# 3 Taxonomy" in survey
 
 
 async def test_unknown_paper_type_raises_with_available_options(mock_ctx, project):
@@ -107,7 +108,7 @@ async def test_run_without_stats_warns_but_still_produces_structure(mock_ctx, pr
     _make_run(project, "run_20260101_120000", with_stats=False)
     result = await outline_paper(mock_ctx, paper_type="method", topic="T")
 
-    assert "## 1 Introduction" in result
+    assert "# 1 Introduction" in result
     assert "predates structured run statistics" in result
     mock_ctx.warning.assert_awaited()
 
@@ -125,9 +126,6 @@ async def test_topic_falls_back_to_run_anchors(mock_ctx, project):
     assert "Blockchain, Interoperability" in result
 
 
-# ── paper_context ────────────────────────────────────────────────────────────
-
-
 def _fake_store(titles):
     store = MagicMock()
     store.query.return_value = [
@@ -139,12 +137,18 @@ def _fake_store(titles):
 
 
 async def test_paper_context_formats_citable_keys(mock_ctx, monkeypatch):
+    """The key is the one the `.bib` will carry, so it is read, not hard-coded."""
     monkeypatch.setattr(
         "academic_hunter.interfaces.mcp.tools.writing._get_vector_store",
         lambda: _fake_store(["Echo Embeddings for Retrieval"]),
     )
     result = await paper_context(mock_ctx, topic="embeddings")
-    assert "`echo2024`" in result
+
+    expected = paper_citation_key(
+        {"title": "Echo Embeddings for Retrieval", "year": 2024, "doi": "10.1/0"}
+    )
+    assert f"`{expected}`" in result
+    assert expected.startswith("echo2024"), expected
     assert "Echo Embeddings for Retrieval" in result
 
 
@@ -172,9 +176,6 @@ async def test_paper_context_clamps_top_k(mock_ctx, monkeypatch):
     )
     await paper_context(mock_ctx, topic="x", top_k=9999)
     assert store.query.call_args.kwargs["top_k"] == 50
-
-
-# ── verify_citations ─────────────────────────────────────────────────────────
 
 
 async def test_verify_citations_reports_when_there_is_nothing_to_check(mock_ctx):
@@ -214,13 +215,6 @@ async def test_verify_citations_marks_unverifiable_without_a_bibliography(
     result = await verify_citations(mock_ctx, text="See [@something2024].")
     assert "unverifiable" in result.lower()
     assert "NOT_FOUND" not in result
-
-
-# ── verify_numbers ──────────────────────────────────────────────────────────
-#
-# The body of this tool had no test at all: `core/writing/numbers.py` sat at 96%
-# and looked validated, while the layer that turns its verdict into something the
-# agent reads never ran.
 
 
 async def test_verify_numbers_matches_a_figure_the_results_contain(mock_ctx, project):

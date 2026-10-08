@@ -10,11 +10,9 @@ from academic_hunter.core.writing import (
     format_table,
     get_template,
     list_templates,
+    paper_citation_key,
 )
 from academic_hunter.core.writing.outline import PROSE_MARKER, RunData
-
-
-# ── templates ────────────────────────────────────────────────────────────────
 
 
 def test_three_templates_exist():
@@ -36,7 +34,6 @@ def test_method_template_matches_the_reference_manuscript():
     assert "Method" in names
     assert "Related Work" in names
     assert names[-1] == "Conclusion"
-    # Related Work sits after Experiments in the method paper, not before.
     assert names.index("Experiments") < names.index("Related Work")
 
 
@@ -50,9 +47,6 @@ def test_joss_template_uses_summary_not_abstract():
 def test_survey_template_declares_its_own_limitations():
     names = get_template("survey").section_names()
     assert "Limitations" in names
-
-
-# ── style: citations ─────────────────────────────────────────────────────────
 
 
 def test_citation_single():
@@ -99,7 +93,38 @@ def test_bibtex_key_is_alnum_only():
     assert key.isalnum()
 
 
-# ── style: tables ────────────────────────────────────────────────────────────
+def test_bibtex_key_reads_a_family_first_author_name():
+    """'Schoot, van de' is the same person as 'van de Schoot'."""
+    assert format_bibtex_key("Title", 2021, author="Schoot, van de") == "schoot2021"
+
+
+def test_a_paper_without_a_doi_keeps_the_bare_key():
+    paper = {"Title": "Echo chambers in social media", "Year": "2024"}
+    assert paper_citation_key(paper) == "echo2024"
+
+
+def test_a_doi_separates_two_papers_that_share_a_stem_and_year():
+    """The collision the allocator used to handle by position."""
+    first = {"Title": "Echo chambers in social media", "Year": "2024", "DOI": "10.1/echo-a"}
+    second = {"Title": "Echo in the courtroom", "Year": "2024", "DOI": "10.1/echo-b"}
+
+    assert paper_citation_key(first) != paper_citation_key(second)
+
+
+def test_the_same_doi_always_gives_the_same_suffix():
+    """Two callers with no shared state must reach the same key."""
+    paper = {"Title": "Echo", "Year": "2024", "DOI": "10.1/echo-a"}
+    spelled_out = {**paper, "DOI": "https://doi.org/10.1/ECHO-A"}
+
+    assert paper_citation_key(paper) == paper_citation_key(spelled_out)
+
+
+def test_the_corpus_lower_case_fields_work_too():
+    """The vector store returns `title`/`doi`, the export rows `Title`/`DOI`."""
+    from_vector_store = {"title": "Echo", "year": "2024", "doi": "10.1/echo-a"}
+    from_export = {"Title": "Echo", "Year": "2024", "DOI": "10.1/echo-a"}
+
+    assert paper_citation_key(from_vector_store) == paper_citation_key(from_export)
 
 
 def test_table_renders_caption_above_and_right_aligns_numbers():
@@ -142,9 +167,6 @@ def test_table_rejects_empty_headers():
         format_table(headers=[], rows=[])
 
 
-# ── style: equations and statistics ──────────────────────────────────────────
-
-
 def test_equation_is_block_form_with_where_clause():
     out = format_equation(r"s = \sqrt{\sigma} \times 10", where=r"$\sigma$ is the cosine")
     assert out.startswith("$$")
@@ -154,9 +176,6 @@ def test_equation_is_block_form_with_where_clause():
 def test_equation_does_not_double_the_where_keyword():
     out = format_equation("x = 1", where="where x is a value")
     assert out.count("where") == 1
-
-
-# ── outline ──────────────────────────────────────────────────────────────────
 
 
 def _run_data(**overrides) -> RunData:
@@ -189,7 +208,7 @@ def test_outline_contains_every_section_of_the_template():
     template = get_template("survey")
     out = build_outline(template, _run_data())
     for name in template.section_names():
-        assert f"## " in out and name in out
+        assert "## " in out and name in out
 
 
 def test_outline_injects_real_screening_numbers():
@@ -199,27 +218,53 @@ def test_outline_injects_real_screening_numbers():
     assert "Duplicates removed | 108" in out
 
 
+def headings(outline):
+    """``(level, label, body)`` per heading — by level, not by substring.
+
+    ``"# 2 Method" in outline`` is true of ``"## 2 Method"`` as well, so a
+    containment check on the marker alone cannot tell a section from its own
+    subsection, which is the only thing the level is there to say.
+    """
+    blocks = []
+    for line in outline.splitlines():
+        if line.startswith("#") and " " in line:
+            level = len(line) - len(line.lstrip("#"))
+            blocks.append([level, line[level:].strip(), []])
+        elif blocks:
+            blocks[-1][2].append(line)
+    return [(level, label, "\n".join(body)) for level, label, body in blocks]
+
+
 def test_outline_marks_every_leaf_section_for_prose():
     """A table without an interpretation paragraph is data, not an article."""
     template = get_template("method")
     out = build_outline(template, _run_data())
+    rendered = {(level, label): body for level, label, body in headings(out)}
 
-    def leaves(sections):
+    def leaves(sections, depth=1):
         for s in sections:
             if s.subsections:
-                yield from leaves(s.subsections)
+                yield from leaves(s.subsections, depth + 1)
             else:
-                yield s
+                yield s, depth
 
-    for section in leaves(template.sections):
-        # Find the section's heading, then confirm a marker follows before the next heading.
-        idx = out.find(f"## {section.number} {section.name}" if section.number
-                       else f"## {section.name}")
-        assert idx != -1, f"heading for {section.name} not found"
-        rest = out[idx:]
-        next_heading = rest.find("\n## ", 3)
-        body = rest if next_heading == -1 else rest[:next_heading]
-        assert PROSE_MARKER in body, f"{section.name} has no prose marker"
+    for section, depth in leaves(template.sections):
+        label = f"{section.number} {section.name}" if section.number else section.name
+        assert (depth, label) in rendered, f"heading for {section.name} not found at level {depth}"
+        assert PROSE_MARKER in rendered[(depth, label)], f"{section.name} has no prose marker"
+
+
+def test_a_subsection_sits_below_the_section_that_owns_it():
+    """Every heading was `##`, so the nesting the template declares was flat."""
+    template = get_template("method")
+    out = build_outline(template, _run_data())
+
+    top = [s for s in template.sections if s.subsections][0]
+    child = top.subsections[0]
+
+    levels = {label: level for level, label, _ in headings(out)}
+    assert levels[f"{top.number} {top.name}"] == 1
+    assert levels[f"{child.number} {child.name}"] == 2
 
 
 def test_outline_never_injects_score_numbers():
@@ -235,5 +280,5 @@ def test_outline_never_injects_score_numbers():
 def test_outline_handles_empty_run_data():
     """An outline for a run with no data must still be produced, not crash."""
     out = build_outline(get_template("survey"), RunData(topic="Empty"))
-    assert "## Abstract" in out
+    assert "# Abstract" in out
     assert PROSE_MARKER in out

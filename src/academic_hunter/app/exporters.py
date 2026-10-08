@@ -34,6 +34,12 @@ class HunterExporterMixin:
                 break
 
     def export_results(self, timestamp: str):
+        """Write every non-PRISMA artifact, and stop at the first failure.
+
+        The exception used to be logged and dropped, so an exporter that failed
+        left no file and reported nothing: the run ended "successfully" with an
+        artifact missing, and the log line was the only trace of it.
+        """
         ctx = self._export_context(timestamp)
         for exporter in self.exporters:
             if not getattr(exporter, "is_prisma", False):
@@ -41,3 +47,4 @@ class HunterExporterMixin:
                     exporter.export(ctx)
                 except Exception as e:
                     logger.error(f"Failed to export via {exporter.__class__.__name__}: {e}")
+                    raise

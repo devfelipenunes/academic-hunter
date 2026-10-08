@@ -49,6 +49,34 @@ def test_the_stats_file_is_complete_and_parses(tmp_path):
     assert payload["identified"] == {"OpenAlex": 10}
 
 
+def test_the_artifact_says_which_sources_were_never_queried(tmp_path):
+    """``CORE: 0`` read as a source that was asked and found nothing.
+
+    It was never asked: the endpoint needs a key the config did not carry. The
+    count of what a source returned cannot tell those apart, so the run records
+    the reason next to it -- and the sources a 429 blocked mid-run, which are a
+    third case again.
+    """
+    ctx = context(tmp_path)
+    ctx.stats["unavailable_sources"] = {"CORE": "no API key. Set CORE_API_KEY"}
+    ctx.stats["blocked_sources"] = ["api.semanticscholar.org"]
+
+    PrismaExporter().export(ctx)
+
+    payload = json.loads(stats_file(tmp_path).read_text(encoding="utf-8"))
+    assert payload["unavailable_sources"] == {"CORE": "no API key. Set CORE_API_KEY"}
+    assert payload["blocked_sources"] == ["api.semanticscholar.org"]
+
+
+def test_a_run_that_could_query_everything_writes_empty_ones(tmp_path):
+    """The keys are always there, so a reader never has to guess at their absence."""
+    PrismaExporter().export(context(tmp_path))
+
+    payload = json.loads(stats_file(tmp_path).read_text(encoding="utf-8"))
+    assert payload["unavailable_sources"] == {}
+    assert payload["blocked_sources"] == []
+
+
 def test_a_failed_write_leaves_the_previous_file_intact(tmp_path, monkeypatch):
     """The property that matters: the file is never a half-written one."""
     exporter = PrismaExporter()

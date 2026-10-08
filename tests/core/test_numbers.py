@@ -10,9 +10,6 @@ from academic_hunter.core.writing import (
 )
 
 
-# ── extraction ───────────────────────────────────────────────────────────────
-
-
 def test_extracts_percentage():
     claims = extract_claims("Overlap of 92.7% was observed.")
     assert [c.kind for c in claims] == ["percent"]
@@ -80,6 +77,17 @@ def test_claims_carry_their_sentence():
     assert "Another finding" not in context
 
 
+def test_the_context_keeps_a_decimal_figure_whole():
+    """A sentence does not end at a decimal point.
+
+    The window was cut at every `[.!?]`, so the context shown for `92.7%` began
+    at `7%` — the figure the reader is asked to judge, truncated at the dot that
+    belongs to it.
+    """
+    context = extract_claims("The ablation reached 92.7% overlap overall.")[0].context
+    assert "92.7% overlap overall" in context
+
+
 def test_claims_are_ordered_by_position():
     claims = extract_claims("First 10 papers, then 92.7% overlap.")
     assert [c.offset for c in claims] == sorted(c.offset for c in claims)
@@ -87,6 +95,27 @@ def test_claims_are_ordered_by_position():
 
 def test_no_numbers_yields_no_claims():
     assert extract_claims("This sentence has no figures in it.") == []
+
+
+def test_a_bare_scientific_number_keeps_its_exponent():
+    """Without the exponent the claim is a different number by 12 orders.
+
+    `3.2e-12` was read as `3.2`, so the figure reported to the reader — and
+    compared against the result files — was not the one the manuscript states.
+    """
+    claims = extract_claims("The decay constant was 3.2e-12 per step.")
+    assert [c.value for c in claims] == [3.2e-12]
+    assert claims[0].raw == "3.2e-12"
+
+
+def test_an_equation_reference_is_not_a_finding():
+    """`Equation 3.14` is a pointer, like `Table 2.1`.
+
+    Equation was missing from the list of structural words, so its number was
+    extracted as a bare decimal and reported as an unsourced figure.
+    """
+    assert extract_claims("As shown in Equation 3.14, the value holds.") == []
+    assert extract_claims("See Eq. 2.7 for the derivation.") == []
 
 
 def test_section_references_are_not_treated_as_findings():
@@ -103,9 +132,6 @@ def test_section_filter_does_not_swallow_real_findings():
     """The filter must only claim the pointer, not the sentence around it."""
     claims = extract_claims("In §3.13 we report 92.7% overlap.")
     assert [c.kind for c in claims] == ["percent"]
-
-
-# ── indexing ─────────────────────────────────────────────────────────────────
 
 
 def test_index_collects_nested_numbers(tmp_path):
@@ -134,9 +160,6 @@ def test_index_skips_malformed_files_without_failing(tmp_path):
 
 def test_index_of_missing_directory_is_empty(tmp_path):
     assert index_results(tmp_path / "nope") == set()
-
-
-# ── verification ─────────────────────────────────────────────────────────────
 
 
 def _claims(text):
@@ -186,6 +209,18 @@ def test_a_p_value_matches_at_its_own_magnitude():
     results = verify_numbers(_claims("The effect was p = 1.57e-73."), {1.57e-73})
     assert results[0].status == "MATCHED"
     assert results[0].claim.value == 1.57e-73
+
+
+def test_a_p_value_does_not_match_a_stored_zero():
+    """The precision of `1.57e-73` is 73 places, not the 6 its `repr` prints.
+
+    Reading the exponent as decimal places rounded the target to `0.0`, so any
+    stored zero confirmed any p-value below 1e-4 — a figure that no experiment
+    produced reported as sourced. It is a near miss, not a match.
+    """
+    results = verify_numbers(_claims("The effect was p = 1.57e-73."), {0.0, 1.0})
+    assert results[0].status == "CLOSE"
+    assert results[0].matched_value == 0.0
 
 
 def test_real_figure_still_matches_alongside_a_fabricated_one():

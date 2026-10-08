@@ -10,14 +10,15 @@ article are produced by code that can be tested, and the agent's freedom is
 confined to the prose itself.
 """
 
+import hashlib
 import re
-from typing import Iterable, List, Optional, Sequence
+from typing import Any, Iterable, List, Mapping, Optional, Sequence
+
+from ..models.utils import normalize_doi
 
 _MULTI_SPACE = re.compile(r"\s+")
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 
-# Words that make poor citation-key stems — articles and connectives that carry
-# no identifying information.
 _STOPWORDS = {
     "a", "an", "the", "on", "of", "in", "for", "and", "or", "to", "with",
     "toward", "towards", "from", "at", "by", "is", "are",
@@ -32,8 +33,6 @@ def format_citation(keys: Iterable[str]) -> str:
     Keys are emitted in the order given — the author orders them deliberately
     (usually the most relevant first), so this does not sort.
     """
-    # Strip brackets before the @ sigil: on "[@sgpt2022]" the reverse order
-    # removes the brackets but leaves the @ behind, yielding "@@sgpt2022".
     cleaned = [k.strip().strip("[]").lstrip("@").strip() for k in keys]
     cleaned = [k for k in cleaned if k]
     if not cleaned:
@@ -51,9 +50,13 @@ def format_bibtex_key(title: str, year: int | str, author: Optional[str] = None)
 
     An acronym-looking first token of a title (``MCP``, ``SGPT``, ``SIF``) is
     kept whole, matching keys like ``mcp2024`` and ``sgpt2022``.
+
+    An author is read in either order. Taking the last word assumed
+    "Given Family", so the bibliography style that writes "Family, Given" —
+    which is the one this project's own sources use — produced the given name.
     """
     if author:
-        stem = author.split()[-1]  # surname last, as in "van de Schoot"
+        stem = author.split(",")[0] if "," in author else author.split()[-1]
     else:
         words = [w for w in _MULTI_SPACE.split(title.strip()) if w]
         words = [w for w in words if _NON_ALNUM.sub("", w.lower()) not in _STOPWORDS]
@@ -65,27 +68,54 @@ def format_bibtex_key(title: str, year: int | str, author: Optional[str] = None)
     return f"{stem}{year}"
 
 
-class BibtexKeyAllocator:
-    """Hands out citation keys unique within one bibliography.
+def _field(paper: Mapping[str, Any], *names: str) -> str:
+    """The first of ``names`` the paper carries a non-empty value under."""
+    for name in names:
+        value = paper.get(name)
+        if value not in (None, ""):
+            return str(value)
+    return ""
 
-    ``format_bibtex_key`` is derived from the paper, which is what lets a tool
-    promise a key the exported ``.bib`` will contain. It is not injective: two
-    papers whose title stem and year coincide would share a key, and a citation
-    would then resolve to whichever was written last.
+
+def _doi_suffix(doi: str) -> str:
+    """A short, stable tag for one DOI.
+
+    A digest rather than the readable tail of the DOI: `10.1/echo-a` and
+    `10.2/echo-a` share a tail, and two papers sharing a key is the defect this
+    suffix exists to remove. Eight hex characters keep it bounded whatever the
+    DOI's length and punctuation, and the same DOI always yields the same tag,
+    which is what lets two independent callers agree without coordinating.
     """
+    return hashlib.sha256(normalize_doi(doi).encode("utf-8")).hexdigest()[:8]
 
-    def __init__(self) -> None:
-        self._used: set[str] = set()
 
-    def __call__(self, title: str, year, author: Optional[str] = None) -> str:
-        base = format_bibtex_key(title, year, author)
-        key = base
-        disambiguator = 1
-        while key in self._used:
-            disambiguator += 1
-            key = f"{base}-{disambiguator}"
-        self._used.add(key)
-        return key
+def paper_citation_key(paper: Mapping[str, Any]) -> str:
+    """The citation key of one paper, derived from that paper alone.
+
+    Both sides of the seam go through here: the tool that tells the agent which
+    key to cite, and the exporter that writes the bibliography. Deriving the key
+    from the paper — rather than from its position in whatever collection each
+    side happens to hold — is what lets the two agree without coordinating. An
+    allocator cannot: it disambiguates by position, and the tool sees a
+    similarity-ranked subset while the exporter sees the whole run in another
+    order, so a colliding pair came out as `echo2024` from one side and
+    `echo2024-2` from the other — a citation that resolves, to the wrong paper.
+
+    A paper with a DOI carries its tag, so `format_bibtex_key`'s collisions
+    (same stem, same year, different works) stop sharing a key. A paper without
+    one keeps the bare `stem+year` this project's bibliographies already use.
+
+    The corpus rows the vector store returns name their fields in lower case
+    (`title`, `doi`, `year`); the export rows use the model's field names
+    (`Title`, `DOI`, `Year`). Accepting both is what makes one function usable
+    by both.
+    """
+    title = _field(paper, "Title", "title")
+    year = _field(paper, "Year", "year")
+    key = format_bibtex_key(title, year)
+
+    doi = _field(paper, "DOI", "doi")
+    return f"{key}-{_doi_suffix(doi)}" if doi else key
 
 
 def format_table(
