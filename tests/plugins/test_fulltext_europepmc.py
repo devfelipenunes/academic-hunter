@@ -58,9 +58,6 @@ def hunt_response(pmcid="PMC123"):
     return response(200, {"resultList": {"result": [{"pmcid": pmcid}]}})
 
 
-# ── JATS → text ─────────────────────────────────────────────────────────────
-
-
 def test_headings_survive_as_lines():
     """The chunker finds sections by the shape of a line, so the titles have to
     come through as lines — that is what makes the `section` metadata reliable
@@ -94,9 +91,6 @@ def test_malformed_xml_is_transient():
         jats_to_text(b"<article><body>unclosed")
 
 
-# ── locating the article ────────────────────────────────────────────────────
-
-
 def test_find_pmcid_returns_the_identifier():
     with patch(SEARCH, return_value=response(200, {"resultList": {"result": [{"pmcid": "PMC42"}]}})):
         assert EuropePmcSource().find_pmcid("10.1/x") == "PMC42"
@@ -111,9 +105,6 @@ def test_find_pmcid_skips_results_without_one():
     payload = {"resultList": {"result": [{"id": "1"}, {"pmcid": "PMC7"}]}}
     with patch(SEARCH, return_value=response(200, payload)):
         assert EuropePmcSource().find_pmcid("10.1/x") == "PMC7"
-
-
-# ── fetching ────────────────────────────────────────────────────────────────
 
 
 def test_fetch_returns_the_sectioned_document():
@@ -140,9 +131,6 @@ def test_a_server_error_is_transient():
     with patch(SEARCH, return_value=response(503)):
         with pytest.raises(FullTextTransientError):
             EuropePmcSource().fetch("10.1/x")
-
-
-# ── the chain ───────────────────────────────────────────────────────────────
 
 
 def source_returning(document=None, error=None, name="src"):

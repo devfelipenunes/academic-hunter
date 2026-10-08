@@ -25,15 +25,12 @@ UNPAYWALL_API = "https://api.unpaywall.org/v2"
 
 DEFAULT_TIMEOUT = 10
 
-#: A PDF larger than this is aborted mid-stream rather than held in memory.
 MAX_PDF_BYTES = 40_000_000
 
-#: Enough of a landing page to reach its `<head>`; the rest is not read.
 MAX_HTML_BYTES = 512_000
 
 _CHUNK = 64 * 1024
 
-#: The convention Google Scholar and Zotero read. Attribute order varies.
 _CITATION_PDF_PATTERNS = (
     re.compile(
         r'<meta[^>]+name=["\']citation_pdf_url["\'][^>]+content=["\']([^"\']+)["\']',
@@ -53,8 +50,6 @@ def pdf_url_from_landing_page(url: str, timeout: int = DEFAULT_TIMEOUT) -> str:
     non-HTML body. Never raises: the caller has a fallback and this is a probe.
     """
     try:
-        # No custom User-Agent: measured, one repository answered a 827-byte stub
-        # to ours and the full page to the default one.
         response = requests.get(url, timeout=timeout, stream=True)
     except requests.RequestException as e:
         logger.debug("Could not read landing page %s: %s", url, e)
@@ -63,8 +58,6 @@ def pdf_url_from_landing_page(url: str, timeout: int = DEFAULT_TIMEOUT) -> str:
     try:
         if response.status_code != 200:
             return ""
-        # `iter_content`, not `raw.read(n)`: the latter returned the first
-        # socket chunk — 827 bytes on the one measured — and never the tag.
         chunks, total = [], 0
         for chunk in response.iter_content(chunk_size=_CHUNK):
             if chunk:
@@ -73,14 +66,13 @@ def pdf_url_from_landing_page(url: str, timeout: int = DEFAULT_TIMEOUT) -> str:
             if total >= MAX_HTML_BYTES:
                 break
         body = b"".join(chunks)
-    except Exception as e:  # noqa: BLE001 — a probe on a failure path
+    except Exception as e:  # noqa: BLE001
         logger.debug("Could not read landing page %s: %s", url, e)
         return ""
     finally:
         response.close()
 
     if b"%PDF-" in body[:1024]:
-        # It is already the PDF, so the URL the caller has is the right one.
         return url
 
     html = body.decode("utf-8", errors="replace")
@@ -128,8 +120,6 @@ class UnpaywallSource:
 
     def __init__(self, email: str, timeout: int = DEFAULT_TIMEOUT) -> None:
         if not email or "@" not in email:
-            # Caught at construction so a run cannot make hundreds of doomed
-            # requests before anyone notices the address is unusable.
             raise FullTextConfigError(
                 f"Unpaywall needs a valid contact e-mail, got {email!r}. "
                 "Set settings.unpaywall_email."
@@ -149,10 +139,6 @@ class UnpaywallSource:
         if not record.get("is_oa"):
             raise NoOpenAccessVersion(doi)
 
-        # `best_oa_location` is Unpaywall's pick for *reliability*, and it is
-        # frequently the publisher's landing page with a null `url_for_pdf` —
-        # while another location in the same record does name a PDF. Using only
-        # the best one turns "there is a PDF in PMC" into "download failed".
         best = record.get("best_oa_location") or {}
         locations = [best] + [
             loc for loc in (record.get("oa_locations") or []) if loc is not best
@@ -162,9 +148,6 @@ class UnpaywallSource:
             if location.get("url_for_pdf"):
                 return self._as_location(location, pdf=True)
 
-        # No location names a PDF. Repository landing pages usually declare one
-        # in a meta tag, so ask — but only here, on the records that would
-        # otherwise fail with "did not return a PDF".
         for location in locations:
             url = str(location.get("url") or "")
             if not url:

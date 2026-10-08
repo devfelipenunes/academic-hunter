@@ -1,4 +1,4 @@
+from .enricher import MetadataEnricher
 from .manager import SearchPipeline
-from .enricher import AbstractEnricher
 
-__all__ = ['SearchPipeline', 'AbstractEnricher']
+__all__ = ['SearchPipeline', 'MetadataEnricher']

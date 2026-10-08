@@ -30,7 +30,6 @@ CONNECTORS = (
     "fetch_core_ac", "fetch_doaj",
 )
 
-#: O DOI canônico de cada um, depois de `normalize_doi`: sem prefixo, minúsculo.
 WITH_DOI = [
     ("Blockchain latency in payment rails", "https://doi.org/10.1234/ALPHA"),
     ("Blockchain consensus protocols", "http://dx.doi.org/10.1234/Beta"),
@@ -55,10 +54,35 @@ def _papers():
     ]
 
 
-def _run(tmp_path, monkeypatch, papers):
+def _silence_connectors(hunter, monkeypatch, published=None):
+    """No connector-level lookup reaches the network from this file.
+
+    Stubbing ``fetch_arxiv`` and its siblings leaves the connectors themselves
+    untouched, and the pipeline asks them twice more once the search threads have
+    joined: for the citations no source reported, and for the published version of
+    each preprint. Both are real HTTP calls, so without this the suite would
+    measure whichever API happened to answer — and would fail on a machine with
+    no network for a reason that has nothing to do with the artifacts.
+    """
+    for connector in hunter.connectors.values():
+        if hasattr(connector, "fetch_citations_by_dois"):
+            monkeypatch.setattr(connector, "fetch_citations_by_dois", lambda dois, **k: {})
+        if hasattr(connector, "resolve_metadata_by_doi"):
+            monkeypatch.setattr(connector, "resolve_metadata_by_doi", lambda doi: {})
+        if hasattr(connector, "find_published_version"):
+            candidates = list(published or [])
+            monkeypatch.setattr(
+                connector,
+                "find_published_version",
+                lambda title, authors="", _c=candidates: {"title": title, "candidates": list(_c)},
+            )
+
+
+def _run(tmp_path, monkeypatch, papers, published=None):
     config_path = tmp_path / "config.json"
     config_path.write_text(json.dumps(CONFIG), encoding="utf-8")
     hunter = AcademicHunter(config_path=str(config_path), output_dir=str(tmp_path))
+    _silence_connectors(hunter, monkeypatch, published)
 
     for name in CONNECTORS:
         monkeypatch.setattr(
@@ -125,6 +149,144 @@ def test_the_artifacts_agree_on_how_many_papers_came_out(artifacts):
         f"{len(rows)} papers were exported but the stats report "
         f"{hunter.stats['included_final']} included"
     )
+
+
+PREPRINT = {
+    "Title": "Blockchain latency at the edge",
+    "Authors": "Ada Lovelace",
+    "Abstract": "Blockchain latency and consensus on a public ledger.",
+    "Year": "2024",
+    "URL": "http://arxiv.org/abs/2401.00001v2",
+    "Source": "ArXiv",
+    "Citations": 0,
+    "Type": "preprint",
+    "Venue": "ArXiv",
+    "Peer_Reviewed": "No (Preprint)",
+}
+
+PUBLISHED_VERSION = {
+    "DOI": "10.1145/3576915.3623202",
+    "Title": PREPRINT["Title"],
+    "Authors": "Lovelace, Ada; Hopper, Grace",
+    "Type": "proceedings-article",
+    "Venue": "Proceedings of the ACM SIGSAC Conference on Computer and Communications Security",
+    "Year": "2024",
+}
+
+
+@pytest.fixture
+def preprint_run(tmp_path, monkeypatch):
+    papers = _papers() + [dict(PREPRINT)]
+    hunter, _ = _run(tmp_path, monkeypatch, papers)
+    csv_path = sorted(tmp_path.rglob("*.csv"))[0]
+    distribution = sorted(tmp_path.rglob("score_distribution_*.json"))[0]
+    return hunter, csv_path, distribution
+
+
+def _row_for(path, title):
+    with open(path, encoding="utf-8") as handle:
+        return next(row for row in csv.DictReader(handle) if row["Title"] == title)
+
+
+def test_a_preprint_that_arrives_without_a_doi_leaves_with_one(preprint_run):
+    """O conector do arXiv não publica DOI, e o URL nomeia o trabalho.
+
+    109 dos 310 papers do run entregue estavam neste estado: identificador
+    conhecido, coluna vazia.
+    """
+    _, csv_path, _ = preprint_run
+
+    assert _row_for(csv_path, PREPRINT["Title"])["DOI"] == "10.48550/arxiv.2401.00001"
+
+
+def test_the_resolved_doi_is_the_identity_every_artifact_uses(preprint_run):
+    """CSV, `.bib`, `.ris` e a distribuição de pontuações têm de concordar.
+
+    A distribuição é escrita **antes** do filtro de inclusão, a partir do run
+    inteiro, e é o que `calibrate_inclusion_threshold` lê para ligar um
+    julgamento a uma pontuação. Se a passagem corresse depois dela, o mesmo paper
+    teria um id na distribuição e outro no dataset exportado.
+    """
+    _, csv_path, distribution = preprint_run
+    resolved = "10.48550/arxiv.2401.00001"
+
+    bib = sorted(csv_path.parent.rglob("*.bib"))[0].read_text(encoding="utf-8")
+    ris = sorted(csv_path.parent.rglob("*.ris"))[0].read_text(encoding="utf-8")
+    payload = json.loads(distribution.read_text(encoding="utf-8"))
+
+    assert resolved in _dois_in_csv(csv_path)
+    assert resolved in _dois_in_bib(bib)
+    assert resolved in _dois_in_ris(ris)
+
+    in_distribution = {
+        row["doi"] for row in payload["papers"] if row["title"] == PREPRINT["Title"]
+    }
+    assert in_distribution == {resolved}, (
+        "the score distribution and the exported dataset disagree about which "
+        f"paper this is: {in_distribution}"
+    )
+
+
+def test_a_paper_whose_url_names_nothing_keeps_an_empty_column(tmp_path, monkeypatch):
+    """Um DOI derivado de uma landing page seria inventado, não lido."""
+    papers = [
+        {
+            "Title": "Blockchain consensus without a landing page DOI",
+            "Abstract": "Blockchain consensus.",
+            "Year": "2024",
+            "URL": "https://core.ac.uk/works/391546543",
+            "Source": "CORE",
+            "Citations": 0,
+            "Type": "article",
+            "Venue": "Unknown Venue",
+        }
+    ]
+    _, _ = _run(tmp_path, monkeypatch, papers)
+    csv_path = sorted(tmp_path.rglob("*.csv"))[0]
+
+    assert _row_for(csv_path, papers[0]["Title"])["DOI"] == ""
+
+
+def test_a_preprint_that_has_a_published_version_leaves_as_likely(tmp_path, monkeypatch):
+    """O passo corre no pipeline, entre o DOI e a recomputação das pontuações.
+
+    Medido no run entregue: 109 dos 310 papers são preprints e o relatório nomeia
+    a venue do próprio preprint — um posting arXiv de 2021 a fazer as vezes da
+    comunicação em conferência de que é o preprint. Sem esta ligação o passo
+    existe e nunca corre, que é a forma como a correcção desaparece sem falhar.
+    """
+    papers = _papers() + [dict(PREPRINT)]
+    _run(tmp_path, monkeypatch, papers, published=[PUBLISHED_VERSION])
+    csv_path = sorted(tmp_path.rglob("*.csv"))[0]
+    distribution = sorted(tmp_path.rglob("score_distribution_*.json"))[0]
+
+    row = _row_for(csv_path, PREPRINT["Title"])
+    assert row["Peer_Reviewed"] == "Likely", "um registo igual não prova revisão por pares"
+    assert row["Venue"] == PUBLISHED_VERSION["Venue"]
+    assert row["DOI"] == "10.48550/arxiv.2401.00001", (
+        "o DOI do preprint é a chave de identidade do pool e da distribuição; "
+        "substituí-lo movê-la-ia depois de o pool ter sido construído"
+    )
+
+    published = json.loads(distribution.read_text(encoding="utf-8"))["published_version"]
+    assert published["promoted"] == 1
+    assert published["promotions"][0]["published_doi"] == PUBLISHED_VERSION["DOI"]
+    assert published["promotions"][0]["match"] == "title_and_authors"
+
+
+def test_a_preprint_that_matches_nothing_keeps_the_venue_it_arrived_with(tmp_path, monkeypatch):
+    """Um sítio onde não se encontra nada não é um sítio onde se inventa."""
+    papers = _papers() + [dict(PREPRINT)]
+    _run(tmp_path, monkeypatch, papers, published=[])
+    csv_path = sorted(tmp_path.rglob("*.csv"))[0]
+    distribution = sorted(tmp_path.rglob("score_distribution_*.json"))[0]
+
+    assert _row_for(csv_path, PREPRINT["Title"])["Venue"] == "ArXiv"
+
+    published = json.loads(distribution.read_text(encoding="utf-8"))["published_version"]
+    assert published["asked"] == 1
+    assert published["promoted"] == 0
+    assert published["unmatched"] == 1
 
 
 def test_an_empty_run_writes_its_own_artifacts(tmp_path, monkeypatch):

@@ -3,11 +3,14 @@ import threading
 import time
 
 from ..ports.exporter import run_dir_for
+from ..screening.ablation import semantic_scoring_enabled
 from .steps import (
     AutoExportObsidianStep,
     IndexResultsStep,
     IngestFullTextStep,
     RecomputeRanksStep,
+    ResolveDoiStep,
+    inclusion_predicate,
 )
 
 logger = logging.getLogger("academic_hunter")
@@ -18,6 +21,7 @@ class SearchPipeline:
     def __init__(self, hunter):
         self.hunter = hunter
         self._vector_store = None
+        self._semantic_degraded = False
 
     @property
     def vector_store(self):
@@ -47,12 +51,57 @@ class SearchPipeline:
         """
         IndexResultsStep(self.hunter).run()
 
-    def _recompute_ranks(self):
+    def _resolve_dois(self):
+        """Store the DOI a paper's URL already carries, where the column is empty.
+
+        Delegates to ResolveDoiStep. It runs after every copy of a work has been
+        merged and before anything derives a paper's identity from its DOI —
+        which is why it sits between the enrichment and the rank recomputation
+        rather than at either end.
+        """
+        ResolveDoiStep(self.hunter).run()
+
+    def _resolve_published_versions(self):
+        """Ask for the published version of each preprint, and record the answer.
+
+        After the DOI pass, so the paper's own DOI is in place before a candidate
+        is compared against it, and before the rank recomputation, so the venue
+        and year the report prints are the published ones. It makes network
+        requests — one bibliographic query per preprint — which is why it is the
+        only enrichment the run performs after the search threads have joined.
+        """
+        self.hunter.resolve_published_versions()
+
+    def _included_only(self) -> dict:
+        """The papers the inclusion predicate admits, keyed as before.
+
+        One predicate, applied here and counted in the rank step, so the papers
+        that survive and the number the report prints are the same set. Two
+        copies of the comparison is how they drifted apart before: the report
+        announced a cut that a different rule had made.
+
+        What the predicate is, and why it is not ``Relevance_Score``, is in
+        :data:`~academic_hunter.core.pipeline.steps.INCLUSION_KEY`.
+        """
+        key, min_score = inclusion_predicate(self.hunter)
+        kept = {}
+        for slug, paper in self.hunter.consolidated_results.items():
+            try:
+                value = float(paper.get(key) or 0.0)
+            except (TypeError, ValueError):
+                value = 0.0
+            if value >= min_score:
+                kept[slug] = paper
+        return kept
+
+    def _recompute_ranks(self, timestamp: str = ""):
         """Re-rank all papers using multiplicative rank normalization.
 
-        Delegates to RecomputeRanksStep for implementation.
+        Delegates to RecomputeRanksStep for implementation. The timestamp is
+        what the step writes the score distribution under, so the run keeps the
+        signals of the papers the threshold is about to remove.
         """
-        RecomputeRanksStep(self.hunter).run()
+        RecomputeRanksStep(self.hunter, timestamp).run()
 
     def _ingest_full_text(self):
         """Fetch and index full text for the qualified papers.
@@ -83,23 +132,31 @@ class SearchPipeline:
                 tech_list = self.hunter.config.keyword_only_terms
                 try:
                     results = fetch_fn(anchor_list, tech_list, limit=limit_per_source)
-                    if results:
-                        for paper in results:
-                            consolidated_cat = self.hunter.config.keyword_only_category
-                            self.hunter._process_paper(paper, anchor_cat, consolidated_cat, anchor_list, tech_list)
                 except Exception as e:
                     logger.error(f"[{source_name} Worker] {e}")
+                    results = None
+
+                for paper in results or []:
+                    try:
+                        consolidated_cat = self.hunter.config.keyword_only_category
+                        self.hunter._process_paper(paper, anchor_cat, consolidated_cat, anchor_list, tech_list)
+                    except Exception as e:
+                        logger.error(f"[{source_name} Worker] dropped one paper: {e}")
 
                 time.sleep(1.0)
             else:
                 for tech_cat, tech_list in self.hunter.tech_strings.items():
                     try:
                         results = fetch_fn(anchor_list, tech_list, limit=limit_per_source)
-                        if results:
-                            for paper in results:
-                                self.hunter._process_paper(paper, anchor_cat, tech_cat, anchor_list, tech_list)
                     except Exception as e:
                         logger.error(f"[{source_name} Worker] {e}")
+                        results = None
+
+                    for paper in results or []:
+                        try:
+                            self.hunter._process_paper(paper, anchor_cat, tech_cat, anchor_list, tech_list)
+                        except Exception as e:
+                            logger.error(f"[{source_name} Worker] dropped one paper: {e}")
 
                     time.sleep(1.0)
 
@@ -109,9 +166,32 @@ class SearchPipeline:
         ``blocked_sources`` lives on the config, which outlives the run: without
         clearing it here, one 429 silences a source for every later run in the
         same process. The block belongs to the run, not to the session.
+
+        ``pacing_delays`` outlives the run the same way and for the same reason
+        — the connector is built once and reused — and it is escalated, never
+        lowered. Every 429 doubles it, so a server that stays up across runs
+        doubles its own delays each time it is throttled: after four throttled
+        runs a 3-second source is pacing at 48 seconds, and nothing reports why
+        the run got slow. The rate limit it was backing off from is long over.
+
+        Clearing alone went one step too far. ``setup_pacing`` writes the delay
+        a credential buys into the same dict — Semantic Scholar drops from 4 s to
+        1 s when a key is configured — and that write happens once, at
+        construction. So the first run's reset wiped the key's discount as well
+        as the escalation, and every source fell back to its unkeyed default for
+        the rest of the process. The hook is re-run here, which restores the dict
+        to the state it was built in: the escalation is gone, the credential's
+        effect is not.
         """
         self.hunter.state.reset(list(self.hunter.connectors.keys()))
         self.hunter.blocked_sources.clear()
+        for connector in self.hunter.connectors.values():
+            delays = getattr(connector, "pacing_delays", None)
+            if delays is not None:
+                delays.clear()
+            setup = getattr(connector, "setup_pacing", None)
+            if setup is not None:
+                setup()
 
     def _warm_semantic_screener(self) -> None:
         """Load the embedding model here, before a worker thread can race it.
@@ -119,13 +199,46 @@ class SearchPipeline:
         `SemanticScreener.warm` has the measurements. The model is only needed
         when the ablation mode scores semantically, and a keyword-only run
         should not pay 79 MB for something it will not call.
+
+        A refusal is recorded rather than discarded. `warm` is the one place
+        that knows a load was attempted and how it went, and the run it is
+        reporting on is over by the time anything reads the flag back.
         """
         screener = getattr(self.hunter, "semantic_screener", None)
         if screener is None:
             return
-        if self.hunter.settings.get("ablation", {}).get("mode", "hybrid") == "keyword":
+        if not semantic_scoring_enabled(self.hunter.settings, screener):
             return
-        screener.warm()
+        if not screener.warm():
+            self._semantic_degraded = True
+
+    def _unavailable_sources(self) -> dict:
+        """Connectors that cannot run with the current settings, and why.
+
+        Asked here rather than at construction: a credential can be configured
+        between this run and the next, and `run_search` builds a fresh hunter
+        that re-reads the config file. The connectors stay registered and
+        instantiated either way -- the facades reach into `hunter.connectors` by
+        name -- so this only decides who gets a thread.
+
+        The answer is written to ``stats`` so the run's artifact can carry it.
+        A source that was never queried and a source that was queried and found
+        nothing both reached the report as ``0``, and nothing on disk told them
+        apart. ``blocked_sources`` is recorded next to it, after the threads
+        join: a source is only blocked by a 429 it meets *during* the run.
+        """
+        reasons = {}
+        for name, connector in self.hunter.connectors.items():
+            reason = type(connector).unavailable_reason(self.hunter.settings)
+            if reason:
+                reasons[name] = reason
+        if reasons:
+            logger.warning(
+                "⏭️ Not querying %s: %s",
+                ", ".join(reasons),
+                " ".join(reasons.values()),
+            )
+        return reasons
 
     def run(self, limit_per_source: int = 100):
         logger.info("🚀 Initializing Multi-Threaded Academic Hunter V2 Pipeline...")
@@ -135,8 +248,13 @@ class SearchPipeline:
         self.hunter.last_request_time = time.time()
         self._warm_semantic_screener()
 
+        unavailable = self._unavailable_sources()
+        self.hunter.state.stats["unavailable_sources"] = unavailable
+
         threads = []
         for src, conn in self.hunter.connectors.items():
+            if src in unavailable:
+                continue
             domain = getattr(conn, "domain", "")
             if domain in self.hunter.blocked_sources:
                 continue
@@ -148,55 +266,32 @@ class SearchPipeline:
         for t in threads:
             t.join()
 
+        self.hunter.state.stats["blocked_sources"] = sorted(self.hunter.blocked_sources)
+
         elapsed = round(time.time() - self.hunter.last_request_time, 2)
         logger.info(f"⏱️ Mining completed in {elapsed} seconds.")
 
-        # Enrich BEFORE scoring. Enrichment supplies missing abstracts, and the
-        # score must be computed over the final text. Running it afterwards
-        # overwrote Relevance_Score with a raw keyword value, putting two
-        # different scales in the same collection while both were compared
-        # against the same min_relevance_score threshold — so enriched papers
-        # systematically outranked the rest.
-        self.hunter.enrich_missing_abstracts()
+        self.hunter.enrich_metadata()
+        self._resolve_dois()
+        self._resolve_published_versions()
 
-        # Rank-based scoring: recompute scores using percentil normalization
-        self._recompute_ranks()
+        self._recompute_ranks(timestamp)
 
-        self.hunter.generate_prisma_report(timestamp)
+        final_qualifiers = self._included_only()
 
-        final_qualifiers = {
-            slug: paper for slug, paper in self.hunter.consolidated_results.items()
-            if paper.get("Relevance_Score", 0.0) >= self.hunter.settings.get('min_relevance_score', 5.0)
-        }
-
-        # Assigned before anything is written. Exporting the collection first and
-        # filtering afterwards left the unfiltered set on disk whenever the
-        # filtered one was empty: the exporters skipped an empty list, so the file
-        # from the earlier call survived, and its excluded papers read as results.
         self.hunter.consolidated_results = final_qualifiers
 
-        # Full text, opt-in and off by default. Here — after the threshold
-        # filter, before the index — so the downloads are spent on the papers
-        # that qualified rather than on everything identified.
         self._ingest_full_text()
 
         self.hunter.export_results(timestamp)
-        # Regenerated: the report above was written before this step could know
-        # how many full texts were obtained, and SLR methodology requires that
-        # number.
         self.hunter.generate_prisma_report(timestamp)
 
-        # Auto-index for RAG
         self._index_results()
-
-        # Auto-export to Obsidian if configured
         self._auto_export_to_obsidian(timestamp)
 
-        # A run whose embedding silently fell back to zeros still finishes and
-        # still reports numbers; say so, because those numbers are not
-        # comparable to a run with a working model.
         screener = getattr(self.hunter, "semantic_screener", None)
-        if screener is not None and getattr(screener, "degraded", False):
+        degraded = self._semantic_degraded or getattr(screener, "degraded", False)
+        if screener is not None and degraded:
             logger.warning(
                 "⚠️ Semantic screener ran in ZERO-VECTOR mode: every semantic "
                 "score is 0.0. Treat this run's scores as keyword-only."
@@ -208,16 +303,14 @@ class SearchPipeline:
         logger.info(f"   - Duplicates Removed: {self.hunter.stats['duplicates_removed']}")
         logger.info(f"   - Excluded (Publication Year): {self.hunter.stats['excluded_year']}")
         logger.info(f"   - Excluded (No Industry Anchors): {self.hunter.stats['excluded_anchors']}")
-        logger.info(f"   - Excluded (Low Relevance Score): {self.hunter.stats['excluded_technical_score']}")
+        logger.info(f"   - Excluded (Below the Inclusion Predicate): {self.hunter.stats['excluded_technical_score']}")
+        logger.info(f"   - Inclusion Predicate: {self.hunter.stats.get('inclusion_predicate')}")
         logger.info(f"   - Final Included: {self.hunter.stats['included_final']}")
         if "reranked" in self.hunter.stats:
             logger.info(
                 f"   - Reranked (cross-encoder): {self.hunter.stats['reranked']}"
             )
 
-        # The exporters' rule, not a second guess at it: they write into
-        # `output_dir/run_<ts>/`, so joining the filename onto `output_dir` handed
-        # back a path that never existed.
         report = run_dir_for(timestamp, self.hunter.output_dir) / f"RELATORIO_ELITE_{timestamp}.md"
         return str(report)
 

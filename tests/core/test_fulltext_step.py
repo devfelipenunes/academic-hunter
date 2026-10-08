@@ -6,8 +6,6 @@ throughout is that it never takes the run down with it.
 
 import threading
 
-import pytest
-
 from academic_hunter.core.pipeline.steps import IngestFullTextStep
 from academic_hunter.core.ports.fulltext import (
     ExtractedDocument,
@@ -70,9 +68,6 @@ def make_step(papers=None, settings=None, fetcher="default", store="default"):
     return IngestFullTextStep(hunter)
 
 
-# ── when it must do nothing ─────────────────────────────────────────────────
-
-
 def test_disabled_by_default():
     step = make_step(settings={"enabled": False})
     step.hunter.consolidated_results["a"]["_full_text_status"] = "untouched"
@@ -103,12 +98,9 @@ def test_a_store_that_cannot_hold_chunks_is_a_no_op():
 def test_no_papers_is_a_no_op():
     step = make_step(papers={})
 
-    step.run()  # must not raise
+    step.run()
 
     assert step.hunter.state.stats == {}
-
-
-# ── the happy path ──────────────────────────────────────────────────────────
 
 
 def test_a_paper_is_fetched_chunked_and_indexed():
@@ -133,9 +125,6 @@ def test_chunks_carry_their_section_and_offsets():
     sections = {c["section"] for c in indexed}
     assert {"abstract", "introduction", "method"} <= sections
     assert all(c["chunk_id"].startswith("doi:10.1/a::") for c in indexed)
-
-
-# ── each failure gets its own status ────────────────────────────────────────
 
 
 def test_no_open_access_is_recorded_as_such():
@@ -185,7 +174,7 @@ def test_an_unexpected_error_does_not_escape():
         raise RuntimeError("something nobody predicted")
 
     step = make_step(fetcher=fetcher)
-    step.run()  # must not raise
+    step.run()
 
     assert step.hunter.consolidated_results["a"]["_full_text_status"] == "download_failed"
 
@@ -195,12 +184,9 @@ def test_a_store_failure_leaves_the_run_alive():
         return ExtractedDocument(text=LONG_TEXT, page_count=2)
 
     step = make_step(fetcher=fetcher, store=FakeChunkStore(result=False))
-    step.run()  # must not raise
+    step.run()
 
     assert step.hunter.consolidated_results["a"]["_full_text_status"] == "download_failed"
-
-
-# ── a broken configuration is reported, not generalized ─────────────────────
 
 
 def test_a_config_error_is_recorded_per_paper():
@@ -241,8 +227,6 @@ def test_the_paper_budget_is_respected_and_reported():
 def test_the_time_budget_is_respected():
     import time
 
-    # The budget is whole seconds, so the work has to overshoot one by a wide
-    # margin: 50 papers at 50 ms is ~2.5 s of work against a 1 s budget.
     def slow_fetcher(doi):
         time.sleep(0.05)
         return ExtractedDocument(text=LONG_TEXT, page_count=2)

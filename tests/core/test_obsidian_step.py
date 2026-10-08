@@ -19,8 +19,6 @@ def _hunter(obsidian_path="", export=None, papers=None):
     hunter.anchors = {"cat": ["blockchain"]}
     hunter.connectors = {"ArXiv": object()}
     if export is None:
-        # A MagicMock attribute is callable, so an unset export would look
-        # configured. Use None to represent "no adapter injected".
         hunter.obsidian_export = None
     else:
         hunter.obsidian_export = export
@@ -69,7 +67,7 @@ def test_skips_when_no_exporter_injected():
     """A vault without an injected adapter is a no-op, not a crash."""
     step = AutoExportObsidianStep(_hunter(obsidian_path="/vault"), "T1")
 
-    step.run()  # must not raise
+    step.run()
 
 
 def test_skips_when_there_are_no_papers():
@@ -89,6 +87,6 @@ def test_exporter_failure_does_not_break_the_run():
     export = MagicMock(side_effect=Exception("vault on fire"))
     step = AutoExportObsidianStep(_hunter(obsidian_path="/vault", export=export), "T1")
 
-    step.run()  # must not raise
+    step.run()
 
     export.assert_called_once()

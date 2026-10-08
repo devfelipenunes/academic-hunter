@@ -15,17 +15,12 @@ from typing import List
 
 from ..ports.fulltext import ExtractedDocument
 
-#: Words per chunk. Imposed by the embedder's 256 word-piece cap — see module docstring.
 TARGET_WORDS = 180
 
-#: Words shared between consecutive chunks, so a boundary-crossing sentence survives.
 OVERLAP_WORDS = 40
 
-#: Shorter than this and a fragment carries no retrievable signal.
 MIN_CHUNK_WORDS = 25
 
-#: Section headings, matched case-insensitively against a title-cased line.
-#: Order matters only for the aliases of the same target.
 _SECTION_ALIASES = {
     "abstract": ("abstract", "summary"),
     "introduction": ("introduction", "background"),
@@ -42,11 +37,8 @@ _SECTION_ALIASES = {
     "acknowledgements": ("acknowledgements", "acknowledgments", "funding"),
 }
 
-#: Dropped by default: 20-40% of a paper's text, matching queries about author
-#: names rather than content. Acknowledgements are the same kind of boilerplate.
 _DROPPED_BY_DEFAULT = ("references", "appendix", "acknowledgements")
 
-#: A heading is a short line that is not a sentence.
 _MAX_HEADING_CHARS = 70
 _WORD = re.compile(r"\S+")
 
@@ -78,7 +70,6 @@ def _classify(line: str) -> str:
     stripped = line.strip().strip(".:#* ").lower()
     if not stripped or len(stripped) > _MAX_HEADING_CHARS:
         return ""
-    # Strip a leading numbering ("2.", "2.1", "III.") before matching.
     stripped = re.sub(r"^(?:\d+(?:\.\d+)*|[ivxlc]+)[.)]?\s+", "", stripped)
     for name, aliases in _SECTION_ALIASES.items():
         for alias in aliases:
@@ -105,8 +96,6 @@ def detect_sections(text: str) -> List[Section]:
             if offset > current_start:
                 sections.append(Section(current_name, current_start, offset))
             current_name = name
-            # Start past the heading line: the heading is a label, not content,
-            # and letting it in puts "1. Introduction" at the head of the chunk.
             current_start = offset + len(line)
         offset += len(line)
 
@@ -133,6 +122,14 @@ def _chunk_span(
     the slice that becomes the chunk and the offsets recorded on it come from the
     same coordinates — slicing a section-local string while recording
     document-local offsets silently produces chunks that point at other sections.
+
+    The loop stops once the words left to cover no longer exceed the overlap. A
+    window opened there would lie entirely inside the previous chunk — the
+    overlap exists to carry a boundary sentence into the next chunk, not to
+    license a chunk of its own — and it would be indexed as a second, separate
+    passage holding text the reader has already been shown. A span of exactly
+    ``target_words`` words hit it in full: the first chunk took all 180, and the
+    tail left over was the overlap it had just written.
     """
     body = text[span_start:span_end]
     words = list(_WORD.finditer(body))
@@ -144,9 +141,10 @@ def _chunk_span(
     position = 0
 
     while position < len(words):
+        if chunks and len(words) - position <= overlap_words:
+            break
+
         window = words[position:position + target_words]
-        # A short tail is dropped rather than merged into the previous chunk:
-        # merging would push that chunk past the embedder's cap.
         if len(window) < min_chunk_words and chunks:
             break
 

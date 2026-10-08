@@ -17,13 +17,12 @@ from typing import Optional
 
 import requests
 
-from ..safe_xml import parse_xml
-
 from ...core.ports.fulltext import (
     ExtractedDocument,
     FullTextTransientError,
     NoOpenAccessVersion,
 )
+from ..safe_xml import parse_xml
 
 logger = logging.getLogger("academic_hunter.fulltext.europepmc")
 
@@ -32,7 +31,6 @@ FULLTEXT_API = "https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/fullTex
 
 DEFAULT_TIMEOUT = 25
 
-#: Below this the XML carried no usable body (an abstract-only record).
 MIN_TEXT_CHARS = 500
 
 
@@ -162,7 +160,7 @@ class EuropePmcSource:
                 f"Europe PMC returned HTTP {response.status_code}"
             )
 
-        text = jats_to_text(response.content)  # raises the domain error itself
+        text = jats_to_text(response.content)
 
         has_layer = len(text) >= MIN_TEXT_CHARS
         if not has_layer:

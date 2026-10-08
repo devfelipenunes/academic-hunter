@@ -14,7 +14,7 @@ from academic_hunter.core.ports.fulltext import (
     OpenAccessLocation,
 )
 from academic_hunter.plugins.fulltext.cache import CachedFullTextSource, PdfCache
-from academic_hunter.plugins.fulltext.unpaywall import UnpaywallSource, fetch_record
+from academic_hunter.plugins.fulltext.unpaywall import UnpaywallSource
 
 API = "academic_hunter.plugins.fulltext.unpaywall.requests.get"
 
@@ -56,9 +56,6 @@ def make_pdf(text: str = "Hello world") -> bytes:
         f"startxref\n{xref_at}\n%%EOF\n"
     ).encode()
     return bytes(out)
-
-
-# ── Unpaywall: locating ─────────────────────────────────────────────────────
 
 
 def test_locate_returns_the_best_pdf_location():
@@ -173,9 +170,6 @@ def test_an_unusable_contact_email_is_refused_at_construction():
         UnpaywallSource("not-an-email")
 
 
-# ── Unpaywall: downloading ──────────────────────────────────────────────────
-
-
 def test_download_returns_the_bytes():
     pdf = make_pdf()
     with patch(API, return_value=response(200, body=pdf)):
@@ -202,14 +196,10 @@ def test_download_rejects_html_masquerading_as_a_pdf():
             UnpaywallSource("a@b.c").download(OpenAccessLocation("https://x/y.pdf"))
 
 
-# ── PDF extraction ──────────────────────────────────────────────────────────
-
-
 def test_extract_reads_the_text_layer():
     pytest.importorskip("pypdf")
     from academic_hunter.plugins.fulltext.pdf import PdfExtractor
 
-    # Over the 500-char threshold, below which the file is treated as a scan.
     body = "Latency in distributed ledgers. " * 30
     document = PdfExtractor().extract(make_pdf(body))
 
@@ -242,9 +232,6 @@ def test_a_missing_pypdf_says_which_extra_to_install(monkeypatch):
     monkeypatch.setitem(__import__("sys").modules, "pypdf", None)
     with pytest.raises(FullTextConfigError, match="fulltext"):
         PdfExtractor().extract(b"%PDF-")
-
-
-# ── Cache ───────────────────────────────────────────────────────────────────
 
 
 def test_the_cache_round_trips(tmp_path):

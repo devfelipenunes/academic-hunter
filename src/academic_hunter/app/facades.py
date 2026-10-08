@@ -1,6 +1,6 @@
-import re
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 from urllib.parse import urlsplit
+
 
 class HunterFacadeMixin:
     """
@@ -20,10 +20,7 @@ class HunterFacadeMixin:
     def anchors(self, val):
         self.config.anchors = val
         self.scorer.anchors = val
-        self.scorer.anchor_patterns = {
-            t: re.compile(rf'\b{re.escape(t.lower())}\b')
-            for cat in val.values() for t in cat
-        }
+        self.scorer.recompile()
 
     @property
     def tech_strings(self) -> Dict[str, list]:
@@ -33,10 +30,7 @@ class HunterFacadeMixin:
     def tech_strings(self, val):
         self.config.tech_strings = val
         self.scorer.tech_strings = val
-        self.scorer.tech_term_patterns = {
-            t: re.compile(rf'\b{re.escape(t.lower())}\b')
-            for cat in val.values() for t in cat
-        }
+        self.scorer.recompile()
 
     @property
     def tech_weights(self) -> Dict[str, float]:
@@ -46,10 +40,7 @@ class HunterFacadeMixin:
     def tech_weights(self, val):
         self.config.tech_weights = val
         self.scorer.tech_weights = val
-        self.scorer.compiled_patterns = {
-            t: (re.compile(rf'\b{re.escape(t.lower())}\b'), w)
-            for t, w in val.items()
-        }
+        self.scorer.recompile()
 
     @property
     def pacing_delays(self) -> Dict[str, float]:
@@ -165,15 +156,36 @@ class HunterFacadeMixin:
         )
 
     def load_config(self):
+        """Reload the config file, and recompile what the scorer derived from it.
+
+        `HunterConfig.load()` refills the same dicts in place, so the scorer's
+        references stay valid and now describe the new terms — but its anchors
+        and weights are *compiled*, into one regex per technical term and one
+        weight per anchor. Without this the new config was read, stored and
+        visible through every property, while every score kept being computed
+        against the patterns of the config before it. Measured: a term whose
+        weight moved from 1.5 to 9.5 still scored 1.50.
+        """
         self.config.load()
+        self.scorer.recompile()
 
     def fetch_abstract_by_doi(self, doi: str) -> str:
-        from ..core.pipeline import AbstractEnricher
-        return AbstractEnricher(self.connectors, self.state, self.lock).fetch_abstract_by_doi(doi)
+        from ..core.pipeline import MetadataEnricher
+        return MetadataEnricher(
+            self.connectors, self.state, self.lock, self.settings
+        ).fetch_abstract_by_doi(doi)
 
-    def enrich_missing_abstracts(self):
-        from ..core.pipeline import AbstractEnricher
-        AbstractEnricher(self.connectors, self.state, self.lock).enrich()
+    def enrich_metadata(self):
+        from ..core.pipeline import MetadataEnricher
+        return MetadataEnricher(
+            self.connectors, self.state, self.lock, self.settings
+        ).enrich()
+
+    def resolve_published_versions(self):
+        from ..core.pipeline import MetadataEnricher
+        return MetadataEnricher(
+            self.connectors, self.state, self.lock, self.settings
+        ).resolve_published_versions()
 
     def _process_paper(self, paper: Dict, anchor_cat: str, tech_cat: str, anchor_list: List[str], tech_list: List[str]):
         self.processor.process(paper, anchor_cat, tech_cat, anchor_list, tech_list)
@@ -184,7 +196,6 @@ class HunterFacadeMixin:
     def run(self, limit_per_source: int = 100) -> str:
         return self.pipeline.run(limit_per_source)
 
-# Helper decorator to bind fetch facades dynamically on the Mixin
 def _register_facades():
     from ..plugins.connectors import CONNECTORS as _CONNECTORS
     for name, connector_cls in _CONNECTORS.items():

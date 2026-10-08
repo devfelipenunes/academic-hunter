@@ -14,7 +14,7 @@ class FullTextError(Exception):
     """Base for the three outcomes a full-text attempt can have."""
 
 
-class NoOpenAccessVersion(FullTextError):
+class NoOpenAccessVersion(FullTextError):  # noqa: N818
     """No open-access copy of this DOI exists.
 
     Not a failure — it is the common case, and the reason the port distinguishes
@@ -33,13 +33,9 @@ class FullTextTransientError(FullTextError):
     it countable without reading prose, and survives the truncation.
     """
 
-    #: The server refused this client (401/403/406) — a retry gets the same answer.
     BLOCKED = "blocked"
-    #: The DOI is gone (404).
     NOT_FOUND = "not_found"
-    #: A 200 that was not a PDF — a landing page, so no file was ever there.
     NO_PDF = "no_pdf"
-    #: Network trouble or a 5xx: the only kind a second pass can plausibly recover.
     TRANSIENT = "transient"
 
     def __init__(self, message: str, kind: str = TRANSIENT) -> None:
@@ -83,10 +79,7 @@ class ExtractedDocument:
 
     text: str
     page_count: int = 0
-    #: False when the PDF carries no text layer (a scan). No OCR is attempted.
     has_text_layer: bool = True
-    #: Which leg of the chain delivered it — a coverage report needs to say which
-    #: source could actually produce the text, not just that there was one.
     source: str = ""
 
 

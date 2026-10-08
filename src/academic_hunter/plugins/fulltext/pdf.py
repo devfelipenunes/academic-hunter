@@ -16,9 +16,6 @@ from ...core.ports.fulltext import (
 
 logger = logging.getLogger("academic_hunter.fulltext.pdf")
 
-#: Below this, the PDF carries no usable text layer — it is a scan. No OCR is
-#: attempted: tesseract is not a dependency and adding it would end the
-#: zero-cost, offline character of the pipeline.
 MIN_TEXT_CHARS = 500
 
 
@@ -43,8 +40,6 @@ class PdfExtractor:
 
         try:
             reader = PdfReader(_stream(pdf_bytes))
-            # Encrypted PDFs raise on access rather than on construction, so the
-            # decrypt call is what surfaces a password-protected file.
             if reader.is_encrypted:
                 raise FullTextTransientError("PDF is encrypted")
             pages = [page.extract_text() or "" for page in reader.pages]

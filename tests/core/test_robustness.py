@@ -50,9 +50,6 @@ def scorer(config):
     )
 
 
-# ── sqrt clamp ──────────────────────────────────────────────────────────────
-
-
 def test_hybrid_score_survives_negative_cosine(scorer):
     """A negative cosine means "no semantic relevance", not a crash.
 
@@ -83,7 +80,6 @@ def test_fused_score_survives_negative_cosine(scorer):
         ablation_mode="hybrid",
     )
 
-    # sqrt(clamp(-0.42)) * 10 == 0, so only the keyword term survives.
     kw_only = scorer.calculate_score("Blockchain latency", "Blockchain latency", 0)
     assert score == pytest.approx(round(kw_only * 0.3, 1))
 
@@ -96,9 +92,6 @@ def test_positive_cosine_is_unchanged_by_the_clamp(scorer):
         title="t", abstract="a", citations=0,
         semantic_score=0.25, has_semantic=True, ablation_mode="embedding",
     ) == expected
-
-
-# ── dedup atomicity ─────────────────────────────────────────────────────────
 
 
 def _make_processor(config, scorer):
@@ -153,7 +146,6 @@ def test_concurrent_duplicate_submission_registers_once(config, scorer, monkeypa
     barrier = threading.Barrier(threads_n)
 
     def submit():
-        # Line every thread up so they collide inside the critical section.
         barrier.wait()
         processor.process(
             paper={
@@ -222,9 +214,6 @@ def test_concurrent_distinct_papers_are_all_registered(config, scorer):
     assert processor.state.stats["duplicates_removed"] == 0
 
 
-# ── sqlite concurrency settings ─────────────────────────────────────────────
-
-
 def test_cache_uses_wal_journal(tmp_path):
     """WAL is what lets a reader proceed while a writer holds the lock."""
     db_path = tmp_path / "cache.db"
@@ -261,7 +250,6 @@ def test_concurrent_promotion_of_an_excluded_duplicate_happens_once(config, scor
 
     processor = _make_processor(config, scorer)
 
-    # First pass: no anchor term, so the paper is stored but excluded.
     processor.process(
         paper={
             "Title": "A study of ledgers",
@@ -281,7 +269,7 @@ def test_concurrent_promotion_of_an_excluded_duplicate_happens_once(config, scor
     real_validate = processor.resolver.validator.validate_and_score
 
     def slow_validate(*args, **kwargs):
-        time.sleep(0.02)  # the window the claim closes
+        time.sleep(0.02)
         return real_validate(*args, **kwargs)
 
     monkeypatch.setattr(processor.resolver.validator, "validate_and_score", slow_validate)
@@ -299,7 +287,7 @@ def test_concurrent_promotion_of_an_excluded_duplicate_happens_once(config, scor
     barrier = threading.Barrier(threads_n)
 
     def submit():
-        barrier.wait()  # line them up so they collide
+        barrier.wait()
         processor.process(
             paper={
                 "Title": "A study of ledgers",
@@ -344,7 +332,7 @@ def test_a_paper_seen_while_it_is_being_registered_is_counted_once(config, score
     real_validate = processor.resolver.validator.validate_and_score
 
     def slow_validate(*args, **kwargs):
-        time.sleep(0.05)  # the window between "seen" and "written"
+        time.sleep(0.05)
         return real_validate(*args, **kwargs)
 
     monkeypatch.setattr(processor.resolver.validator, "validate_and_score", slow_validate)

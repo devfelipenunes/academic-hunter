@@ -89,9 +89,6 @@ def fetcher_returning(*outcomes):
     return fetch
 
 
-# ── the happy path, and what it leaves behind ───────────────────────────────
-
-
 def test_every_paper_gets_a_status_and_the_counters_add_up():
     papers = [paper("One", "10.1/a"), paper("Two", "10.1/b"), paper("Three", "")]
     store = FakeChunkStore()
@@ -147,9 +144,6 @@ def test_a_paper_without_a_doi_costs_no_request():
 
     assert counters["no_doi"] == 1
     assert fetch.calls == [], "a request was spent on a paper that cannot be addressed"
-
-
-# ── idempotence ─────────────────────────────────────────────────────────────
 
 
 def test_an_indexed_paper_is_skipped_without_being_fetched():
@@ -246,9 +240,6 @@ def test_the_collection_can_be_redirected():
     assert store.indexed_collections == ["paper_chunks_eval"]
 
 
-# ── degradation: each case counted, nothing propagated ──────────────────────
-
-
 @pytest.mark.parametrize(
     "outcome,expected",
     [
@@ -256,9 +247,6 @@ def test_the_collection_can_be_redirected():
         (FullTextTransientError("503"), "download_failed"),
         (document(has_text_layer=False), "no_text_layer"),
         (document(text="   "), "no_text_layer"),
-        # Text extracted, but nothing in it looks like a section. Distinct from
-        # `no_text_layer` on purpose: that one points at OCR, this one at the
-        # extractor, and they are different repairs.
         (document(text="just one long run of prose " * 50), "no_sections"),
     ],
 )
@@ -372,9 +360,6 @@ def test_an_indexing_failure_is_reported_as_a_failed_download():
     assert counters["download_failed"] == 1
 
 
-# ── budget ──────────────────────────────────────────────────────────────────
-
-
 def test_the_paper_budget_leaves_the_rest_untouched():
     papers = [paper(f"P{i}", f"10.1/{i}") for i in range(5)]
     fetch = fetcher_returning(document())
@@ -415,14 +400,6 @@ def test_the_time_budget_stops_the_batch(monkeypatch):
 
     assert counters["not_attempted"] > 0, "the budget never triggered"
     assert sum(counters.values()) == len(papers)
-
-
-# ── why it failed, as a value and not as prose ──────────────────────────────
-#
-# The three causes of `download_failed` need different fixes and only one of
-# them is worth retrying, but they all landed in one bucket described by a free
-# text message truncated to 300 characters — uncountable without reading prose,
-# and cut off mid-sentence in the longest case.
 
 
 def test_an_http_status_is_classified_by_what_it_means():

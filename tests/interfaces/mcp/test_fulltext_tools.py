@@ -16,6 +16,7 @@ from academic_hunter.core.ports.fulltext import (
     ExtractedDocument,
     NoOpenAccessVersion,
 )
+from academic_hunter.interfaces.mcp.exceptions import VectorStoreError
 from academic_hunter.interfaces.mcp.tools import fulltext as ft
 
 LONG_TEXT = (
@@ -122,9 +123,6 @@ def hit(parent_id, relevance, title="", section="method", index=0, text="passage
     }
 
 
-# ── fulltext_status ─────────────────────────────────────────────────────────
-
-
 async def test_status_reports_the_counters_of_the_last_run(tmp_path, mock_ctx, env):
     run = make_run(
         tmp_path,
@@ -184,9 +182,6 @@ async def test_status_names_the_missing_pdf_extra(mock_ctx, env):
     assert "fulltext" in result, "the message must say which extra to install"
 
 
-# ── index_fulltext ──────────────────────────────────────────────────────────
-
-
 async def test_index_fulltext_reports_the_counters(mock_ctx, env):
     papers = [{"Title": "One", "DOI": "10.1/a"}, {"Title": "Two", "DOI": ""}]
     store = FakeStore()
@@ -226,14 +221,18 @@ async def test_index_fulltext_forwards_force(mock_ctx, env):
 
 
 async def test_index_fulltext_says_so_when_the_store_cannot_hold_chunks(mock_ctx, env):
+    """A store with no chunk API is a wiring error, not a result to report.
+
+    Returning the sentence made the call a success on the wire: nothing was
+    indexed and the client had no `isError` to notice it by.
+    """
     class NotAChunkStore:
         pass
 
     env(store=NotAChunkStore(), papers=[{"Title": "One", "DOI": "10.1/a"}])
 
-    result = await ft.index_fulltext(ctx=mock_ctx)
-
-    assert "cannot hold chunks" in result
+    with pytest.raises(VectorStoreError, match="cannot hold chunks"):
+        await ft.index_fulltext(ctx=mock_ctx)
 
 
 async def test_index_fulltext_without_papers_points_at_run_search(mock_ctx, env):
@@ -260,12 +259,7 @@ async def test_index_fulltext_does_not_spend_a_request_on_a_paper_without_a_doi(
     assert calls == []
 
 
-# ── chunk_search ────────────────────────────────────────────────────────────
-
-
 async def test_chunk_search_groups_hits_under_their_paper(mock_ctx, env):
-    # Deliberately out of order: the weaker paper comes first, so grouping has
-    # to sort rather than preserve whatever the store returned.
     store = FakeStore(hits=[
         hit("doi:10.1/b", 0.55, title="Another paper", index=0),
         hit("doi:10.1/a", 0.72, title="Ledgers in practice", index=1, section="results"),
@@ -277,8 +271,6 @@ async def test_chunk_search_groups_hits_under_their_paper(mock_ctx, env):
 
     assert result.index("Ledgers in practice") < result.index("Another paper")
     assert "results" in result, "the second chunk of the same paper is missing"
-    # 2 papers claimed, so the search must ask for more than 2 chunks: they come
-    # grouped, and 10 chunks can easily be 2 papers.
     assert store.queries[0][1] > 2
 
 
@@ -304,8 +296,6 @@ async def test_chunk_search_reports_section_and_offsets_and_no_page(mock_ctx, en
 
     assert "method" in result
     assert "chars 300–390" in result
-    # "passage" is not the word under test here — a page marker would be a
-    # number attached to a page, and there is no such number to attach.
     assert "page" not in result.lower().replace("passage", "")
 
 
@@ -348,3 +338,49 @@ async def test_chunk_search_reaches_the_collection_it_is_given(mock_ctx, env):
     await ft.chunk_search("latency", collection_name="paper_chunks_eval", ctx=mock_ctx)
 
     assert store.queries[0][2] == "paper_chunks_eval"
+
+
+async def test_an_unreadable_dataset_is_not_reported_as_the_step_not_running(
+    mock_ctx, env, tmp_path
+):
+    """Three answers, and only two of them were told apart.
+
+    An absent ``_full_text_status`` column means the step did not run; a
+    dataset that cannot be *opened* is a different thing, and it was reported
+    with the same sentence — telling a reader to go and change
+    ``settings.fulltext.enabled`` about a permissions problem.
+    """
+    run = make_run(tmp_path, counters={"indexed": 1})
+    (run / "academic_dataset_20260910_120000.csv").mkdir()
+
+    env(run_dir=run)
+
+    result = await ft.fulltext_status(ctx=mock_ctx)
+
+    assert "could not be read" in result
+    assert "did not run" not in result, (
+        "a read failure was reported as a configuration choice"
+    )
+
+
+async def test_a_dataset_without_the_column_still_says_the_step_did_not_run(
+    mock_ctx, env, tmp_path
+):
+    """The third answer must survive the split that the previous test forced."""
+    import csv as _csv
+
+    run = tmp_path / "results" / "run_20260910_120000"
+    run.mkdir(parents=True)
+    with (run / "academic_dataset_20260910_120000.csv").open(
+        "w", newline="", encoding="utf-8"
+    ) as handle:
+        writer = _csv.writer(handle)
+        writer.writerow(["Title", "DOI"])
+        writer.writerow(["Paper 0", "10.1/0"])
+
+    env(run_dir=run)
+
+    result = await ft.fulltext_status(ctx=mock_ctx)
+
+    assert "did not run" in result
+    assert "could not be read" not in result

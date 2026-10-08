@@ -12,9 +12,9 @@ go anywhere else.
 """
 
 import json
+from unittest.mock import MagicMock
 
 import pytest
-from unittest.mock import MagicMock
 
 from academic_hunter import AcademicHunter
 

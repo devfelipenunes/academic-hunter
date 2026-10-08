@@ -45,7 +45,6 @@ class ChainFullTextSource:
     can still tell "fix the config" from "there is no copy".
     """
 
-    #: Severity for choosing which failure to report when all of them failed.
     _RANK = {NoOpenAccessVersion: 0, FullTextTransientError: 1, FullTextConfigError: 2}
 
     def __init__(self, sources: List[Callable[[str], ExtractedDocument]]) -> None:
@@ -64,7 +63,7 @@ class ChainFullTextSource:
                 logger.debug("%s had nothing for %s: %s", name, doi, e)
                 worst = self._worse(worst, e)
                 continue
-            except Exception as e:  # noqa: BLE001 — one source must not stop the chain
+            except Exception as e:  # noqa: BLE001
                 logger.warning("%s failed unexpectedly for %s: %s", name, doi, e)
                 worst = self._worse(worst, FullTextTransientError(str(e)))
                 continue
@@ -72,8 +71,6 @@ class ChainFullTextSource:
             if document.has_text_layer:
                 document.source = name
                 return document
-            # Text was found but is unusable (a scan, an abstract-only record);
-            # another source may still have the real thing.
             logger.debug("%s produced no text layer for %s", name, doi)
             worst = self._worse(worst, NoOpenAccessVersion(doi))
 

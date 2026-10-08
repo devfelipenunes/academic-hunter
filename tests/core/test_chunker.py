@@ -7,7 +7,7 @@ import time
 
 import pytest
 
-from academic_hunter.core.fulltext import Chunk, chunk_document, detect_sections
+from academic_hunter.core.fulltext import chunk_document, detect_sections
 from academic_hunter.core.fulltext.chunker import TARGET_WORDS
 from academic_hunter.core.ports.fulltext import ExtractedDocument
 
@@ -24,8 +24,6 @@ def words(prefix, count):
     return " ".join(f"{prefix}{i}" for i in range(count))
 
 
-# Distinct word prefixes per section, so a test can tell which section a chunk's
-# text came from. They deliberately do not echo the heading names.
 DOC = build(
     ("Abstract", "This paper studies ledgers."),
     ("1. Introduction", words("alpha", 300)),
@@ -36,9 +34,6 @@ DOC = build(
 
 def chunk(path="doi:10.1/x", text=DOC, **kwargs):
     return chunk_document(ExtractedDocument(text=text, page_count=9), path, **kwargs)
-
-
-# ── sections ────────────────────────────────────────────────────────────────
 
 
 def test_detect_sections_finds_the_headings():
@@ -73,9 +68,6 @@ def test_a_long_line_is_not_a_heading():
     assert [s.name for s in detect_sections(text)] == ["preamble"]
 
 
-# ── offsets: the property a chunk_search depends on ─────────────────────────
-
-
 def test_every_chunk_matches_the_text_at_its_own_offsets():
     """A chunk that points at the wrong span misreports section and page."""
     for c in chunk():
@@ -95,15 +87,12 @@ def test_offsets_are_document_local_not_section_local():
     assert all(c.text.split()[0].startswith("beta") for c in methods)
 
 
-# ── boundaries and size ─────────────────────────────────────────────────────
-
-
 def test_a_chunk_never_crosses_a_section_boundary():
     """Each section's fixture words share a prefix; a chunk holding two of them
     means the boundary was crossed."""
     for c in chunk():
         if c.section == "abstract":
-            continue  # prose, not generated from a single prefix
+            continue
         prefixes = {w.rstrip("0123456789") for w in c.text.split()}
         assert len(prefixes) == 1, f"chunk mixes sections: {prefixes}"
 
@@ -128,7 +117,50 @@ def test_a_short_tail_is_dropped_rather_than_merged():
     assert all(len(c.text.split()) >= 25 for c in chunks)
 
 
-# ── what is kept and what is dropped ────────────────────────────────────────
+def test_a_span_of_exactly_one_window_yields_one_chunk():
+    """The tail left over was the overlap the first chunk had just written.
+
+    At exactly ``target_words`` the loop advanced by ``step``, found
+    ``overlap_words`` still to cover, and emitted them as a second chunk whose
+    whole text already sat inside the first. The same passage indexed twice, so
+    one source could fill two of a query's result slots — and a reader shown
+    both would have no way to tell they were the same text.
+    """
+    body = words("a", TARGET_WORDS)
+    text = build(("Abstract", body), ("Introduction", words("b", 200)))
+
+    abstracts = [c for c in chunk(text=text) if c.section == "abstract"]
+
+    assert len(abstracts) == 1
+    assert abstracts[0].text == body
+
+
+def test_no_chunk_is_wholly_contained_in_another():
+    """Every chunk has to add text; a contained one adds none."""
+    chunks = chunk()
+
+    for outer in chunks:
+        for inner in chunks:
+            if inner is not outer:
+                assert inner.text not in outer.text, (
+                    f"chunk {inner.chunk_id} is already inside {outer.chunk_id}"
+                )
+
+
+def test_dropping_the_duplicate_tail_loses_no_words():
+    """The guard stops before a window that is entirely inside its predecessor,
+    so nothing that used to be indexed stops being indexed."""
+    body = words("a", TARGET_WORDS)
+    text = build(("Abstract", body), ("Introduction", words("b", 200)))
+
+    indexed = {
+        word
+        for c in chunk(text=text)
+        if c.section == "abstract"
+        for word in c.text.split()
+    }
+
+    assert indexed == set(body.split())
 
 
 def test_a_short_abstract_is_exactly_one_chunk():
@@ -216,9 +248,6 @@ def test_acknowledgements_can_be_asked_for():
     assert kept
 
 
-# ── identity and degenerate input ───────────────────────────────────────────
-
-
 def test_ids_are_deterministic_and_unique():
     first = [c.chunk_id for c in chunk()]
     second = [c.chunk_id for c in chunk()]
@@ -240,9 +269,6 @@ def test_an_empty_document_yields_nothing(text):
 def test_a_document_without_headings_is_dropped_entirely():
     """Everything lands in the preamble, which is not content."""
     assert chunk(text=words("w", 500)) == []
-
-
-# ── cost ────────────────────────────────────────────────────────────────────
 
 
 def test_a_long_document_chunks_in_linear_time():

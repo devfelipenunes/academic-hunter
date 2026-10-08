@@ -7,6 +7,8 @@ makes "a second run does not hit the network" a property of the wiring.
 
 import hashlib
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -40,9 +42,13 @@ class PdfCache:
         """Store the PDF, atomically so a concurrent reader never sees a partial file."""
         self.root.mkdir(parents=True, exist_ok=True)
         path = self.path_for(url)
-        temporary = path.with_suffix(".part")
+        descriptor, name = tempfile.mkstemp(dir=self.root, prefix=f"{path.name}.", suffix=".part")
+        temporary = Path(name)
         try:
-            temporary.write_bytes(pdf_bytes)
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(pdf_bytes)
+                handle.flush()
+                os.fsync(handle.fileno())
             temporary.replace(path)
         except OSError as e:
             logger.warning("Could not cache PDF %s: %s", path, e)

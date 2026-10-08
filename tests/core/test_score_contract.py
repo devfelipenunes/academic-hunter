@@ -49,8 +49,6 @@ def resolver(config):
         context_rules=config.context_rules,
         settings=config.settings,
     )
-    # semantic_screener=None keeps the mode effectively keyword-only, so the
-    # inclusion score is the raw regex score — a scale we can predict exactly.
     return PaperResolver(
         state=SearchState(),
         scorer=scorer,
@@ -59,9 +57,6 @@ def resolver(config):
         lock=threading.RLock(),
         semantic_screener=None,
     )
-
-
-# ── the threshold setting ───────────────────────────────────────────────────
 
 
 def test_min_inclusion_score_falls_back_to_min_relevance_score(config):
@@ -76,9 +71,6 @@ def test_min_inclusion_score_can_be_set_independently(config):
     config.settings["min_relevance_score"] = 3.5
 
     assert config.min_inclusion_score() == 12.0
-
-
-# ── the Paper model footgun ─────────────────────────────────────────────────
 
 
 def test_paper_constructor_drops_underscore_fields():
@@ -102,9 +94,6 @@ def test_paper_preserves_underscore_fields_assigned_after_construction():
     paper["_hybrid_score"] = 7.5
 
     assert paper["_hybrid_score"] == 7.5
-
-
-# ── ingest writes the inclusion score, never the reported one ───────────────
 
 
 def test_register_new_paper_stores_inclusion_score_under_private_key(resolver):
@@ -169,7 +158,6 @@ def test_inclusion_gate_uses_min_inclusion_score(resolver):
     inclusion = resolver.state.consolidated_results["p1"]["_hybrid_score"]
     assert resolver.state.stats["included_final"] == 1
 
-    # Raise only the inclusion threshold, above this paper's score.
     resolver.config.settings["min_inclusion_score"] = inclusion + 1.0
 
     resolver.register_new_paper(
@@ -187,3 +175,84 @@ def test_inclusion_gate_uses_min_inclusion_score(resolver):
     assert "p2" in resolver.state.consolidated_results, (
         "the gate classifies; it does not evict — removal is deferred to the rank step"
     )
+
+
+def test_a_keyword_only_run_never_asks_the_screener(config):
+    """The ablation that removes the semantic signal has to remove the call too.
+
+    `validators.py` and `resolve_existing_duplicate` already checked the mode
+    before scoring; `register_new_paper` did not, and it is the one that runs for
+    every paper. A keyword-mode run therefore paid the 79 MB model load and ran
+    the concurrent-download race the warm-up exists to prevent, for a score the
+    ablation was configured to discard.
+    """
+    from unittest.mock import MagicMock
+
+    config.settings["ablation"] = {"mode": "keyword"}
+    scorer = AcademicScorer(
+        anchors=config.anchors,
+        tech_strings=config.tech_strings,
+        tech_weights=config.tech_weights,
+        context_rules=config.context_rules,
+        settings=config.settings,
+    )
+    screener = MagicMock()
+    resolver = PaperResolver(
+        state=SearchState(),
+        scorer=scorer,
+        config=config,
+        connectors={},
+        lock=threading.RLock(),
+        semantic_screener=screener,
+    )
+
+    resolver.register_new_paper(
+        paper={"Title": "Blockchain latency", "Abstract": "chain latency", "Year": 2024,
+               "URL": "http://x", "Source": "Mock", "Citations": 0},
+        dedup_id="p1",
+        title="Blockchain latency",
+        doi_clean="10.0/1",
+        tech_cat="cat",
+        tech_list=["latency"],
+        source="Mock",
+    )
+
+    screener.evaluate.assert_not_called()
+    assert resolver.state.consolidated_results["p1"]["_sem_score"] == 0.0
+
+
+def test_a_hybrid_run_still_asks_the_screener(config):
+    from unittest.mock import MagicMock
+
+    config.settings["ablation"] = {"mode": "hybrid"}
+    scorer = AcademicScorer(
+        anchors=config.anchors,
+        tech_strings=config.tech_strings,
+        tech_weights=config.tech_weights,
+        context_rules=config.context_rules,
+        settings=config.settings,
+    )
+    screener = MagicMock()
+    screener.evaluate.return_value = 0.5
+    resolver = PaperResolver(
+        state=SearchState(),
+        scorer=scorer,
+        config=config,
+        connectors={},
+        lock=threading.RLock(),
+        semantic_screener=screener,
+    )
+
+    resolver.register_new_paper(
+        paper={"Title": "Blockchain latency", "Abstract": "chain latency", "Year": 2024,
+               "URL": "http://x", "Source": "Mock", "Citations": 0},
+        dedup_id="p1",
+        title="Blockchain latency",
+        doi_clean="10.0/1",
+        tech_cat="cat",
+        tech_list=["latency"],
+        source="Mock",
+    )
+
+    assert screener.evaluate.called, "the ablation that keeps the signal dropped it"
+    assert resolver.state.consolidated_results["p1"]["_sem_score"] == 0.5

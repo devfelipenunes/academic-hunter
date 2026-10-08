@@ -63,8 +63,6 @@ def ingest_full_text(
     failure_kinds: Dict[str, int] = {}
 
     for paper in papers:
-        # A previous run's dataset carries this column; a stale value would be
-        # attributed to an attempt that never reached a source.
         paper.pop("_full_text_source", None)
 
         if attempted >= max_papers or (time.monotonic() - started > budget):
@@ -85,10 +83,6 @@ def ingest_full_text(
                             replace=force,
                         )
                     except FullTextConfigError as e:
-                        # The chain raises this only after every source failed for
-                        # *this* DOI. The sources do not share configuration, so it
-                        # says nothing about the next paper — treating it as global
-                        # is how one rejected e-mail silenced a whole run.
                         logger.warning("Full text needs configuration for %s: %s", doi, e)
                         status = _failed(paper, e)
 
@@ -129,7 +123,7 @@ def _ingest_one(
     except FullTextTransientError as e:
         logger.info("Full text unavailable for %s: %s", doi, e)
         return _failed(paper, e)
-    except Exception as e:  # noqa: BLE001 — an optional stage must not fail the run
+    except Exception as e:  # noqa: BLE001
         logger.warning("Unexpected full-text failure for %s: %s", doi, e)
         return _failed(paper, e)
 
@@ -140,7 +134,6 @@ def _ingest_one(
 
     chunks = chunk_document(document, parent_id)
     if not chunks:
-        # Extracted text with no recognisable section: the extractor, not OCR.
         return "no_sections"
 
     records = [
@@ -152,7 +145,6 @@ def _ingest_one(
             "index": c.index,
             "start": c.start,
             "end": c.end,
-            # So `chunk_search` can name the paper: the parent_id is not readable.
             "title": str(paper.get("Title") or ""),
             "doi": doi,
             "year": str(paper.get("Year") or ""),
@@ -168,9 +160,6 @@ def _ingest_one(
         return _failed(paper, e, kind="store")
 
     if indexed and replace:
-        # After the replacement is in the store, and naming what it kept. A delete
-        # ordered before the index ran on the old chunks and then left the paper
-        # with none at all when the store refused the batch.
         store.delete_chunks(
             parent_id,
             collection_name=collection_name,
@@ -217,14 +206,11 @@ def _report(
         counters["already_indexed"],
     )
     if failure_kinds:
-        # Separately, because they need different fixes and only one is worth
-        # retrying: a refusal is not a missing file, and neither is weather.
         logger.info(
             "Of the failures: %s.",
             ", ".join(f"{n} {kind}" for kind, n in sorted(failure_kinds.items())),
         )
     if counters["not_attempted"]:
-        # Silence here would read as "there is no OA copy".
         logger.warning(
             "%d papers were not attempted (budget: %d papers / %ds). "
             "Raise settings.fulltext.max_papers or time_budget_seconds.",
