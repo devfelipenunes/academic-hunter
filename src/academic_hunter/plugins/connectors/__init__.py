@@ -9,13 +9,10 @@ registered in the ``CONNECTORS`` dictionary keyed by their display name.
 import importlib
 from pathlib import Path
 
-from .base import BaseConnector  # noqa: F401 — re-exported for convenience
+from .base import BaseConnector  # noqa: F401
 
 CONNECTORS: dict = {}
 
-# Mapping from module name (stem) to connector display name.
-# Kept explicit to preserve backward-compatible keys ("ArXiv", "CORE", …)
-# while avoiding imports of every connector at the package level.
 _CONNECTOR_NAMES: dict[str, str] = {
     "arxiv": "ArXiv",
     "crossref": "Crossref",

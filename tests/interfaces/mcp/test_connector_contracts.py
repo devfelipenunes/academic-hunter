@@ -78,9 +78,6 @@ async def test_unpaywall_falls_back_when_the_pdf_field_is_null(mock_ctx):
     assert "https://repository.example.org/handle/1" in report
 
 
-# ── ORCID ───────────────────────────────────────────────────────────────────
-
-
 def _orcid_response(record):
     response = MagicMock()
     response.json.return_value = record
@@ -149,9 +146,6 @@ async def test_orcid_reads_the_affiliations_it_publishes(mock_ctx):
     assert "Analytical Engines" in report, report
 
 
-# ── Lens ────────────────────────────────────────────────────────────────────
-
-
 def _lens_post(captured, data=None):
     def post(url, json=None, headers=None, timeout=None):
         captured["headers"] = headers
@@ -208,9 +202,6 @@ async def test_the_token_can_come_from_the_config_instead(mock_ctx, monkeypatch)
     assert captured["headers"].get("Authorization") == "Bearer from-config"
 
 
-# ── OpenAIRE ────────────────────────────────────────────────────────────────
-
-
 def _openaire_response(oaf):
     response = MagicMock()
     response.json.return_value = {
@@ -262,9 +253,6 @@ async def test_openaire_reads_a_multi_valued_field(mock_ctx):
     assert "Ada; Grace" in report, report
 
 
-# ── bioRxiv / medRxiv ───────────────────────────────────────────────────────
-
-
 def _biorxiv_page(items, cursor):
     response = MagicMock()
     response.json.return_value = {
@@ -286,8 +274,6 @@ async def test_biorxiv_follows_the_cursor_to_find_a_match(mock_ctx):
     pages = [
         _biorxiv_page([{"title": "Something unrelated", "abstract": ""}], cursor=100),
         _biorxiv_page([{"title": "Ledger methods", "abstract": ""}], cursor=200),
-        # An empty page ends the walk. Without it the mock runs out of responses
-        # and the resulting StopIteration inside the coroutine hangs the test.
         _biorxiv_page([], cursor=200),
     ]
 
@@ -308,9 +294,6 @@ async def test_biorxiv_stops_when_the_cursor_stops_moving(mock_ctx):
 
     assert "No matching preprints" in report
     assert m_get.call_count <= 2, f"the loop did not stop: {m_get.call_count} pages"
-
-
-# ── o health e um store que não responde ────────────────────────────────────
 
 
 async def test_a_store_that_cannot_be_read_makes_the_status_degrade(mock_ctx):

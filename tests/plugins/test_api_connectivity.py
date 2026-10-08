@@ -1,8 +1,6 @@
 import sys
 from pathlib import Path
-import time
 
-# Add src to path if needed
 sys.path.append(str(Path(__file__).parent))
 
 try:
@@ -11,7 +9,9 @@ except ImportError:
     from academic_hunter import AcademicHunter
 
 import pytest
+
 from academic_hunter import AcademicHunter
+
 
 @pytest.fixture
 def hunter():

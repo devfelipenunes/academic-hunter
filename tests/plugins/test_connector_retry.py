@@ -8,8 +8,6 @@ server said "not now", which is not a retry, it is the same request twice.
 import threading
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from academic_hunter.plugins.connectors.base import BaseConnector
 
 URL = "https://example.org/search"
@@ -38,7 +36,6 @@ def response(status):
 def attempt_with(connector, outcomes, max_retries=3):
     """Run one request, capturing every sleep instead of taking it."""
     if not isinstance(outcomes, list):
-        # The same outcome every time: mock's `side_effect` needs a sequence.
         outcomes = [outcomes] * max_retries
     with patch("academic_hunter.plugins.connectors.base.requests.get") as get, patch(
         "academic_hunter.plugins.connectors.base.time.sleep"
@@ -110,3 +107,51 @@ def test_a_success_after_a_failure_still_returns():
 
     assert result is not None
     assert waits, "the retry did not wait"
+
+
+def test_a_backoff_does_not_hold_the_shared_semaphore():
+    """The wait is per-source; the semaphore is shared by every source.
+
+    `Semaphore(2)` is global, so a 30-second rate-limit wait taken while
+    holding a slot stopped the other connectors from fetching at all: one
+    throttled API stalled the whole run, which is the opposite of what a
+    per-source backoff is for. `_apply_pacing` already separated deciding the
+    wait from taking it; the retry path did not.
+    """
+    connector = make_connector()
+    connector.semaphore = threading.Semaphore(1)
+    free_during_sleep = []
+
+    with patch("academic_hunter.plugins.connectors.base.requests.get") as get, patch(
+        "academic_hunter.plugins.connectors.base.time.sleep"
+    ) as sleep:
+        get.return_value = response(503)
+        sleep.side_effect = lambda seconds: free_during_sleep.append(
+            connector.semaphore._value
+        )
+        connector._raw_request(URL, max_retries=3)
+
+    assert free_during_sleep, "nothing was waited on at all"
+    assert all(free_during_sleep), (
+        "a slot was held across the backoff, so no other source could fetch"
+    )
+
+
+def test_a_rate_limit_wait_does_not_hold_the_shared_semaphore():
+    connector = make_connector()
+    connector.semaphore = threading.Semaphore(1)
+    throttled = MagicMock()
+    throttled.status_code = 429
+    throttled.headers = {"Retry-After": "5"}
+    free_during_sleep = []
+
+    with patch("academic_hunter.plugins.connectors.base.requests.get") as get, patch(
+        "academic_hunter.plugins.connectors.base.time.sleep"
+    ) as sleep:
+        get.return_value = throttled
+        sleep.side_effect = lambda seconds: free_during_sleep.append(
+            connector.semaphore._value
+        )
+        connector._raw_request(URL, max_retries=3)
+
+    assert free_during_sleep == [1, 1], "the 429 waiting happened inside the slot"

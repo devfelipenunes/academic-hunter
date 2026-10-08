@@ -1,6 +1,8 @@
 """Tests for DOAJ connector."""
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from academic_hunter.plugins.connectors.doaj import DoajConnector
 
 
@@ -54,8 +56,22 @@ def test_doaj_fetch_returns_papers(connector):
     assert results[0]["URL"] == "https://example.com/paper"
     assert results[0]["Venue"] == "Journal of Science"
     assert results[1]["Title"] == "Second Paper"
-    assert results[1]["DOI"] is None
+    assert results[1]["DOI"] == ""
     assert results[1]["URL"] == ""
+
+
+def test_a_record_with_no_doi_yields_an_empty_string(connector):
+    """A missing DOI is the empty string, not ``None``.
+
+    The field is a string everywhere it is written and the exporters read it as
+    one; ``null`` in a JSON record is a missing value, and the record carries the
+    same empty string the other four connectors carry.
+    """
+    connector._make_request.return_value = {
+        "results": [{"bibjson": {"title": "No DOI", "identifier": []}}]
+    }
+
+    assert connector.fetch(["anchor"], ["tech"], limit=1)[0]["DOI"] == ""
 
 
 def test_doaj_fetch_respects_limit(connector):

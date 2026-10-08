@@ -1,9 +1,11 @@
 """Tests for Europe PMC search tool."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from academic_hunter.interfaces.mcp.tools.europepmc import search_europepmc
+
 from academic_hunter.interfaces.mcp.exceptions import MCPToolError
+from academic_hunter.interfaces.mcp.tools.europepmc import search_europepmc
 
 
 async def test_search_europepmc_success(mock_ctx):

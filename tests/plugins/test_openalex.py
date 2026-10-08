@@ -1,20 +1,24 @@
-import sys
-from pathlib import Path
-import unittest
-from unittest.mock import patch, MagicMock
 import json
 import os
+import shutil
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import requests
 
-# Add src to path
 sys.path.append(str(Path(__file__).parent.parent / 'src'))
 
 from academic_hunter import AcademicHunter
 
+
 class TestOpenAlex(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.test_config_path = 'test_config_task4.json'
+        cls.tmp_dir = tempfile.mkdtemp(prefix="ah-openalex-")
+        cls.test_config_path = os.path.join(cls.tmp_dir, "test_config_task4.json")
         cls.config = {
             "settings": {
                 "user_email": "test@example.com",
@@ -29,15 +33,13 @@ class TestOpenAlex(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if os.path.exists(cls.test_config_path):
-            os.remove(cls.test_config_path)
+        shutil.rmtree(cls.tmp_dir, ignore_errors=True)
 
     def setUp(self):
-        self.hunter = AcademicHunter(config_path=self.test_config_path)
+        self.hunter = AcademicHunter(config_path=self.test_config_path, output_dir=self.tmp_dir)
 
     @patch('requests.get')
     def test_fetch_openalex_success(self, mock_get):
-        # Mock successful response
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -57,12 +59,11 @@ class TestOpenAlex(unittest.TestCase):
         
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["Title"], "Test Article")
-        self.assertEqual(results[0]["DOI"], "10.1234/test.123") # Normalized
+        self.assertEqual(results[0]["DOI"], "10.1234/test.123")
         self.assertEqual(results[0]["URL"], "https://doi.org/10.1234/test.123")
 
     @patch('requests.get')
     def test_fetch_openalex_no_doi(self, mock_get):
-        # Mock response without DOI
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -86,7 +87,6 @@ class TestOpenAlex(unittest.TestCase):
 
     @patch('requests.get')
     def test_fetch_openalex_http_error(self, mock_get):
-        # Mock HTTP error
         mock_response = MagicMock()
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Client Error")
         mock_get.return_value = mock_response
@@ -96,7 +96,6 @@ class TestOpenAlex(unittest.TestCase):
 
     @patch('requests.get')
     def test_fetch_openalex_invalid_json(self, mock_get):
-        # Mock invalid JSON
         mock_response = MagicMock()
         mock_response.json.side_effect = ValueError("Invalid JSON")
         mock_get.return_value = mock_response
@@ -105,5 +104,5 @@ class TestOpenAlex(unittest.TestCase):
         self.assertEqual(results, [])
 
 if __name__ == "__main__":
-    import requests # Ensure requests is available for the exception
+    import requests
     unittest.main()

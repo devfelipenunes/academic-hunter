@@ -16,9 +16,6 @@ from academic_hunter.plugins.connectors.base import BaseConnector
 
 SRC = pathlib.Path(__file__).resolve().parent.parent.parent / "src"
 
-#: `AcademicHunter/2.0.0`, `academic-hunter/2.1` — a version glued to the name.
-#: The MCP resource URI `academic-hunter://papers/{doi}` has no digit there and
-#: is deliberately out of reach.
 _VERSIONED_AGENT = re.compile(r"academic[-_]?hunter/\d", re.IGNORECASE)
 
 

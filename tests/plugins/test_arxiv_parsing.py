@@ -179,3 +179,57 @@ def test_a_feed_carrying_an_entity_bomb_is_not_expanded(connector):
     assert not papers or "lollollollol" not in papers[0]["Title"], (
         "the document's internal entities were expanded"
     )
+
+
+class RecordingCache:
+    def __init__(self):
+        self.written = {}
+
+    def get(self, key):
+        return None
+
+    def set(self, key, value):
+        self.written[key] = value
+
+
+def test_a_page_that_does_not_parse_is_not_cached(connector):
+    """A proxy in front of the API answers with an HTML error body and a 200.
+
+    Caching before `parse_xml` accepted the page stored that body under the
+    query URL, and every later run read it back and failed in the same place —
+    with the network, the one thing that would have fixed it, never consulted
+    again, because the cache hit short-circuits the fetch.
+    """
+    connector.use_cache = True
+    connector.cache = RecordingCache()
+    connector.serve("<html><body>502 Bad Gateway<br></body></html>")
+
+    papers = connector.fetch(["ledger"], ["throughput"], limit=10)
+
+    assert papers == []
+    assert connector.cache.written == {}, "a page that never parsed was cached"
+
+
+def test_a_page_that_parses_is_cached(connector):
+    connector.use_cache = True
+    connector.cache = RecordingCache()
+    connector.serve(ATOM)
+
+    connector.fetch(["ledger"], ["throughput"], limit=10)
+
+    assert len(connector.cache.written) == 1, "the good page was not cached at all"
+
+
+def test_a_cached_page_is_reparsed_and_not_refetched(connector):
+    """The cache hit is only a hit if its payload is what gets parsed."""
+    connector.use_cache = True
+    cache = RecordingCache()
+    cache.get = lambda key: ATOM
+    connector.cache = cache
+    connector.serve(EMPTY)
+
+    papers = connector.fetch(["ledger"], ["throughput"], limit=10)
+
+    assert len(papers) == 2, "the cached page was fetched over instead of parsed"
+    assert connector.served == [], "the network was consulted for a cached URL"
+    assert cache.written == {}, "the cached payload was written back over itself"

@@ -1,12 +1,14 @@
 """Tests for citation analysis MCP tools (OpenCitations/COCI)."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
+from academic_hunter.interfaces.mcp.exceptions import MCPToolError
 from academic_hunter.interfaces.mcp.tools.citations import (
     get_citation_count,
     get_citing_papers,
 )
-from academic_hunter.interfaces.mcp.exceptions import MCPToolError
 
 
 async def test_get_citation_count(mock_ctx):

@@ -1,6 +1,7 @@
 import logging
 import urllib.parse
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from .base import BaseConnector, keyword_terms, quoted_ors
 
 logger = logging.getLogger("academic_hunter.connectors")
@@ -17,20 +18,19 @@ class DoajConnector(BaseConnector):
     def detect_peer_review(self, doc_type: str) -> str:
         return "Yes"
 
-    def resolve_abstract_by_doi(self, doi: str) -> str:
+    def resolve_metadata_by_doi(self, doi: str) -> Dict[str, Any]:
         try:
             url = f"https://doaj.org/api/search/articles/doi:{doi}"
             data = self._make_request(url, timeout=10)
             if data and data.get('results'):
-                return data['results'][0].get('bibjson', {}).get('abstract', '')
+                abstract = (data['results'][0].get('bibjson') or {}).get('abstract') or ''
+                if abstract:
+                    return {"Abstract": abstract}
         except Exception as e:
-            logger.warning("DOAJ abstract lookup failed: %s", e)
-        return ""
+            logger.warning("DOAJ metadata lookup failed: %s", e)
+        return {}
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
-        # Quoted and OR-joined: DOAJ's search reads a space-separated bag as a
-        # conjunction, so the same four anchors that return 21 results this way
-        # return none as plain phrases.
         query = quoted_ors(keyword_terms(anchors, tech_strings))
         with self.lock:
             self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
@@ -49,26 +49,26 @@ class DoajConnector(BaseConnector):
             if not data:
                 break
 
-            results = data.get('results', [])
+            results = data.get('results') or []
             if not results:
                 break
 
             for res in results:
-                bibjson = res.get('bibjson', {})
-                title = bibjson.get('title', 'Unknown Title')
-                abstract = bibjson.get('abstract', '')
-                year = bibjson.get('year', 'N/A')
-                journal = bibjson.get('journal', {})
+                bibjson = res.get('bibjson') or {}
+                title = bibjson.get('title') or 'Unknown Title'
+                abstract = bibjson.get('abstract') or ''
+                year = bibjson.get('year') or 'N/A'
+                journal = bibjson.get('journal') or {}
                 venue = journal.get('title') or "Unknown Venue"
 
                 doi = None
-                for ident in bibjson.get('identifier', []):
+                for ident in bibjson.get('identifier') or []:
                     if ident.get('type') == 'doi':
                         doi = ident.get('id')
                         break
 
                 article_url = ""
-                for link in bibjson.get('link', []):
+                for link in bibjson.get('link') or []:
                     if link.get('url'):
                         article_url = link.get('url')
                         break
@@ -81,7 +81,7 @@ class DoajConnector(BaseConnector):
                     "URL": article_url,
                     "Source": self.SOURCE_NAME,
                     "Citations": 0,
-                    "DOI": doi,
+                    "DOI": doi or "",
                     "Type": doc_type,
                     "Peer_Reviewed": self.detect_peer_review(doc_type),
                     "Venue": venue

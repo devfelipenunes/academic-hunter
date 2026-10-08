@@ -44,9 +44,6 @@ def _query(conn, anchors=ANCHORS, tech=FALLBACK):
     return conn.query_history[-1]["Query"]
 
 
-# ── a seleção dos termos ─────────────────────────────────────────────
-
-
 def test_the_terms_are_the_anchors():
     """Um termo de fallback não entra: medido, ele estreita em vez de ampliar."""
     assert keyword_terms(ANCHORS, FALLBACK) == ANCHORS
@@ -72,9 +69,6 @@ def test_the_cap_names_what_it_dropped(caplog):
 
 def test_quoted_ors():
     assert quoted_ors(["a b", "c"]) == '"a b" OR "c"'
-
-
-# ── a sintaxe de cada fonte ──────────────────────────────────────────
 
 
 def test_semantic_scholar_joins_plain_phrases():

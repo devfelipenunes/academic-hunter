@@ -35,7 +35,7 @@ def fire(connector, count=4):
     start = threading.Barrier(count)
 
     def worker():
-        start.wait()  # release them together, so the race is real
+        start.wait()
         connector._apply_pacing(DOMAIN)
         with times_lock:
             times.append(time.monotonic())

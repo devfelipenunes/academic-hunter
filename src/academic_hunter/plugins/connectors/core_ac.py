@@ -1,6 +1,7 @@
-import os
 import logging
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+from ...core.infra.config import core_key
 from .base import BaseConnector, quoted_ors
 
 logger = logging.getLogger("academic_hunter.connectors")
@@ -21,19 +22,28 @@ class CoreConnector(BaseConnector):
 
     def get_headers(self) -> Dict[str, str]:
         headers = super().get_headers()
-        api_keys = self.settings.get('api_keys', {})
-        core_key = os.environ.get('CORE_API_KEY') or api_keys.get('core') or self.settings.get('core_api_key')
-        if core_key:
-            headers["ApiKey"] = core_key
+        key = core_key(self.settings)
+        if key:
+            headers["ApiKey"] = key
         return headers
 
+    @classmethod
+    def unavailable_reason(cls, settings: Dict[str, Any]) -> str:
+        """This search endpoint requires a key, and answers 401 without one.
+
+        Which the pipeline reported as ``CORE: 0`` -- the same number a source
+        that was asked and found nothing produces. Measured over the runs on
+        disk: the key was never configured, so the source has never contributed
+        a paper, and every report read as though it had been consulted.
+        """
+        if core_key(settings):
+            return ""
+        return (
+            "no API key. Set CORE_API_KEY in the environment, or "
+            "settings.api_keys.core in config.json."
+        )
+
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 30) -> List[Dict[str, Any]]:
-        # No `title:`/`abstract:` prefixes. With them CORE's backend answers
-        # HTTP 500 — "Azure search failed with status code: 400 …
-        # OperationNotAllowed" — and `_make_request` reads any non-200 as None,
-        # so the connector returned an empty list and the PRISMA published
-        # "CORE: 0" as though the source had been searched and had nothing.
-        # The same two groups with no field prefix: HTTP 200 and 21 hits.
         query = f"({quoted_ors(anchors)}) AND ({quoted_ors(tech_strings)})"
         with self.lock:
             self.query_history.append({"Source": self.SOURCE_NAME, "Query": query})
@@ -51,7 +61,7 @@ class CoreConnector(BaseConnector):
             if not data:
                 break
 
-            results = data.get('results', [])
+            results = data.get('results') or []
             if not results:
                 break
 
@@ -60,15 +70,16 @@ class CoreConnector(BaseConnector):
                 first_journal = journals[0] if journals and journals[0] else {}
                 venue_name = i.get('publisher') or first_journal.get('title') or "Unknown Venue"
 
-                doc_type = i.get('type', "journal-article")
+                doc_type = i.get('type') or "journal-article"
                 articles.append({
-                    "Title": i.get('title', "Unknown Title"),
-                    "Abstract": i.get('abstract', ""),
-                    "Year": i.get('yearPublished', "N/A"),
+                    "Title": i.get('title') or "Unknown Title",
+                    "Abstract": i.get('abstract') or "",
+                    "Year": i.get('yearPublished') or "N/A",
                     "URL": f"https://core.ac.uk/works/{i.get('id')}" if i.get('id') else "",
                     "Source": self.SOURCE_NAME,
-                    "Citations": 0,
-                    "DOI": i.get('doi'),
+                    "Citations": i.get('citationCount') or 0,
+                    "Citations_Source": "core" if i.get('citationCount') is not None else "",
+                    "DOI": i.get('doi') or "",
                     "Type": doc_type,
                     "Peer_Reviewed": self.detect_peer_review(doc_type),
                     "Venue": venue_name

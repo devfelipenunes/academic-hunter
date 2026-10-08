@@ -1,32 +1,12 @@
 import logging
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from ...core.infra.config import openalex_key
-from ...core.models.utils import normalize_doi
-
+from ...core.models.authors import openalex_authors
+from ...core.models.utils import decode_abstract, normalize_doi
 from .base import BaseConnector
 
 logger = logging.getLogger("academic_hunter.connectors")
-
-
-def decode_abstract(inverted_index) -> str:
-    """Rebuild an OpenAlex abstract from its inverted index.
-
-    OpenAlex ships abstracts as ``{word: [positions]}`` rather than as text; the
-    MCP tools read the same field, so the decoder lives at module level rather
-    than on the connector they would otherwise have to instantiate to reach it.
-    """
-    if not inverted_index:
-        return ""
-    try:
-        max_pos = max(max(pos) for pos in inverted_index.values())
-        words = [""] * (max_pos + 1)
-        for word, positions in inverted_index.items():
-            for pos in positions:
-                words[pos] = word
-        return " ".join(words).strip()
-    except Exception:
-        return ""
 
 
 class OpenAlexConnector(BaseConnector):
@@ -50,16 +30,91 @@ class OpenAlexConnector(BaseConnector):
             headers["Authorization"] = f"Bearer {key}"
         return headers
 
-    def resolve_abstract_by_doi(self, doi: str) -> str:
+    def resolve_metadata_by_doi(self, doi: str) -> Dict[str, Any]:
         try:
             url = f"https://api.openalex.org/works/https://doi.org/{doi}"
             email = self.settings.get('user_email', 'academic_hunter@example.com')
             data = self._make_request(url, params={"mailto": email}, timeout=10)
-            if data:
-                return decode_abstract(data.get('abstract_inverted_index', {}))
+            return self.work_metadata(data)
         except Exception as e:
-            logger.warning("OpenAlex abstract lookup failed for %s: %s", doi, e)
-        return ""
+            logger.warning("OpenAlex metadata lookup failed for %s: %s", doi, e)
+        return {}
+
+    @staticmethod
+    def work_metadata(data: Any) -> Dict[str, Any]:
+        """Read what the pipeline needs out of one OpenAlex work record.
+
+        The record is downloaded for its abstract and carries the citation count
+        alongside it, so the count costs nothing extra. Absent stays absent: a
+        record with no ``cited_by_count`` yields no ``Citations`` key at all,
+        which is a different statement from yielding zero.
+        """
+        if not isinstance(data, dict):
+            return {}
+        metadata: Dict[str, Any] = {}
+        abstract = decode_abstract(data.get('abstract_inverted_index', {}))
+        if abstract:
+            metadata["Abstract"] = abstract
+        authors = openalex_authors(data.get('authorships'))
+        if authors:
+            metadata["Authors"] = authors
+        citations = data.get('cited_by_count')
+        if citations is not None:
+            try:
+                metadata["Citations"] = max(int(citations), 0)
+            except (TypeError, ValueError):
+                pass
+        return metadata
+
+    CITATION_CHUNK_SIZE = 50
+
+    def fetch_citations_by_dois(
+        self, dois: List[str], chunk_size: int = CITATION_CHUNK_SIZE
+    ) -> Dict[str, int]:
+        """Citation counts for many DOIs at once, keyed by normalised DOI.
+
+        OpenAlex prices by request shape rather than by result count: a DOI
+        singleton is free, a filtered list costs one credit and a ``search``
+        costs ten. ``filter=doi:a|b|c`` is therefore the only shape that reaches
+        a whole corpus — a title search per paper is ten credits each and does
+        not scale. Measured: 50 DOIs in one request, 0.6 s, 1 credit.
+
+        The keys are sorted before the filter is built because the SQLite cache
+        is keyed on the serialised params: an unsorted list yields a different
+        cache key on every run and never hits, so the same corpus would be paid
+        for again each time.
+
+        A chunk that fails returns nothing for its DOIs and never raises — a
+        blocked or rate-limited source must leave the run to finish and the
+        report to say which counts it could not obtain.
+        """
+        counts: Dict[str, int] = {}
+        keys = sorted({normalize_doi(d) for d in dois if d})
+        email = self.settings.get('user_email', 'academic_hunter@example.com')
+
+        for start in range(0, len(keys), chunk_size):
+            chunk = keys[start:start + chunk_size]
+            params = {
+                "filter": "doi:" + "|".join(chunk),
+                "per_page": len(chunk),
+                "select": "doi,cited_by_count",
+                "mailto": email,
+            }
+            try:
+                data = self._make_request(
+                    "https://api.openalex.org/works", params=params, timeout=20
+                )
+                for work in (data or {}).get("results") or []:
+                    doi = normalize_doi(work.get("doi") or "")
+                    citation_count = work.get("cited_by_count")
+                    if doi and citation_count is not None:
+                        counts[doi] = max(int(citation_count), 0)
+            except Exception as e:
+                logger.warning(
+                    "OpenAlex citation batch failed for %d DOI(s): %s", len(chunk), e
+                )
+
+        return counts
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
         email = self.settings.get('user_email', 'academic_hunter@example.com')
@@ -87,36 +142,36 @@ class OpenAlexConnector(BaseConnector):
             if not data:
                 break
 
-            results = data.get('results', [])
+            results = data.get('results') or []
             if not results:
                 break
 
             for i in results:
                 raw_doi = i.get('doi') or ""
-                # One normaliser for the whole project: this copy missed the
-                # `dx.doi.org` forms, and a second rule drifts from the first.
                 doi_clean = normalize_doi(raw_doi)
-                abstract_text = decode_abstract(i.get('abstract_inverted_index', {}))
+                abstract_text = decode_abstract(i.get('abstract_inverted_index') or {})
 
                 primary_loc = i.get('primary_location') or {}
                 source_info = primary_loc.get('source') or {}
                 venue_name = source_info.get('display_name') or "Unknown Venue"
 
-                doc_type = i.get('type', "article")
+                doc_type = i.get('type') or "article"
                 articles.append({
-                    "Title": i.get('display_name', "Unknown Title"),
+                    "Title": i.get('display_name') or "Unknown Title",
+                    "Authors": openalex_authors(i.get('authorships')),
                     "Abstract": abstract_text,
-                    "Year": i.get('publication_year', "N/A"),
+                    "Year": i.get('publication_year') or "N/A",
                     "URL": i.get('doi') or i.get('id') or "",
                     "Source": self.SOURCE_NAME,
-                    "Citations": i.get('cited_by_count', 0),
+                    "Citations": i.get('cited_by_count') or 0,
+                    "Citations_Source": "openalex" if i.get('cited_by_count') is not None else "",
                     "DOI": doi_clean,
                     "Type": doc_type,
                     "Peer_Reviewed": self.detect_peer_review(doc_type),
                     "Venue": venue_name
                 })
 
-            next_cursor = data.get('meta', {}).get('next_cursor')
+            next_cursor = (data.get('meta') or {}).get('next_cursor')
             if not next_cursor or next_cursor == cursor:
                 break
             cursor = next_cursor

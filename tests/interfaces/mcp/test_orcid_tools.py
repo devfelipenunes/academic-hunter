@@ -19,8 +19,6 @@ async def test_lookup_orcid(mock_ctx):
                 "credit-name": {"value": "Ada Lovelace"},
             },
         },
-        # Employments live here, nested two levels deep — not under `person`,
-        # which is where the tool looked and where this fixture used to put them.
         "activities-summary": {
             "employments": {
                 "affiliation-group": [

@@ -7,7 +7,7 @@ count and a second source with a zero, in the PRISMA table and in the CSV.
 
 import pytest
 
-from academic_hunter.plugins.connectors import CONNECTORS, _CONNECTOR_NAMES, _register
+from academic_hunter.plugins.connectors import _CONNECTOR_NAMES, CONNECTORS, _register
 from academic_hunter.plugins.connectors.base import BaseConnector
 
 

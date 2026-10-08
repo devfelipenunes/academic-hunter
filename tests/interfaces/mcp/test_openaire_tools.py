@@ -1,9 +1,11 @@
 """Tests for OpenAIRE search tool."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from academic_hunter.interfaces.mcp.tools.openaire import search_openaire
+
 from academic_hunter.interfaces.mcp.exceptions import MCPToolError
+from academic_hunter.interfaces.mcp.tools.openaire import search_openaire
 
 
 async def test_search_openaire(mock_ctx):

@@ -1,27 +1,18 @@
+import json
 import logging
 import time
-import requests
-import json
-from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
-# Read from the package root rather than repeating the number: this header is
-# the only version most upstream APIs ever see, and a literal here drifts
-# silently (it sat at 2.0.0 while the package was 2.1.0).
+import requests
+
 from academic_hunter import __version__
 
 logger = logging.getLogger("academic_hunter.connectors")
 
-#: First wait before retrying a transient failure; doubles per attempt.
-#: A 404 does not become a 200 by waiting, and 429 has its own escalation.
 _RETRY_BACKOFF_SECONDS = 0.5
 
 
-#: How many phrases a keyword-only query may carry. A bound is necessary, not
-#: cosmetic: Semantic Scholar's `paper/search` is a relevance endpoint, not a
-#: boolean AND, and enough phrases in it match nothing at all. Measured against
-#: the live API with the Stellar anchors, same credentials: 15 words -> 2
-#: results, 17 -> 2, 18 -> 0.
 KEYWORD_QUERY_MAX_TERMS = 5
 
 
@@ -89,8 +80,6 @@ class BaseConnector:
     domain = ""
     default_delay = 1.5
     resolve_priority = 0
-    #: Stamped on every paper and used as the key in `stats["identified"]`; it
-    #: has to match the name the connector is registered under.
     SOURCE_NAME = ""
 
     def __init__(self, cache, settings, query_history, lock, semaphore, use_cache=True):
@@ -101,7 +90,6 @@ class BaseConnector:
         self.semaphore = semaphore
         self.use_cache = use_cache
 
-        # Shared mutable state — overwritten by the engine after construction
         self.pacing_delays: Dict[str, float] = {}
         self.last_request_by_domain: Dict[str, float] = {}
         self.blocked_sources: set = set()
@@ -110,6 +98,21 @@ class BaseConnector:
         """Optional hook for connectors to dynamically adjust their pacing delays."""
         pass
 
+    @classmethod
+    def unavailable_reason(cls, settings) -> str:
+        """Why this connector cannot run with ``settings``, or ``""`` when it can.
+
+        Evaluated once per run rather than at construction: a credential can be
+        configured between two runs, and the answer has to follow it.
+
+        A connector that returns a reason is left out of the run and named in
+        the reply. Calling it anyway is the worse option for a source that needs
+        a credential -- it gets throttled into a blocked source partway through
+        and reports a zero nobody can tell from a source that was asked and
+        found nothing.
+        """
+        return ""
+
     def get_headers(self) -> Dict[str, str]:
         """Returns HTTP headers for this connector. Override in subclasses to add API keys."""
         email = self.settings.get('user_email', 'academic_hunter@example.com')
@@ -117,9 +120,19 @@ class BaseConnector:
             "User-Agent": f"AcademicHunter/{__version__} (mailto:{email})"
         }
 
+    def resolve_metadata_by_doi(self, doi: str) -> Dict[str, Any]:
+        """What this source knows about a DOI, keyed by field name.
+
+        ``Abstract``, ``Authors`` and ``Citations`` are the keys a resolver may
+        return, and a source returns only the ones it actually has — an absent
+        key means "not known here", never zero. The default is empty: a source
+        with no DOI-addressed lookup at all is skipped rather than asked.
+        """
+        return {}
+
     def resolve_abstract_by_doi(self, doi: str) -> str:
         """Resolves the abstract for a given DOI. Connector plugins can optionally implement this."""
-        return ""
+        return str(self.resolve_metadata_by_doi(doi).get("Abstract") or "")
 
     def detect_peer_review(self, doc_type: str) -> str:
         """Determines if a document is peer reviewed based on its type/venue. Override in subclasses."""
@@ -140,7 +153,6 @@ class BaseConnector:
             wait_time = max(0.0, delay - (now - self.last_request_by_domain.get(domain, 0.0)))
             self.last_request_by_domain[domain] = now + wait_time
 
-        # The sleep stays outside the lock so it does not block other domains.
         if wait_time > 0:
             time.sleep(wait_time)
 
@@ -149,6 +161,13 @@ class BaseConnector:
         Low-level HTTP GET with pacing, retries, rate-limit escalation, and concurrency control.
         Returns the raw Response object (or None on failure).
         Use this for non-JSON responses (e.g. ArXiv XML).
+
+        Every wait happens *outside* the concurrency semaphore. The semaphore is
+        shared by all connectors and has two slots, so a 30-second rate-limit
+        wait taken inside it stopped the other sources from fetching too: one
+        throttled API stalled the whole run, which is the opposite of what a
+        per-source backoff is for. ``_apply_pacing`` already separates deciding
+        the wait from taking it, for the same reason.
         """
         domain = url.split('/')[2]
 
@@ -160,78 +179,86 @@ class BaseConnector:
 
         for attempt in range(max_retries):
             self._apply_pacing(domain)
+            wait = 0.0
 
             with self.semaphore:
                 try:
                     resp = requests.get(url, params=params, headers=headers, timeout=timeout)
                     if resp.status_code == 429:
-                        retry_after_sec = 30  # default backoff if no header is present
-                        
-                        # 1. Standard Retry-After header (ex: OpenAlex)
-                        if 'Retry-After' in resp.headers:
-                            try:
-                                retry_after_sec = int(resp.headers['Retry-After'])
-                            except ValueError:
-                                pass
-                        
-                        # 2. Custom header like X-Ratelimit-Retry-After (ex: CORE)
-                        elif 'X-Ratelimit-Retry-After' in resp.headers:
-                            try:
-                                ts_str = resp.headers['X-Ratelimit-Retry-After']
-                                dt_target = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
-                                dt_now = datetime.now(timezone.utc)
-                                diff = (dt_target - dt_now).total_seconds()
-                                if diff > 0:
-                                    retry_after_sec = int(diff) + 1
-                            except Exception:
-                                pass
-                                
-                        # Safety lock: if wait is >60s, block source to avoid halting the engine
-                        if retry_after_sec > 60:
-                            logger.error(f"HTTP 429 from {domain}. API requested wait of {retry_after_sec}s. Too long! Blocking source immediately.")
-                            with self.lock:
-                                self.blocked_sources.add(domain)
+                        wait = self._note_rate_limit(domain, resp, attempt, max_retries)
+                        if wait is None:
                             return None
-                        
-                        if attempt < max_retries - 1:
-                            with self.lock:
-                                old_delay = self.pacing_delays.get(domain, self.default_delay)
-                                new_delay = old_delay * 2.0
-                                self.pacing_delays[domain] = new_delay
-                                logger.warning(f"HTTP 429 from {domain}. Waiting {retry_after_sec}s. Escalating pacing: {old_delay}s -> {new_delay}s.")
-                            time.sleep(retry_after_sec)
-                            continue
-                        else:
-                            logger.error(f"HTTP 429 from {domain}. Max retries exceeded. Blocking source.")
-                            with self.lock:
-                                self.blocked_sources.add(domain)
-                            return None
-
-                    if resp.status_code != 200:
-                        # A 5xx is the server saying "not now"; retrying it with
-                        # no wait spends the budget without the pause it asked for.
+                    elif resp.status_code != 200:
                         if resp.status_code >= 500:
-                            self._backoff(domain, attempt, max_retries)
-                        continue
-
-                    return resp
+                            wait = self._backoff(domain, attempt, max_retries)
+                        else:
+                            continue
+                    else:
+                        return resp
                 except Exception as e:
                     logger.debug(f"Request to {domain} failed (attempt {attempt + 1}): {e}")
-                    self._backoff(domain, attempt, max_retries)
-                    continue
+                    wait = self._backoff(domain, attempt, max_retries)
+
+            if wait:
+                time.sleep(wait)
         return None
 
-    def _backoff(self, domain: str, attempt: int, max_retries: int) -> None:
-        """Wait before the next attempt, unless this was the last one.
+    def _note_rate_limit(self, domain: str, response: requests.Response, attempt: int, max_retries: int) -> Optional[float]:
+        """How long to wait after a 429, or ``None`` when the source must be blocked.
+
+        Split out of the request loop so the caller can leave the semaphore
+        before taking the wait; see ``_raw_request``.
+        """
+        retry_after_sec = 30
+
+        if 'Retry-After' in response.headers:
+            try:
+                retry_after_sec = int(response.headers['Retry-After'])
+            except ValueError:
+                pass
+
+        elif 'X-Ratelimit-Retry-After' in response.headers:
+            try:
+                ts_str = response.headers['X-Ratelimit-Retry-After']
+                dt_target = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+                dt_now = datetime.now(timezone.utc)
+                diff = (dt_target - dt_now).total_seconds()
+                if diff > 0:
+                    retry_after_sec = int(diff) + 1
+            except Exception:  # noqa: S110
+                pass
+
+        if retry_after_sec > 60:
+            logger.error(f"HTTP 429 from {domain}. API requested wait of {retry_after_sec}s. Too long! Blocking source immediately.")
+            with self.lock:
+                self.blocked_sources.add(domain)
+            return None
+
+        if attempt >= max_retries - 1:
+            logger.error(f"HTTP 429 from {domain}. Max retries exceeded. Blocking source.")
+            with self.lock:
+                self.blocked_sources.add(domain)
+            return None
+
+        with self.lock:
+            old_delay = self.pacing_delays.get(domain, self.default_delay)
+            new_delay = old_delay * 2.0
+            self.pacing_delays[domain] = new_delay
+            logger.warning(f"HTTP 429 from {domain}. Waiting {retry_after_sec}s. Escalating pacing: {old_delay}s -> {new_delay}s.")
+        return retry_after_sec
+
+    def _backoff(self, domain: str, attempt: int, max_retries: int) -> float:
+        """How long to wait before the next attempt, or 0 on the last one.
 
         Pacing spaces different queries apart; this spaces the retries of one
-        failing request, which nothing else covers.
+        failing request, which nothing else covers. The caller takes the wait —
+        see ``_raw_request``.
         """
         if attempt >= max_retries - 1:
-            return
+            return 0.0
         wait = _RETRY_BACKOFF_SECONDS * (2 ** attempt)
         logger.debug("Retrying %s in %.1fs (attempt %d).", domain, wait, attempt + 1)
-        time.sleep(wait)
+        return wait
 
     def _make_request(self, url: str, params: Dict[str, Any] = None, timeout: int = 20, max_retries: int = 2) -> Any:
         """
@@ -246,7 +273,7 @@ class BaseConnector:
             if cached_val:
                 try:
                     return json.loads(cached_val)
-                except Exception:
+                except Exception:  # noqa: S110
                     pass
 
         resp = self._raw_request(url, params, timeout, max_retries)
