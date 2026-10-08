@@ -4,18 +4,17 @@ Uses mock_ctx from conftest and patches requests or AcademicHunter.
 """
 
 import json
-import pytest
 from unittest.mock import patch
+
+import pytest
+
+from academic_hunter.interfaces.mcp.exceptions import MCPToolError
 from academic_hunter.interfaces.mcp.tools.discovery import (
     explore_citation_graph,
-    fetch_paper_by_doi,
     fetch_multiple_abstracts,
+    fetch_paper_by_doi,
     quick_topic_discovery,
 )
-from academic_hunter.interfaces.mcp.exceptions import MCPToolError
-
-
-# ── explore_citation_graph ────────────────────────────────────────────────────
 
 
 @patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
@@ -45,7 +44,6 @@ async def test_explore_citation_graph(mock_get, mock_ctx, mock_openalex, openale
     assert "2024" in result
     mock_ctx.info.assert_called()
     assert mock_get.call_count == 2
-    # The second call is the one that must be scoped to this work.
     assert mock_get.call_args_list[1].kwargs["params"]["filter"] == "cites:W123"
 
 
@@ -162,9 +160,6 @@ async def test_explore_citation_graph_no_data(mock_get, mock_ctx, mock_openalex,
     assert "No citations found" in result
 
 
-# ── fetch_paper_by_doi ────────────────────────────────────────────────────────
-
-
 async def test_fetch_paper_by_doi(mock_discovery_hunter, mock_ctx):
     result = await fetch_paper_by_doi("10.1234/test", mock_ctx)
     assert "Abstract of a groundbreaking paper" in result
@@ -186,9 +181,6 @@ async def test_fetch_paper_by_doi_error(mock_discovery_hunter, mock_ctx):
     with pytest.raises(MCPToolError, match="API unavailable"):
         await fetch_paper_by_doi("10.1234/test", mock_ctx)
     mock_ctx.error.assert_called()
-
-
-# ── fetch_multiple_abstracts ──────────────────────────────────────────────────
 
 
 async def test_fetch_multiple_abstracts(mock_discovery_hunter, mock_ctx):
@@ -213,9 +205,6 @@ async def test_fetch_multiple_abstracts_error(mock_discovery_hunter, mock_ctx):
     mock_ctx.error.assert_called()
 
 
-# ── quick_topic_discovery ─────────────────────────────────────────────────────
-
-
 @patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
 async def test_quick_topic_discovery(mock_get, mock_ctx, mock_openalex, openalex_response):
     mock_get.return_value = openalex_response(
@@ -237,20 +226,22 @@ async def test_quick_topic_discovery(mock_get, mock_ctx, mock_openalex, openalex
 
 
 @patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
-async def test_quick_topic_discovery_drafts_a_config_from_the_titles(
+async def test_quick_topic_discovery_returns_evidence_not_a_configuration(
     mock_get, mock_ctx, mock_openalex, openalex_response
 ):
-    """The jargon comes from the field's own titles, not from the model's memory.
+    """The terms come from the field's own titles; the shape does not come at all.
 
-    That is the step that used to be invented: the agent was asked to write
-    ``technical_strings`` for a topic it had only just been told about. An empty
-    or guessed mapping leaves four of the six sources unqueried, so the draft
-    gives it something to correct instead of something to recall.
+    The reply used to be a finished draft -- one anchor group, one technical
+    category, every weight flat at 1.5 -- built from the ten titles retrieved.
+    Ten titles are not a field, and for an ambiguous topic the sample is mostly
+    off-topic, so the frequency count lifts the words every field uses to the
+    height of the topic's own. A shape handed over is a shape kept: an agent
+    revises the numbers it was given and keeps the frame.
 
-    The anchors have to come from the titles for the same reason, and the cost
-    of not doing it is higher. Measured on a real run: the draft put the topic
-    verbatim in as its only anchor, no title carried that phrase, and all 11
-    papers were dropped at the anchor gate before anything scored them.
+    The counts still come from the titles, because that part was always worth
+    having. Writing ``technical_strings`` for a topic one has only just been
+    told about is guesswork, and an empty or guessed mapping leaves four of the
+    six sources unqueried.
     """
     mock_get.return_value = openalex_response(
         {
@@ -269,21 +260,107 @@ async def test_quick_topic_discovery_drafts_a_config_from_the_titles(
 
     result = await quick_topic_discovery("tokenised settlement rails", mock_ctx)
 
-    assert "Draft configuration" in result
-    draft = json.loads(result[result.index("{") :])
+    assert "Draft configuration" not in result
+    payload = json.loads(result[result.index("{") :])
 
-    assert draft["topic"] == "tokenised settlement rails"
+    assert payload["titles_counted"] == 2
+    assert "anchors" not in payload
+    assert "technical_strings" not in payload
+    assert "technical_weights" not in payload
 
-    anchors = draft["anchors"]["Topic"]
-    assert anchors[0] == "tokenised settlement rails"
-    assert "distributed ledger" in anchors, (
-        "the anchors are the gate every paper passes before it is scored, and "
-        "the topic verbatim matches no title"
+    counts = {entry["term"]: entry["titles"] for entry in payload["candidate_terms"]}
+    assert counts["distributed ledger"] == 2, (
+        "the recurring phrase from the titles is the evidence the reply exists to give"
     )
 
-    terms = draft["technical_strings"]["tokenised settlement rails"]
-    assert "distributed ledger" in terms, "the recurring phrase from the titles is missing"
-    assert set(draft["technical_weights"]) == set(terms), "every drafted term needs a weight"
+
+@patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
+async def test_quick_topic_discovery_counts_a_hundred_titles(
+    mock_get, mock_ctx, mock_openalex, openalex_response
+):
+    """A hundred titles are counted, because the hundredth costs nothing.
+
+    OpenAlex prices a `search` by call type rather than by result count -- ten
+    credits for the request -- so the ten-title page was buying a tenth of the
+    evidence for the whole price.
+    """
+    mock_get.return_value = openalex_response({"results": []})
+
+    await quick_topic_discovery("anything", mock_ctx)
+
+    assert mock_get.call_args.kwargs["params"]["per_page"] == 100
+
+
+@patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
+async def test_quick_topic_discovery_shows_fewer_titles_than_it_counts(
+    mock_get, mock_ctx, mock_openalex, openalex_response
+):
+    """The sample grows; the printed list does not.
+
+    Every fetched title used to be printed. Raising the fetch without capping
+    the print would put a hundred titles into the agent's context -- and for an
+    ambiguous topic most of them are the off-topic ones the counts are supposed
+    to be judged against.
+    """
+    mock_get.return_value = openalex_response(
+        {
+            "results": [
+                {
+                    "display_name": f"Ledger settlement study {i}",
+                    "publication_year": 2023,
+                }
+                for i in range(40)
+            ]
+        }
+    )
+
+    result = await quick_topic_discovery("ledger settlement", mock_ctx)
+
+    listed = [line for line in result.splitlines() if line.startswith("- ")]
+    assert len(listed) == 10
+    assert "30 more, not shown" in result
+    payload = json.loads(result[result.index("{") :])
+    assert payload["titles_counted"] == 40
+
+
+def test_candidate_terms_marks_a_generic_word_without_dropping_it():
+    """A generic term is flagged, not deleted: scoring on it is still fair.
+
+    Measured on a real run, ``framework`` matched 316 of 1151 papers and
+    ``accuracy`` 424 -- more than the topic's own core term. Frequency alone
+    cannot separate a field's vocabulary from every field's, so the counts say
+    which is which and leave the choice with the caller. Deleting them hides the
+    choice; making one an anchor widens the gate to every paper using the word.
+    """
+    from academic_hunter.interfaces.mcp.tools.discovery import _candidate_terms
+
+    payload = _candidate_terms(
+        ["A framework for accurate quantization", "A framework for fast inference"]
+    )
+    entries = {entry["term"]: entry for entry in payload["candidate_terms"]}
+
+    assert entries["framework"]["generic"] is True
+    assert entries["framework"]["titles"] == 2
+    assert "generic" not in entries["quantization"]
+
+
+def test_candidate_terms_keeps_a_phrase_that_contains_a_generic_word():
+    """Only a phrase that is generic word for word counts as generic.
+
+    ``deep learning`` and ``language model`` keep their meaning next to a
+    generic word, and flagging them would mark the topic's own vocabulary as
+    noise. ``framework evaluation`` is generic in both words and is flagged.
+    """
+    from academic_hunter.interfaces.mcp.tools.discovery import _candidate_terms
+
+    common = _candidate_terms(["Deep learning for language model compression"])
+    common_entries = {e["term"]: e for e in common["candidate_terms"]}
+    assert "generic" not in common_entries["deep learning"]
+    assert "generic" not in common_entries["language model"]
+
+    generic = _candidate_terms(["framework evaluation across the field"])
+    generic_entries = {e["term"]: e for e in generic["candidate_terms"]}
+    assert generic_entries["framework evaluation"]["generic"] is True
 
 
 @patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
@@ -316,3 +393,82 @@ async def test_quick_topic_discovery_api_error(mock_get, mock_ctx, mock_openalex
     with pytest.raises(MCPToolError, match="API limit exceeded"):
         await quick_topic_discovery("test", mock_ctx)
     mock_ctx.error.assert_called()
+
+
+_ASTRO = [
+    "Stellar Populations in the Local Group",
+    "MESA Isochrones and Stellar Evolution",
+]
+
+
+@patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
+async def test_the_discovery_keeps_the_titles_it_counted(
+    mock_get, mock_ctx, mock_openalex, openalex_response
+):
+    """The titles were swept, counted, and thrown away.
+
+    For the topic "Stellar" the sweep returned stellar populations and MESA
+    isochrones -- in the literature that word is an adjective for stars -- and a
+    configuration for the Stellar blockchain was written over it from memory.
+    `update_config` can only hold the anchors against that literature if the
+    titles it counted are still somewhere to be read.
+    """
+    from academic_hunter.interfaces.mcp.cache import discovery_titles
+
+    mock_get.return_value = openalex_response(
+        {
+            "results": [
+                {"display_name": _ASTRO[0], "publication_year": 2021},
+                {"display_name": _ASTRO[1], "publication_year": 2022},
+            ]
+        }
+    )
+
+    await quick_topic_discovery("Stellar", mock_ctx)
+
+    record = discovery_titles.get("Stellar")
+    assert record["topic"] == "Stellar"
+    assert record["titles"] == _ASTRO
+    assert record["candidates"]["titles_counted"] == 2
+
+
+@patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
+async def test_a_discovery_that_found_nothing_records_nothing(
+    mock_get, mock_ctx, mock_openalex, openalex_response
+):
+    """An empty success is still cached, and a missing record has to read as
+    "nothing to check" rather than as every anchor having missed."""
+    from academic_hunter.interfaces.mcp.cache import discovery_titles
+
+    mock_get.return_value = openalex_response({"results": []})
+
+    result = await quick_topic_discovery("a topic nobody wrote about", mock_ctx)
+
+    assert "No results found" in result
+    assert discovery_titles.size == 0
+
+
+@patch("academic_hunter.interfaces.mcp.tools.discovery.requests.get")
+async def test_the_evidence_outlives_a_reply_the_cache_serves(
+    mock_get, mock_ctx, mock_openalex, openalex_response
+):
+    """`@cached` runs the body only on a miss, so the store that body fills has
+    to outlive the reply it belongs to.
+
+    If the titles expired first, a reply served from `discovery_cache` would be
+    handed back while the evidence behind it was already gone, and the check
+    that reads it would go quiet in exactly the case it exists for.
+    """
+    from academic_hunter.interfaces.mcp.cache import discovery_cache, discovery_titles
+
+    assert discovery_titles._ttl >= discovery_cache._ttl
+
+    mock_get.return_value = openalex_response(
+        {"results": [{"display_name": _ASTRO[0], "publication_year": 2021}]}
+    )
+
+    await quick_topic_discovery("Stellar", mock_ctx)
+    await quick_topic_discovery("Stellar", mock_ctx)
+
+    assert mock_get.call_count == 1
+    assert discovery_titles.get("Stellar")["titles"] == [_ASTRO[0]]

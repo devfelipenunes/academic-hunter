@@ -6,21 +6,20 @@ for logging and error reporting.
 
 import json
 import re
-import requests
 from collections import Counter
 from urllib.parse import quote
+
+import requests
+
 from academic_hunter import AcademicHunter
-from ..cache import cached, discovery_cache
-from ._utils import _STOPWORDS, openalex_get, run_blocking
-from .trending import _extract_bigrams
-from ..exceptions import DiscoveryError
-from ..validation import validate_doi
 from mcp.server.fastmcp import Context
 
+from ..cache import cached, discovery_cache, discovery_titles
+from ..exceptions import DiscoveryError
+from ..validation import validate_doi
+from ._utils import _STOPWORDS, _is_generic, openalex_get, run_blocking
+from .trending import _extract_bigrams
 
-#: OpenAlex returns a work's references as bare OpenAlex IDs, which then have to
-#: be resolved in a second call. Its `filter` takes at most 100 OR values, and
-#: the tool's own contract is a list of ten, so that is the ceiling here.
 _REFERENCE_LIMIT = 10
 
 
@@ -58,8 +57,6 @@ async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Co
 
     try:
         doi = validate_doi(doi)
-        # The singleton is free, and for `references` it is the only way in:
-        # a work carries its references as IDs, not as resolvable records.
         work = await openalex_get(
             f"/works/doi:{quote(doi, safe='/')}",
             {"select": "id,display_name,publication_year,cited_by_count,referenced_works"},
@@ -83,9 +80,6 @@ async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Co
         else:
             referenced = work.get("referenced_works") or []
             if not referenced:
-                # OpenAlex has the work but no parsed reference list for it,
-                # which is common for conference papers. Saying so is the point:
-                # an empty answer here is not "nothing cites this".
                 await ctx.info(f"OpenAlex has no indexed references for {doi}")
                 return (
                     f"OpenAlex holds no indexed reference list for DOI {doi} "
@@ -110,10 +104,6 @@ async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Co
         for item in items:
             title = item.get("display_name") or "Unknown Title"
             year = item.get("publication_year") or "Unknown Year"
-            # OpenAlex indexes a paper's preprint and its published version as
-            # two works with the same title, so the same line appeared twice
-            # with nothing to tell them apart. Naming the preprint is what makes
-            # the pair readable rather than looking like a duplicate bug.
             marker = " [preprint]" if item.get("type") == "preprint" else ""
             results.append(f"- {title} ({year}){marker}")
 
@@ -144,7 +134,7 @@ async def fetch_paper_by_doi(doi: str, ctx: Context) -> str:
     await ctx.info(f"Fetching paper by DOI {doi}...")
     try:
         hunter = await run_blocking(AcademicHunter)
-        abstract = hunter.fetch_abstract_by_doi(doi)
+        abstract = await run_blocking(hunter.fetch_abstract_by_doi, doi)
         if abstract:
             await ctx.info(f"Abstract found for DOI {doi}")
             return f"Abstract found for DOI {doi}:\n{abstract}"
@@ -166,13 +156,18 @@ async def fetch_multiple_abstracts(dois: list[str], ctx: Context) -> str:
     await ctx.info(f"Fetching abstracts for {len(dois)} DOIs...")
     try:
         hunter = await run_blocking(AcademicHunter)
-        results = []
-        for doi in dois:
-            abstract = hunter.fetch_abstract_by_doi(doi)
-            if abstract:
-                results.append(f"--- Abstract for {doi} ---\n{abstract}\n")
-            else:
-                results.append(f"--- Abstract for {doi} ---\n[Not found]\n")
+
+        def _fetch_all() -> list:
+            results = []
+            for doi in dois:
+                abstract = hunter.fetch_abstract_by_doi(doi)
+                if abstract:
+                    results.append(f"--- Abstract for {doi} ---\n{abstract}\n")
+                else:
+                    results.append(f"--- Abstract for {doi} ---\n[Not found]\n")
+            return results
+
+        results = await run_blocking(_fetch_all)
         await ctx.info(f"Retrieved {len(results)} abstracts")
         return "\n".join(results)
     except DiscoveryError:
@@ -182,24 +177,26 @@ async def fetch_multiple_abstracts(dois: list[str], ctx: Context) -> str:
         raise DiscoveryError(str(e))
 
 
-_ANCHOR_TERM_LIMIT = 8
+_DISCOVERY_PER_PAGE = 100
+_DISCOVERY_PRINTED_TITLES = 10
+_CANDIDATE_TERM_LIMIT = 30
 
 
-def _draft_config(topic: str, titles: list) -> dict:
-    """A starting configuration built from the words the field's titles use.
+def _candidate_terms(titles: list) -> dict:
+    """The terms the retrieved titles use, counted, with no structure imposed.
 
-    The terms come from the retrieved corpus rather than from the model's memory
-    of the field. That distinction is the point: writing ``technical_strings``
-    for a topic one has only just been told about is guesswork, and an empty or
-    guessed mapping is what leaves four of the six sources unqueried.
+    This used to hand back a finished shape -- one anchor group, one technical
+    category, every weight flat at 1.5 -- built from whatever the ten retrieved
+    titles repeated most. Ten titles are not a field: for an ambiguous topic the
+    sample is mostly off-topic, and a frequency count over it lifts the words
+    every field uses to the same height as the field's own. The draft then
+    arrived with its shape already decided, and a shape is what an agent keeps;
+    "review the draft" does not undo anchors it was handed.
 
-    ``anchors`` is drawn from the same counts, and it is the field that decides
-    whether a paper is looked at at all: a paper whose title and abstract match
-    no anchor is dropped before anything scores it. An anchor matches as a
-    whole phrase, so the topic verbatim is an anchor only when the topic is one
-    distinctive word -- as a multi-word phrase it fires on nothing, and the run
-    ends with every paper excluded. The topic stays in the set for the cases
-    where it does fire, and the corpus supplies the rest.
+    So the counts come back as evidence and the structure stays with the caller,
+    who is the one that knows the field. ``generic`` marks a term rather than
+    removing it: such a term is still a legitimate thing to score a paper on,
+    and only the caller knows whether this is a topic where it means something.
     """
     counts: Counter = Counter()
     for title in titles:
@@ -209,40 +206,49 @@ def _draft_config(topic: str, titles: list) -> dict:
             if word not in _STOPWORDS and len(word) > 2:
                 counts[word] += 1
 
-    terms = [term for term, _ in counts.most_common(30)]
-    anchors = [topic] + [t for t in terms if t != topic.lower()][:_ANCHOR_TERM_LIMIT]
-    return {
-        "topic": topic,
-        "anchors": {"Topic": anchors},
-        "technical_strings": {topic: terms},
-        "technical_weights": {term: 1.5 for term in terms},
-    }
+    terms = []
+    for term, seen in counts.most_common(_CANDIDATE_TERM_LIMIT):
+        entry = {"term": term, "titles": seen}
+        if _is_generic(term):
+            entry["generic"] = True
+        terms.append(entry)
+    return {"titles_counted": len(titles), "candidate_terms": terms}
 
 
 @cached(discovery_cache)
 async def quick_topic_discovery(topic: str, ctx: Context) -> str:
     """Performs a quick topic search via OpenAlex.
 
-    Returns the titles of the most relevant papers, plus a draft configuration
-    of anchors, technical_strings and technical_weights derived from those
-    titles. Review the draft, add what you know of the field, and pass it to
-    `update_config` — an empty technical_strings leaves four of the six sources
-    unqueried.
+    Returns the titles of the most relevant papers and the terms those titles
+    use, counted, so `technical_strings` can be written from the field's own
+    vocabulary rather than from the model's memory of it — an empty or guessed
+    mapping is what leaves four of the six sources unqueried.
+
+    It returns no anchors, no categories and no weights. Ten titles were never
+    enough to infer a field's shape, and a shape handed over is a shape kept, so
+    the counts come back as evidence and the configuration is written by the
+    caller, who knows the field. `update_config` then reports what the
+    configuration it accepted will fail to do.
+
+    The hundred titles are kept for the life of the session, so that report can
+    hold the anchors against them: an anchor appearing in none of the titles
+    this topic actually retrieved is one written from memory rather than from
+    the literature, and when most of a group does, the topic word belongs to
+    another field.
 
     A `search` is OpenAlex's most expensive call type — 10 of the roughly 1000
-    daily credits a keyless caller gets — so the result is cached.
+    daily credits a keyless caller gets — and that cost does not grow with
+    `per_page`, so a hundred titles are counted while ten are shown. The result
+    is cached.
     """
     await ctx.info(f"Running quick topic discovery for '{topic}'...")
 
     try:
-        # Keyword arguments rather than a pasted query string: a topic is
-        # operator input, and building the URL by hand let an `&` in it add a
-        # parameter of its own.
         data = await openalex_get(
             "/works",
             {
                 "search": topic,
-                "per_page": 10,
+                "per_page": _DISCOVERY_PER_PAGE,
                 "select": "display_name,publication_year",
             },
         )
@@ -253,23 +259,45 @@ async def quick_topic_discovery(topic: str, ctx: Context) -> str:
             return f"No results found for topic: {topic}"
 
         results = [f"--- Quick Discovery for '{topic}' ---"]
-        for work in items:
+        for work in items[:_DISCOVERY_PRINTED_TITLES]:
             title = work.get("display_name") or "Unknown Title"
             year = work.get("publication_year") or "Unknown Year"
             results.append(f"- {title} ({year})")
+        if len(items) > _DISCOVERY_PRINTED_TITLES:
+            results.append(
+                f"  (and {len(items) - _DISCOVERY_PRINTED_TITLES} more, not shown)"
+            )
 
         titles = [work.get("display_name") or "" for work in items]
-        draft = _draft_config(topic, titles)
-        results.append("")
-        results.append(
-            "Draft configuration built from these titles. It is a starting point, "
-            "not a finished one: it carries a single technical category, and "
-            "update_config wants at least four. Keep the terms that fit, add the "
-            "concepts you know the field uses, then pass the whole object to "
-            "update_config."
+        candidates = _candidate_terms(titles)
+        discovery_titles.set(
+            topic, {"topic": topic, "titles": titles, "candidates": candidates}
         )
         results.append("")
-        results.append(json.dumps(draft, indent=2, ensure_ascii=False))
+        results.append(
+            f"The terms these titles use, counted over all "
+            f"{candidates['titles_counted']} of them. This is evidence, not a "
+            "configuration: it carries no anchors, no categories and no weights, "
+            "because those are the field's shape and the shape is yours to "
+            "decide. A term marked \"generic\" names any field's work — as a "
+            "scoring term it is fine, but as an anchor it admits every paper "
+            "that uses the word, since the anchor gate accepts any one term of "
+            "the first group that matches. Pick anchors specific to this topic, "
+            "then give update_config the categories — at least four — and the "
+            "weights you know the field uses. It reports back what the "
+            "configuration it accepts will fail to do."
+        )
+        results.append("")
+        results.append(
+            "One trap worth naming, because it is the likeliest way to get an "
+            "empty run: an anchor matches as a whole phrase, so the topic "
+            "written verbatim usually matches no title at all. Measured on a "
+            "real run, a topic used as its own only anchor dropped all 11 "
+            "papers at the gate before anything scored them. Anchor on the "
+            "phrases the titles above actually use."
+        )
+        results.append("")
+        results.append(json.dumps(candidates, indent=2, ensure_ascii=False))
 
         await ctx.info(f"Found {len(items)} papers for '{topic}'")
         return "\n".join(results)
