@@ -21,10 +21,7 @@ import pytest
 SRC = pathlib.Path(__file__).resolve().parent.parent / "src" / "academic_hunter"
 CORE = SRC / "core"
 
-#: Packages ``core`` must never import from.
 FORBIDDEN_FROM_CORE = ("academic_hunter.interfaces", "academic_hunter.app", "academic_hunter.plugins")
-#: Packages ``plugins`` must never import from (adapters depend on the domain,
-#: never on the application layer or the interface layer).
 FORBIDDEN_FROM_PLUGINS = ("academic_hunter.interfaces", "academic_hunter.app")
 
 
@@ -38,11 +35,9 @@ def _resolve(module_path: pathlib.Path, node: ast.ImportFrom) -> str:
     if node.level == 0:
         return node.module or ""
 
-    # Package containing this file, e.g. "academic_hunter.core.pipeline".
-    rel = module_path.relative_to(SRC.parent)  # academic_hunter/core/pipeline/steps.py
+    rel = module_path.relative_to(SRC.parent)
     package_parts = list(rel.with_suffix("").parts[:-1])
 
-    # level=1 means "this package", so drop (level - 1) components.
     trim = node.level - 1
     base_parts = package_parts[: len(package_parts) - trim] if trim else package_parts
     base = ".".join(base_parts)
@@ -116,3 +111,43 @@ def test_ports_declare_no_plugin_dependency():
 def test_ports_are_importable(module):
     """Each port module imports cleanly and exposes its contract."""
     __import__(module)
+
+
+REACHING_A_PLUGIN_IS_KNOWN = {
+    "academic_hunter.interfaces.mcp.tools._utils:ChromaVectorStore",
+    "academic_hunter.interfaces.mcp.tools.obsidian:write_obsidian_note",
+    "academic_hunter.interfaces.mcp.tools.unpaywall:fetch_record",
+    "academic_hunter.interfaces.mcp.tools.configuration:CONNECTORS",
+}
+
+
+def _interfaces_to_plugins() -> set[str]:
+    """``<module>:<name>`` for every name ``interfaces`` takes from ``plugins``."""
+    found = set()
+    for module_path in sorted((SRC / "interfaces").rglob("*.py")):
+        for node in ast.walk(ast.parse(module_path.read_text(encoding="utf-8"))):
+            if not isinstance(node, ast.ImportFrom):
+                continue
+            if not _resolve(module_path, node).startswith("academic_hunter.plugins"):
+                continue
+            rel = module_path.relative_to(SRC.parent)
+            for alias in node.names:
+                found.add(f"{str(rel.with_suffix('')).replace('/', '.')}:{alias.name}")
+    return found
+
+
+def test_the_interface_layer_reaches_no_new_plugin():
+    """Four adapters are reached directly, and the set may not grow.
+
+    The rule is that ``app`` wires the adapters and the tools receive them, but
+    these four tools build their own: the vector store, the Obsidian writer, the
+    Unpaywall record fetch and the connector registry. Routing them through the
+    collaborators ``AcademicHunter`` already accepts is the real fix, and it is a
+    change to how the tools are built, not an import to move.
+
+    Until then the list is frozen rather than the rule broken quietly: pure
+    helpers drift into adapter modules all the time -- five of them did, and were
+    moved to ``core`` -- and each one added a sixth entry nobody noticed. A new
+    entry fails here.
+    """
+    assert _interfaces_to_plugins() == REACHING_A_PLUGIN_IS_KNOWN

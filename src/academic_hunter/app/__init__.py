@@ -12,8 +12,13 @@ Layering::
 
 ``core`` depends on nothing outward: it defines the ports in ``core/ports``
 and receives implementations by injection. ``plugins`` implement those ports.
-Both ``interfaces`` and ``app`` may import ``core``; only ``app`` imports
-``plugins``.
+``interfaces`` and ``app`` may both import ``core``. Reaching a *plugin* is
+``app``'s job, and ``interfaces`` does it in four places anyway — the vector
+store, the Obsidian writer, the Unpaywall record fetch and the connector
+registry — because the MCP tools build those adapters themselves instead of
+taking them from the composition root. Those four are named and frozen in
+``tests/test_architecture.py``; the pure helpers that used to travel the same
+road live in ``core`` now, so the list cannot grow by accident.
 """
 
 from .main import AcademicHunter

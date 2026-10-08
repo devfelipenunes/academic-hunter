@@ -53,6 +53,11 @@ dev = [
     "pytest-xdist>=3.0.0",
     "ruff>=0.11.0",
     "pre-commit>=4.0.0",
+    # The matcher hatchling composes the sdist's exclusion spec with. The test
+    # that checks a sandbox copy of `config.example.json` does not embark has to
+    # ask the same library; reimplementing gitignore semantics by hand is how a
+    # packaging test comes to pass on a broken pattern.
+    "pathspec>=0.12.0",
 ]
 all = ["academic-hunter[ml,fulltext]"]
 
@@ -108,16 +113,25 @@ line-length = 120
 # 3.10, which let `UP` suggest syntax the floor cannot run.
 #
 # Note this is *not* the source of the existing UP warnings — measured, they are
-# identical under either target (263 UP006, 98 UP035, 56 UP045). Those come from
-# the `Dict`/`List`/`Optional` annotations used throughout the codebase, which
-# are valid on 3.10 and are a deliberate style, not a version problem.
+# identical under either target. Those come from the `Dict`/`List`/`Optional`
+# annotations used throughout the codebase, which are valid on 3.10 and are a
+# deliberate style, not a version problem. Measured today: UP006 315, UP035 100,
+# UP045 69, UP007 2. All four are ignored below, because modernising `Union`
+# while `Optional` stays would be the least coherent of the options.
 target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "S"]
+ignore = [
+    "UP006", "UP007", "UP035", "UP045",  # the deliberate typing style above
+    "W291", "W293",                      # whitespace, which is `ruff format`'s
+    "E501", "E701", "E702",
+]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"]
+# S101 is `assert`; E402 is the deliberate `sys.path` shim these tests need
+# before they can import the package.
+"tests/**" = ["S101", "S105", "S108", "S603", "E402"]
 
 [tool.ruff.format]
 quote-style = "double"

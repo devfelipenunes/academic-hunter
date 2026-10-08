@@ -14,6 +14,7 @@ import subprocess
 import sys
 import threading
 from pathlib import Path
+from typing import Any
 
 #: Everything is resolved against the script, not the caller's directory: run as
 #: `python /path/to/install.py` from anywhere else, the relative paths created a
@@ -122,10 +123,6 @@ def print_banner() -> None:
 
 def check_python() -> None:
     print(">> Checking Python version...")
-    # Deliberately a runtime check: this script is the thing that has to be able
-    # to run on a Python too old for the package and say so. Matches
-    # `requires-python` in pyproject.toml — accepting less meant the check passed
-    # and then `pip install` failed with a message about the package.
     if sys.version_info < (3, 10):  # noqa: UP036
         print("❌ Error: Python 3.10 or higher is required.")
         print("   (pyproject.toml declares requires-python >=3.10)")
@@ -137,7 +134,7 @@ def setup_venv(ml: bool = False) -> None:
     print("\n>> Setting up virtual environment (venv)...")
     target = venv_dir()
     if not target.exists():
-        # noqa: S603 — sys.executable, an absolute path, and no shell.
+        # noqa: S603
         subprocess.run([sys.executable, "-m", "venv", str(target)], check=True)  # noqa: S603
         print("✅ Virtual environment created.")
     else:
@@ -168,9 +165,42 @@ def setup_config() -> None:
         print("⚠️  Warning: config.example.json not found.")
 
 
+def _toml_basic_string(value: str) -> str:
+    """``value`` as a TOML basic string, escapes included."""
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _substitute(node: Any, command: str) -> Any:
+    """The template's structure with every placeholder value replaced."""
+    if isinstance(node, dict):
+        return {key: _substitute(value, command) for key, value in node.items()}
+    if isinstance(node, list):
+        return [_substitute(value, command) for value in node]
+    return command if node == MCP_COMMAND_PLACEHOLDER else node
+
+
 def render_client_config(template: Path) -> str:
-    """The versioned template, with this checkout's command in place of the placeholder."""
-    return template.read_text(encoding="utf-8").replace(MCP_COMMAND_PLACEHOLDER, mcp_server_command())
+    """The versioned template, with this checkout's command in place of the placeholder.
+
+    Substituting into the template as raw text is only correct while the path
+    carries no character the format gives a meaning to. On Windows the command is
+    ``C:\\Users\\...\\academic-mcp.exe``, and those backslashes landed inside a
+    JSON string — where ``\\U`` is not a valid escape — and inside a TOML basic
+    string, where ``\\U`` demands eight hex digits. Both files were written and
+    both were unparseable, and all the client reports is "failed to connect".
+
+    So the value is serialised by the format's own rules rather than pasted: the
+    JSON template is parsed, walked and dumped, and the TOML one gets a properly
+    escaped literal. Which leaves the template in charge of placement, as before.
+    """
+    text = template.read_text(encoding="utf-8")
+    command = mcp_server_command()
+
+    if template.suffix == ".json":
+        data = _substitute(json.loads(text), command)
+        return json.dumps(data, indent=2) + "\n"
+
+    return text.replace(f'"{MCP_COMMAND_PLACEHOLDER}"', _toml_basic_string(command))
 
 
 def write_mcp_configs() -> list[str]:
@@ -256,7 +286,7 @@ def smoke_test(timeout: float = 90.0) -> int:
     """
     command = [mcp_server_command(), "--transport", "stdio"]
     try:
-        # noqa: S603 — absolute path, list argv, no shell.
+        # noqa: S603
         process = subprocess.Popen(  # noqa: S603
             command,
             stdin=subprocess.PIPE,
@@ -283,9 +313,6 @@ def smoke_test(timeout: float = 90.0) -> int:
                 tools = len(payload.get("result", {}).get("tools", []))
                 return
 
-    # Both pipes are drained on threads. A server that fills a pipe buffer while
-    # nobody reads it blocks forever, and this check would then report its own
-    # deadlock as "the server did not answer".
     err: list[str] = []
     threading.Thread(target=lambda: err.extend(process.stderr), daemon=True).start()
     reader = threading.Thread(target=read_stdout, daemon=True)
@@ -298,8 +325,6 @@ def smoke_test(timeout: float = 90.0) -> int:
     except OSError:
         pass
 
-    # Joined, not slept on: the wait ends the moment the reply arrives, and only
-    # runs to `timeout` when the server really is silent.
     reader.join(timeout)
 
     process.kill()

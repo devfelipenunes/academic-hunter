@@ -5,6 +5,8 @@ import re
 
 PYPROJECT = pathlib.Path(__file__).resolve().parent.parent / "pyproject.toml"
 
+GITIGNORE = PYPROJECT.parent / ".gitignore"
+
 SDIST_MARKER = "[tool.hatch.build.targets.sdist]"
 
 AGENT_RUNTIMES = (".claude", ".gemini", ".cursor", ".codex")
@@ -114,7 +116,69 @@ def test_the_sdist_never_ships_a_generated_mcp_config():
     assert excludes.index("!.codex/config.toml.example") > excludes.index(".codex")
 
 
-# ── o que o projeto pede para instalar ──────────────────────────────────────
+def _hatch_sdist_spec():
+    """The exclusion spec hatchling really composes, in the order it composes it.
+
+    Read out of `hatchling/builders/config.py`: `default_global_exclude()`, then
+    every line of `.gitignore`, then `tool.hatch.build.targets.sdist.exclude` —
+    and the whole list goes through `pathspec.GitIgnoreSpec.from_lines`, not the
+    plain `PathSpec`. That choice is what decides this file's subject: under
+    `GitIgnoreSpec` a negation re-includes a file whose *directory* an earlier
+    rule excluded, so a re-inclusion pattern with no anchor reaches into the
+    ignored `mutants/` sandbox.
+
+    Verified against a real build of both rules, not only simulated: with the
+    unanchored pattern the sdist carried `mutants/config.example.json`, and with
+    the anchored one it did not.
+    """
+    import pathspec
+
+    patterns = ["*.py[cdo]", "/dist"]
+    patterns += GITIGNORE.read_text(encoding="utf-8").splitlines()
+    patterns += _sdist_excludes()
+    return pathspec.GitIgnoreSpec.from_lines(patterns)
+
+
+def _embarks(relative: str) -> bool:
+    """Whether hatchling's composed spec leaves ``relative`` in the sdist."""
+    return not _hatch_sdist_spec().match_file(relative)
+
+
+def test_a_sandbox_copy_of_the_example_config_does_not_embark():
+    """`!config.example.json` was unanchored, and matched at any depth.
+
+    `mutants/` is the mutmut sandbox — 7 MB of copies of the source tree,
+    rebuilt by `mutmut run`, ignored on purpose. An unanchored negation put a
+    copy of the example config back inside it, and hatchling's spec is what
+    decides the archive: the file shipped.
+    """
+    assert not _embarks("mutants/config.example.json")
+    assert not _embarks("mutants/deep/config.example.json")
+
+
+def test_the_anchoring_did_not_cost_the_example_config_itself():
+    """The template the operator copies has to stay in, or the fix is a deletion."""
+    assert _embarks("config.example.json")
+    assert _embarks("src/academic_hunter/core/infra/config.default.json")
+    assert not _embarks("config.json")
+    assert not _embarks("config.local.json")
+
+
+def test_the_gitignore_exception_is_anchored_to_the_root():
+    """One rule, two files, and only one of them was anchored.
+
+    `pyproject.toml` anchored its `!/config.example.json` when the config
+    exclusion was fixed; `.gitignore` kept the bare spelling. Hatchling reads
+    both — and the `.gitignore` lines enter the spec ahead of the target's own
+    list, so it was the unanchored one that decided the archive.
+    """
+    lines = [
+        line.strip()
+        for line in GITIGNORE.read_text(encoding="utf-8").splitlines()
+        if line.strip().lstrip("!").endswith("config.example.json")
+    ]
+
+    assert lines == ["!/config.example.json"]
 
 
 def test_every_dependency_announced_to_the_client_is_real():
@@ -132,7 +196,7 @@ def test_every_dependency_announced_to_the_client_is_real():
 
     assert server.dependencies, "the announcement is empty"
     for name in server.dependencies:
-        importlib.import_module(name)  # raises when it is not installed
+        importlib.import_module(name)
 
 
 def test_every_declared_dependency_is_imported_somewhere():

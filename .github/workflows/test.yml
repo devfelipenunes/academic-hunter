@@ -36,6 +36,24 @@ jobs:
       - name: Run test suite
         run: python -m pytest tests/ -v --tb=short
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Pinned, and equal to the `ruff-pre-commit` rev: an unpinned linter turns
+      # an upstream rule change into a red build on a commit that changed
+      # nothing. Same command as `make lint`, so the two cannot disagree.
+      - name: Install ruff
+        run: pip install ruff==0.16.9
+
+      - name: Lint
+        run: ruff check src/ tests/
+
   mcp-protocol:
     runs-on: ubuntu-latest
     steps:

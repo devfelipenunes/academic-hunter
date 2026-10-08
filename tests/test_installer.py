@@ -7,6 +7,7 @@ vai ter.
 
 import importlib.util
 import io
+import json
 import sys
 from pathlib import Path
 
@@ -38,7 +39,7 @@ def test_a_python_below_the_declared_floor_is_refused(monkeypatch, version):
 def test_a_supported_python_passes(monkeypatch):
     monkeypatch.setattr(sys, "version_info", (3, 12, 0))
 
-    _installer().check_python()  # must not raise
+    _installer().check_python()
 
 
 def test_the_pip_path_does_not_depend_on_the_working_directory():
@@ -75,7 +76,7 @@ def test_the_installer_survives_a_run_with_no_terminal(monkeypatch):
     disk, which is worse than not starting.
     """
     installer = _installer()
-    monkeypatch.setattr(sys, "stdin", io.StringIO())  # isatty() is False
+    monkeypatch.setattr(sys, "stdin", io.StringIO())
 
     assert installer.install_mcp_claude_desktop() is False
 
@@ -104,7 +105,7 @@ def test_the_uv_check_is_advisory_and_never_fatal(monkeypatch, capsys):
     installer = _installer()
     monkeypatch.setattr(installer.shutil, "which", lambda name: None)
 
-    installer.check_uv()  # must not raise or exit
+    installer.check_uv()
 
     printed = capsys.readouterr().out
     assert "uv is not on PATH" in printed
@@ -138,11 +139,8 @@ def test_the_printed_uvx_command_matches_the_canonical_guide():
 
 MCP_EXAMPLES = (".mcp.json.example", ".codex/config.toml.example")
 
-#: The path the versioned templates carry. A placeholder on purpose: any real
-#: absolute path is correct in exactly one checkout.
 PLACEHOLDER = "/absolute/path/to/academic-hunter"
 
-#: Prefixes of a path that names somebody's machine.
 FOREIGN_ROOTS = ("/home/", "/Users/", "/l/disk0", "/opt/", "C:\\")
 
 
@@ -184,3 +182,42 @@ def test_the_generated_config_names_this_checkout_not_the_placeholder():
 
         assert installer.mcp_server_command() in rendered
         assert installer.MCP_COMMAND_PLACEHOLDER not in rendered
+
+
+WINDOWS_COMMAND = r"C:\Users\fnunes\academic-hunter\venv\Scripts\academic-mcp.exe"
+
+
+def test_a_windows_command_renders_as_parseable_json(monkeypatch):
+    """Substituting into the template as text wrote a JSON file nothing can read.
+
+    `C:\\Users\\...` pasted into a JSON string is not a string: `\\U` starts an
+    eight-hex-digit escape and the parse fails. The installer printed "Wrote
+    .mcp.json", the file existed, and the client's only report was "failed to
+    connect" — the same thing it says when the server is broken.
+    """
+    installer = _installer()
+    monkeypatch.setattr(installer, "mcp_server_command", lambda: WINDOWS_COMMAND)
+
+    rendered = installer.render_client_config(ROOT / ".mcp.json.example")
+
+    entry = json.loads(rendered)["mcpServers"]["academic-hunter"]
+    assert entry["command"] == WINDOWS_COMMAND
+    assert entry["args"] == ["--transport", "stdio"]
+
+
+def test_a_windows_command_renders_as_parseable_toml(monkeypatch):
+    """The TOML side took the same raw paste, and TOML is stricter about it.
+
+    A basic string has no `\\U` escape at all — it is an eight-hex-digit unicode
+    escape — so the parse fails there too, and `.codex/config.toml` is the only
+    file the Codex client reads.
+    """
+    tomllib = pytest.importorskip("tomllib")
+    installer = _installer()
+    monkeypatch.setattr(installer, "mcp_server_command", lambda: WINDOWS_COMMAND)
+
+    rendered = installer.render_client_config(ROOT / ".codex" / "config.toml.example")
+
+    entry = tomllib.loads(rendered)["mcp_servers"]["academic-hunter"]
+    assert entry["command"] == WINDOWS_COMMAND
+    assert entry["args"] == ["--transport", "stdio"]

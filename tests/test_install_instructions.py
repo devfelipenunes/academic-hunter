@@ -17,17 +17,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-#: The prose that describes how to install. Strict: every project-install line in
-#: these has to name the extras.
 CANONICAL_DOCS = ("README.md", "docs/tutorial.md", "CONTRIBUTING.md", "docs/mcp_setup.md")
 
-#: The pages that must not contradict it. Looser on purpose — the HTML pages show
-#: `python install.py` and never name the extras, so demanding the canonical
-#: string there would be false.
 ALL_DOCS = (*CANONICAL_DOCS, "docs/index.html", "docs/mcp/index.html", "docs/presentation/index.html")
 
-#: Commands that do not exist. `pyproject.toml` declares exactly one script,
-#: `academic-mcp`; `academic-hunter` was the interactive CLI, since removed.
 BANNED_FORMS = ("academic-hunter --limit",)
 
 
