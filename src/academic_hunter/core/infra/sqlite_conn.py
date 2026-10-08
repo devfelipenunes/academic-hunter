@@ -48,17 +48,16 @@ def connect(db_path: str, timeout: float = 10.0) -> sqlite3.Connection:
     Args:
         db_path: Path to the database file.
         timeout: Seconds the driver waits for a lock before raising
-            ``OperationalError``. The ``busy_timeout`` pragma below sets the
-            same bound at the engine level, so both agree.
+            ``OperationalError``. The ``busy_timeout`` pragma below gets the same
+            bound, in the milliseconds it is measured in, so the two agree —
+            they agreed only at the default while the pragma was pinned to
+            10000, leaving a caller who asked for 2s to be told 10s by the engine.
 
     Returns:
         A connection with WAL journalling and a busy timeout applied.
     """
     conn = sqlite3.connect(db_path, timeout=timeout)
-    # Readers do not block the writer and vice versa.
     conn.execute("PRAGMA journal_mode=WAL")
-    # Safe with WAL: a crash cannot corrupt the database, and this avoids an
-    # fsync per transaction — acceptable for a cache and a config history.
     conn.execute("PRAGMA synchronous=NORMAL")
-    conn.execute("PRAGMA busy_timeout=10000")
+    conn.execute(f"PRAGMA busy_timeout={int(timeout * 1000)}")
     return conn

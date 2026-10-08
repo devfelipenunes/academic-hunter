@@ -162,3 +162,53 @@ def test_cache_persists_to_disk():
         assert cache2.get("persist") == "disk_value"
     finally:
         os.unlink(db_path)
+
+
+def _age(path, key, seconds):
+    with connect(path) as conn:
+        conn.execute(
+            "UPDATE cache SET timestamp = datetime('now', ?) WHERE key = ?",
+            (f"-{seconds} seconds", key),
+        )
+        conn.commit()
+
+
+def test_a_stale_entry_is_a_miss():
+    """The table always carried a timestamp and nothing ever read it.
+
+    So a response written once was served for the life of the database: one bad
+    page cached under a query URL stayed there, and every later run read it
+    back, failed in the same place, and never re-asked the API that would have
+    answered correctly.
+    """
+    cache, path = _make_cache()
+    try:
+        cache.set("key", "value")
+        _age(path, "key", 8 * 24 * 60 * 60)
+
+        assert cache.get("key") is None, "a week-old response was still being served"
+    finally:
+        os.unlink(path)
+
+
+def test_a_fresh_entry_is_still_a_hit():
+    cache, path = _make_cache()
+    try:
+        cache.set("key", "value")
+        _age(path, "key", 60)
+
+        assert cache.get("key") == "value"
+    finally:
+        os.unlink(path)
+
+
+def test_expiry_can_be_turned_off():
+    cache, path = _make_cache()
+    try:
+        cache.ttl_seconds = None
+        cache.set("key", "value")
+        _age(path, "key", 5 * 365 * 24 * 60 * 60)
+
+        assert cache.get("key") == "value"
+    finally:
+        os.unlink(path)

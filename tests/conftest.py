@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from academic_hunter import AcademicHunter
+from academic_hunter.core.infra import paths
 from academic_hunter.core.nlp.model_cache import clear_model_cache
 
 
@@ -22,6 +23,28 @@ def _reset_model_cache():
     clear_model_cache()
     yield
     clear_model_cache()
+
+
+@pytest.fixture(autouse=True)
+def _isolate_ambient_paths(tmp_path, monkeypatch):
+    """Neutralise every ambient rung of the config and data search order.
+
+    ``resolve_config_path``/``resolve_location`` read the XDG variables and fall
+    back to ``~/.config``/``~/.local/share``, so a developer's real config would
+    otherwise decide what the suite measures, and state-creating tests would
+    write into their home. Autouse at the root so no test has to remember.
+
+    The directory has to be per-test, and this must stay a ``setenv``: pytest
+    hands the same function-scoped ``monkeypatch`` to every requester, so a
+    module-level fixture that deletes these variables would run after this one
+    and undo it.
+    """
+    for name in (paths.CONFIG_ENV, paths.DATA_ENV, paths.PROJECT_ENV):
+        monkeypatch.delenv(name, raising=False)
+    for var, leaf in (("XDG_CONFIG_HOME", "config"), ("XDG_DATA_HOME", "data")):
+        target = tmp_path / f"xdg-{leaf}"
+        target.mkdir()
+        monkeypatch.setenv(var, str(target))
 
 
 @pytest.fixture

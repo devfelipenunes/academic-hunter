@@ -28,8 +28,6 @@ logger = logging.getLogger("academic_hunter.semantic_screener")
 
 _DEFAULT_EMBED_DIM = 384
 
-#: Papers whose embeddings are kept. Bounded because a long run would otherwise
-#: hold every abstract it ever scored in memory.
 _PAPER_CACHE_MAX = 4096
 
 
@@ -57,9 +55,7 @@ class SemanticScreener(BaseScreener):
         self.model_name = model_name
         self._embedding_function: Optional[Any] = None
         self._cached_base: Dict[str, Dict[str, np.ndarray]] = {}
-        #: Paper text -> embedding. Bounded LRU; guarded by its own lock so a
-        #: threaded run cannot corrupt it.
-        self._paper_cache: "OrderedDict[str, np.ndarray]" = OrderedDict()
+        self._paper_cache: OrderedDict[str, np.ndarray] = OrderedDict()
         self._cache_lock = threading.Lock()
 
     def _embed_paper(self, text: str) -> np.ndarray:
@@ -178,7 +174,6 @@ class SemanticScreener(BaseScreener):
         """
         unique_terms = list(tech_weights.keys())
 
-        # 1. Embed base text (anchors) + each technical term
         texts: List[str] = []
         if base_parts:
             texts.append(" ".join(base_parts))
@@ -186,7 +181,6 @@ class SemanticScreener(BaseScreener):
 
         embeddings = self.embedding_function(texts)
 
-        # 2. Base contribution (zero if no anchors)
         if base_parts:
             v_base = np.array(embeddings[0], dtype=np.float32)
             term_embeds = embeddings[1:]
@@ -199,7 +193,6 @@ class SemanticScreener(BaseScreener):
         v_sum = v_base * n_base
         total_w = float(n_base)
 
-        # 3. Add each technical term weighted by its importance
         for term, raw in zip(unique_terms, term_embeds):
             v_term = np.array(raw, dtype=np.float32)
             w = tech_weights[term]
@@ -212,7 +205,7 @@ class SemanticScreener(BaseScreener):
     def _config_hash(base_parts: List[str], tech_weights: Dict[str, float]) -> str:
         """Stable MD5 of the config signature used as cache key."""
         sig = json.dumps({"bp": base_parts, "tw": tech_weights}, sort_keys=True)
-        return hashlib.md5(sig.encode()).hexdigest()
+        return hashlib.md5(sig.encode(), usedforsecurity=False).hexdigest()
 
     def _cosine(self, a: np.ndarray, b: np.ndarray) -> float:
         """Cosine similarity between two vectors, clamped to ``[0, 1]``.
@@ -268,11 +261,19 @@ class SemanticScreener(BaseScreener):
         the run rather than in the middle of it. Returns whether the model is
         usable; a False leaves the pipeline on the keyword-only path it would
         have taken anyway.
+
+        A failure *here* installs the zero-vector fallback, because that is what
+        the run is about to be. Catching the exception and returning False left
+        the broken embedder in place: `degraded` stayed False, so the warning at
+        the end of the pipeline never fired, and every paper scored from then on
+        raised inside `_embed_paper` instead of scoring 0.0. The run failed one
+        paper at a time, with a report that read like any other.
         """
         try:
             self.embedding_function(["warmup"])
         except Exception as e:
             logger.warning("Could not load the embedding model up front: %s", e)
+            self._embedding_function = _ZeroEmbedding(_DEFAULT_EMBED_DIM)
             return False
         return not self.degraded
 

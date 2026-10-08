@@ -56,3 +56,40 @@ def test_a_lowercase_doctype_is_refused_too():
 def test_malformed_xml_still_raises_a_parse_error():
     with pytest.raises(ET.ParseError):
         parse_xml("<feed><unclosed></feed>")
+
+
+def _as(encoding, text):
+    return text.encode(encoding)
+
+
+def test_a_utf16_bomb_is_refused():
+    """The scan read the bytes as UTF-8, and the parser did not.
+
+    In UTF-16 every ASCII character is followed by a NUL, so ``<!DOCTYPE`` is
+    not a substring of the utf-8 decoding of the document — the marker check
+    passed and ``ET.fromstring``, which reads the BOM itself, expanded the
+    entities. Measured on the defect: one 319-character document, refused as
+    UTF-8, parsed from UTF-16 and returned 1.5 million characters.
+    """
+    with pytest.raises(ValueError, match="DTD"):
+        parse_xml(_as("utf-16", BOMB))
+
+
+def test_a_utf16_bomb_without_a_bom_is_refused():
+    """A BOM is optional, and expat detects the byte order from ``<?``."""
+    with pytest.raises(ValueError, match="DTD"):
+        parse_xml(_as("utf-16-le", '<?xml version="1.0"?>' + BOMB[BOMB.index("<!DOCTYPE") :]))
+
+
+def test_a_utf32_bomb_is_refused():
+    with pytest.raises(ValueError, match="DTD"):
+        parse_xml(_as("utf-32", BOMB))
+
+
+def test_a_utf16_document_without_a_dtd_still_parses():
+    """Rejecting UTF-16 wholesale would cost legitimate payloads.
+
+    The obvious way to close the hole — refusing anything that is not ASCII —
+    breaks every feed served in UTF-16.
+    """
+    assert parse_xml(_as("utf-16", PLAIN)).tag.endswith("feed")
