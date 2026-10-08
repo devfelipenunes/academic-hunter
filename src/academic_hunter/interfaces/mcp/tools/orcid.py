@@ -6,11 +6,11 @@ read-only access to public profiles, including name, affiliations,
 publications, and funding.
 """
 
+import asyncio
 import logging
 
-import asyncio
-
 import requests
+
 from mcp.server.fastmcp import Context
 
 from ..cache import cached, citation_cache
@@ -50,7 +50,6 @@ async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
 
         lines = [f"# ORCID Profile: {credit}\n", f"**ORCID:** https://orcid.org/{orcid_id}\n"]
 
-        # Affiliations
         employments = _employments(data)
         if employments:
             lines.append("\n## Affiliations\n")
@@ -66,7 +65,6 @@ async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
                 suffix = f" ({', '.join(parts)})" if parts else ""
                 lines.append(f"- {org}{suffix}\n")
 
-        # Publications
         activities = data.get("activities-summary") or {}
         works = (activities.get("works") or {}).get("group", [])
         if works:

@@ -9,7 +9,7 @@ import logging
 from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
-from ._utils import _get_vector_store, run_blocking
+from ._utils import _get_vector_store, corpus_of, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.novelty")
 
@@ -26,12 +26,12 @@ async def find_novel_papers(ctx: Context, top_k: int = 500, contamination: float
         contamination: Expected proportion of outliers (default 0.1).
     """
     await ctx.info(f"Running novelty detection on {top_k} papers...")
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
         return "Vector store not available. Index papers first."
 
-    results = store.query("research novelty outlier detection", top_k=top_k)
+    results = (await run_blocking(corpus_of, store, top_k))[:top_k]
     if not results or len(results) < 5:
         await ctx.info("Too few papers for novelty detection")
         return "Not enough papers for novelty detection."

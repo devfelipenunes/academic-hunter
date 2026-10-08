@@ -1,7 +1,7 @@
 """Tests for clustering MCP tools (cluster_papers)."""
 
-import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import MagicMock, patch
+
 from academic_hunter.interfaces.mcp.tools.clustering import cluster_papers
 
 
@@ -15,15 +15,11 @@ async def test_cluster_papers_success(mock_ctx):
 
     with patch("academic_hunter.interfaces.mcp.tools.clustering._get_vector_store") as m_store:
         store = MagicMock()
-        # Both entry points: `corpus_of` reads `all_papers` or falls back to a
-        # query, and `isinstance` against a runtime-checkable Protocol answers
-        # differently for a bare MagicMock on 3.10/3.11 than on 3.12.
         store.query.return_value = mock_results
         store.all_papers.return_value = mock_results
         m_store.return_value = store
 
         topic_model = MagicMock()
-        # Simulate 2 topics + outliers
         topic_model.fit_transform.return_value = ([0, 1, -1], None)
         topic_model.get_topic_info.return_value = MagicMock()
         topic_model.get_topic.return_value = [("deep", 0.5), ("learning", 0.3)]

@@ -1,6 +1,5 @@
 """Tests for find_related_papers tool."""
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 async def test_find_related_papers_no_vector_store(mock_ctx):
@@ -36,7 +35,6 @@ async def test_find_related_papers_clamps_top_k(mock_ctx):
     with patch("academic_hunter.interfaces.mcp.tools.related._get_vector_store") as m:
         m.return_value = mock_store
         await find_related_papers(mock_ctx, "test", top_k=50)
-    # Should call with top_k=20 (clamped)
     args, kwargs = mock_store.query.call_args
     assert kwargs.get("top_k") == 20 or args[1] == 20
 
@@ -86,6 +84,5 @@ async def test_find_related_papers_truncates_query(mock_ctx):
         long_query = "A" * 200
         await find_related_papers(mock_ctx, long_query)
     mock_ctx.info.assert_called()
-    # The first info call should contain truncated query
     first_call = mock_ctx.info.call_args_list[0]
     assert len(first_call[0][0]) < 150

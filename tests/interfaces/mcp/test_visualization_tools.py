@@ -11,8 +11,6 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-# ── visualize_landscape tests ──────────────────────────────────────────────────
-
 
 async def test_visualize_landscape(mock_ctx):
     """Returns JSON with 2D coordinates and paper metadata."""
@@ -128,9 +126,6 @@ async def test_visualize_landscape_import_error(mock_ctx):
 
                 result = await visualize_landscape(mock_ctx, top_k=10)
                 assert "academic-hunter[ml]" in result
-
-
-# ── topic_evolution tests ──────────────────────────────────────────────────────
 
 
 async def test_topic_evolution(mock_ctx):
@@ -267,7 +262,86 @@ async def test_topic_evolution_no_year(mock_ctx):
                 )
 
                 result = await topic_evolution(mock_ctx, top_k=10)
-                # The None-year paper should be excluded (year = 0), so only 2023 appears
                 assert "2023" in result
-                # Despite the excluded paper, the headline count includes all docs
                 assert "Papers analyzed" in result
+
+
+class _ListableStore:
+    """A store that can list its collection, which is what makes it the corpus."""
+
+    def __init__(self, papers):
+        self.papers = papers
+        self.listed = 0
+        self.queried = []
+
+    def all_papers(self, collection_name="papers"):
+        self.listed += 1
+        return self.papers
+
+    def query(self, prompt, top_k=5, collection_name="papers", score_threshold=None):
+        self.queried.append(prompt)
+        return self.papers
+
+
+async def test_the_landscape_is_the_corpus_not_a_neighbourhood(mock_ctx):
+    """A projection of the papers nearest one phrase is not the landscape."""
+    import numpy as np
+
+    from academic_hunter.interfaces.mcp.tools.visualization import visualize_landscape
+
+    papers = [{"title": f"Paper {i}", "abstract_preview": f"A{i}"} for i in range(10)]
+    store = _ListableStore(papers)
+    embeddings = np.array([[float(i), float(i)] for i in range(10)])
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.visualization._get_vector_store"
+    ) as m_store, patch(
+        "academic_hunter.interfaces.mcp.tools.visualization._load_umap"
+    ) as m_umap, patch(
+        "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer"
+    ) as m_st:
+        m_store.return_value = store
+        m_umap.return_value.UMAP.return_value.fit_transform.return_value = embeddings
+        model = MagicMock()
+        model.encode.return_value = embeddings
+        m_st.return_value = model
+
+        await visualize_landscape(mock_ctx, top_k=10)
+
+    assert store.listed == 1, "the collection was never listed"
+    assert store.queried == [], (
+        f"the projection described the neighbourhood of a phrase: {store.queried}"
+    )
+
+
+async def test_the_evolution_is_the_corpus_not_a_neighbourhood(mock_ctx):
+    from academic_hunter.interfaces.mcp.tools.visualization import topic_evolution
+
+    papers = [
+        {"title": f"Paper {i}", "abstract_preview": f"A{i}", "year": 2020 + i % 3}
+        for i in range(10)
+    ]
+    store = _ListableStore(papers)
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.visualization._get_vector_store"
+    ) as m_store, patch(
+        "academic_hunter.interfaces.mcp.tools.visualization._load_bertopic"
+    ) as m_bt, patch(
+        "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer"
+    ) as m_st:
+        m_store.return_value = store
+        topic_model = MagicMock()
+        topic_model.fit_transform.return_value = ([0] * 10, None)
+        topic_model.get_topic.return_value = [("deep", 0.5)]
+        m_bt.return_value = MagicMock(return_value=topic_model)
+        model = MagicMock()
+        model.encode.return_value = [[0.1]] * 10
+        m_st.return_value = model
+
+        await topic_evolution(mock_ctx, top_k=10)
+
+    assert store.listed == 1, "the collection was never listed"
+    assert store.queried == [], (
+        f"the evolution described the neighbourhood of a phrase: {store.queried}"
+    )

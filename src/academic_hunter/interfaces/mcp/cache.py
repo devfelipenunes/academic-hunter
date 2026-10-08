@@ -1,6 +1,15 @@
 """Simple in-memory cache for MCP tools to avoid repeated API calls.
 
 Uses TTL-based expiration. Thread-safe for async usage.
+
+Three stores live here, and one ordering between two of them is load-bearing.
+``discovery_cache`` holds what ``quick_topic_discovery`` replied, and
+``discovery_titles`` holds the evidence behind that reply, written by the same
+function body. Since ``@cached`` runs the body only on a miss, a call served
+from ``discovery_cache`` returns the reply without rewriting the evidence --
+so ``discovery_titles`` must not expire first, or the reply is handed back
+while the evidence it describes is already gone. Keep its TTL at or above
+``discovery_cache``'s.
 """
 
 import inspect
@@ -30,7 +39,6 @@ class TTLCache:
     def set(self, key: str, value):
         """Cache a value."""
         if len(self._store) >= self._max_size:
-            # Evict oldest
             oldest = min(self._timestamps, key=self._timestamps.get)
             del self._store[oldest]
             del self._timestamps[oldest]
@@ -42,14 +50,32 @@ class TTLCache:
         self._store.clear()
         self._timestamps.clear()
 
+    def keys(self) -> list:
+        """The keys still live, dropping the expired ones on the way out.
+
+        Expiry is otherwise noticed only by a ``get``, so a key nobody asks for
+        again stays counted in ``size`` for the life of the process. Enumerating
+        is the one operation that has to sweep, or a caller is handed entries no
+        ``get`` would ever return.
+        """
+        now = time.time()
+        expired = [
+            key for key, stamp in self._timestamps.items()
+            if now - stamp > self._ttl
+        ]
+        for key in expired:
+            del self._store[key]
+            del self._timestamps[key]
+        return list(self._store)
+
     @property
     def size(self) -> int:
         return len(self._store)
 
 
-# Global cache instances
-citation_cache = TTLCache(ttl_seconds=600, max_size=200)  # 10 min TTL
-discovery_cache = TTLCache(ttl_seconds=300, max_size=100)  # 5 min TTL
+citation_cache = TTLCache(ttl_seconds=600, max_size=200)
+discovery_cache = TTLCache(ttl_seconds=300, max_size=100)
+discovery_titles = TTLCache(ttl_seconds=3600, max_size=50)
 
 
 def cached(cache: TTLCache, key_prefix: str = ""):
@@ -64,12 +90,9 @@ def cached(cache: TTLCache, key_prefix: str = ""):
 
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            # Build a dict of all argument names -> values
-            # so we can exclude the `ctx` parameter from the cache key.
             bound = sig.bind(*args, **kwargs)
             bound.apply_defaults()
             all_args = dict(bound.arguments)
-            # Remove ctx from key generation
             key_args = {
                 k: v for k, v in all_args.items() if k != "ctx"
             }

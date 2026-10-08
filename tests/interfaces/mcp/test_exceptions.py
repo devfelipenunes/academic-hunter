@@ -7,13 +7,15 @@ Validates that every exception subclass:
 """
 
 import pytest
+
 from academic_hunter.interfaces.mcp.exceptions import (
-    MCPToolError,
     ConfigError,
+    DiscoveryError,
+    MCPToolError,
+    ObsidianError,
     SearchError,
     VectorStoreError,
-    DiscoveryError,
-    ObsidianError,
+    WritingError,
 )
 
 
@@ -40,6 +42,32 @@ class TestMCPToolError:
         msg = "this is the error message"
         err = MCPToolError(msg)
         assert str(err) == msg
+
+    def test_the_calculated_context_reaches_the_message(self):
+        """FastMCP serialises ``str(exc)`` and drops the attributes.
+
+        So a tool that worked out which directory it looked in was filling in a
+        field the client never receives. The writing tools are the ones that do
+        this: ``writing.py`` raises with ``details={"looked_in": …}`` on a missing
+        run and ``details={"available": …}`` on an unknown section.
+        """
+        err = WritingError("Run not found", details={"looked_in": "/r/results"})
+
+        assert "/r/results" in str(err)
+        assert "WRITING_ERROR" in str(err)
+        assert err.details == {"looked_in": "/r/results"}
+
+    def test_every_detail_is_carried(self):
+        err = MCPToolError("nope", code="CUSTOM", details={"a": 1, "b": "two"})
+
+        assert "a=1" in str(err)
+        assert "b=two" in str(err)
+        assert "CUSTOM" in str(err)
+
+    def test_an_error_without_details_keeps_its_message_verbatim(self):
+        """The suffix is not decoration: it only appears when there is context."""
+        assert str(MCPToolError("plain")) == "plain"
+        assert str(WritingError("plain")) == "plain"
 
 
 class TestConfigError:

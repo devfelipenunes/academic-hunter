@@ -64,9 +64,6 @@ def test_a_listing_of_an_empty_collection_is_empty(tmp_path):
     assert empty.all_papers() == []
 
 
-# ── o que as análises usam ──────────────────────────────────────────────────
-
-
 def test_the_corpus_is_read_rather_than_searched():
     """A query answers which documents sit nearest a phrase.
 

@@ -14,13 +14,34 @@ from ._utils import (
     _get_vector_store,
     _load_latest_papers,
     _make_hunter,
+    read_store_stats,
     run_blocking,
 )
 
 logger = logging.getLogger("academic_hunter.mcp.rag")
 
 
+def _opening(text: str, limit: int = 250) -> str:
+    """The opening of ``text``, ending on a sentence rather than mid-word.
 
+    The preview was already truncated to 500 characters when the paper was
+    indexed (``plugins/vector_stores/chroma.py``), so slicing at 250 lands inside
+    a sentence -- and read under a heading, that half-sentence is taken for a
+    finding the retrieval never made. Cutting at the last sentence end that fits
+    keeps the excerpt a whole statement.
+
+    When even the first sentence overruns the limit the excerpt is returned as
+    indexed instead of clipped: this is a retrieved abstract, not a generated
+    claim, and half a sentence is worse than a long one.
+    """
+    text = text.strip()
+    if len(text) <= limit:
+        return text
+    window = text[:limit]
+    cut = max(window.rfind(". "), window.rfind("? "), window.rfind("! "))
+    if cut < 0:
+        return text
+    return window[: cut + 1]
 
 
 async def semantic_search(
@@ -38,14 +59,14 @@ async def semantic_search(
         score_threshold: Minimum semantic relevance threshold 0.0-1.0 (default 0.0).
     """
     await ctx.info(f"Semantic search for: '{query}'...")
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
-        return "Error: Vector store not available. Run a search first to index papers."
+        raise VectorStoreError(
+            "Vector store not available. Run a search first to index papers."
+        )
 
     top_k = min(top_k, 50)
-    # The store embeds the query with ONNX and scans the collection: real
-    # work, and on the event loop it would stall every other tool.
     results = await run_blocking(
         store.query, query, top_k=top_k, score_threshold=score_threshold
     )
@@ -101,9 +122,6 @@ async def index_papers(ctx: Context = None) -> str:
         hunter = await run_blocking(_make_hunter)
         papers = list(hunter.consolidated_results.values())
 
-        # The hunter here is always freshly built, so this is the normal path
-        # rather than a fallback: the run that produced the papers lives in the
-        # hunter owned by `run_search`, and nothing carries it across calls.
         if not papers:
             await ctx.info("No in-memory results, reading the latest run...")
             papers = await run_blocking(_load_latest_papers)
@@ -114,10 +132,10 @@ async def index_papers(ctx: Context = None) -> str:
                 "No papers found to index. Run a search first using `run_search`."
             )
 
-        store = _get_vector_store()
+        store = await run_blocking(_get_vector_store)
         if store is None:
             await ctx.error("Could not initialize vector store")
-            return "Error: Could not initialize vector store."
+            raise VectorStoreError("Could not initialize vector store.")
 
         await ctx.report_progress(0, 1, f"Indexing {len(papers)} papers...")
         success = await run_blocking(store.index_papers, papers)
@@ -128,7 +146,7 @@ async def index_papers(ctx: Context = None) -> str:
             return f"✅ Successfully indexed {len(papers)} papers for semantic search."
         else:
             await ctx.error("Failed to index papers")
-            return "Error: Failed to index papers."
+            raise VectorStoreError("Failed to index papers.")
 
     except VectorStoreError:
         raise
@@ -138,35 +156,128 @@ async def index_papers(ctx: Context = None) -> str:
 
 
 async def vector_store_stats(ctx: Context = None) -> str:
-    """Shows statistics about the vector store: collection name, paper count, and status.
+    """Shows every collection in the vector store, with its paper count.
 
-    Use this to check if papers have been indexed and how many are available for
-    semantic search.
+    One collection per review, so this is the list of reviews this installation
+    has searched and how big each corpus is. The **active** one — marked below —
+    is the collection ``settings.collection_name`` points at, and it is the one
+    `semantic_search`, `ask_papers` and every corpus analysis read. The others are
+    older reviews, or the shared ``papers`` collection that predates one
+    collection per review; remove one with `delete_collection`.
+
+    A count of zero on the active collection means nothing is indexed for this
+    review yet: run a search, then use `index_papers`, or let the pipeline
+    auto-index.
+
+    Args:
+        ctx: FastMCP Context (auto-injected).
     """
     await ctx.info("Checking vector store statistics...")
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.info("Vector store not available")
         return "Vector store not available."
 
-    stats = store.collection_stats("papers")
-    collections = store.list_collections()
+    collections, data, total = await run_blocking(read_store_stats, store)
+    active = getattr(store, "default_collection", "")
+    counts = dict(zip(collections, data))
 
     lines = ["# Vector Store Statistics\n"]
-    lines.append(
-        f"**Collections:** {', '.join(collections) if collections else 'None'}\n"
-    )
-    if stats.get("count", 0) > 0:
-        lines.append(f"**Papers indexed:** {stats['count']}\n")
-        lines.append("✅ Vector store is ready for semantic queries.\n")
-    else:
+    if not collections:
         lines.append(
-            "⚠️  No papers indexed yet. Run a search, then use `index_papers` "
-            "or the pipeline auto-indexes.\n"
+            "No collections yet. Run a search, then use `index_papers`, or let "
+            "the pipeline auto-index.\n"
+        )
+        return "\n".join(lines)
+
+    lines.append(f"**Collection in use:** `{active}`\n")
+    lines.append(f"**Papers in it:** {counts.get(active, {}).get('count', 0)}\n")
+    lines.append(f"**Papers across all collections:** {total}\n")
+    lines.append("\n## Collections\n")
+    for name in collections:
+        count = counts.get(name, {}).get("count", 0)
+        marker = "  ← this review" if name == active else ""
+        lines.append(f"- `{name}`: {count} papers{marker}")
+
+    if active not in counts:
+        lines.append(
+            f"\nThe active collection `{active}` does not exist yet, so a search "
+            "here would find nothing. Index with `index_papers`, or run a search "
+            "and let the pipeline do it."
+        )
+    elif not counts[active].get("count", 0):
+        lines.append(
+            f"\n`{active}` is empty: nothing is indexed for this review yet. "
+            "Index with `index_papers`, or run a search and let the pipeline "
+            "index the results."
+        )
+    lines.append("")
+    lines.append("Remove one with `delete_collection`; that cannot be undone.")
+
+    await ctx.info(f"{len(collections)} collection(s), {total} papers in total")
+    return "\n".join(lines)
+
+
+async def delete_collection(collection: str, confirm: bool = False,
+                            ctx: Context = None) -> str:
+    """Deletes a vector-store collection and every paper in it. Irreversible.
+
+    One collection per review, so over time an installation accumulates one per
+    search that was ever run. This removes one. List them with
+    `vector_store_stats` first -- the count is shown there, and this tool will not
+    tell you what you lost after the fact.
+
+    Deleting the collection the current configuration points at is allowed: the
+    next run re-indexes into it, so it is how a review's corpus is cleared before
+    a re-run. Nothing else points back at it, and the papers themselves are not
+    lost from disk -- the run's CSV in ``results/`` still holds them.
+
+    Args:
+        collection: Exact collection name, as `vector_store_stats` spells it.
+        confirm: Must be True. Without it nothing is deleted and the tool says
+            what it would have removed.
+        ctx: FastMCP Context (auto-injected).
+    """
+    store = await run_blocking(_get_vector_store)
+    if store is None:
+        await ctx.info("Vector store not available")
+        return "Vector store not available."
+
+    collections = await run_blocking(store.list_collections)
+    if collection not in collections:
+        known = ", ".join(f"`{name}`" for name in collections) or "none"
+        return (
+            f"No collection named `{collection}`. Nothing was deleted. In this "
+            f"store: {known}."
         )
 
-    await ctx.info(f"Vector store has {stats.get('count', 0)} papers")
-    return "\n".join(lines)
+    stats = await run_blocking(store.collection_stats, collection)
+    count = stats.get("count", 0)
+    active = getattr(store, "default_collection", "")
+
+    if not confirm:
+        note = (
+            f" `{collection}` is the collection this review reads, so the next "
+            "run will re-index into it from scratch." if collection == active else ""
+        )
+        return (
+            f"`{collection}` holds {count} papers and nothing was deleted.{note} "
+            f"Call again with confirm=true to remove it."
+        )
+
+    await ctx.report_progress(0, 1, f"Deleting {collection}...")
+    deleted = await run_blocking(store.delete_collection, collection)
+    await ctx.report_progress(1, 1, "Deletion complete")
+
+    if not deleted:
+        await ctx.error(f"Could not delete collection {collection}")
+        raise VectorStoreError(
+            f"ChromaDB refused to delete `{collection}`. Nothing was removed."
+        )
+
+    await ctx.info(f"Deleted {collection}")
+    return f"✅ Deleted `{collection}` and its {count} papers."
+
 
 
 async def ask_papers(question: str, top_k: int = 15, ctx: Context = None) -> str:
@@ -181,10 +292,10 @@ async def ask_papers(question: str, top_k: int = 15, ctx: Context = None) -> str
         top_k: Number of papers to retrieve for context (default 15, max 20).
     """
     await ctx.info(f"Retrieving context for: '{question}'...")
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
-        return "Error: Vector store not available. Run a search first."
+        raise VectorStoreError("Vector store not available. Run a search first.")
 
     top_k = min(top_k, 20)
     results = await run_blocking(store.query, question, top_k=top_k)
@@ -220,22 +331,27 @@ async def ask_papers(question: str, top_k: int = 15, ctx: Context = None) -> str
 
 
 async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -> str:
-    """Full RAG tool: retrieves semantically relevant papers and synthesises a structured answer.
+    """Retrieves the papers that best match a question and quotes their abstracts.
 
-    Use this tool when you want a grounded answer to a research question, complete with
-    source citations (titles and DOIs).  Works best after papers have been indexed via
-    ``index_papers`` or after running the automatic pipeline.
+    Nothing here reads the abstracts and answers the question: what comes back is
+    the most relevant indexed papers, their abstracts as indexed, and their titles
+    and DOIs to cite. The reading is the caller's. The description this tool used
+    to publish promised a composed answer, which described a tool that does not
+    exist — and the headings said the same thing.
+
+    Use it to gather citable sources on a question. Works best after papers have
+    been indexed via ``index_papers`` or after running the automatic pipeline.
 
     Args:
-        question: The research question to answer.
+        question: The research question to retrieve papers for.
         top_k: Number of papers to retrieve for context (default 15, max 20).
         ctx: FastMCP Context (auto-injected).
     """
     await ctx.info(f"Answering question: '{question}'")
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
-        return "Error: Vector store not available. Run a search first."
+        raise VectorStoreError("Vector store not available. Run a search first.")
 
     top_k = min(top_k, 20)
     results = await run_blocking(store.query, question, top_k=top_k)
@@ -247,7 +363,6 @@ async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -
             "Try a different question or run a new search."
         )
 
-    # Synthesise key findings from retrieved abstracts
     findings: list[str] = []
     citations: list[str] = []
 
@@ -256,8 +371,7 @@ async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -
         doi = paper.get("doi", "")
         preview = paper.get("abstract_preview", "")
 
-        # Use the first non-empty sentence as a key finding
-        finding = preview[:250] if preview else "No abstract available."
+        finding = _opening(preview) if preview else "No abstract available."
         findings.append(f"- {finding}")
 
         if doi:
@@ -266,18 +380,18 @@ async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -
             citations.append(f"- **{title}**")
 
     lines = [
-        "# Research Answer\n",
+        "# Retrieved Context\n",
         f"**Question:** {question}\n",
         f"**Papers consulted:** {len(results)}\n",
         "---\n",
-        "## Key Findings\n",
+        "## Retrieved Abstracts\n",
         *findings,
         "",
         "## Sources\n",
         *citations,
         "",
         "---",
-        "*This answer was generated by retrieving context from the indexed paper database.*",
+        "*These abstracts were retrieved from the indexed paper database; no answer was generated.*",
     ]
 
     await ctx.info(f"Answered question using {len(results)} papers")
@@ -297,22 +411,19 @@ async def rerank_search(ctx: Context, query: str, top_k: int = 20, rerank_k: int
         rerank_k: Final results after re-ranking (default 5).
     """
     await ctx.info(f"Running re-ranked search for: '{query[:60]}'...")
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
-        return "Error: Vector store not available."
+        raise VectorStoreError("Vector store not available.")
 
     results = await run_blocking(store.query, query, top_k=top_k)
     if not results:
         await ctx.info("No results found")
         return "No semantically relevant papers found."
 
-    # Optional cross-encoder re-ranking. The model is cached by
-    # `core.nlp.model_cache`: loading it costs ~5.9 s on CPU, which this tool
-    # used to pay on every call before doing any work.
     texts = [f"{p.get('title','')} {p.get('abstract_preview','')}" for p in results]
     try:
-        scores = rerank_texts(query, texts)
+        scores = await run_blocking(rerank_texts, query, texts)
     except Exception as e:
         await ctx.warning(f"Cross-encoder failed ({e}), using bi-encoder results")
     else:

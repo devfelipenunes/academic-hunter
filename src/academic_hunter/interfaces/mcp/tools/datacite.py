@@ -1,10 +1,11 @@
 """MCP tool for searching datasets and software via DataCite API.
 """
 
+import asyncio
 import logging
 
-import asyncio
 import requests
+
 from mcp.server.fastmcp import Context
 
 from ..exceptions import DiscoveryError

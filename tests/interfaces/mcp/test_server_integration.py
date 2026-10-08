@@ -14,7 +14,6 @@ from pathlib import Path
 
 import pytest
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 SRC_DIR = str(PROJECT_ROOT / "src")
 ENV = {**os.environ, "PYTHONPATH": SRC_DIR, "PYTHONUNBUFFERED": "1"}
@@ -107,8 +106,12 @@ def test_list_tools():
                      "cluster_papers", "find_novel_papers", "summarize_paper",
                      "search_europepmc", "search_openaire", "lookup_orcid"):
         assert expected in names, f"Tool '{expected}' not found"
-    assert len(tools) == 44, (
-        f"Expected 44 tools, got {len(tools)}. A tool that loses its `Context` "
-        f"annotation stops being discovered without an import error; if the "
-        f"change was deliberate, update this number."
+    assert len(tools) == 47, (
+        f"Expected 47 tools, got {len(tools)}. The total is the 46 functions "
+        f"auto-discovered from tools/ plus server_status, registered by hand in "
+        f"server.py:98 because it lives in interfaces/mcp/health.py, outside the "
+        f"discovered package. A tool that loses its `Context` annotation stops "
+        f"being discovered without an import error, so a total that is one short "
+        f"is usually that; if the change was deliberate, update this number and "
+        f"the breakdown above with it."
     )

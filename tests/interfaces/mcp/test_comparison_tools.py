@@ -1,6 +1,7 @@
 """Tests for compare_papers tool."""
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 async def test_compare_papers_both_found(mock_ctx, mock_openalex, openalex_work, openalex_response):
@@ -47,8 +48,6 @@ async def test_compare_papers_fallback_arxiv(mock_ctx, mock_openalex):
         with patch("academic_hunter.interfaces.mcp.tools.comparison.AcademicHunter") as m_h:
             instance = m_h.return_value
             instance.fetch_abstract_by_doi.return_value = "Title: arXiv paper abstract here."
-            # Second call to fetch_abstract_by_doi for abstract_b also returns
-            # But our mock needs to return for TWO calls
             instance.fetch_abstract_by_doi.side_effect = [
                 "Title: arXiv paper abstract here.",
                 "arXiv paper B abstract.",
@@ -60,8 +59,8 @@ async def test_compare_papers_fallback_arxiv(mock_ctx, mock_openalex):
 
 async def test_compare_papers_invalid_doi(mock_ctx):
     """Raises DiscoveryError for invalid DOI format."""
-    from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
     from academic_hunter.interfaces.mcp.exceptions import DiscoveryError
+    from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
 
     with pytest.raises(DiscoveryError):
         await compare_papers(mock_ctx, "not-a-doi", "10.1000/valid")
@@ -69,8 +68,8 @@ async def test_compare_papers_invalid_doi(mock_ctx):
 
 async def test_compare_papers_not_found(mock_ctx, mock_openalex):
     """Raises DiscoveryError when neither source finds the paper."""
-    from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
     from academic_hunter.interfaces.mcp.exceptions import DiscoveryError
+    from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
 
     mock_fail = MagicMock()
     mock_fail.raise_for_status.side_effect = __import__("requests").HTTPError("Not found")

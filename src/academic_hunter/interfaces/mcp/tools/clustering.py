@@ -51,20 +51,18 @@ async def cluster_papers(
     """
     await ctx.info(f"Clustering up to {top_k} papers (min cluster size: {min_cluster_size})...")
 
-    # ── Retrieve papers from the vector store ───────────────────────────────
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
         return "Vector store not available. Index papers first."
 
-    results = corpus_of(store, top_k)
+    results = await run_blocking(corpus_of, store, top_k)
     if not results:
         await ctx.info("No papers found in vector store")
         return "No papers found to cluster. Index papers first."
 
-    # ── Guard: BERTopic available? ──────────────────────────────────────────
     try:
-        BERTopic = await run_blocking(_load_bertopic)
+        bertopic_cls = await run_blocking(_load_bertopic)
     except ImportError:
         await ctx.error("BERTopic is not installed")
         return (
@@ -74,7 +72,6 @@ async def cluster_papers(
 
     await ctx.info(f"Retrieved {len(results)} papers, running BERTopic...")
 
-    # ── Prepare documents ───────────────────────────────────────────────────
     documents = []
     for paper in results:
         title = paper.get("title", "")
@@ -89,19 +86,17 @@ async def cluster_papers(
             f"Need at least {min_cluster_size}."
         )
 
-    # ── Run BERTopic ────────────────────────────────────────────────────────
     try:
         embedding_model = await run_blocking(get_sentence_transformer)
         if embedding_model is None:
             raise ImportError("sentence-transformers")
-        topic_model = BERTopic(
+        topic_model = bertopic_cls(
             embedding_model=embedding_model,
             min_topic_size=min_cluster_size,
             verbose=False,
         )
         topics, _ = await run_blocking(topic_model.fit_transform, documents)
 
-        # ── Build report ────────────────────────────────────────────────────
         n_topics = len({t for t in topics if t != -1})
         n_outliers = sum(1 for t in topics if t == -1)
 
@@ -115,7 +110,7 @@ async def cluster_papers(
 
         for topic_id in sorted(set(topics)):
             if topic_id == -1:
-                continue  # Outlier / noise cluster
+                continue
 
             words = topic_model.get_topic(topic_id)
             if not words:

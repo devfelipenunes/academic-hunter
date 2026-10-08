@@ -6,13 +6,12 @@ Provides visualize_landscape and topic_evolution tools.
 import json
 import logging
 
+from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
-from ._utils import _get_vector_store, run_blocking
+from ._utils import _get_vector_store, corpus_of, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.visualization")
-
-from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 
 
 def _load_umap():
@@ -46,12 +45,12 @@ async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int =
     """
     await ctx.info(f"Generating landscape visualization for {top_k} papers...")
 
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
         return "Vector store not available."
 
-    results = store.query("research paper topic analysis", top_k=top_k)
+    results = (await run_blocking(corpus_of, store, top_k))[:top_k]
     if not results or len(results) < 5:
         await ctx.info("Too few papers for visualization")
         return "Not enough papers for a meaningful visualization."
@@ -80,7 +79,6 @@ async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int =
         reducer = umap.UMAP(n_neighbors=min(n_neighbors, len(results) - 1), min_dist=0.1, random_state=42)
         coords_2d = await run_blocking(reducer.fit_transform, embeddings)
 
-        # Build JSON output with coordinates + metadata
         points = []
         for i, paper in enumerate(results):
             points.append({
@@ -115,18 +113,18 @@ async def topic_evolution(ctx: Context, top_k: int = 500) -> str:
     """
     await ctx.info("Analyzing topic evolution over time...")
 
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
         return "Vector store not available."
 
-    results = store.query("research topic analysis", top_k=top_k)
+    results = (await run_blocking(corpus_of, store, top_k))[:top_k]
     if not results or len(results) < 5:
         await ctx.info("Too few papers for evolution analysis")
         return "Not enough papers for evolution analysis."
 
     try:
-        BERTopic = await run_blocking(_load_bertopic)
+        bertopic_cls = await run_blocking(_load_bertopic)
     except ImportError:
         await ctx.error("BERTopic is not installed")
         return (
@@ -155,10 +153,9 @@ async def topic_evolution(ctx: Context, top_k: int = 500) -> str:
             year = p.get("year", 0)
             years.append(int(year) if year else 0)
 
-        topic_model = BERTopic(embedding_model=model, min_topic_size=3, verbose=False)
+        topic_model = bertopic_cls(embedding_model=model, min_topic_size=3, verbose=False)
         topics, _ = await run_blocking(topic_model.fit_transform, documents)
 
-        # Group by year and topic
         year_topic = defaultdict(lambda: defaultdict(int))
         for i, (topic, year) in enumerate(zip(topics, years)):
             if topic != -1 and year > 0:

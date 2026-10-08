@@ -10,6 +10,7 @@ import numpy as np
 from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from mcp.server.fastmcp import Context
 
+from ..exceptions import VectorStoreError
 from ._utils import _get_vector_store, corpus_of, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.dedup")
@@ -28,24 +29,21 @@ async def semantic_dedup(ctx: Context, threshold: float = 0.85, min_group_size: 
     """
     await ctx.info(f"Running semantic dedup (threshold={threshold})...")
 
-    # Get vector store
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
-        return "Error: Vector store not available. Index papers first."
+        raise VectorStoreError("Vector store not available. Index papers first.")
 
-    results = corpus_of(store, 1000)
+    results = await run_blocking(corpus_of, store, 1000)
     if not results or len(results) < min_group_size:
         await ctx.info("Too few papers for dedup")
         return "Not enough papers for deduplication."
 
-    # Compute embeddings for all papers. The model is shared and cached —
-    # loading MiniLM takes seconds and this tool used to pay it on every call.
     model = await run_blocking(get_sentence_transformer)
     if model is None:
         await ctx.error("sentence-transformers not installed")
-        return (
-            "Error: sentence-transformers not installed. "
+        raise VectorStoreError(
+            "sentence-transformers not installed. "
             "Install the extra: pip install 'academic-hunter[ml]'"
         )
 
@@ -54,13 +52,11 @@ async def semantic_dedup(ctx: Context, threshold: float = 0.85, min_group_size: 
         embeddings = await run_blocking(model.encode, texts)
     except Exception as e:
         await ctx.error(f"Embedding failed: {e}")
-        return f"Error: embedding computation failed: {e}"
+        raise VectorStoreError(f"Embedding computation failed: {e}") from e
 
-    # Compute pairwise cosine similarity efficiently
     norm = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
     sim_matrix = np.dot(norm, norm.T)
 
-    # Find duplicate groups
     visited = set()
     groups = []
     for i in range(len(results)):
@@ -72,9 +68,8 @@ async def semantic_dedup(ctx: Context, threshold: float = 0.85, min_group_size: 
                 continue
             if sim_matrix[i][j] >= threshold:
                 group.append(j)
-                visited.add(j)
         if len(group) >= min_group_size:
-            visited.add(i)
+            visited.update(group)
             groups.append(group)
 
     if not groups:

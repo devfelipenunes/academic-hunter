@@ -8,11 +8,8 @@ The HTTP call lives in ``plugins/fulltext/unpaywall.py`` so the pipeline can use
 it without importing this layer; this tool keeps the presentation concerns.
 """
 
-import logging
-
 import asyncio
-
-from mcp.server.fastmcp import Context
+import logging
 
 from academic_hunter.core.ports.fulltext import (
     FullTextConfigError,
@@ -20,6 +17,8 @@ from academic_hunter.core.ports.fulltext import (
     NoOpenAccessVersion,
 )
 from academic_hunter.plugins.fulltext.unpaywall import fetch_record
+from mcp.server.fastmcp import Context
+
 from ..exceptions import DiscoveryError
 from ..validation import validate_doi, validate_email
 
@@ -55,9 +54,6 @@ async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com"
         ]
 
         if best_loc:
-            # `or`, not `.get(k, default)`: the default applies only when the key
-            # is absent, and Unpaywall sends `"url_for_pdf": null` on locations
-            # it knows as a landing page. The URL it did send was dropped.
             url = best_loc.get("url_for_pdf") or best_loc.get("url") or ""
             host = best_loc.get("host_type", "")
             license = best_loc.get("license", "")
@@ -75,7 +71,6 @@ async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com"
         return "\n".join(lines)
 
     except FullTextConfigError:
-        # Unpaywall refuses an unusable contact address with HTTP 422.
         await ctx.warning("Unpaywall requires a valid email")
         return "Unpaywall requires a valid email. Pass email='your@email.com'."
     except NoOpenAccessVersion:

@@ -76,3 +76,21 @@ async def test_the_tool_and_the_resource_agree(project, mock_ctx):
     assert "Elite report" in from_resource, (
         "the two readers disagree about which file is the latest report"
     )
+
+
+async def test_a_report_in_a_nested_run_directory_is_still_found(project, mock_ctx):
+    """The fallback looked one level deep; the exporter writes one level down.
+
+    With no `RELATORIO_ELITE_*` anywhere, the search for any `.md` used a plain
+    `glob`, so a run that wrote its report into ``results/<stamp>/`` was
+    reported as having produced no report at all.
+    """
+    from academic_hunter.interfaces.mcp.tools.search import read_latest_report
+
+    nested = project / "results" / "20260101_120000" / "artifacts"
+    nested.mkdir(parents=True)
+    (nested / "report.md").write_text("# Nested report\n\nFound.", encoding="utf-8")
+
+    result = await read_latest_report(mock_ctx)
+
+    assert "Nested report" in result

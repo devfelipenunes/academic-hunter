@@ -5,18 +5,16 @@ in the relevant tool modules.
 """
 
 import json
-import pytest
-from unittest.mock import patch, MagicMock, PropertyMock
 from pathlib import Path
+from unittest.mock import MagicMock, PropertyMock, patch
 
-from academic_hunter.interfaces.mcp.tools.trending import trending_topics
+import pytest
+
+from academic_hunter.interfaces.mcp.exceptions import DiscoveryError, SearchError
 from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
 from academic_hunter.interfaces.mcp.tools.export import export_report
 from academic_hunter.interfaces.mcp.tools.summarize import summarize_paper
-from academic_hunter.interfaces.mcp.exceptions import DiscoveryError, SearchError, MCPToolError
-
-
-# ── trending_topics ───────────────────────────────────────────────────────
+from academic_hunter.interfaces.mcp.tools.trending import trending_topics
 
 
 async def test_trending_topics(mock_ctx):
@@ -35,10 +33,6 @@ async def test_trending_topics(mock_ctx):
         "academic_hunter.interfaces.mcp.tools.trending._get_vector_store"
     ) as m_get:
         store = MagicMock()
-        # Both entry points: `corpus_of` reads `all_papers` or falls back to a
-        # query, and `isinstance` against a runtime-checkable Protocol answers
-        # differently for a bare MagicMock on 3.10/3.11 than on 3.12. Without
-        # this, the empty mock makes a test pass for the wrong reason.
         store.query.return_value = mock_papers
         store.all_papers.return_value = mock_papers
         m_get.return_value = store
@@ -48,8 +42,6 @@ async def test_trending_topics(mock_ctx):
         assert "Trending Research Topics" in result
         assert "deep learning" in result.lower()
         assert "7 papers analyzed" in result or "7" in result.split("Total papers analyzed")[-1][:5]
-        # Which entry point `corpus_of` takes depends on the Protocol check, so
-        # the claim is that the collection was read, not how.
         assert store.all_papers.called or store.query.called
         mock_ctx.info.assert_called()
 
@@ -93,10 +85,6 @@ async def test_trending_topics_below_threshold(mock_ctx):
         "academic_hunter.interfaces.mcp.tools.trending._get_vector_store"
     ) as m_get:
         store = MagicMock()
-        # Both entry points: `corpus_of` reads `all_papers` or falls back to a
-        # query, and `isinstance` against a runtime-checkable Protocol answers
-        # differently for a bare MagicMock on 3.10/3.11 than on 3.12. Without
-        # this, the empty mock makes a test pass for the wrong reason.
         store.query.return_value = mock_papers
         store.all_papers.return_value = mock_papers
         m_get.return_value = store
@@ -105,9 +93,6 @@ async def test_trending_topics_below_threshold(mock_ctx):
 
         assert "No trending topics found" in result
         assert "Index papers first" in result
-
-
-# ── compare_papers ────────────────────────────────────────────────────────
 
 
 async def test_compare_papers(mock_ctx, mock_openalex, openalex_work, openalex_response):
@@ -172,7 +157,6 @@ async def test_compare_papers_one_not_found(mock_ctx, mock_openalex, openalex_wo
                 if "doi:10.1000/alpha" in url:
                     resp.json.return_value = work_a
                 else:
-                    # Simulate empty response for missing paper
                     resp.json.return_value = {}
                 return resp
 
@@ -202,9 +186,6 @@ async def test_compare_papers_api_error(mock_ctx, mock_openalex):
 
         assert "Network error" in str(exc_info.value)
         mock_ctx.error.assert_called()
-
-
-# ── export_report ─────────────────────────────────────────────────────────
 
 
 async def test_export_report_csv(mock_ctx, tmp_path):
@@ -289,7 +270,7 @@ async def test_export_report_no_results(mock_ctx, tmp_path):
     ):
         hunter_instance = m_hunter.return_value
         type(hunter_instance).consolidated_results = PropertyMock(return_value={})
-        m_root.return_value = tmp_path  # no CSV files exist here
+        m_root.return_value = tmp_path
 
         result = await export_report(mock_ctx)
 
@@ -334,7 +315,6 @@ async def test_export_report_default_output_path(mock_ctx, tmp_path):
             result = await export_report(mock_ctx, format="csv")
 
             assert "Successfully exported 1 papers" in result
-            # Should have written to results/export_{timestamp}.csv
             exported_files = list((tmp_path / "results").glob("export_*.csv"))
             assert len(exported_files) == 1
             mock_ctx.info.assert_called()
@@ -426,9 +406,6 @@ async def test_export_report_write_error(mock_ctx):
         mock_ctx.error.assert_called()
 
 
-# ── summarize_paper ─────────────────────────────────────────────────
-
-
 async def test_summarize_paper(mock_ctx):
     """Returns extractive summary from abstract."""
     mock_abstract = "This is the first sentence of the paper. Here is the second one discussing methods. The third sentence presents the key findings. Fourth sentence discusses implications. Fifth sentence concludes the work."
@@ -465,9 +442,6 @@ async def test_summarize_paper_short_abstract(mock_ctx):
         instance.fetch_abstract_by_doi.return_value = "Short."
         result = await summarize_paper(mock_ctx, "10.1234/short")
         assert "too short" in result.lower()
-
-
-# ── find_related_papers ─────────────────────────────────────────────────
 
 
 async def test_find_related_papers_basic(mock_ctx):

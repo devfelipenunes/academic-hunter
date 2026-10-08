@@ -17,6 +17,7 @@ from academic_hunter.core.infra.config import HunterConfig
 from academic_hunter.core.ports.vector_store import ChunkStorePort
 from mcp.server.fastmcp import Context
 
+from ..exceptions import VectorStoreError
 from ._utils import (
     _get_vector_store,
     _latest_run_dir,
@@ -47,20 +48,19 @@ def _pypdf_installed() -> bool:
 def _statuses_from_dataset(csv_path: Path) -> Optional[Counter]:
     """Per-paper status counts from a run's dataset, or None if it never ran.
 
-    None is not zero: an absent column means the step did not run.
+    None is not zero: an absent column means the step did not run. A dataset
+    that cannot be *read* is a third answer and is not folded into this one — it
+    raises, so the caller can say which of the three happened rather than
+    reporting a permissions problem as a configuration choice.
     """
-    try:
-        with csv_path.open(newline="", encoding="utf-8") as handle:
-            reader = csv.DictReader(handle)
-            if not reader.fieldnames or "_full_text_status" not in reader.fieldnames:
-                return None
-            counts: Counter = Counter()
-            for row in reader:
-                counts[(row.get("_full_text_status") or "").strip() or "(unset)"] += 1
-            return counts
-    except OSError as e:
-        logger.warning("Could not read %s: %s", csv_path, e)
-        return None
+    with csv_path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames or "_full_text_status" not in reader.fieldnames:
+            return None
+        counts: Counter = Counter()
+        for row in reader:
+            counts[(row.get("_full_text_status") or "").strip() or "(unset)"] += 1
+        return counts
 
 
 def _latest_dataset(run_dir: Optional[Path]) -> Optional[Path]:
@@ -93,15 +93,22 @@ async def fulltext_status(ctx: Context = None) -> str:
 
     try:
         cfg = await run_blocking(lambda: HunterConfig().fulltext_config())
-    except Exception as e:  # noqa: BLE001 — a missing config must not kill the report
+    except Exception as e:  # noqa: BLE001
         logger.warning("Could not read the configuration: %s", e)
         cfg = {}
     run_dir = await run_blocking(_latest_run_dir)
     dataset = _latest_dataset(run_dir)
     stats = await run_blocking(_run_stats, run_dir)
-    per_paper = await run_blocking(_statuses_from_dataset, dataset) if dataset else None
+    unreadable = None
+    per_paper = None
+    if dataset is not None:
+        try:
+            per_paper = await run_blocking(_statuses_from_dataset, dataset)
+        except OSError as e:
+            unreadable = e
+            logger.warning("Could not read %s: %s", dataset, e)
 
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     chunks = 0
     if store is not None:
         collection = await run_blocking(store.collection_stats, DEFAULT_COLLECTION)
@@ -139,7 +146,14 @@ async def fulltext_status(ctx: Context = None) -> str:
             if status in counters:
                 lines.append(f"- {status}: {counters[status]}")
         lines.append("")
-    if per_paper is None:
+    if unreadable is not None:
+        lines.append(
+            f"\n⚠️  The run's dataset could not be read ({unreadable}), so its "
+            "per-paper statuses are **unknown**. That is not the same as the "
+            "step not having run, and not the same as finding no open-access "
+            "copies.\n"
+        )
+    elif per_paper is None:
         lines.append(
             "\n⚠️  The run's dataset has no `_full_text_status` column, so the "
             "full-text step **did not run** in this run — this is not the same "
@@ -176,20 +190,20 @@ async def index_fulltext(
             "that produced a dataset."
         )
 
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Could not initialize vector store")
-        return "Error: could not initialize the vector store."
+        raise VectorStoreError("Could not initialize the vector store.")
     if not isinstance(store, ChunkStorePort):
-        return (
-            "Error: the configured vector store cannot hold chunks, so full text "
+        raise VectorStoreError(
+            "The configured vector store cannot hold chunks, so full text "
             "cannot be indexed."
         )
 
     hunter = await run_blocking(_make_hunter)
     fetcher = getattr(hunter, "full_text_fetcher", None)
     if fetcher is None:
-        return "Error: no full-text fetcher is wired."
+        raise VectorStoreError("No full-text fetcher is wired.")
 
     cfg = hunter.config.fulltext_config()
     max_papers = limit or cfg["max_papers"]
@@ -295,11 +309,11 @@ async def chunk_search(
     """
     await ctx.info(f"Searching chunks for: {query}")
 
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
-        return "Error: could not initialize the vector store."
+        raise VectorStoreError("Could not initialize the vector store.")
     if not isinstance(store, ChunkStorePort):
-        return "Error: the configured vector store cannot hold chunks."
+        raise VectorStoreError("The configured vector store cannot hold chunks.")
 
     hits = await run_blocking(
         store.query_chunks, query, top_k * per_paper, collection_name

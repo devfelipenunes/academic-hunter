@@ -5,8 +5,11 @@ Indexes 198M+ publications linked to 3.7M+ grants.
 
 import asyncio
 import logging
+
 import requests
+
 from mcp.server.fastmcp import Context
+
 from ..exceptions import DiscoveryError
 
 logger = logging.getLogger("academic_hunter.mcp.openaire")

@@ -8,7 +8,6 @@ def validate_doi(doi: str) -> str:
     if not doi or not doi.strip():
         raise ValueError("DOI is required.")
     doi = doi.strip()
-    # Basic DOI format: 10.xxxx/xxxx
     if not re.match(r'^10\.\d{4,}/', doi):
         raise ValueError(f"Invalid DOI format: '{doi}'. Expected format: 10.xxxx/xxxx")
     return doi

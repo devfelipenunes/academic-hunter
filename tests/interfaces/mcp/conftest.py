@@ -5,9 +5,14 @@ Uses pytest fixtures and unittest.mock throughout.
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
-import pytest
-from academic_hunter.interfaces.mcp.cache import citation_cache, discovery_cache
 
+import pytest
+
+from academic_hunter.interfaces.mcp.cache import (
+    citation_cache,
+    discovery_cache,
+    discovery_titles,
+)
 
 
 @pytest.fixture
@@ -31,7 +36,6 @@ def mock_hunter():
     """Mock ``AcademicHunter`` so no real config, cache, or APIs are touched."""
     with patch("academic_hunter.interfaces.mcp.tools.search.AcademicHunter") as m:
         instance = m.return_value
-        # Default: ``run()`` returns a dummy report path
         instance.run.return_value = "/tmp/dummy/report.md"
         yield instance
 
@@ -41,6 +45,7 @@ def _clear_mcp_caches():
     """Clear TTL caches before each test to avoid cross-test interference."""
     citation_cache.clear()
     discovery_cache.clear()
+    discovery_titles.clear()
 
 
 @pytest.fixture
@@ -112,6 +117,7 @@ def mock_vector_store():
         instance.collection_stats.return_value = {"count": 0}
         instance.list_collections.return_value = []
         instance.index_papers.return_value = True
+        instance.default_collection = "papers"
         m.return_value = instance
         yield instance
 
@@ -124,9 +130,6 @@ def mock_hunter_config():
     ) as m:
         instance = m.return_value
         instance.settings = {"start_year": 2020, "limit_per_query": 100}
-        # `read_config` returns `public_settings()`, not `settings` — the raw one
-        # carries API keys. The real redaction is covered by
-        # `tests/core/test_config_secrets.py`; here it only has to be JSON-able.
         instance.public_settings = MagicMock(return_value=dict(instance.settings))
         instance.anchors = {}
         instance.tech_strings = {}

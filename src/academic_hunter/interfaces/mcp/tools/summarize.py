@@ -30,11 +30,10 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
     """
     await ctx.info(f"Summarizing paper DOI {doi}...")
 
-    # Fetch abstract
     try:
         doi = validate_doi(doi)
         hunter = await run_blocking(AcademicHunter)
-        abstract = hunter.fetch_abstract_by_doi(doi)
+        abstract = await run_blocking(hunter.fetch_abstract_by_doi, doi)
     except ValueError as e:
         await ctx.error(f"Invalid DOI: {e}")
         return f"Invalid DOI: {e}"
@@ -46,12 +45,11 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
         await ctx.info(f"Abstract too short or not found for {doi}")
         return f"Abstract too short or not available for DOI {doi}."
 
-    num_sentences = min(num_sentences, 8)
+    num_sentences = max(1, min(num_sentences, 8))
 
     try:
         import numpy as np
 
-        # Split into sentences
         sentences = [
             s.strip()
             for s in re.split(r'(?<=[.!?])\s+', abstract)
@@ -61,8 +59,6 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
             await ctx.info("Abstract has fewer sentences than requested")
             return f"# Abstract Summary\n\n{abstract}"
 
-        # Embed sentences. The model comes from the shared cache — loading
-        # MiniLM takes seconds and this tool used to pay it on every call.
         model = await run_blocking(get_sentence_transformer)
         if model is None:
             raise ImportError(
@@ -71,27 +67,21 @@ async def summarize_paper(ctx: Context, doi: str, num_sentences: int = 3) -> str
             )
         emb = await run_blocking(model.encode, sentences)
 
-        # Centroid
         centroid = np.mean(emb, axis=0)
 
-        # MMR selection
         selected = []
         remaining = list(range(len(sentences)))
 
-        # First pick: closest to centroid
         sims = emb @ centroid / (np.linalg.norm(emb, axis=1) * np.linalg.norm(centroid) + 1e-10)
         first = int(np.argmax(sims))
         selected.append(first)
         remaining.remove(first)
 
-        # Subsequent picks: MMR
         lambda_param = 0.7
         for _ in range(min(num_sentences - 1, len(remaining))):
             mmr_scores = []
             for i in remaining:
-                # Relevance to centroid
                 rel = float(emb[i] @ centroid / (np.linalg.norm(emb[i]) * np.linalg.norm(centroid) + 1e-10))
-                # Diversity: max similarity to already selected
                 sim_to_sel = max(float(emb[i] @ emb[j] / (np.linalg.norm(emb[i]) * np.linalg.norm(emb[j]) + 1e-10)) for j in selected)
                 mmr = lambda_param * rel - (1 - lambda_param) * sim_to_sel
                 mmr_scores.append((i, mmr))

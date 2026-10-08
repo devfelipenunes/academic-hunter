@@ -1,14 +1,33 @@
-import logging
-
-from .tools._utils import run_blocking
-
-logger = logging.getLogger("academic_hunter.mcp.resources")
 """MCP resource functions — expose data as read-only content.
 
 Each function is registered via ``mcp.resource()`` in server.py.
 """
 
 import json as _json
+import logging
+from urllib.parse import unquote
+
+from .tools._utils import read_store_stats, run_blocking
+
+logger = logging.getLogger("academic_hunter.mcp.resources")
+
+LATEST_REPORT_MAX_CHARS = 10000
+
+
+def _with_truncation_notice(content: str, limit: int) -> str:
+    """The content cut to ``limit``, saying so when it had to be cut.
+
+    A bare slice returns a document that simply stops mid-sentence, which reads
+    as the report's own ending: the client summarises a fragment and has no way
+    to know. A report is the one artifact where the tail is the conclusion.
+    """
+    if len(content) <= limit:
+        return content
+    return (
+        content[:limit]
+        + f"\n\n---\n\n_[truncated: {len(content) - limit} of {len(content)} "
+        "characters omitted. The full file is on disk.]_\n"
+    )
 
 
 async def get_config_resource() -> str:
@@ -20,7 +39,6 @@ async def get_config_resource() -> str:
 
     config = get_config()
     data = {
-        # Redacted: resources are read by the MCP client, same as `read_config`.
         "settings": config.public_settings(),
         "anchors": config.anchors,
         "technical_strings": config.tech_strings,
@@ -46,23 +64,12 @@ async def get_latest_report_resource() -> str:
     if not results_dir.exists():
         return "No report available"
 
-    # The same rule `read_latest_report` uses. Two readers answering "which is
-    # the latest report" with two different criteria is how this resource came to
-    # serve the PRISMA flow.
     latest = _latest_report_path(results_dir)
     if latest is None:
         return "No report available"
 
     content = latest.read_text(encoding="utf-8", errors="replace")
-    return content[:10000]
-
-
-def _read_store(store):
-    """Every synchronous call the vector-store resource needs, in one place."""
-    collections = store.list_collections()
-    collection_data = [store.collection_stats(name) for name in collections]
-    total_papers = sum(stats.get("count", 0) for stats in collection_data)
-    return collections, collection_data, total_papers
+    return _with_truncation_notice(content, LATEST_REPORT_MAX_CHARS)
 
 
 async def get_vector_stats_resource() -> str:
@@ -73,16 +80,14 @@ async def get_vector_stats_resource() -> str:
     try:
         from .tools._utils import _get_vector_store
 
-        store = _get_vector_store()
+        store = await run_blocking(_get_vector_store)
         if store is None:
             return _json.dumps(
                 {"available": False, "error": "Vector store not available"},
                 ensure_ascii=False,
                 indent=2,
             )
-        # Off the loop: opening the Chroma client and counting collections is
-        # I/O, and doing it here froze every other request for as long as it took.
-        collections, collection_data, total_papers = await run_blocking(_read_store, store)
+        collections, collection_data, total_papers = await run_blocking(read_store_stats, store)
 
         return _json.dumps(
             {
@@ -106,13 +111,19 @@ async def get_vector_stats_resource() -> str:
 async def get_paper_resource(doi: str) -> str:
     """Return metadata (including abstract) for a paper by DOI.
 
-    URI: ``academic-hunter://papers/{doi}``
+    URI: ``academic-hunter://papers/{doi}``, with the DOI **percent-encoded** —
+    ``academic-hunter://papers/10.48550%2FarXiv.2101.00001``. A DOI carries a
+    slash between its prefix and its suffix, and the URI template matches a
+    single path segment, so a DOI written literally reaches no handler at all
+    ("Unknown resource"). The encoded form matches, and it is decoded here
+    because it arrives still encoded.
     """
+    doi = unquote(doi)
     try:
         from academic_hunter import AcademicHunter
 
         hunter = await run_blocking(AcademicHunter)
-        abstract = hunter.fetch_abstract_by_doi(doi)
+        abstract = await run_blocking(hunter.fetch_abstract_by_doi, doi)
         if abstract:
             return _json.dumps(
                 {"doi": doi, "found": True, "abstract": abstract},

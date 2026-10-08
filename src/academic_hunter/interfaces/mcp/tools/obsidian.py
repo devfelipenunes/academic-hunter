@@ -1,10 +1,12 @@
 """MCP tool to export research reports directly to the user's Obsidian vault."""
 
 from pathlib import Path
+
 from academic_hunter.core import get_config
 from academic_hunter.plugins.exporters.obsidian import write_obsidian_note
-from ..exceptions import ObsidianError
 from mcp.server.fastmcp import Context
+
+from ..exceptions import ObsidianError
 
 
 async def export_to_obsidian(topic: str, content: str, tags: list = None, ctx: Context = None) -> str:
@@ -28,14 +30,14 @@ async def export_to_obsidian(topic: str, content: str, tags: list = None, ctx: C
 
         if not obsidian_path:
             await ctx.error("Obsidian path not configured in config.json")
-            return (
-                "Error: Obsidian path not configured. "
-                "Please add 'obsidian_vault_path' in the 'settings' key of your config.json."
+            raise ObsidianError(
+                "Obsidian path not configured. Please add 'obsidian_vault_path' "
+                "in the 'settings' key of your config.json."
             )
 
         if not Path(obsidian_path).exists():
             await ctx.error(f"Obsidian vault path does not exist: {obsidian_path}")
-            return f"Error: Obsidian path does not exist ({obsidian_path})."
+            raise ObsidianError(f"Obsidian path does not exist ({obsidian_path}).")
 
         filepath = write_obsidian_note(
             vault_path=obsidian_path, topic=topic, content=content, tags=tags

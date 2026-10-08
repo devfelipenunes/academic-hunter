@@ -3,10 +3,13 @@
 Free, open database of 2B+ citation links.
 """
 
-import logging
 import asyncio
+import logging
+
 import requests
+
 from mcp.server.fastmcp import Context
+
 from ..cache import cached, citation_cache
 from ..exceptions import DiscoveryError
 from ..validation import validate_doi, validate_limit

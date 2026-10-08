@@ -5,12 +5,13 @@ preprints.  medRxiv shares the same API at a different endpoint.
 No API key is needed.
 """
 
+import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Any
 
-import asyncio
 import requests
+
 from mcp.server.fastmcp import Context
 
 from ..exceptions import DiscoveryError
@@ -20,13 +21,9 @@ logger = logging.getLogger("academic_hunter.mcp.biorxiv")
 BIORXIV_API = "https://api.biorxiv.org/details/biorxiv"
 MEDRXIV_API = "https://api.biorxiv.org/details/medrxiv"
 
-#: The API serves at most 100 items per page.
 PAGE_SIZE = 100
-#: An upper bound on the reading. A query that matches nothing would otherwise
-#: walk the whole window, and 90 days of bioRxiv is tens of thousands of records.
 MAX_PAGES = 5
 
-# Common bioRxiv subject categories (for reference / hinting)
 
 
 
@@ -57,21 +54,14 @@ async def search_biorxiv(
     server_name = "bioRxiv" if server.lower() == "bio" else "medRxiv"
 
     try:
-        # bioRxiv API is date-range / cursor-based.  Fetch recent papers
-        # and filter by keyword client-side.
         end_date = datetime.now().strftime("%Y-%m-%d")
         start_date = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
 
-        # The API answers by date range and paginates with a cursor. Reading one
-        # page of a 90-day window and calling the result "not found" is a claim
-        # about the window, made from a sample of it.
         query_lower = query.lower()
         matches = []
         cursor: Any = 0
         visited = set()
         pages = 0
-        # Whether the API returned anything at all, as opposed to returning
-        # records that none of which matched. The two need different messages.
         seen_any = False
 
         while len(matches) < limit and pages < MAX_PAGES and cursor not in visited:
@@ -94,7 +84,6 @@ async def search_biorxiv(
                 if query_lower in title.lower() or query_lower in abstract.lower():
                     matches.append(preprint)
 
-            # A cursor that does not move would repeat the same page forever.
             next_cursor = (data.get("messages") or [{}])[0].get("cursor")
             if not isinstance(next_cursor, int) or next_cursor == cursor:
                 break

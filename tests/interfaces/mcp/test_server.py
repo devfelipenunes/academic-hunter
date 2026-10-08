@@ -9,13 +9,16 @@ Tests cover:
 
 import inspect
 import logging
-from unittest.mock import patch, MagicMock, PropertyMock
+import re
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 
 def test_create_mcp_server_returns_fastmcp():
     """create_mcp_server returns a FastMCP instance."""
-    from academic_hunter.interfaces.mcp.server import create_mcp_server
     from mcp.server.fastmcp import FastMCP
+
+    from academic_hunter.interfaces.mcp.server import create_mcp_server
 
     server = create_mcp_server()
     assert isinstance(server, FastMCP)
@@ -28,7 +31,7 @@ def test_create_mcp_server_registers_tools(mock_ctx):
 
     with patch("academic_hunter.interfaces.mcp.server._discover_and_register") as m_discover:
         server = create_mcp_server()
-        m_discover.assert_called_once()
+        m_discover.assert_called_once_with(server)
 
 
 def test_create_mcp_server_resources_and_prompts(mock_ctx):
@@ -37,24 +40,68 @@ def test_create_mcp_server_resources_and_prompts(mock_ctx):
 
     server = create_mcp_server()
     assert server.name == "academic-hunter"
-    # The server has the expected attributes from FastMCP
     assert hasattr(server, "name")
     assert hasattr(server, "tool")
 
 
 def test_discover_and_register(mock_ctx):
-    """_discover_and_register calls mcp.tool() for each discovered function."""
+    """_discover_and_register calls mcp.tool() for each discovered function.
+
+    This is the discovered count, so it is one below the total the server
+    exposes: `server_status` is registered by hand in ``server.py`` because it
+    lives in ``interfaces/mcp/health.py``, outside the discovered package. A
+    count that is one short is usually a tool that lost its `Context` annotation
+    — auto-discovery then skips it without an import error — so bump this number
+    only with the tool it accounts for.
+    """
     from academic_hunter.interfaces.mcp.server import _discover_and_register
 
     mock_mcp = MagicMock()
     _discover_and_register(mock_mcp)
 
-    # The exact count, not a floor. A floor of 10 was satisfied by 10 tools and
-    # by 43: a tool that loses its `Context` annotation stops being discovered
-    # silently, and the assertion below was no help at all. Update this number
-    # when a tool is added or removed on purpose — that is what makes it worth
-    # having.
-    assert mock_mcp.tool.call_count == 43
+    assert mock_mcp.tool.call_count == 46
+
+
+DOCUMENTED_TOOL_COUNTS = (
+    ("README.md", r"\*\*(\d+) ferramentas"),
+    ("README.md", r"MCP Server \((\d+) tools\)"),
+    ("docs/mcp_setup.md", r"the agent sees (\d+) tools"),
+    ("docs/mcp_setup.md", r"the same (\d+) tools"),
+)
+
+
+def test_the_documented_tool_count_is_the_registered_one():
+    """The docs said 44 while the code served 46, across two releases.
+
+    The only other assertion on this number is in ``test_server_integration``,
+    which is deselected by default — so the count a reader is told and the count
+    an agent sees could drift apart with every suite green. This one counts the
+    same way the server does, by driving the real discovery, and reads the
+    numbers back out of the prose.
+    """
+    from academic_hunter.interfaces.mcp.server import _discover_and_register
+
+    mock_mcp = MagicMock()
+    _discover_and_register(mock_mcp)
+    measured_discovered = mock_mcp.tool.call_count
+    registered = measured_discovered + 1
+
+    root = Path(__file__).resolve().parent.parent.parent.parent
+    found = []
+    for relative, pattern in DOCUMENTED_TOOL_COUNTS:
+        text = (root / relative).read_text(encoding="utf-8")
+        found += [(relative, int(number)) for number in re.findall(pattern, text)]
+
+    assert len(found) == len(DOCUMENTED_TOOL_COUNTS), (
+        f"a documented count is no longer where this test looks for it: "
+        f"{[relative for relative, _ in found]}"
+    )
+    assert {number for _, number in found} == {registered}, (
+        f"the code registers {measured_discovered} discovered tools plus the "
+        f"hand-registered `server_status`, so a reader should be told "
+        f"{registered}. The docs say {sorted({n for _, n in found})} — "
+        f"update them, or say why the surface changed."
+    )
 
 
 async def test_the_fulltext_tools_are_registered():
@@ -73,9 +120,32 @@ async def test_the_fulltext_tools_are_registered():
     assert {"fulltext_status", "index_fulltext", "chunk_search"} <= names
 
 
+async def test_the_collection_admin_tool_is_registered():
+    """One collection per review leaves one collection per review behind, so the
+    tool that removes one has to exist — and `delete_collection` takes `ctx` with
+    a default, which is the annotation auto-discovery looks for."""
+    from academic_hunter.interfaces.mcp.server import create_mcp_server
+
+    server = create_mcp_server()
+    names = {tool.name for tool in await server.list_tools()}
+
+    assert {"vector_store_stats", "delete_collection"} <= names
+
+
+async def test_the_calibration_tool_is_registered():
+    """The inclusion threshold is a setting with a consequence, and this is the
+    only tool that can argue for a value of it."""
+    from academic_hunter.interfaces.mcp.server import create_mcp_server
+
+    server = create_mcp_server()
+    names = {tool.name for tool in await server.list_tools()}
+
+    assert "calibrate_inclusion_threshold" in names
+
+
 def test_server_status_imported():
     """server_status tool is registered in the server module."""
-    from academic_hunter.interfaces.mcp.server import server_status, _check_components
+    from academic_hunter.interfaces.mcp.server import _check_components, server_status
 
     assert callable(server_status)
     assert callable(_check_components)
@@ -149,7 +219,6 @@ def test_setup_logging(mock_ctx):
     """_setup_logging configures log levels for noisy libraries."""
     from academic_hunter.interfaces.mcp.server import _setup_logging
 
-    # Reset loggers first
     for name in ("chromadb", "urllib3", "httpx"):
         logging.getLogger(name).setLevel(logging.NOTSET)
 
@@ -173,10 +242,8 @@ def test_run_mcp_server_parses_stdio():
 
         run_mcp_server()
 
-        # Should run in stdio mode by default
         mock_server.run.assert_called_once()
         args, kwargs = mock_server.run.call_args
-        # No transport argument means stdio (the default)
         assert kwargs.get("transport") is None or kwargs.get("host") is None
 
 
@@ -241,5 +308,4 @@ def test_run_mcp_server_debug_log_level():
 
         run_mcp_server()
 
-        # Should set academic_hunter logger to DEBUG
         m_get_logger.assert_any_call("academic_hunter")

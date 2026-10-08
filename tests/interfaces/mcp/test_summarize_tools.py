@@ -1,6 +1,5 @@
 """Tests for summarize_paper tool."""
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 async def test_summarize_paper_no_abstract(mock_ctx):
@@ -113,3 +112,35 @@ async def test_summarize_paper_invalid_doi(mock_ctx):
         result = await summarize_paper(mock_ctx, "not-a-doi")
 
     assert "Invalid DOI" in result
+
+
+async def test_asking_for_zero_sentences_returns_one(mock_ctx):
+    """``num_sentences=0`` reached the MMR loop as a count of selections.
+
+    The loop ran ``min(num_sentences - 1, len(remaining))`` times, which is
+    ``min(-1, ...)`` = -1, and the summary came back with no sentence at all —
+    an empty "Extractive Summary" reported as a success.
+    """
+    from academic_hunter.interfaces.mcp.tools.summarize import summarize_paper
+
+    abstract = (
+        "This paper introduces a method for term weighting in retrieval. "
+        "We evaluate it on several standard benchmark collections. "
+        "The results show a consistent improvement over the baseline. "
+        "We also analyse the effect of the weighting on rare terms."
+    )
+
+    with patch("academic_hunter.interfaces.mcp.tools.summarize.AcademicHunter") as m_h:
+        instance = m_h.return_value
+        instance.fetch_abstract_by_doi.return_value = abstract
+        with patch(
+            "academic_hunter.interfaces.mcp.tools.summarize.get_sentence_transformer"
+        ) as m_st:
+            model = MagicMock()
+            model.encode.return_value = [[float(i), 1.0] for i in range(4)]
+            m_st.return_value = model
+
+            result = await summarize_paper(mock_ctx, "10.1000/zero", num_sentences=0)
+
+    assert "**Sentences:** 1" in result, result
+    assert "**1.**" in result, "the summary came back with no sentence in it"

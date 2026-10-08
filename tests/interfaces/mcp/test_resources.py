@@ -8,8 +8,7 @@ Verifies that:
 """
 
 import json
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 async def test_get_config_resource_returns_config(mock_ctx):
@@ -30,7 +29,6 @@ async def test_get_config_resource_returns_config(mock_ctx):
     with patch("academic_hunter.core.get_config") as m_get_config:
         mock_cfg = MagicMock()
         mock_cfg.settings = config_data["settings"]
-        # The resource returns `public_settings()` (settings minus credentials).
         mock_cfg.public_settings = MagicMock(return_value=config_data["settings"])
         mock_cfg.anchors = config_data["anchors"]
         mock_cfg.tech_strings = config_data["technical_strings"]
@@ -74,7 +72,6 @@ async def test_get_config_resource_format(mock_ctx):
 async def test_get_latest_report_resource_no_dir(mock_ctx, tmp_path):
     """Returns fallback when results directory does not exist."""
     from academic_hunter.interfaces.mcp.resources import get_latest_report_resource
-    from academic_hunter.interfaces.mcp.tools._utils import get_project_root
 
     with patch("academic_hunter.interfaces.mcp.tools._utils.get_project_root") as m:
         m.return_value = tmp_path / "nonexistent"
@@ -110,8 +107,13 @@ async def test_get_latest_report_resource_returns_content(mock_ctx, tmp_path):
     assert "Some content here" in result
 
 
-async def test_get_latest_report_resource_truncates(mock_ctx, tmp_path):
-    """Truncates content to 10000 characters."""
+async def test_get_latest_report_resource_says_when_it_cut_the_report(mock_ctx, tmp_path):
+    """A bare slice ends mid-sentence and reads as the report's own ending.
+
+    The resource is the read a client summarises a run from, and a report is the
+    one artifact whose tail is the conclusion. Cutting it silently hands over a
+    fragment that looks whole.
+    """
     from academic_hunter.interfaces.mcp.resources import get_latest_report_resource
 
     results_dir = tmp_path / "results"
@@ -123,7 +125,24 @@ async def test_get_latest_report_resource_truncates(mock_ctx, tmp_path):
     with patch("academic_hunter.interfaces.mcp.tools._utils.get_project_root") as m:
         m.return_value = tmp_path
         result = await get_latest_report_resource()
-    assert len(result) == 10000
+
+    assert result.startswith("A" * 100)
+    assert "truncated" in result.lower(), "the report just stopped, unannounced"
+    assert "5000" in result, "the reader was not told how much is missing"
+
+
+async def test_get_latest_report_resource_leaves_a_short_report_alone(mock_ctx, tmp_path):
+    from academic_hunter.interfaces.mcp.resources import get_latest_report_resource
+
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    (results_dir / "report_short.md").write_text("# Report\n\nAll of it.", encoding="utf-8")
+
+    with patch("academic_hunter.interfaces.mcp.tools._utils.get_project_root") as m:
+        m.return_value = tmp_path
+        result = await get_latest_report_resource()
+
+    assert result == "# Report\n\nAll of it."
 
 
 async def test_get_vector_stats_resource_not_available(mock_ctx):
@@ -211,3 +230,48 @@ async def test_get_paper_resource_error(mock_ctx):
     parsed = json.loads(result)
     assert parsed["found"] is False
     assert "error" in result
+
+
+async def test_the_doi_resource_answers_through_the_uri_template(mock_ctx):
+    """The three tests above call the handler directly, so none of them could
+    see that the URI it is registered under reaches no handler for a real DOI.
+
+    A DOI's slash never crosses the `{doi}` segment the template matches, and
+    the percent-encoded form — the only one that matches — arrives still
+    encoded. This reads through the template, which is what a client does, and
+    pins both halves: the route answers, and the handler is given the DOI.
+    """
+    from academic_hunter.interfaces.mcp.server import create_mcp_server
+
+    server = create_mcp_server()
+    with patch("academic_hunter.AcademicHunter") as m_hunter:
+        m_hunter.return_value.fetch_abstract_by_doi.return_value = "An abstract."
+        contents = await server.read_resource(
+            "academic-hunter://papers/10.1000%2Ftest_doi"
+        )
+
+    parsed = json.loads(contents[0].content)
+    assert parsed["found"] is True
+    assert parsed["doi"] == "10.1000/test_doi"
+    assert parsed["abstract"] == "An abstract."
+    m_hunter.return_value.fetch_abstract_by_doi.assert_called_once_with("10.1000/test_doi")
+
+
+async def test_the_doi_resource_says_the_doi_must_be_encoded(mock_ctx):
+    """The description is the only place an agent can learn the encoding.
+
+    A resource whose URI cannot be built from the documentation is one the agent
+    never reads, and it fails as "Unknown resource" — which says nothing about
+    the encoding that would have worked.
+    """
+    from academic_hunter.interfaces.mcp.server import create_mcp_server
+
+    server = create_mcp_server()
+    template = next(
+        t for t in await server.list_resource_templates() if "papers" in str(t.uriTemplate)
+    )
+
+    assert "%2F" in (template.description or ""), (
+        "an agent reading this description cannot build a URI that matches: "
+        f"{template.description!r}"
+    )

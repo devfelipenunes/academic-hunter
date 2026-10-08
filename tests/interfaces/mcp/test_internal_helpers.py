@@ -1,10 +1,8 @@
 """Tests for internal helper functions used across tools."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
-
-
-# ── _coci_request ──────────────────────────────────────────────────
 
 
 async def test_coci_request_success(mock_ctx):
@@ -23,16 +21,14 @@ async def test_coci_request_success(mock_ctx):
 
 async def test_coci_request_raises_on_error(mock_ctx):
     """_coci_request raises on HTTP error."""
-    from academic_hunter.interfaces.mcp.tools.citations import _coci_request
     import requests
+
+    from academic_hunter.interfaces.mcp.tools.citations import _coci_request
 
     with patch("academic_hunter.interfaces.mcp.tools.citations.requests.get") as m_get:
         m_get.side_effect = requests.RequestException("HTTP 500")
         with pytest.raises(requests.RequestException):
             await _coci_request("citation-count", "10.1234/test")
-
-
-# ── _openalex_get_sync ─────────────────────────────────────────────
 
 
 def _openalex_test_response(status_code=200, payload=None, retry_after=None):
@@ -90,7 +86,6 @@ def test_openalex_get_retries_a_429_then_succeeds(mock_openalex):
         assert _utils._openalex_get_sync("/works") == {"ok": True}
 
     assert m_get.call_count == 2
-    # OpenAlex asked for 1s and was taken at its word, not at 2**attempt.
     assert clock.slept == [1.0]
 
 
@@ -116,7 +111,6 @@ def test_openalex_get_makes_at_most_attempts_requests(mock_openalex):
             _utils._openalex_get_sync("/works", attempts=3)
 
     assert m_get.call_count == 3
-    # Two backoffs, then the third attempt raises instead of asking again.
     assert clock.slept == [1.0, 2.0]
 
 
@@ -130,9 +124,6 @@ def test_openalex_get_paces_successive_calls():
     """
     from academic_hunter.interfaces.mcp.tools import _utils
 
-    # The pacing cursor starts well before the clock, so the first call has
-    # nothing to wait for. Anchoring it level with the clock would make that
-    # first call look like it happened this instant, and it would wait too.
     clock = _FakeClock()
     with patch.object(_utils, "_openalex_credentials", return_value=({}, {})), \
          patch.object(_utils, "time", clock), \
@@ -142,7 +133,6 @@ def test_openalex_get_paces_successive_calls():
         _utils._openalex_get_sync("/works")
         assert clock.slept == [], "the first call should not be paced"
 
-        # The second follows immediately, so it waits out the whole interval.
         _utils._openalex_get_sync("/works")
 
     assert clock.slept == [_utils._OPENALEX_MIN_INTERVAL]
@@ -163,9 +153,6 @@ def test_openalex_key_prefers_the_environment(monkeypatch):
     assert openalex_key({}) == ""
 
 
-# ── _extract_bigrams ───────────────────────────────────────────────
-
-
 def test_extract_bigrams_returns_bigrams():
     """Extracts meaningful bigrams from title."""
     from academic_hunter.interfaces.mcp.tools._utils import _STOPWORDS
@@ -173,7 +160,33 @@ def test_extract_bigrams_returns_bigrams():
 
     result = _extract_bigrams("Deep Learning for NLP", _STOPWORDS)
     assert "deep learning" in result
-    assert "learning for" not in result  # 'for' is stopword
+    assert "learning for" not in result
+    assert "learning nlp" not in result
+
+
+def test_extract_bigrams_does_not_stitch_across_a_removed_stopword():
+    """A stopword separates two words; removing it does not join them.
+
+    Pairing whatever survives the stopword filter made "Deep Learning for NLP"
+    yield "learning nlp" and "AI for ML is cool stuff" yield "for cool", both of
+    which read as phrases a field uses and neither of which appeared in a title.
+    """
+    from academic_hunter.interfaces.mcp.tools._utils import _STOPWORDS
+    from academic_hunter.interfaces.mcp.tools.trending import _extract_bigrams
+
+    assert "learning nlp" not in _extract_bigrams("Deep Learning for NLP", _STOPWORDS)
+    assert "for cool" not in _extract_bigrams("AI for ML is cool stuff", set())
+
+
+def test_extract_bigrams_keeps_words_that_are_actually_adjacent():
+    """The words a bigram joins were next to each other in the title."""
+    from academic_hunter.interfaces.mcp.tools._utils import _STOPWORDS
+    from academic_hunter.interfaces.mcp.tools.trending import _extract_bigrams
+
+    result = _extract_bigrams(
+        "Efficient KV Cache Quantization for Inference", _STOPWORDS
+    )
+    assert "cache quantization" in result
 
 
 def test_extract_bigrams_ignores_stopwords():
@@ -185,9 +198,6 @@ def test_extract_bigrams_ignores_stopwords():
     assert all("the" not in bg for bg in result)
     assert all("of" not in bg for bg in result)
     assert all("on" not in bg for bg in result)
-
-
-# ── _extract_meta ──────────────────────────────────────────────────
 
 
 def test_extract_meta_parses_openai_response():
@@ -223,9 +233,6 @@ def test_extract_meta_empty_fallback():
     assert meta["funder"] == ""
 
 
-# ── _utils: get_project_root ──────────────────────────────────────
-
-
 def test_get_project_root_is_the_resolved_data_dir(tmp_path, monkeypatch):
     """The explicit data dir wins, so get_project_root is the resolver's answer."""
     from academic_hunter.core.infra import paths
@@ -247,9 +254,6 @@ def test_get_project_root_honours_a_project_marker(tmp_path, monkeypatch):
     assert _utils.get_project_root() == tmp_path
 
 
-# ── _utils: which run is "the latest" ────────────────────────────
-
-
 def _fake_project(tmp_path):
     """A results/ tree with two runs and one file that is not a run."""
     run = tmp_path / "results" / "run_20260910_120000"
@@ -261,7 +265,6 @@ def _fake_project(tmp_path):
     old.mkdir(parents=True)
     (old / "academic_dataset_20260601_090000.csv").write_text("Title\nB\n")
 
-    # Ordered last by ctime, and the reason the ordering stopped using it.
     (tmp_path / "results" / "run_stats_test_stats.json").write_text("{}")
     return tmp_path
 
@@ -296,15 +299,12 @@ def test_load_latest_papers_reads_the_newest_run(tmp_path):
     older = root / "results" / "run_20260601_090000" / "academic_dataset_20260601_090000.csv"
     import os
 
-    os.utime(older, (9_000_000_000, 9_000_000_000))  # newest by ctime, oldest by name
+    os.utime(older, (9_000_000_000, 9_000_000_000))
 
     with patch.object(_utils, "get_project_root", return_value=root):
         papers = _utils._load_latest_papers()
 
     assert papers and papers[0]["Title"] == "A"
-
-
-# ── _utils: _get_vector_store ────────────────────────────────────
 
 
 def test_get_vector_store_disabled(mock_ctx):
@@ -340,12 +340,10 @@ def test_get_vector_store_does_not_build_a_hunter():
     )
 
 
-# ── _utils: _make_hunter ─────────────────────────────────────────
-
-
 def test_make_hunter(mock_ctx):
     """Creates an AcademicHunter with project-root output."""
     from pathlib import Path
+
     from academic_hunter.interfaces.mcp.tools import _utils
 
     mock_hunter = MagicMock()
@@ -356,9 +354,6 @@ def test_make_hunter(mock_ctx):
             result = _utils._make_hunter()
     m_h.assert_called_once_with(output_dir="/tmp/test_project/results")
     assert result == mock_hunter
-
-
-# ── _write_bibtex ──────────────────────────────────────────────────
 
 
 def test_write_bibtex_creates_entries(tmp_path):
@@ -404,9 +399,6 @@ def test_write_bibtex_no_doi_key(tmp_path):
 
     expected = format_bibtex_key("No DOI Paper", "2024")
     assert f"@article{{{expected}," in out.read_text()
-
-
-# ── _write_ris ─────────────────────────────────────────────────────
 
 
 def test_write_ris_creates_entries(tmp_path):

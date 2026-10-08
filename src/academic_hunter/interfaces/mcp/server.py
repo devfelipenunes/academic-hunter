@@ -10,16 +10,19 @@ import inspect
 import logging
 from pathlib import Path
 
-from mcp.server.fastmcp import Context, FastMCP
 from starlette.responses import JSONResponse
 
 from academic_hunter.core.infra import paths
-from .health import server_status, _check_components
+from mcp.server.fastmcp import Context, FastMCP
+
+from .health import _check_components, server_status
+from .prompts import quick_discovery, systematic_review
 from .resources import (
-    get_config_resource, get_latest_report_resource,
-    get_vector_stats_resource, get_paper_resource,
+    get_config_resource,
+    get_latest_report_resource,
+    get_paper_resource,
+    get_vector_stats_resource,
 )
-from .prompts import systematic_review, quick_discovery
 
 logger = logging.getLogger("academic_hunter.mcp")
 
@@ -43,9 +46,6 @@ async def health_check(request):
     data = await _check_components()
     del data["last_config_backup"]
     return JSONResponse(data)
-
-
-# ── Auto-discovery helpers ────────────────────────────────────────────────────
 
 
 def _discover_and_register(mcp: FastMCP) -> None:
@@ -81,9 +81,6 @@ def _discover_and_register(mcp: FastMCP) -> None:
             mcp.tool()(func)
 
 
-# ── Server factory ────────────────────────────────────────────────────────────
-
-
 def create_mcp_server(host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
     """Instantiate the FastMCP server and register all tools, resources, and prompts."""
     _setup_logging()
@@ -93,34 +90,24 @@ def create_mcp_server(host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
         "academic-hunter",
         host=host,
         port=port,
-        # Announced to the client, which may act on it. Each one is imported by
-        # this project: `bibtexparser` was listed here and appears nowhere.
         dependencies=["requests", "pandas", "chromadb"],
     )
 
-    # ── Tools (auto-discovered from tools/ package) ─────────────────────────
     _discover_and_register(mcp)
 
-    # Tools outside the tools/ package (registered manually)
     mcp.tool()(server_status)
 
-    # ── Resources ───────────────────────────────────────────────────────────
     mcp.resource("academic-hunter://config/current")(get_config_resource)
     mcp.resource("academic-hunter://reports/latest")(get_latest_report_resource)
     mcp.resource("academic-hunter://vector-store/stats")(get_vector_stats_resource)
     mcp.resource("academic-hunter://papers/{doi}")(get_paper_resource)
 
-    # ── Prompts ────────────────────────────────────────────────────────────
     mcp.prompt("systematic-review")(systematic_review)
     mcp.prompt("quick-discovery")(quick_discovery)
 
-    # ── Custom HTTP routes (SSE mode only) ─────────────────────────────────
     mcp.custom_route("/health", methods=["GET"])(health_check)
 
     return mcp
-
-
-# ── CLI entry point ────────────────────────────────────────────────────────────
 
 
 def _report_resolution() -> None:

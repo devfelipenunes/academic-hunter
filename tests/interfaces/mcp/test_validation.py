@@ -1,13 +1,14 @@
 """Tests for input validation module."""
 
 import pytest
+
 from academic_hunter.interfaces.mcp.validation import (
     validate_doi,
-    validate_query,
-    validate_limit,
-    validate_topic,
     validate_email,
+    validate_limit,
     validate_orcid,
+    validate_query,
+    validate_topic,
 )
 
 

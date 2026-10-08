@@ -8,7 +8,7 @@ import logging
 
 from mcp.server.fastmcp import Context
 
-from ._utils import _get_vector_store
+from ._utils import _get_vector_store, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.related")
 
@@ -22,13 +22,13 @@ async def find_related_papers(ctx: Context, query: str, top_k: int = 20) -> str:
         top_k: Number of results (default 20, capped at 20).
     """
     await ctx.info(f"Finding papers related to: '{query[:60]}'...")
-    store = _get_vector_store()
+    store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
         return "Vector store not available. Index papers first."
 
     top_k = min(top_k, 20)
-    results = store.query(query, top_k=top_k)
+    results = await run_blocking(store.query, query, top_k=top_k)
     if not results:
         await ctx.info("No related papers found")
         return "No related papers found. Try a different query."

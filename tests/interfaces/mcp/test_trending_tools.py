@@ -1,6 +1,5 @@
 """Tests for trending_topics tool."""
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 async def test_trending_topics_no_vector_store(mock_ctx):
@@ -31,7 +30,6 @@ async def test_trending_topics_no_bigrams_meet_threshold(mock_ctx):
     from academic_hunter.interfaces.mcp.tools.trending import trending_topics
 
     mock_store = MagicMock()
-    # 2 papers with the same bigram, but min_papers=3
     mock_store.query.return_value = [
         {"title": "Deep Learning Methods"},
         {"title": "Deep Learning Advances"},
@@ -56,9 +54,6 @@ async def test_trending_topics_returns_topics(mock_ctx):
         {"title": "Blockchain Scalability in Distributed Systems"},
         {"title": "Blockchain Consensus Mechanisms Compared"},
     ]
-    # Both entry points: `corpus_of` reads `all_papers` or falls back to a query,
-    # and `isinstance` against a runtime-checkable Protocol answers differently
-    # for a bare MagicMock on 3.10/3.11 than on 3.12.
     mock_store.query.return_value = mock_papers
     mock_store.all_papers.return_value = mock_papers
 
@@ -69,7 +64,7 @@ async def test_trending_topics_returns_topics(mock_ctx):
     assert "Trending Research Topics" in result
     assert "Deep Learning" in result
     assert "Blockchain Scalability" in result
-    assert "6" in result  # 6 papers analyzed
+    assert "6" in result
 
 
 async def test_trending_topics_empty_title_skipped(mock_ctx):
@@ -85,8 +80,6 @@ async def test_trending_topics_empty_title_skipped(mock_ctx):
     with patch("academic_hunter.interfaces.mcp.tools.trending._get_vector_store") as m:
         m.return_value = mock_store
         result = await trending_topics(mock_ctx, min_papers=1)
-    # Only "Single Paper Title" contributes bigrams, and with 1 paper,
-    # no bigram can form
     assert "Trending" in result or "No trending" in result
 
 
@@ -98,8 +91,9 @@ async def test_extract_bigrams_basic():
     result = _extract_bigrams("Deep Learning for NLP", stopwords)
 
     assert "deep learning" in result
-    assert "learning for" not in result  # 'for' is stopword
-    assert "for nlp" not in result       # 'for' is stopword
+    assert "learning for" not in result
+    assert "for nlp" not in result
+    assert "learning nlp" not in result
 
 
 def test_extract_bigrams_short_words():
@@ -109,7 +103,6 @@ def test_extract_bigrams_short_words():
     stopwords = set()
     result = _extract_bigrams("AI for ML is cool stuff", stopwords)
 
-    # All 1-2 char words filtered
     assert "ai for" not in result
     assert "ai" not in result
 

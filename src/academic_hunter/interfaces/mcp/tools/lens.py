@@ -4,10 +4,11 @@ Lens.org links 150M+ patents to academic papers.
 Free tier: 1,000 requests/day with token.
 """
 
+import asyncio
 import logging
 
-import asyncio
 import requests
+
 from mcp.server.fastmcp import Context
 
 from ..exceptions import DiscoveryError
@@ -25,8 +26,6 @@ async def search_patents(ctx: Context, query: str, limit: int = 10) -> str:
     """
     await ctx.info(f"Searching patents for: '{query}'...")
 
-    # Checked before the call, not after: without it every request is a 401, and
-    # a 401 does not tell anyone which variable to set.
     token = _api_token()
     if not token:
         await ctx.error("Lens.org token is not configured")

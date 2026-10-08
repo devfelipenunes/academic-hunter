@@ -9,6 +9,7 @@ import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence
 
+from ...core.ports.vector_store import LEGACY_COLLECTION
 from .base import BaseVectorStore
 
 logger = logging.getLogger("academic_hunter.vector_store")
@@ -25,7 +26,7 @@ def _as_float(value: Any, default: float = 0.0) -> float:
         result = float(value)
     except (TypeError, ValueError):
         return default
-    return default if result != result else result  # NaN != NaN
+    return default if result != result else result
 
 
 def _as_int(value: Any, default: int = 0) -> int:
@@ -93,13 +94,11 @@ def _space_of(collection) -> str:
     space = None
     try:
         space = collection.configuration["hnsw"]["space"]
-    except Exception:
+    except Exception:  # noqa: S110
         pass
     if space is None:
         space = (collection.metadata or {}).get("hnsw:space")
 
-    # An unrecognised value falls back to the default rather than through the
-    # `else` of the conversion, where a typo would silently mean "l2".
     normalised = str(space).lower() if space is not None else ""
     return normalised if normalised in ("l2", "cosine", "ip") else "l2"
 
@@ -117,20 +116,61 @@ def _cosine_from(distance: float, space: str) -> float:
     if space == "cosine":
         similarity = 1.0 - distance
     elif space == "ip":
-        # Inner product. On the unit vectors embedded here that is the cosine.
         similarity = 1.0 - distance
     else:
         similarity = 1.0 - distance / 2.0
     return max(0.0, min(1.0, similarity))
 
 
+def _unique_by_id(documents, metadatas, ids):
+    """The batch with one entry per id, keeping the last written for each.
+
+    ChromaDB rejects a call that carries the same id twice, and the ``except``
+    around the indexing turned that into "indexing failed" — so two papers that
+    shared a DOI, or two that shared a title, discarded the *whole* batch. A
+    duplicate id is a duplicate document, and the store's own ``upsert`` already
+    says which of the two survives.
+    """
+    last: Dict[str, int] = {}
+    for position, doc_id in enumerate(ids):
+        last[doc_id] = position
+
+    if len(last) == len(ids):
+        return documents, metadatas, ids
+
+    keep = sorted(last.values())
+    logger.warning(
+        "Dropped %d of %d papers that resolved to an id already in the batch.",
+        len(ids) - len(keep), len(ids),
+    )
+    return (
+        [documents[i] for i in keep],
+        [metadatas[i] for i in keep],
+        [ids[i] for i in keep],
+    )
+
+
 class ChromaVectorStore(BaseVectorStore):
     """ChromaDB-backed vector store for semantic paper search."""
 
-    def __init__(self, db_dir: str = ".academic_hunter/chroma_db"):
+    def __init__(self, db_dir: str = ".academic_hunter/chroma_db",
+                 default_collection: Optional[str] = None):
+        """``default_collection`` is the collection a caller gets by naming none.
+
+        It exists so that "which review is this" is a property of the store in
+        hand rather than a literal repeated at every call site. Indexing and
+        every read then agree on the review without each caller having to pass
+        its name -- and without a caller that forgets landing, silently, on the
+        collection the previous review wrote.
+        """
         self.db_dir = db_dir
+        self.default_collection = default_collection or LEGACY_COLLECTION
         self._client = None
         self._collection = None
+
+    def _named(self, collection_name: Optional[str]) -> str:
+        """The collection a call means: the one it named, or this store's."""
+        return collection_name or self.default_collection
 
     @property
     def client(self):
@@ -141,33 +181,29 @@ class ChromaVectorStore(BaseVectorStore):
             self._client = chromadb.PersistentClient(path=self.db_dir)
         return self._client
 
-    def _get_or_create_collection(self, name: str = "papers"):
+    def _get_or_create_collection(self, name: str):
         """Get or create a collection by name, with error handling for existing."""
         try:
             return self.client.get_collection(name)
         except Exception:
-            # ChromaDB raises NotFoundError (or ValueError in older versions)
             return self.client.create_collection(
                 name,
                 metadata={
                     "created": datetime.now().isoformat(),
                     "type": "academic_papers",
-                    # Declared rather than inherited: Chroma's default is squared
-                    # L2, and the conversion back to a similarity depends on
-                    # knowing which one it was. Collections built before this
-                    # keep working — `_cosine_from` reads what the collection
-                    # actually uses.
                     "hnsw:space": "cosine",
                 },
             )
 
-    def index_papers(self, papers: List[Dict[str, Any]], collection_name: str = "papers") -> bool:
+    def index_papers(self, papers: List[Dict[str, Any]],
+                     collection_name: Optional[str] = None) -> bool:
         """
         Convert paper metadata/abstracts into vector embeddings and index them.
 
         Args:
             papers: A list of paper dictionaries (from consolidated_results).
-            collection_name: ChromaDB collection to use.
+            collection_name: ChromaDB collection to use; ``None`` means this
+                store's own, which is the review it was built for.
 
         Returns:
             bool: True if indexing was successful.
@@ -176,6 +212,7 @@ class ChromaVectorStore(BaseVectorStore):
             logger.warning("No papers to index.")
             return True
 
+        collection_name = self._named(collection_name)
         try:
             collection = self._get_or_create_collection(collection_name)
 
@@ -183,7 +220,7 @@ class ChromaVectorStore(BaseVectorStore):
             metadatas = []
             ids = []
 
-            for paper in papers:
+            for position, paper in enumerate(papers):
                 title = paper.get("Title", "") or ""
                 abstract = paper.get("Abstract", "") or ""
                 doi = paper.get("DOI", "") or ""
@@ -192,16 +229,12 @@ class ChromaVectorStore(BaseVectorStore):
                 if not doc_text.strip():
                     continue
 
-                title_hash = hashlib.md5(title.encode()).hexdigest()[:12] if title else ""
-                doc_id = doi or title_hash or f"paper_{len(ids)}"
+                title_hash = hashlib.md5(title.encode(), usedforsecurity=False).hexdigest()[:12] if title else ""
+                doc_id = doi or title_hash or f"paper_{position}"
 
                 documents.append(doc_text)
                 metadatas.append({
                     "title": title[:500],
-                    # Consumers build their text from `title` + `abstract`:
-                    # `novelty` embeds the pair for its outlier detection, and
-                    # `paper_context` prints it. Stored as its own field so those
-                    # two read what they say they read.
                     "abstract": abstract,
                     "doi": doi,
                     "year": _as_str(paper.get("Year")),
@@ -219,6 +252,8 @@ class ChromaVectorStore(BaseVectorStore):
                 logger.warning("No valid documents to index after filtering.")
                 return True
 
+            documents, metadatas, ids = _unique_by_id(documents, metadatas, ids)
+
             collection.upsert(documents=documents, metadatas=metadatas, ids=ids)
             logger.info(f"Indexed {len(documents)} papers into ChromaDB collection '{collection_name}'.")
             return True
@@ -228,10 +263,15 @@ class ChromaVectorStore(BaseVectorStore):
             return False
 
     def query(
-        self, prompt: str, top_k: int = 5, collection_name: str = "papers",
+        self, prompt: str, top_k: int = 5, collection_name: Optional[str] = None,
         score_threshold: Optional[float] = None,
     ) -> List[Dict[str, Any]]:
-        """Semantic similarity search against indexed papers."""
+        """Semantic similarity search against indexed papers.
+
+        ``collection_name`` of ``None`` searches this store's own collection,
+        which is the review it was built for.
+        """
+        collection_name = self._named(collection_name)
         try:
             try:
                 collection = self.client.get_collection(collection_name)
@@ -272,12 +312,10 @@ class ChromaVectorStore(BaseVectorStore):
             logger.error(f"ChromaDB query failed: {e}")
             return []
 
-    # ── reading the collection (the PaperListingPort capability) ────────────
 
-    #: ChromaDB caps a `get`, so the listing walks it in pages.
     listing_page = 500
 
-    def all_papers(self, collection_name: str = "papers") -> List[Dict[str, Any]]:
+    def all_papers(self, collection_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """Every indexed paper, in no particular order, with no similarity.
 
         The corpus analyses used `query("research topic analysis", top_k=1000)`.
@@ -285,7 +323,12 @@ class ChromaVectorStore(BaseVectorStore):
         *reaches* the collection. Past that, the answer is the thousand papers
         nearest that phrase, so clustering, trends and duplicates described a
         semantic neighbourhood of "research topic analysis", not the corpus.
+
+        ``collection_name`` of ``None`` means this store's own collection, so the
+        analyses describe the review in hand rather than every review that ever
+        wrote to the shared one.
         """
+        collection_name = self._named(collection_name)
         try:
             collection = self.client.get_collection(collection_name)
         except Exception:
@@ -321,12 +364,6 @@ class ChromaVectorStore(BaseVectorStore):
             if len(ids) < self.listing_page:
                 return papers
 
-    # ── chunk retrieval (the ChunkStorePort capability) ─────────────────────
-    #
-    # A separate collection rather than a `doc_type` field on `papers`: ChromaDB
-    # has no `$exists` operator, and every document indexed by earlier runs
-    # lacks that key, so filtering on it would empty `semantic_search` for the
-    # whole back catalogue until a full reindex.
 
     def index_chunks(
         self, chunks: List[Dict[str, Any]], collection_name: str = "paper_chunks"
@@ -345,8 +382,6 @@ class ChromaVectorStore(BaseVectorStore):
                 if not text or not chunk_id:
                     continue
                 documents.append(text)
-                # The paper's identity travels with the chunk so `chunk_search`
-                # can name it: the parent_id is a derived id, not a readable one.
                 metadatas.append({
                     "parent_id": _as_str(chunk.get("parent_id")),
                     "section": _as_str(chunk.get("section")),
@@ -423,7 +458,6 @@ class ChromaVectorStore(BaseVectorStore):
             found = collection.get(where={"parent_id": parent_id}, limit=1)
             return bool(found.get("ids"))
         except Exception:
-            # A missing collection simply has no chunks.
             return False
 
     def delete_chunks(
@@ -464,8 +498,9 @@ class ChromaVectorStore(BaseVectorStore):
             logger.error(f"Failed to delete collection '{name}': {e}")
             return False
 
-    def collection_stats(self, name: str = "papers") -> Dict[str, Any]:
-        """Get statistics about a collection."""
+    def collection_stats(self, name: Optional[str] = None) -> Dict[str, Any]:
+        """Get statistics about a collection; ``None`` is this store's own."""
+        name = self._named(name)
         try:
             try:
                 collection = self.client.get_collection(name)

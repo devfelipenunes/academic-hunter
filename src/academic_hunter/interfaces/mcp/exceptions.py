@@ -8,6 +8,12 @@ converts it into an ``isError: true`` response on the wire.
 class MCPToolError(Exception):
     """Base for all MCP tool errors.
 
+    The ``code`` and the ``details`` also travel inside the message, because the
+    message is the only field of an exception that reaches the client: FastMCP
+    serialises ``str(exc)`` and drops the attributes. A tool that worked out which
+    directory it looked in, or which alternatives existed, was computing context
+    that was thrown away one frame later.
+
     Parameters
     ----------
     message : str
@@ -23,7 +29,21 @@ class MCPToolError(Exception):
     ):
         self.code = code
         self.details = details or {}
-        super().__init__(message)
+        super().__init__(self._with_context(message))
+
+    def _with_context(self, message: str) -> str:
+        """The message as the client receives it: code and details folded in.
+
+        Only when there are details. An error raised with none keeps the exact
+        message it was given, so ``str(exc)`` stays the sentence the caller wrote.
+        The cost of folding is that the code stops being a structured field and
+        becomes text; FastMCP offers nowhere else to put it, and a code the agent
+        cannot read is the same as no code at all.
+        """
+        if not self.details:
+            return message
+        context = ", ".join(f"{key}={value}" for key, value in self.details.items())
+        return f"{message} [{self.code}: {context}]"
 
 
 class ConfigError(MCPToolError):

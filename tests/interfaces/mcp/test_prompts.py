@@ -6,7 +6,7 @@ Verifies that:
 - Templates contain the expected workflow steps, in the order that works.
 """
 
-from academic_hunter.interfaces.mcp.prompts import systematic_review, quick_discovery
+from academic_hunter.interfaces.mcp.prompts import quick_discovery, systematic_review
 
 
 async def test_systematic_review_template():

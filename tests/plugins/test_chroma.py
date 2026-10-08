@@ -1,13 +1,14 @@
 """Tests for ChromaVectorStore."""
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from academic_hunter.plugins.vector_stores.chroma import ChromaVectorStore
 
 
 @pytest.fixture
 def store():
     s = ChromaVectorStore(db_dir="/tmp/test_chroma")
-    # Mock the client and collection to avoid real ChromaDB
     s._client = MagicMock()
     s._collection = MagicMock()
     return s
@@ -96,7 +97,6 @@ def test_index_papers_empty_text_skipped(store):
         {"Title": "Valid Paper", "Abstract": "Has content."},
     ]
     assert store.index_papers(papers) is True
-    # Only the valid paper should be upserted
     call_args = mock_coll.upsert.call_args
     assert call_args is not None
     assert len(call_args.kwargs.get("documents", [])) == 1
@@ -144,9 +144,6 @@ def test_query_returns_results(store):
     assert len(results) == 2
     assert results[0]["title"] == "Paper 1"
     assert results[0]["doi"] == "10.1000/1"
-    # Chroma's `l2` distance is the *squared* one, and the embedded vectors are
-    # unit length, so `cos = 1 - d/2`. Collections that predate the declared
-    # metric still report `l2`, and this is the branch they take.
     assert results[0]["semantic_relevance"] == pytest.approx(0.75, rel=0.01)
     assert results[1]["semantic_relevance"] == pytest.approx(0.6, rel=0.01)
 
@@ -182,7 +179,6 @@ def test_query_with_score_threshold(store):
         "distances": [[0.2, 1.2]],
         "documents": [["Content 1", "Content 2"]],
     }
-    # `l2`, so cos = 1 - d/2: 0.2 → 0.9, and 1.2 → 0.4, under the threshold.
     results = store.query("test", top_k=5, score_threshold=0.5)
     assert len(results) == 1
     assert results[0]["title"] == "Paper 1"
@@ -222,3 +218,30 @@ def test_a_query_result_carries_a_key_named_abstract(tmp_path):
 
     assert result["abstract"] == "We measure ledger throughput."
     assert result["abstract_preview"], "the preview is kept for display"
+
+
+def test_a_repeated_id_does_not_discard_the_batch(store):
+    """ChromaDB rejects a call carrying the same id twice.
+
+    Two papers that share a DOI — a preprint and its published version, which
+    the dedup step keeps as separate records — made ``upsert`` raise, and the
+    ``except`` around the indexing turned that into "indexing failed" for the
+    whole batch: a corpus of two hundred silently became zero.
+    """
+    collection = MagicMock()
+    store._collection = collection
+    store._get_or_create_collection = MagicMock(return_value=collection)
+
+    papers = [
+        {"Title": "First", "Abstract": "a", "DOI": "10.1/same"},
+        {"Title": "Second", "Abstract": "b", "DOI": "10.1/other"},
+        {"Title": "Third", "Abstract": "c", "DOI": "10.1/same"},
+    ]
+
+    assert store.index_papers(papers) is True
+
+    collection.upsert.assert_called_once()
+    ids = collection.upsert.call_args.kwargs["ids"]
+    assert len(ids) == len(set(ids)), "a duplicate id reached the store"
+    assert set(ids) == {"10.1/same", "10.1/other"}
+    assert len(collection.upsert.call_args.kwargs["documents"]) == 2
