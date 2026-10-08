@@ -9,7 +9,7 @@
 [![MCP Ready](https://img.shields.io/badge/Protocol-MCP_Ready-orange.svg)](https://modelcontextprotocol.io/)
 </div>
 
-Academic Hunter is an open-source Systematic Literature Review (SLR) tool that combines **multi-source search** (7 databases searched in parallel, 15 accessible in total), **semantic relevance scoring** (Weight-Bleeding), **topic clustering** (BERTopic), **novelty detection**, **extractive summarization**, and a **Model Context Protocol (MCP) server** — all running locally on CPU, with zero API costs.
+Academic Hunter is an open-source Systematic Literature Review (SLR) tool that combines **multi-source search** (6 databases searched in parallel, 14 accessible in total), **semantic relevance scoring** (Weight-Bleeding), **topic clustering** (BERTopic), **novelty detection**, **extractive summarization**, and a **Model Context Protocol (MCP) server** — all running locally on CPU, with zero API costs.
 
 ---
 
@@ -114,7 +114,7 @@ Método original de ponderação semântica configurável via centroide ponderad
 
 ### 🤖 MCP Server — Integração com Agentes de IA
 
-O Academic Hunter expõe **44 ferramentas, 3 recursos (e um template de URI) e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
+O Academic Hunter expõe **47 ferramentas, 3 recursos (e um template de URI) e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
 
 Os comandos de lançamento estão na tabela de comandos, mais abaixo, e a conexão
 de cada cliente no [guia de conexão MCP](docs/mcp_setup.md) — o README não
@@ -154,7 +154,7 @@ CSV, BibTeX, RIS, JSON, Markdown, PRISMA — e exportação direta para **Obsidi
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    MCP Server (44 tools)                     │
+│                    MCP Server (47 tools)                     │
 │  4 Resources · 2 Prompts · Health Check · SSE Transport     │
 ├─────────────────────────────────────────────────────────────┤
 │ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐│

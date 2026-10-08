@@ -198,7 +198,7 @@ For a remote agent or a container, run the server in SSE mode instead. See
 
 ## 3. Confirm it works
 
-Connected, the agent sees 44 tools.
+Connected, the agent sees 47 tools.
 
 The first tool call is also where a config problem shows up, so it is worth
 asking the server what it resolved before running anything else:
@@ -211,6 +211,47 @@ config was found: the server runs, but with no anchors, so `run_search` refuses 
 the pipeline queries once per anchor, and with none it would ask nothing at all.
 The refusal names the file, so the fix is `quick_topic_discovery` and then
 `update_config`.
+
+### Which code is running
+
+Two servers can answer to the same name and report identical values in every
+field — the same version string, the same config path, the same 47 tools. What
+differs is *where the package was read from*, and that is the one thing nothing
+else tells you.
+
+The `uvx` command in §2 resolves to the **published distribution**, not to a
+checkout: `uvx --from 'academic-hunter[fulltext]'` uses its own cache, and a
+`--from /path/to/dist/academic_hunter-2.1.0-py3-none-any.whl` uses that frozen
+file. Neither is affected by `pip install -e .` in a clone. Editing `src/` and
+seeing no change is this, not a caching bug — and it is invisible until
+something behaves the way the old code behaved.
+
+`server_status` reports an `identity` block, which is the field that differs:
+
+| Field | What it answers |
+| :--- | :--- |
+| `source` | `checkout` or `installed`: whether the package sits in a directory holding a `pyproject.toml` (a clone) or in `site-packages` |
+| `package_dir` | The absolute directory the running package was imported from |
+| `python` | The interpreter executing it |
+| `version` | What the *environment* installed, read from distribution metadata |
+| `extras` | Which optional extras are importable, and which modules each is missing |
+
+Ask for it after touching the client config:
+
+> *"Call server_status and tell me `identity.source` and `identity.package_dir`."*
+
+A `dist/*.whl`, a `uvx` cache path, or a `site-packages` directory means the
+checkout is not what is answering. To make it answer, point the client at the
+console script inside your virtualenv (§2, *From a clone, for development*) and
+**restart the client** — a config change alone does not move a running server to
+other code.
+
+`extras` is worth reading for its own reason. A server launched without `ml`
+serves every tool but raises `No module named 'sklearn'` on the six that embed
+text (`cluster_papers`, `semantic_dedup`, `find_novel_papers`, `summarize_paper`,
+`visualize_landscape`, `topic_evolution`); the table says `ml` is unavailable and names the missing modules, instead
+of leaving you to infer it from whichever dependency happened to be imported
+first.
 
 Without a client, the cheapest check is to start the server with stdin already
 closed and see how it exits:
