@@ -20,8 +20,12 @@ def _no_ambient_resolution(tmp_path, monkeypatch):
 
     The variables are read by ``resolve_*`` directly, so a developer's exported
     ``ACADEMIC_HUNTER_CONFIG`` would otherwise decide what these tests measure.
+    The XDG variables are deliberately *not* deleted here: the root conftest
+    redirects them to an empty directory, and deleting them would re-arm the
+    ``~/.config`` fallback — which is exactly how these tests came to read a
+    real developer's config.
     """
-    for name in (paths.CONFIG_ENV, paths.DATA_ENV, paths.PROJECT_ENV, "XDG_CONFIG_HOME", "XDG_DATA_HOME"):
+    for name in (paths.CONFIG_ENV, paths.DATA_ENV, paths.PROJECT_ENV):
         monkeypatch.delenv(name, raising=False)
     neutral = tmp_path / "cwd"
     neutral.mkdir()
@@ -53,9 +57,6 @@ def _write_config(directory: Path, **overrides) -> Path:
     target = directory / paths.CONFIG_FILENAME
     target.write_text(json.dumps(payload), encoding="utf-8")
     return target
-
-
-# ── config: the rungs, in order ───────────────────────────────────
 
 
 def test_env_names_the_config(tmp_path, monkeypatch):
@@ -167,9 +168,6 @@ def test_the_user_config_is_not_the_packaged_default():
     assert paths.is_inside_package(paths.packaged_default_path())
 
 
-# ── data: the rungs, in order ─────────────────────────────────────
-
-
 def test_data_env_names_the_project_directory(tmp_path, monkeypatch):
     base = tmp_path / "explicit"
     monkeypatch.setenv(paths.DATA_ENV, str(base))
@@ -266,9 +264,6 @@ def test_ensure_data_dir_creates_every_parent(tmp_path, monkeypatch):
     assert created == paths.resolve_location().data_dir
 
 
-# ── the checkout stays the checkout ───────────────────────────────
-
-
 def test_the_checkout_is_found_from_the_package_file():
     """Development keeps working: run from a clone and the clone is the project."""
     root = paths.checkout_root()
@@ -310,9 +305,6 @@ def test_a_clone_obeys_the_user_config_over_its_own(tmp_path, monkeypatch):
 
     assert found.path == expected
     assert found.origin == paths.ORIGIN_USER_CONFIG
-
-
-# ── describe(), which is what the server reports ──────────────────
 
 
 def test_describe_names_both_resolutions(tmp_path, monkeypatch, installed):

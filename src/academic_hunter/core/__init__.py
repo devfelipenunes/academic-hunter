@@ -5,9 +5,9 @@ contracts the adapters satisfy live in ``core.ports``; implementations arrive
 by injection from the composition root (``academic_hunter.app``).
 """
 
+from .infra import HunterConfig, SearchState, SQLiteCache
 from .models import Paper
 from .nlp import AcademicScorer
-from .infra import SQLiteCache, HunterConfig, SearchState
 from .ports import (
     BaseExporter,
     BaseScreener,
@@ -32,11 +32,10 @@ __all__ = [
     "SQLiteCache",
     "HunterConfig",
     "SearchState",
-    # ports
+    "get_config",
     "BaseExporter",
     "ExportContext",
     "BaseScreener",
     "BaseVectorStore",
     "ConnectorPort",
-    "get_config",
 ]

@@ -4,8 +4,67 @@ The pipeline receives a factory for this, so the concrete store (ChromaDB,
 LanceDB, FAISS) is chosen at the composition root rather than imported by core.
 """
 
+import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Protocol, Sequence, runtime_checkable
+from typing import Any, Dict, List, Optional, Protocol, Sequence, runtime_checkable
+
+LEGACY_COLLECTION = "papers"
+"""The collection every run indexed into before a review could name its own.
+
+Kept as the fallback so an installation that predates ``settings.collection_name``
+keeps reading the papers it already has, and so a store built without a review in
+hand still works.
+"""
+
+
+_CHROMA_NAME = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{1,61}[a-zA-Z0-9]$")
+"""ChromaDB's own rule for a collection name.
+
+Spelled out rather than tested with ``str.isalnum``, which is true for ``é``:
+``"reviewé"`` would pass here and be refused at the first write, after the
+search has already been paid for.
+"""
+
+
+def is_valid_collection_name(name: str) -> bool:
+    """Whether ChromaDB will accept ``name`` as a collection name.
+
+    3-63 characters, ASCII alphanumerics plus ``_``, ``-`` and ``.``, an
+    alphanumeric at each end, and no ``..`` anywhere. A name that fails this is
+    rejected at the first write, which is after the search has already run.
+    """
+    if not isinstance(name, str) or ".." in name:
+        return False
+    return _CHROMA_NAME.match(name) is not None
+
+
+def review_collection_name(topic: str = "", anchors: Optional[Dict[str, Any]] = None) -> str:
+    """A ChromaDB-legal collection name for one review, or ``""``.
+
+    One collection per review, because one collection for every review is what
+    this replaces: two searches leave 1040 papers in a single ``papers``
+    collection, and clustering, trends and duplicate detection then describe both
+    of them while reading as though they described the current one.
+
+    Derived from the ``topic`` that ``update_config`` already takes, so the runs
+    that revise a review keep writing to the same collection; the anchors are the
+    fallback for an update that names no topic. Returning ``""`` rather than a
+    guess is deliberate: the caller can then leave an existing name alone instead
+    of silently moving a corpus.
+    """
+    source = str(topic or "").strip()
+    if not source and anchors:
+        source = " ".join(
+            str(term) for terms in anchors.values() for term in (terms or [])
+        )
+
+    slug = re.sub(r"[^a-z0-9]+", "_", source.lower()).strip("_")
+    slug = re.sub(r"_+", "_", slug)
+    if not slug:
+        return ""
+
+    name = f"review_{slug}"[:63].strip("_-")
+    return name if is_valid_collection_name(name) else ""
 
 
 class BaseVectorStore(ABC):
@@ -55,8 +114,32 @@ class PaperListingPort(Protocol):
     that cannot list is still a valid vector store, and callers degrade.
     """
 
-    def all_papers(self, collection_name: str = "papers") -> List[Dict[str, Any]]:
-        """Every indexed paper, in no particular order, with no similarity."""
+    def all_papers(self, collection_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Every indexed paper, in no particular order, with no similarity.
+
+        ``None`` means the collection the store was built for — the review in
+        hand — rather than a hardcoded name, which is what made every analysis
+        describe whichever reviews happened to share the one collection.
+        """
+        ...
+
+
+@runtime_checkable
+class CollectionAdminPort(Protocol):
+    """Managing the collections themselves, rather than the papers in them.
+
+    Separate from :class:`PaperListingPort` for the same reason it is separate
+    from :class:`BaseVectorStore`: listing is enough for an analysis, and a store
+    that cannot delete is still a valid store. Only the tool that manages
+    collections needs this.
+    """
+
+    def list_collections(self) -> List[str]:
+        """Every collection in the store, in no particular order."""
+        ...
+
+    def delete_collection(self, name: str) -> bool:
+        """Remove a collection and everything in it. Returns True on success."""
         ...
 
 

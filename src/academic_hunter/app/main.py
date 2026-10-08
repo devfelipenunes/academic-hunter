@@ -1,13 +1,12 @@
 import logging
 import threading
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-from ..core.infra import SQLiteCache, HunterConfig, SearchState
-from ..core.infra import paths
+from ..core.infra import HunterConfig, SearchState, SQLiteCache, paths
 from ..core.nlp import AcademicScorer
-from .facades import HunterFacadeMixin
 from .exporters import HunterExporterMixin
+from .facades import HunterFacadeMixin
 
 logger = logging.getLogger("academic_hunter.app")
 
@@ -37,19 +36,15 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         import sys
-        is_testing = 'pytest' in sys.modules or 'unittest' in sys.modules or 'test' in str(config_path).lower()
+        is_testing = 'pytest' in sys.modules or 'unittest' in sys.modules
         self.use_cache = use_cache and not is_testing
 
         self.cache = SQLiteCache(db_path=str(self.output_dir / "request_cache.db"))
         self.lock = threading.RLock()
         self.semaphore = threading.Semaphore(2)
 
-        # Pacing defaults are a property of the adapter set, so they are read from
-        # the connectors here and handed to the config — the config itself no
-        # longer reaches into the plugin registry to discover them.
         connector_classes = self._resolve_connector_classes(connectors)
 
-        # Core components — access via hunter.config, hunter.state, hunter.scorer
         self.config = HunterConfig(
             config_path, pacing_defaults=self._pacing_defaults(connector_classes)
         )
@@ -59,14 +54,12 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
             self.config.tech_weights, self.config.context_rules, self.config.settings
         )
 
-        # Semantic screener — injectable for tests, plugin import as default
         if semantic_screener is not None:
             self.semantic_screener = semantic_screener
         else:
             from ..plugins.screeners import SemanticScreener as _SemanticScreener
             self.semantic_screener = _SemanticScreener()
 
-        # Connectors — injectable for tests, plugin registry as default
         if connectors is not None:
             self.connectors = connectors
         else:
@@ -76,41 +69,38 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
                 name: cls(*conn_args) for name, cls in connector_classes.items()
             }
 
-        # Propagate shared mutable state to the connectors
         for conn in self.connectors.values():
             conn.pacing_delays = self.config.pacing_delays
             conn.last_request_by_domain = self.state.last_request_by_domain
             conn.blocked_sources = self.config.blocked_sources
             conn.setup_pacing()
 
-        # Exporters — injectable, plugin registry as default
         if exporters is not None:
             self.exporters = exporters
         else:
             from ..plugins.exporters import EXPORTERS as _EXPORTERS
             self.exporters = _EXPORTERS
 
-        # Vector store — injected factory, lazy ChromaDB as default. The pipeline
-        # asks for the factory instead of importing the adapter.
         if vector_store_factory is not None:
             self.vector_store_factory = vector_store_factory
         else:
             from ..plugins.vector_stores import ChromaVectorStore
 
             def _chroma_factory(db_dir: Path):
-                return ChromaVectorStore(db_dir=str(db_dir))
+                return ChromaVectorStore(
+                    db_dir=str(db_dir),
+                    default_collection=self.config.collection_name(),
+                )
 
             self.vector_store_factory = _chroma_factory
 
-        # Obsidian auto-export — injected callable, plugin adapter as default.
-        # The pipeline step must not import the MCP tool layer.
         if obsidian_export is not None:
             self.obsidian_export = obsidian_export
         else:
             from ..plugins.exporters.obsidian import write_obsidian_note
 
             def _obsidian_export(topic: str, content: str, tags: list, vault_path: str):
-                return f"✅ Report exported to Obsidian: " + str(
+                return "✅ Report exported to Obsidian: " + str(
                     write_obsidian_note(
                         vault_path=vault_path, topic=topic, content=content, tags=tags
                     )
@@ -118,9 +108,6 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
 
             self.obsidian_export = _obsidian_export
 
-        # Full text — injected callable, adapters as default. Whether it runs at
-        # all is `settings.fulltext.enabled`, which the step checks; building it
-        # here only means the capability exists.
         if full_text_fetcher is not None:
             self.full_text_fetcher = full_text_fetcher
         else:

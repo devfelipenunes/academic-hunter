@@ -12,27 +12,7 @@
       "core": "",
       "openalex": ""
     },
-    "context_rules": {
-      "drex": [
-        "cbdc",
-        "digital currency",
-        "payment",
-        "central bank",
-        "financial",
-        "banking",
-        "ledger",
-        "monetary",
-        "real digital",
-        "wholesale",
-        "retail",
-        "liquidity",
-        "transaction",
-        "cross-border",
-        "settlement",
-        "tokenization",
-        "tokenized"
-      ]
-    },
+    "context_rules": {},
     "ranking_query": "",
     "rerank": {
       "enabled": false,
@@ -45,7 +25,15 @@
       "email": "",
       "max_papers": 200,
       "time_budget_seconds": 900
-    }
+    },
+    "citations_backfill": {
+      "enabled": true,
+      "invalidate_scores": true
+    },
+    "published_version": {
+      "enabled": true
+    },
+    "impact_percentile": 90
   },
   "anchors": {
     "Retail_Instant_Payments": [
@@ -119,5 +107,7 @@
     "settlement latency": 1.5,
     "framework": 1.5,
     "architecture": 1.5
-  }
+  },
+  "keyword_only_terms": [],
+  "keyword_only_category": ""
 }

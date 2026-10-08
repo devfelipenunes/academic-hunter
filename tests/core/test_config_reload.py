@@ -90,3 +90,24 @@ def test_reloading_actually_changes_what_the_config_reports(hunter):
     instance.load_config()
 
     assert instance.config.tech_weights == {"ledger": 9.0}
+
+
+def test_reloading_reaches_the_compiled_score(hunter):
+    """The weights reaching the scorer is not the same as the score changing.
+
+    `recompile()` is what turns the weights into patterns. While it was not
+    called, the config was read, stored and visible through every property —
+    and every score was still computed with the weights from before the reload.
+    Measured on the defect: a term moved from 1.5 to 9.5 kept scoring 1.50.
+    """
+    instance, config_path = hunter
+    title, abstract = "A ledger study", "We measure ledger throughput."
+
+    _write(config_path, {"ledger": 9.5}, newer_by=1.0)
+    instance.load_config()
+
+    weight = instance.scorer.tech_weights["ledger"]
+    assert weight == 9.5, "the reload did not reach the weights at all"
+    assert instance.scorer.calculate_score(title, abstract) >= weight, (
+        "the score was still computed with the weights from before the reload"
+    )

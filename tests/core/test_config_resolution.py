@@ -24,6 +24,7 @@ def _no_ambient_resolution(tmp_path, monkeypatch):
     neutral.mkdir()
     monkeypatch.chdir(neutral)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg-data"))
 
 
 def test_an_explicit_path_still_wins(tmp_path):
@@ -79,9 +80,6 @@ def test_a_config_that_vanishes_after_resolution_names_its_rung(tmp_path, monkey
         config.load(force=True)
 
 
-# ── the packaged default is read-only ─────────────────────────────
-
-
 def test_saving_the_default_materialises_it_outside_the_package(tmp_path, monkeypatch):
     """Saving what was never written by the user must not write into the install."""
     monkeypatch.setattr(paths, "checkout_root", lambda: None)
@@ -131,9 +129,6 @@ def test_saving_a_config_the_user_owns_leaves_it_where_it_is(tmp_path):
     }
 
 
-# ── is_scorable, which is what stops a silent empty run ───────────
-
-
 def test_the_packaged_default_is_not_scorable(monkeypatch):
     """The neutral default has no topic, and that has to be detectable.
 
@@ -173,9 +168,6 @@ def test_weights_alone_are_not_scorable(tmp_path):
     )
 
     assert HunterConfig(str(target)).is_scorable() is False
-
-
-# ── the resolver's variables are not config overrides ─────────────
 
 
 def test_the_path_variables_do_not_leak_into_settings(tmp_path, monkeypatch):
