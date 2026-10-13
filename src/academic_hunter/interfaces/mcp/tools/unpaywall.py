@@ -1,8 +1,10 @@
 """MCP tool for finding open-access versions of papers via Unpaywall.
 
 Unpaywall (https://api.unpaywall.org/v2/) indexes open-access versions of
-paywalled papers using DOIs.  An email address is recommended for higher
-rate limits but not strictly required.
+paywalled papers using DOIs.  An email address is not optional: Unpaywall
+answers 422 without a contact address it accepts, and it refuses the placeholder
+domains this kind of documentation usually ships. So the address is taken from
+the configuration when the caller does not pass one.
 
 The HTTP call lives in ``plugins/fulltext/unpaywall.py`` so the pipeline can use
 it without importing this layer; this tool keeps the presentation concerns.
@@ -25,19 +27,28 @@ from ..validation import validate_doi, validate_email
 logger = logging.getLogger("academic_hunter.mcp.unpaywall")
 
 
-async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com") -> str:
+async def find_open_access(ctx: Context, doi: str, email: str = "") -> str:
     """Finds the open-access version of a paper by DOI via Unpaywall.
 
     Returns OA status, best location URL, and license info.
 
+    With no ``email`` passed, the address configured under
+    ``settings.fulltext.email`` is used, falling back to ``settings.user_email``
+    -- the same resolution the full-text step performs, so one setting serves
+    both and neither can drift from the other.
+
     Args:
         ctx: FastMCP Context (auto-injected).
         doi: DOI of the paper.
-        email: Email for Unpaywall API (optional but recommended for higher limits).
+        email: Contact address for Unpaywall. Defaults to the configured one.
     """
     await ctx.info(f"Looking up OA version for DOI {doi}...")
     try:
         doi = validate_doi(doi)
+        if not email:
+            from academic_hunter.core import get_config
+
+            email = str(get_config().fulltext_config().get("email") or "")
         if email:
             email = validate_email(email)
 
@@ -72,7 +83,12 @@ async def find_open_access(ctx: Context, doi: str, email: str = "me@example.com"
 
     except FullTextConfigError:
         await ctx.warning("Unpaywall requires a valid email")
-        return "Unpaywall requires a valid email. Pass email='your@email.com'."
+        return (
+            "Unpaywall needs a contact address it accepts, and none is "
+            "configured. Pass `email`, or set `settings.fulltext.email` (or "
+            "`settings.user_email`) in config.json. Placeholder domains such as "
+            "example.com are refused."
+        )
     except NoOpenAccessVersion:
         await ctx.info(f"Unpaywall has no record for {doi}")
         return f"# Open Access Status: {doi}\n\n**OA:** ❌ No\n**Status:** not found\n"

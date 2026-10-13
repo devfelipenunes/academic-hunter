@@ -1,6 +1,6 @@
 # Architecture of Academic Hunter
 
-Academic Hunter is designed using **Hexagonal Architecture** (also known as Ports and Adapters). This ensures that the core domain logic (the scientific research engine) is strictly isolated from delivery mechanisms like the CLI or the MCP Server.
+Academic Hunter is designed using **Hexagonal Architecture** (also known as Ports and Adapters). This ensures that the core domain logic (the scientific research engine) is strictly isolated from delivery mechanisms like the MCP Server.
 
 ## High-Level System Diagram
 
@@ -13,22 +13,21 @@ graph TD
     classDef external fill:#d63031,stroke:#ff7675,stroke-width:2px,color:white
 
     subgraph External["External World"]
-        CLI["Command Line (User)"]:::external
         MCP_Client["MCP Client (Claude/Cursor)"]:::external
         APIs["Scientific APIs (Semantic Scholar, arXiv)"]:::external
     end
 
     subgraph Interfaces["Interfaces (Delivery Layer)"]
-        CLI_Adapter["main.py (CLI Adapter)"]:::interface
+        App["app/main.py (Hunter facade)"]:::interface
         MCP_Server["FastMCP Server"]:::interface
         DB["SQLite DB (.academic_hunter)"]:::interface
     end
 
     subgraph Core["Core Engine (Domain Layer)"]
         Pipeline["pipeline/manager.py"]:::core
-        Engine["engine/search.py"]:::core
-        Models["models/schemas.py"]:::core
-        NLP["nlp/screening.py"]:::core
+        Steps["pipeline/steps.py"]:::core
+        Models["models/schema.py"]:::core
+        Screening["screening/"]:::core
     end
 
     subgraph Plugins["Plugins (Infrastructure Layer)"]
@@ -39,18 +38,17 @@ graph TD
     end
 
     %% Relationships
-    CLI --> CLI_Adapter
     MCP_Client --> MCP_Server
 
-    CLI_Adapter --> Pipeline
-    MCP_Server --> Pipeline
+    App --> Pipeline
+    MCP_Server --> App
     MCP_Server <--> DB
 
-    Pipeline --> Engine
-    Pipeline --> NLP
+    Pipeline --> Steps
+    Pipeline --> Screening
     Pipeline --> Models
 
-    Engine --> Connectors
+    Steps --> Connectors
     Connectors --> APIs
 
     Pipeline --> Exporters
@@ -58,13 +56,13 @@ graph TD
 
 ## Directory Structure Explained
 
-1. **`src/academic_hunter/core/`**: The brain of the project. Contains the business logic for deduplication, relevance scoring, and the search pipeline. It has zero knowledge of MCP or CLI.
+1. **`src/academic_hunter/core/`**: The brain of the project. Contains the business logic for deduplication, relevance scoring, and the search pipeline. It has zero knowledge of MCP.
 2. **`src/academic_hunter/plugins/`**: Adapters for external services.
     - `connectors/` (APIs like Semantic Scholar)
     - `exporters/` (Markdown/CSV)
     - `screeners/` (NLP Semantic Evaluators)
     - `vector_stores/` (RAG / ChromaDB Storage)
-3. **`src/academic_hunter/interfaces/`**: The entry points. 
-    - `interfaces/mcp/` exposes the Core as an MCP Server using FastMCP. 
+3. **`src/academic_hunter/app/`**: The composition root. `main.py` holds `AcademicHunter`, the facade that wires a configuration to the pipeline and the plugins; nothing here decides anything the core does not.
+4. **`src/academic_hunter/interfaces/`**: The entry points.
+    - `interfaces/mcp/` exposes the Core as an MCP Server using FastMCP.
     - (Future) `interfaces/cli/` or `interfaces/api/` can be added here.
-4. **`docs/superpowers/agents/`**: Contains the Multi-Agent prompts (`01_orchestrator.md`, `02_hunter.md`, `03_synthesizer.md`) meant to be used by LLMs connecting via MCP.

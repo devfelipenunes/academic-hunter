@@ -10,6 +10,19 @@ def title_slug(title: Any) -> str:
     return re.sub(r"\W+", "", str(title).lower())
 
 
+def doc_id_for(title: str = "", doi: str = "") -> str:
+    """Canonical document id for a paper.
+
+    Prefers the DOI (stable across sources), falling back to a normalised title
+    slug. Uses the same slug rule as ``AcademicScorer.generate_slug`` so that an
+    id derived here matches one derived by the pipeline.
+    """
+    doi_clean = (doi or "").strip().lower()
+    if doi_clean:
+        return f"doi:{doi_clean}"
+    return f"title:{title_slug(title)}"
+
+
 def _term_pattern(term: str) -> "re.Pattern[str]":
     """How one term is matched inside a title or an abstract.
 
@@ -76,11 +89,27 @@ class AcademicScorer:
         return title_slug(title)
 
     def calculate_score(self, title: str, abstract: str, citations: int = 0) -> float:
+        """A paper's weighted term tally, title terms worth more than abstract ones.
+
+        The title multiplier exists to reward a term the authors put in the
+        title, which is a claim about the whole paper. With no abstract there is
+        no whole paper to make the claim about: the tally is the title's terms
+        alone, and multiplying those by 1.5 let a record carrying nothing but a
+        title outrank complete papers on the same terms. The multiplier is
+        therefore withheld when the abstract is empty, and the title's terms
+        still count at face value.
+
+        Withholding it is not the same as ignoring the title. A dense title with
+        no abstract can still reach any given cut; it simply no longer gets the
+        1.5× that put it above papers whose abstract was read.
+        """
         score = 0.0
         title_lower = str(title).lower() if title else ""
         abstract_lower = str(abstract).lower() if abstract else ""
-        
+
         multiplier = self.settings.get('title_multiplier', 1.5)
+        if not abstract_lower.strip():
+            multiplier = 1.0
         precision = self.settings.get('score_precision', 1)
         
         for term, (pattern, weight) in self.compiled_patterns.items():

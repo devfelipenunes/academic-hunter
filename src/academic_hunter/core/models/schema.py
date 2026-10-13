@@ -14,12 +14,12 @@ from .strategies import (
     strategy_venue,
     strategy_year,
 )
-from .utils import collapse_whitespace, normalize_doi
+from .utils import normalize_doi, strip_abstract_placeholder, strip_title_label
 
 FIELD_SCHEMA: Dict[str, Dict[str, Any]] = {
     "Title": {
         "default": "",
-        "normalize": collapse_whitespace,
+        "normalize": strip_title_label,
     },
     "Authors": {
         "default": "",
@@ -28,7 +28,7 @@ FIELD_SCHEMA: Dict[str, Dict[str, Any]] = {
     },
     "Abstract": {
         "default": "",
-        "normalize": collapse_whitespace,
+        "normalize": strip_abstract_placeholder,
         "strategy": strategy_longest_string
     },
     "Year": {

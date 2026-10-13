@@ -151,9 +151,9 @@ def test_the_tie_break_does_not_move_a_single_score(tmp_path):
 
     Folding the identity into ``Relevance_Score`` would have been the other way
     to make the rows stable, and it would have been wrong: the score is what the
-    run reports, compares and calibrates against, and nudging it to break a tie
-    changes the measurement to fix the display. This pins every value, so that
-    route cannot be taken without a test going red.
+    run reports and ranks on, and nudging it to break a tie changes the
+    measurement to fix the display. This pins every value, so that route cannot
+    be taken without a test going red.
     """
     papers = tied()
     scores = {p["Title"]: p["Relevance_Score"] for p in papers}

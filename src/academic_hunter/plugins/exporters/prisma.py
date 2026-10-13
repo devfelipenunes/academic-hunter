@@ -3,6 +3,7 @@ from typing import Any, Dict
 
 from academic_hunter.core.infra.atomic import write_json_atomically
 from academic_hunter.core.models.citations import citation_summary
+from academic_hunter.core.models.utils import abstract_summary
 
 from .base import BaseExporter, ExportContext
 
@@ -97,6 +98,7 @@ class PrismaExporter(BaseExporter):
             "included_final": final,
             "inclusion_predicate": stats.get("inclusion_predicate"),
             "score_distribution": stats.get("score_distribution"),
+            "abstracts": abstract_summary(papers),
             "full_text": stats.get("full_text", {}),
             "exclusions_by_source": stats.get("exclusions_by_source", {}),
             "unavailable_sources": stats.get("unavailable_sources", {}),
@@ -106,11 +108,14 @@ class PrismaExporter(BaseExporter):
                 "min_relevance_score": settings.get("min_relevance_score"),
                 "min_inclusion_score": settings.get("min_inclusion_score"),
                 "limit_per_query": settings.get("limit_per_query"),
+                "ranking_query": settings.get("ranking_query", ""),
+                "title_multiplier": settings.get("title_multiplier", 1.5),
             },
             "anchors": sorted(anchors) if isinstance(anchors, dict) else anchors,
             "technical_domains": (
                 sorted(tech_strings) if isinstance(tech_strings, dict) else tech_strings
             ),
+            "configuration": context.run_config,
         })
 
         sources_mermaid = "\n".join([f"        S{i}[{source}: {count}]:::identification" for i, (source, count) in enumerate(stats.get("identified", {}).items())])
@@ -174,6 +179,20 @@ graph TD
                 f"{impact.get('papers_measured', 0)} measured papers\n"
             )
 
+        abstracts = abstract_summary(papers)
+        abstract_block = (
+            f"- **Abstracts Recorded:** {abstracts['with_abstract']} of "
+            f"{abstracts['papers']}\n"
+        )
+        if abstracts["without_abstract"]:
+            abstract_block += (
+                f"- **Abstracts Not Recorded:** {abstracts['without_abstract']} — the "
+                "anchor gate and the term tally read those papers through their "
+                "titles alone, and their titles carry no multiplier; "
+                + ", ".join(f"*{t}*" for t in abstracts["without_abstract_titles"][:10])
+                + "\n"
+            )
+
         published = stats.get("published_version") or {}
         published_block = ""
         if published:
@@ -208,9 +227,10 @@ graph TD
 - **Technical Evaluation:** {closure}
 - **Title Multiplier Bonus:** {settings.get('title_multiplier', 1.5)}x
 - **Score Precision:** {settings.get('score_precision', 1)} decimal place(s)
+- **Ranking Query:** {settings.get('ranking_query') or "*(none — the run was ordered by the term tally)*"}
 - **Grid Anchors:** {list(anchors.keys())}
 - **Grid Technical Domains:** {list(tech_strings.keys())}
-{citation_block}{published_block}
+{citation_block}{abstract_block}{published_block}
 The inclusion predicate is the criterion, stated as applied: a paper is in the
 review when its own weighted tally of the configured domain terms reaches the
 threshold. It is a property of the paper, so the same paper is included by two
@@ -220,6 +240,11 @@ reported separately in the results table; it is not the inclusion criterion.
 A citation count is listed with the source accountable for it. A `0` recorded as
 confirmed by a source and a `0` no source could answer for are different facts,
 and only the first is a measurement.
+
+The title multiplier is applied only to papers that carry an abstract. A record
+with nothing but a title has no abstract the gate could screen and no abstract
+terms to balance the title's, so boosting the title would rank it above papers
+that were read in full.
 """
 
         exclusion_table = """### 📊 Exclusions by Database Source

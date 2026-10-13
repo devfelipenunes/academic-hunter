@@ -147,6 +147,110 @@ def decode_abstract(inverted_index) -> str:
         return ""
 
 
+ABSTRACT_PLACEHOLDERS = frozenset({
+    "abstract",
+    "no abstract",
+    "sem abstract",
+    "sem resumo",
+    "abstract not available",
+    "abstract unavailable",
+    "resumo não disponível",
+})
+
+_PLACEHOLDER_EDGES = " .:;-–—"
+
+
+def strip_abstract_placeholder(value: Any) -> str:
+    """A note where an abstract should be, returned as no abstract at all.
+
+    A source can fill the field with a note that there is nothing to fill it
+    with rather than leaving it empty, and such a note survives every emptiness
+    check in the pipeline while still reading as content. It is not what this
+    run had — the two papers of run 20261008_091529 without an abstract carry an
+    empty cell — so this is a guard against the shape and not a repair of the
+    corpus that prompted it. What the corpus did need is ``abstract_summary``
+    disclosing the empties and the scorer withholding the title multiplier on
+    them.
+
+    Matched exactly, past the collapsed whitespace and any edge punctuation, and
+    never as a substring. A real abstract that happens to contain the word
+    "abstract" is a real abstract, and truncating it would be the worse of the
+    two faults. The comparison is on the whole value, so it cannot do that.
+    """
+    text = collapse_whitespace(value)
+    if text.strip(_PLACEHOLDER_EDGES).lower() in ABSTRACT_PLACEHOLDERS:
+        return ""
+    return text
+
+
+_TITLE_LABEL = re.compile(r"^\s*title\s*[:.\-–—]\s*", re.IGNORECASE)
+
+
+def strip_title_label(value: Any) -> str:
+    """A title that arrived with its own field name glued to the front.
+
+    One source handed back ``"Title: Distributed Ledger Technology…"`` while
+    another handed the same paper bare. The label survives into the identity --
+    ``title_slug`` folds the first to ``titledistributedledger…`` and the second
+    to ``distributedledger…`` -- so the deduplication never matches them and the
+    run keeps both copies. Measured: one such pair in a 78-paper run. The DOI
+    pass does not save it either, because the labelled copy carried a DOI and the
+    bare one carried none.
+
+    Only a label standing alone at the very front is removed, and only when a
+    separator follows it. A title that merely contains the word is a title, and
+    truncating it would be the worse of the two faults -- the same reasoning as
+    :func:`strip_abstract_placeholder`, one field over.
+
+    Collapsing the whitespace is part of this, so it replaces
+    ``collapse_whitespace`` at the call sites rather than sitting beside it.
+    """
+    return _TITLE_LABEL.sub("", collapse_whitespace(value), count=1)
+
+
+def abstract_text(paper) -> str:
+    """A paper's abstract under either spelling.
+
+    Papers carry the schema's field name; the score-distribution sidecar writes
+    its columns in lower case. Both are read so one summary describes the
+    collection and the artifact written from it, and the two cannot drift.
+    """
+    if "Abstract" in paper:
+        return paper.get("Abstract") or ""
+    return paper.get("abstract") or ""
+
+
+def has_abstract(paper) -> bool:
+    """Whether a paper carries an abstract the scorer and the gate can read."""
+    return bool(strip_abstract_placeholder(abstract_text(paper)).strip())
+
+
+def abstract_summary(papers) -> dict:
+    """How much of a corpus is readable, and which papers are not.
+
+    A paper with no abstract is not screened the way the rest are: the anchor
+    gate and its context rules run over title and abstract concatenated, so with
+    the abstract empty they run over the title alone, and the keyword score is
+    the title's terms with nothing to balance them. The count belongs in the
+    report for the same reason the citation coverage does — a corpus that is
+    partly unscreenable and does not say so reads as a corpus that was screened.
+    """
+    summary = {
+        "papers": 0,
+        "with_abstract": 0,
+        "without_abstract": 0,
+        "without_abstract_titles": [],
+    }
+    for paper in papers:
+        summary["papers"] += 1
+        if has_abstract(paper):
+            summary["with_abstract"] += 1
+            continue
+        summary["without_abstract"] += 1
+        summary["without_abstract_titles"].append(str(paper.get("Title") or paper.get("title") or ""))
+    return summary
+
+
 _BIBTEX_ESCAPES = str.maketrans({
     "\\": r"\textbackslash{}",
     "{": r"\{",

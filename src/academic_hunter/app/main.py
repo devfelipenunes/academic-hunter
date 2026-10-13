@@ -122,10 +122,10 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
     def _build_full_text_fetcher(self):
         """Compose the full-text source chain for this hunter's configuration.
 
-        The chain itself is built in :mod:`academic_hunter.plugins.fulltext.compose`
-        because the MCP tool and the evaluation script need the same one without
-        standing up a hunter; what stays here is the decision of which e-mail and
-        which cache directory this project uses.
+        The chain itself is built in :mod:`academic_hunter.plugins.fulltext.compose`,
+        where the builder takes nothing but an e-mail and a cache directory and
+        therefore needs no hunter to exist; what stays here is the decision of
+        which e-mail and which cache directory this project uses.
         """
         from ..plugins.fulltext.compose import build_full_text_fetcher
 

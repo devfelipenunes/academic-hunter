@@ -1,131 +1,12 @@
-"""Tests for visualization MCP tools (visualize_landscape, topic_evolution).
+"""Tests for visualization MCP tools (topic_evolution).
 
-Uses mock_ctx from the MCP conftest and patches vector store, UMAP,
+Uses mock_ctx from the MCP conftest and patches vector store,
 SentenceTransformer, and BERTopic to avoid real API / model calls.
 All patching uses the module-level names in visualization.py so that
 ``unittest.mock.patch`` can target them correctly.
 """
 
-import json
 from unittest.mock import MagicMock, patch
-
-import numpy as np
-
-
-async def test_visualize_landscape(mock_ctx):
-    """Returns JSON with 2D coordinates and paper metadata."""
-    mock_papers = [
-        {"title": f"Paper {i}", "abstract_preview": f"Abstract {i}"}
-        for i in range(10)
-    ]
-    mock_embeddings = np.array([[float(i), float(i)] for i in range(10)])
-
-    with patch(
-        "academic_hunter.interfaces.mcp.tools.visualization._get_vector_store"
-    ) as m_store:
-        store = MagicMock()
-        store.query.return_value = mock_papers
-        m_store.return_value = store
-
-        m_umap = MagicMock()
-        m_umap.UMAP.return_value.fit_transform.return_value = mock_embeddings
-        with patch(
-            "academic_hunter.interfaces.mcp.tools.visualization._load_umap",
-            return_value=m_umap,
-        ):
-
-            with patch(
-                "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer"
-            ) as m_st:
-                model = MagicMock()
-                model.encode.return_value = mock_embeddings
-                m_st.return_value = model
-
-                from academic_hunter.interfaces.mcp.tools.visualization import (
-                    visualize_landscape,
-                )
-
-                result = await visualize_landscape(mock_ctx, top_k=10)
-                data = json.loads(result)
-                assert "papers" in data
-                assert len(data["papers"]) == 10
-                assert "shape" in data
-                assert data["papers"][0]["x"] == 0.0
-                assert data["papers"][0]["y"] == 0.0
-                mock_ctx.info.assert_called()
-
-
-async def test_visualize_landscape_no_store(mock_ctx):
-    """Graceful when vector store is unavailable."""
-    with patch(
-        "academic_hunter.interfaces.mcp.tools.visualization._get_vector_store",
-        return_value=None,
-    ):
-        from academic_hunter.interfaces.mcp.tools.visualization import (
-            visualize_landscape,
-        )
-
-        result = await visualize_landscape(mock_ctx)
-        assert "not available" in result.lower()
-
-
-async def test_visualize_landscape_few_papers(mock_ctx):
-    """Graceful with too few papers (less than 5)."""
-    with patch(
-        "academic_hunter.interfaces.mcp.tools.visualization._get_vector_store"
-    ) as m_store:
-        store = MagicMock()
-        store.query.return_value = [{"title": "Only one"}]
-        m_store.return_value = store
-
-        from academic_hunter.interfaces.mcp.tools.visualization import (
-            visualize_landscape,
-        )
-
-        result = await visualize_landscape(mock_ctx)
-        assert "Not enough papers" in result
-
-
-async def test_visualize_landscape_empty_results(mock_ctx):
-    """Graceful when vector store returns no results."""
-    with patch(
-        "academic_hunter.interfaces.mcp.tools.visualization._get_vector_store"
-    ) as m_store:
-        store = MagicMock()
-        store.query.return_value = []
-        m_store.return_value = store
-
-        from academic_hunter.interfaces.mcp.tools.visualization import (
-            visualize_landscape,
-        )
-
-        result = await visualize_landscape(mock_ctx)
-        assert "Not enough papers" in result
-
-
-async def test_visualize_landscape_import_error(mock_ctx):
-    """Graceful when SentenceTransformer is not installed."""
-    with patch(
-        "academic_hunter.interfaces.mcp.tools.visualization._get_vector_store"
-    ) as m_store:
-        store = MagicMock()
-        store.query.return_value = [{"title": f"P{i}"} for i in range(10)]
-        m_store.return_value = store
-
-        with patch(
-            "academic_hunter.interfaces.mcp.tools.visualization._load_umap",
-            return_value=MagicMock(),
-        ):
-            with patch(
-                "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer",
-                MagicMock(return_value=None),
-            ):
-                from academic_hunter.interfaces.mcp.tools.visualization import (
-                    visualize_landscape,
-                )
-
-                result = await visualize_landscape(mock_ctx, top_k=10)
-                assert "academic-hunter[ml]" in result
 
 
 async def test_topic_evolution(mock_ctx):
@@ -281,37 +162,6 @@ class _ListableStore:
     def query(self, prompt, top_k=5, collection_name="papers", score_threshold=None):
         self.queried.append(prompt)
         return self.papers
-
-
-async def test_the_landscape_is_the_corpus_not_a_neighbourhood(mock_ctx):
-    """A projection of the papers nearest one phrase is not the landscape."""
-    import numpy as np
-
-    from academic_hunter.interfaces.mcp.tools.visualization import visualize_landscape
-
-    papers = [{"title": f"Paper {i}", "abstract_preview": f"A{i}"} for i in range(10)]
-    store = _ListableStore(papers)
-    embeddings = np.array([[float(i), float(i)] for i in range(10)])
-
-    with patch(
-        "academic_hunter.interfaces.mcp.tools.visualization._get_vector_store"
-    ) as m_store, patch(
-        "academic_hunter.interfaces.mcp.tools.visualization._load_umap"
-    ) as m_umap, patch(
-        "academic_hunter.interfaces.mcp.tools.visualization.get_sentence_transformer"
-    ) as m_st:
-        m_store.return_value = store
-        m_umap.return_value.UMAP.return_value.fit_transform.return_value = embeddings
-        model = MagicMock()
-        model.encode.return_value = embeddings
-        m_st.return_value = model
-
-        await visualize_landscape(mock_ctx, top_k=10)
-
-    assert store.listed == 1, "the collection was never listed"
-    assert store.queried == [], (
-        f"the projection described the neighbourhood of a phrase: {store.queried}"
-    )
 
 
 async def test_the_evolution_is_the_corpus_not_a_neighbourhood(mock_ctx):

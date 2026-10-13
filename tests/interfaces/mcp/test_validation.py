@@ -7,8 +7,6 @@ from academic_hunter.interfaces.mcp.validation import (
     validate_email,
     validate_limit,
     validate_orcid,
-    validate_query,
-    validate_topic,
 )
 
 
@@ -35,19 +33,6 @@ class TestValidateDOI:
         assert validate_doi("  10.1234/test  ") == "10.1234/test"
 
 
-class TestValidateQuery:
-    def test_valid_query(self):
-        assert validate_query("CBDC") == "CBDC"
-
-    def test_empty_query(self):
-        with pytest.raises(ValueError, match="cannot be empty"):
-            validate_query("")
-
-    def test_custom_field_name(self):
-        with pytest.raises(ValueError, match="topic cannot be empty"):
-            validate_query("", field="topic")
-
-
 class TestValidateLimit:
     def test_valid_limit(self):
         assert validate_limit(10) == 10
@@ -64,15 +49,6 @@ class TestValidateLimit:
 
     def test_zero_returns_default(self):
         assert validate_limit(0) == 10
-
-
-class TestValidateTopic:
-    def test_valid_topic(self):
-        assert validate_topic("CBDC") == "CBDC"
-
-    def test_empty_topic(self):
-        with pytest.raises(ValueError, match="cannot be empty"):
-            validate_topic("")
 
 
 class TestValidateEmail:

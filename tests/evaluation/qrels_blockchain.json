@@ -1,0 +1,155 @@
+{
+  "run": "run_20261013_093241",
+  "questions": [
+    {
+      "question": "Que levantamento sistemático (SoK) cobre os mercados automatizados (AMM) em exchanges descentralizadas?",
+      "target_title": "SoK: Decentralized Exchanges (DEX) with Automated Market Maker (AMM) Protocols",
+      "target_doi": "10.1145/3570639",
+      "target_slug": "sokdecentralizedexchangesdexwithautomatedmarketmakerammprotocols"
+    },
+    {
+      "question": "Que trabalho mede e perfila o consumo de gas em contratos Solidity?",
+      "target_title": "Profiling Gas Consumption in Solidity Smart Contracts",
+      "target_doi": "10.48550/arxiv.2008.05449",
+      "target_slug": "profilinggasconsumptioninsoliditysmartcontracts"
+    },
+    {
+      "question": "Que artigo propoe um rollup de conhecimento zero para o Hyperledger Fabric?",
+      "target_title": "ZK-Rollup for Hyperledger Fabric: Architecture and Performance Evaluation",
+      "target_doi": "10.48550/arxiv.2602.08870",
+      "target_slug": "zkrollupforhyperledgerfabricarchitectureandperformanceevaluation"
+    },
+    {
+      "question": "Que paper identifica vulnerabilidades de reentrancia em contratos inteligentes Ethereum?",
+      "target_title": "Reentrancy Vulnerability Identification in Ethereum Smart Contracts",
+      "target_doi": "10.48550/arxiv.2105.02881",
+      "target_slug": "reentrancyvulnerabilityidentificationinethereumsmartcontracts"
+    },
+    {
+      "question": "Que trabalho usa analise estatica para cacar ataques de re-entrancia em contratos Ethereum?",
+      "target_title": "Hunting for Re-Entrancy Attacks in Ethereum Smart Contracts via Static Analysis",
+      "target_doi": "10.48550/arxiv.2007.01029",
+      "target_slug": "huntingforreentrancyattacksinethereumsmartcontractsviastaticanalysis"
+    },
+    {
+      "question": "Que artigo propoe uma linguagem de consulta cross-chain para interoperabilidade ao nivel da aplicacao?",
+      "target_title": "A Cross-Chain Query Language for Application-Level Interoperability Between Open and Permissionless Blockchains",
+      "target_doi": "10.48550/arxiv.2307.00951",
+      "target_slug": "acrosschainquerylanguageforapplicationlevelinteroperabilitybetweenopenandpermissionlessblockchains"
+    },
+    {
+      "question": "Que sistema aplica provas de conhecimento zero a rastreabilidade de madeira?",
+      "target_title": "Wood traceability system using blockchain and zero-knowledge proof",
+      "target_doi": "10.48550/arxiv.2211.11136",
+      "target_slug": "woodtraceabilitysystemusingblockchainandzeroknowledgeproof"
+    },
+    {
+      "question": "Que paper analisa teoricamente a distribuicao dos tempos de bloco em consenso tolerante a faltas bizantinas?",
+      "target_title": "Theoretical Analysis on Block Time Distributions in Byzantine Fault-Tolerant Consensus Blockchains",
+      "target_doi": "10.48550/arxiv.2407.14299",
+      "target_slug": "theoreticalanalysisonblocktimedistributionsinbyzantinefaulttolerantconsensusblockchains"
+    },
+    {
+      "question": "Que protocolo de sharding baseado em intervalos e proposto para blockchains empresariais?",
+      "target_title": "A Range-Based Sharding (RBS) Protocol for Scalable Enterprise Blockchain",
+      "target_doi": "10.48550/arxiv.2509.11006",
+      "target_slug": "arangebasedshardingrbsprotocolforscalableenterpriseblockchain"
+    },
+    {
+      "question": "Que paper descreve o market maker automatizado da Uniswap?",
+      "target_title": "Decentralized Exchange: The Uniswap Automated Market Maker",
+      "target_doi": "10.1111/jofi.13405",
+      "target_slug": "decentralizedexchangetheuniswapautomatedmarketmaker"
+    },
+    {
+      "question": "Que protocolo de consenso proof-of-stake escalavel usa assinaturas coletivas?",
+      "target_title": "SklCoin: Toward a Scalable Proof-of-Stake and Collective Signature Based Consensus Protocol for Strong Consistency in Blockchain",
+      "target_doi": "10.48550/arxiv.2008.06763",
+      "target_slug": "sklcointowardascalableproofofstakeandcollectivesignaturebasedconsensusprotocolforstrongconsistencyinblockchain"
+    },
+    {
+      "question": "Que estudo mede empiricamente quao descentralizada e a governanca das financas baseadas em blockchain?",
+      "target_title": "How Decentralized is the Governance of Blockchain-based Finance: Empirical Evidence from four Governance Token Distributions",
+      "target_doi": "10.48550/arxiv.2102.10096",
+      "target_slug": "howdecentralizedisthegovernanceofblockchainbasedfinanceempiricalevidencefromfourgovernancetokendistributions"
+    },
+    {
+      "question": "Que paper discute os desafios e abordagens de regulacao das financas descentralizadas?",
+      "target_title": "Challenges and Approaches to Regulating Decentralized Finance",
+      "target_doi": "10.1017/aju.2021.66",
+      "target_slug": "challengesandapproachestoregulatingdecentralizedfinance"
+    },
+    {
+      "question": "Que investigacao abrangente avalia casos de uso e desempenho da integracao de blockchain na saude?",
+      "target_title": "Blockchain integration in healthcare: a comprehensive investigation of use cases, performance issues, and mitigation strategies",
+      "target_doi": "10.3389/fdgth.2024.1359858",
+      "target_slug": "blockchainintegrationinhealthcareacomprehensiveinvestigationofusecasesperformanceissuesandmitigationstrategies"
+    },
+    {
+      "question": "Que sistema de autenticacao mutua para casas inteligentes se baseia em blockchain?",
+      "target_title": "HomeChain: A Blockchain-Based Secure Mutual Authentication System for Smart Homes",
+      "target_doi": "10.1109/jiot.2019.2944400",
+      "target_slug": "homechainablockchainbasedsecuremutualauthenticationsystemforsmarthomes"
+    },
+    {
+      "question": "Que ferramenta de fuzzing procura vulnerabilidades em contratos do Hyperledger Fabric?",
+      "target_title": "HFContractFuzzer: Fuzzing Hyperledger Fabric Smart Contracts for Vulnerability Detection",
+      "target_doi": "10.48550/arxiv.2106.11210",
+      "target_slug": "hfcontractfuzzerfuzzinghyperledgerfabricsmartcontractsforvulnerabilitydetection"
+    },
+    {
+      "question": "Que enquadramento de verificacao formal trata problemas de seguranca de contratos inteligentes?",
+      "target_title": "A Formal Verification Framework for Security Issues of Blockchain Smart Contracts",
+      "target_doi": "10.3390/electronics9020255",
+      "target_slug": "aformalverificationframeworkforsecurityissuesofblockchainsmartcontracts"
+    },
+    {
+      "question": "Que paper propoe descoberta dinamica de taxas de juro em DeFi com um market maker reverso de Kelly?",
+      "target_title": "Dynamic Interest Rate Discovery in Decentralized Finance: A Reverse Kelly Automated Market Maker for Risk-Adjusted Lending",
+      "target_doi": "10.48550/arxiv.2607.04178",
+      "target_slug": "dynamicinterestratediscoveryindecentralizedfinanceareversekellyautomatedmarketmakerforriskadjustedlending"
+    },
+    {
+      "question": "Que trabalho deteta MEV em pontes cross-chain?",
+      "target_title": "Bunny Hops and Blockchain Stops: Cross-Chain MEV Detection With N-Hops",
+      "target_doi": "10.48550/arxiv.2511.17527",
+      "target_slug": "bunnyhopsandblockchainstopscrosschainmevdetectionwithnhops"
+    },
+    {
+      "question": "Que biblioteca de consenso tolerante a faltas bizantinas e proposta para o Hyperledger Fabric?",
+      "target_title": "A Byzantine Fault-Tolerant Consensus Library for Hyperledger Fabric",
+      "target_doi": "10.48550/arxiv.2107.06922",
+      "target_slug": "abyzantinefaulttolerantconsensuslibraryforhyperledgerfabric"
+    },
+    {
+      "question": "Que estudo compara as tecnologias de ledger distribuido Diem e Aptos?",
+      "target_title": "A study on Diem and Aptos distributed ledger technology",
+      "target_doi": "10.1080/17445760.2023.2217486",
+      "target_slug": "astudyondiemandaptosdistributedledgertechnology"
+    },
+    {
+      "question": "Que mecanismo realiza transacoes atomicas cross-chain para interoperabilidade segura entre blockchains?",
+      "target_title": "CATs: Secure Blockchain Interoperability with Cross-chain Atomic Transactions",
+      "target_doi": "10.48550/arxiv.2607.05387",
+      "target_slug": "catssecureblockchaininteroperabilitywithcrosschainatomictransactions"
+    },
+    {
+      "question": "Que trabalho torna a cadeia de fornecimento de medicamentos segura e rastreavel com blockchain?",
+      "target_title": "Making drug supply chain secure traceable and efficient: a Blockchain and smart contract based implementation",
+      "target_doi": "10.1007/s11042-022-14238-4",
+      "target_slug": "makingdrugsupplychainsecuretraceableandefficientablockchainandsmartcontractbasedimplementation"
+    },
+    {
+      "question": "Que artigo usa provas de conhecimento zero para privacidade em transacoes de energia?",
+      "target_title": "Blockchain and Demand Response: Zero-Knowledge Proofs for Energy Transactions Privacy",
+      "target_doi": "10.3390/s20195678",
+      "target_slug": "blockchainanddemandresponsezeroknowledgeproofsforenergytransactionsprivacy"
+    },
+    {
+      "question": "Que esquema descentralizado faz auditoria remota de dados externalizados com blockchain?",
+      "target_title": "Dredas: Decentralized, reliable and efficient remote outsourced data auditing scheme with blockchain smart contract for industrial IoT",
+      "target_doi": "10.1016/j.future.2019.10.014",
+      "target_slug": "dredasdecentralizedreliableandefficientremoteoutsourceddataauditingschemewithblockchainsmartcontractforindustrialiot"
+    }
+  ]
+}

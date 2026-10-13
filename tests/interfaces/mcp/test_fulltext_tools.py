@@ -205,7 +205,7 @@ async def test_index_fulltext_forwards_the_limit(mock_ctx, env):
 
 
 async def test_index_fulltext_forwards_force(mock_ctx, env):
-    from academic_hunter.core.evaluation.qrels import doc_id_for
+    from academic_hunter.core.nlp.scorer import doc_id_for
 
     parent_id = doc_id_for("One", "10.1/a")
     store = FakeStore(already={parent_id})
@@ -301,7 +301,7 @@ async def test_chunk_search_reports_section_and_offsets_and_no_page(mock_ctx, en
 
 async def test_chunk_search_falls_back_to_the_run_dataset_for_the_title(mock_ctx, env):
     """Chunks indexed before the identity existed carry no title."""
-    from academic_hunter.core.evaluation.qrels import doc_id_for
+    from academic_hunter.core.nlp.scorer import doc_id_for
 
     parent_id = doc_id_for("A study of ledgers", "10.1/a")
     env(

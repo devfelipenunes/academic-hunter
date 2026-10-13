@@ -1,9 +1,9 @@
 """The score distribution sidecar, which had no direct test.
 
-Every run writes it and every choice of threshold is argued from it, so its
-shape is a contract: the calibration tool keys on ``title`` and ``doi``, and the
-run's provenance has to be readable from the file alone — a paper's count is
-only evidence when the file also says who answered for it.
+Every run writes it, and it is the record a threshold can be argued from
+afterwards, so its shape is a contract: a row is keyed by ``title`` and ``doi``,
+and the run's provenance has to be readable from the file alone — a paper's
+count is only evidence when the file also says who answered for it.
 """
 
 import json

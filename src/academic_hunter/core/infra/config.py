@@ -5,6 +5,7 @@ Supports validation and change tracking for MCP config history.
 """
 
 import copy
+import hashlib
 import json
 import logging
 import os
@@ -108,6 +109,27 @@ def restore_from_disk(section: Dict[str, Any], raw: Dict[str, Any], path: Tuple[
         target[path[-1]] = copy.deepcopy(source[path[-1]])
     else:
         target.pop(path[-1], None)
+
+
+def config_fingerprint(payload: Dict[str, Any]) -> str:
+    """A stable digest of a configuration, for telling two of them apart.
+
+    Key order does not matter, so the same configuration assembled by two
+    different paths gets the same digest, and a run's archived block can be
+    compared against a candidate without diffing nested dicts.
+
+    A ``config_fingerprint`` key already in ``payload`` is ignored, so the
+    digest of an archived block is the one that was stored in it rather than a
+    second hash of the first.
+
+    What it does not promise: it covers the configuration and nothing else --
+    not the code that consumes it, not which connectors answered, not the
+    machine. ``5`` and ``5.0`` serialize differently and therefore fingerprint
+    differently, though the scorer treats them alike.
+    """
+    body = {key: value for key, value in payload.items() if key != "config_fingerprint"}
+    canonical = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def normalise_context_rules(rules: Any) -> Dict[str, List[str]]:
@@ -480,6 +502,46 @@ class HunterConfig:
             "technical_weights": self.tech_weights,
         }
 
+    def run_snapshot(self) -> Dict[str, Any]:
+        """The full configuration a run executed, deep-copied and unsullied.
+
+        A run used to record only the *names* of its anchor and domain
+        categories beside six scalars, so ``technical_weights`` and
+        ``context_rules`` -- the two things that decide which papers are
+        admitted and what they score -- survived nowhere. Reproducing a run's
+        ``_kw_score`` meant finding the ``config.json`` that produced it, and a
+        later run overwriting that file left nothing to find.
+
+        Deep-copied because the caller hands this to an exporter that may run
+        after the pipeline, while ``update_config`` mutates ``config.settings``
+        in place: a reference would let a change of topic rewrite the record of
+        a run that already finished.
+
+        ``settings`` is filtered through :attr:`RUN_ARCHIVE_SETTINGS`, a
+        positive list, because the archive ends up in the file people attach to
+        a thesis or mail to an advisor. A positive list fails closed -- a new
+        setting is archived only once someone declares it safe -- whereas a
+        denial list has to guess every credential name at every depth, forever.
+        ``context_rules`` travels under its own key rather than being read back
+        out of ``settings``, where the property mirrors it, so the archive
+        holds one copy under the name the configuration uses.
+        """
+        payload: Dict[str, Any] = {
+            "anchors": copy.deepcopy(self.anchors),
+            "technical_strings": copy.deepcopy(self.tech_strings),
+            "technical_weights": copy.deepcopy(self.tech_weights),
+            "context_rules": copy.deepcopy(self.context_rules),
+            "keyword_only_terms": copy.deepcopy(self.keyword_only_terms),
+            "keyword_only_category": self.keyword_only_category,
+            "settings": {
+                key: copy.deepcopy(self.settings[key])
+                for key in self.RUN_ARCHIVE_SETTINGS
+                if key in self.settings
+            },
+        }
+        payload["config_fingerprint"] = config_fingerprint(payload)
+        return payload
+
     def is_scorable(self) -> bool:
         """Whether the pipeline can query anything at all.
 
@@ -491,6 +553,21 @@ class HunterConfig:
         return bool(self.anchors)
 
     SECRET_SETTINGS = ("semantic_scholar_api_key", "openalex_api_key", "core_api_key", "lens_api_key")
+
+    RUN_ARCHIVE_SETTINGS: Tuple[str, ...] = (
+        "min_inclusion_score",
+        "min_relevance_score",
+        "title_multiplier",
+        "score_precision",
+        "start_year",
+        "limit_per_query",
+        "ranking_query",
+        "ablation",
+        "fusion",
+        "fusion_weights",
+        "rerank",
+        "citations_backfill",
+    )
 
     def public_settings(self) -> Dict[str, Any]:
         """``settings`` with credentials masked, for anything that returns it.

@@ -46,9 +46,10 @@ class SemanticScreener(BaseScreener):
     This approximates the effect of mean pooling over repeated tokens, but is
     not equivalent to it: ``v_base`` is a single embedding of the concatenated
     base vocabulary while ``N_base`` counts individual terms, and token
-    truncation in the encoder breaks the correspondence further. Empirically
-    the two formulations yield divergent rankings (Spearman rho = -0.2242; the
-    probe measurements are in ``evaluation/cross_encoder_correlation.json``).
+    truncation in the encoder breaks the correspondence further. Empirically the
+    two formulations yield divergent rankings (Spearman rho = -0.2242 on a probe
+    corpus), so the formula below is an approximation with a behaviour of its
+    own rather than a reimplementation of token repetition.
     """
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:

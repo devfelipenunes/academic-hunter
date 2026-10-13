@@ -15,11 +15,9 @@ from .fulltext import (
     ExtractedDocument,
     FullTextConfigError,
     FullTextError,
-    FullTextSourcePort,
     FullTextTransientError,
     NoOpenAccessVersion,
     OpenAccessLocation,
-    TextExtractorPort,
 )
 from .screener import BaseScreener
 from .vector_store import BaseVectorStore, ChunkStorePort
@@ -34,9 +32,7 @@ __all__ = [
     "ExtractedDocument",
     "FullTextConfigError",
     "FullTextError",
-    "FullTextSourcePort",
     "FullTextTransientError",
     "NoOpenAccessVersion",
     "OpenAccessLocation",
-    "TextExtractorPort",
 ]

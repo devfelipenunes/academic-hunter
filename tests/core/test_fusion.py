@@ -1,6 +1,6 @@
 """Tests for the score fusion that produces ``Relevance_Score``.
 
-The rule was replaced after the judged collection showed the old one measured
+The rule was replaced after a hand-judged sample showed the old one measured
 worse than either of its own inputs. These tests pin the property that made the
 difference — magnitudes survive the combination — and the degenerate cases that
 would silently empty a run.

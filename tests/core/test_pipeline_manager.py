@@ -496,17 +496,25 @@ def test_the_gate_is_re_answered_by_every_run():
     assert hunter.state.stats["unavailable_sources"] == {}
 
 
-def test_a_run_writes_the_prisma_flow_once():
+def test_a_run_writes_the_prisma_flow_once(tmp_path):
     """The same flow was written twice, with the same timestamp.
 
     The first call ran before the eligibility filter, so the file it produced
     was named for the run and showed the identification counters as if the
     screening had not happened; the second overwrote it. A reader who opened the
     file between the two calls got the wrong one.
+
+    ``output_dir`` is a real path here rather than the mock the other tests use:
+    this is the only one of them that runs the whole pipeline, and
+    ``run_dir_for`` converts whatever it is given with ``Path()`` and then calls
+    ``mkdir``. A ``MagicMock`` stringifies to its own name, so the directory was
+    really created -- a ``MagicMock/mock.output_dir/<id>/run_<timestamp>`` tree
+    at the repository root, which is not a path any test reads.
     """
     from academic_hunter.core.pipeline.manager import SearchPipeline
 
     hunter = _make_hunter_with_results({"a": {"Relevance_Score": 9.0}})
+    hunter.output_dir = tmp_path
     hunter.connectors = {}
     hunter.settings = {}
 

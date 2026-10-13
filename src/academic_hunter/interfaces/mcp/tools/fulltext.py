@@ -11,9 +11,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from academic_hunter.core.evaluation.qrels import doc_id_for
 from academic_hunter.core.fulltext.ingest import STATUSES, ingest_full_text
 from academic_hunter.core.infra.config import HunterConfig
+from academic_hunter.core.nlp.scorer import doc_id_for
 from academic_hunter.core.ports.vector_store import ChunkStorePort
 from mcp.server.fastmcp import Context
 
@@ -305,7 +305,7 @@ async def chunk_search(
         query: What to look for, in natural language.
         top_k: How many papers to return.
         per_paper: How many passages to show per paper.
-        collection_name: Chunks collection; the evaluation has its own.
+        collection_name: Chunks collection to read; the shipped one by default.
     """
     await ctx.info(f"Searching chunks for: {query}")
 

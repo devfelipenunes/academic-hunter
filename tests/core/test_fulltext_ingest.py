@@ -10,8 +10,8 @@ import logging
 
 import pytest
 
-from academic_hunter.core.evaluation.qrels import doc_id_for
 from academic_hunter.core.fulltext.ingest import STATUSES, ingest_full_text
+from academic_hunter.core.nlp.scorer import doc_id_for
 from academic_hunter.core.ports.fulltext import (
     ExtractedDocument,
     FullTextConfigError,
@@ -229,7 +229,7 @@ def test_a_successful_force_removes_only_what_the_new_version_lacks():
 
 
 def test_the_collection_can_be_redirected():
-    """The evaluation indexes into its own collection, never the shipped one."""
+    """The collection can be pointed somewhere other than the shipped one."""
     store = FakeChunkStore()
 
     ingest_full_text(
@@ -273,7 +273,7 @@ def test_an_unexpected_error_is_contained():
 def test_a_failure_keeps_the_reason():
     """`download_failed` covers three situations, and only one is worth retrying.
 
-    Measured on the judged collection: 30 of 83 addressable documents land here,
+    Measured on a hand-judged sample: 30 of 83 addressable documents land here,
     some because the open-access copy is only a landing page and some because the
     publisher refuses a non-browser client. A bare count cannot be acted on.
     """

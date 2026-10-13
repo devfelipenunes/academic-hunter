@@ -21,17 +21,6 @@ ORIGIN_PACKAGED = "packaged_default"
 ORIGIN_USER_DATA = "user_data"
 ORIGIN_EXPLICIT = "explicit"
 
-ORIGINS = (
-    ORIGIN_ENV,
-    ORIGIN_CWD,
-    ORIGIN_CLAUDE_PROJECT,
-    ORIGIN_USER_CONFIG,
-    ORIGIN_CHECKOUT,
-    ORIGIN_PACKAGED,
-    ORIGIN_USER_DATA,
-    ORIGIN_EXPLICIT,
-)
-
 
 @dataclass(frozen=True)
 class Resolution:

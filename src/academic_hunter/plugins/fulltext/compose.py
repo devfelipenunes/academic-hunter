@@ -1,7 +1,8 @@
 """Composing the full-text sources into one callable: DOI in, document out.
 
-Lives below ``app/`` so the MCP tool and the evaluation script can get the same
-chain without standing up a whole hunter.
+Lives below ``app/`` so the chain can be built from a plain e-mail and cache
+directory, without a hunter standing up first; ``app/main.py`` is what decides
+which e-mail and which directory those are.
 """
 
 import logging

@@ -45,7 +45,7 @@ the bare name resolves to nothing.
 with ChromaDB's ONNX model, which comes with the base install, so scoring,
 ranking and indexing work without it. What `ml` adds is `sentence-transformers`,
 `scikit-learn`, `umap-learn`, `bertopic` and `hdbscan`, for the analysis tools:
-clustering, landscape and evolution visualisation, semantic deduplication,
+clustering, evolution visualisation, semantic deduplication,
 novelty detection and abstract summarization. Without it those tools return a
 message naming this extra — they do not fail silently, and nothing else changes.
 Adding it costs **3.15 GB measured** (about 2.5 GB of that is the CUDA build and
@@ -192,13 +192,14 @@ args = [
 
 ### Anything else over HTTP
 
-For a remote agent or a container, run the server in SSE mode instead. See
-[the MCP reference](mcp/index.html) for `ACADEMIC_MCP_TRANSPORT`,
-`ACADEMIC_MCP_HOST`, `ACADEMIC_MCP_PORT` and the `GET /health` endpoint.
+For a remote agent or a container, run the server in SSE mode instead.
+`ACADEMIC_MCP_TRANSPORT`, `ACADEMIC_MCP_HOST`, `ACADEMIC_MCP_PORT` and the
+`GET /health` endpoint are read from the environment — `academic-mcp --help`
+lists them.
 
 ## 3. Confirm it works
 
-Connected, the agent sees 47 tools.
+Connected, the agent sees 43 tools.
 
 The first tool call is also where a config problem shows up, so it is worth
 asking the server what it resolved before running anything else:
@@ -215,7 +216,7 @@ The refusal names the file, so the fix is `quick_topic_discovery` and then
 ### Which code is running
 
 Two servers can answer to the same name and report identical values in every
-field — the same version string, the same config path, the same 47 tools. What
+field — the same version string, the same config path, the same 43 tools. What
 differs is *where the package was read from*, and that is the one thing nothing
 else tells you.
 
@@ -247,9 +248,9 @@ console script inside your virtualenv (§2, *From a clone, for development*) and
 other code.
 
 `extras` is worth reading for its own reason. A server launched without `ml`
-serves every tool but raises `No module named 'sklearn'` on the six that embed
+serves every tool but raises `No module named 'sklearn'` on the five that embed
 text (`cluster_papers`, `semantic_dedup`, `find_novel_papers`, `summarize_paper`,
-`visualize_landscape`, `topic_evolution`); the table says `ml` is unavailable and names the missing modules, instead
+`topic_evolution`); the table says `ml` is unavailable and names the missing modules, instead
 of leaving you to infer it from whichever dependency happened to be imported
 first.
 
@@ -265,12 +266,3 @@ That only proves it starts. `install.py` goes further and runs a real
 `initialize` + `tools/list` handshake, then prints the tool count — which is the
 check that catches the failure `pyproject.toml` warns about, where a bad `mcp`
 version makes the server exit silently and cleanly, installed and still useless.
-
-## 4. Using the agent profiles
-
-To get the most out of the integration, copy the prompts in
-[`docs/superpowers/agents/`](superpowers/agents/) into your agent's system prompt
-or project instructions.
-
-These profiles (`01_orchestrator`, `02_hunter`, `03_synthesizer`) give the model
-strict rules on how to chain the MCP tools together.

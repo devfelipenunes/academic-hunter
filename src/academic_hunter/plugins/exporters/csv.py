@@ -3,7 +3,11 @@ import logging
 import pandas as pd
 
 from academic_hunter.core.models.schema import FIELD_SCHEMA
-from academic_hunter.core.models.utils import neutralise_formula, paper_order_key
+from academic_hunter.core.models.utils import (
+    neutralise_formula,
+    paper_order_key,
+    strip_abstract_placeholder,
+)
 
 from .base import BaseExporter, ExportContext
 
@@ -29,7 +33,13 @@ class CsvExporter(BaseExporter):
     ``Database_Count`` first and the populated one put it last, so a reader that
     takes columns by position read a different dataset depending on whether the
     run qualified anything.
+
+    ``Has_Abstract`` is derived for the same reason ``Database_Count`` is: a row
+    whose abstract cell is empty is a row the anchor gate and the term tally could
+    only read through its title, and no column said so.
     """
+
+    DERIVED_COLUMNS = ("Database_Count", "Has_Abstract")
 
     def export(self, context: ExportContext) -> None:
         papers = context.papers
@@ -40,7 +50,7 @@ class CsvExporter(BaseExporter):
         csv_file = run_dir / f"academic_dataset_{timestamp}.csv"
 
         if not papers:
-            pd.DataFrame(columns=[*FIELD_SCHEMA, "Database_Count"]).to_csv(
+            pd.DataFrame(columns=[*FIELD_SCHEMA, *self.DERIVED_COLUMNS]).to_csv(
                 csv_file, index=False, encoding="utf-8"
             )
             logger.info("No studies qualified; empty dataset: %s", csv_file)
@@ -55,6 +65,9 @@ class CsvExporter(BaseExporter):
             if field not in df.columns:
                 df[field] = spec["default"]
         df['Database_Count'] = df['Source'].apply(get_db_count)
+        df['Has_Abstract'] = df['Abstract'].apply(
+            lambda value: bool(strip_abstract_placeholder(value).strip())
+        )
 
         for column in df.columns:
             df[column] = df[column].map(neutralise_formula)

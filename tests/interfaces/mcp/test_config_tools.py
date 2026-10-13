@@ -601,6 +601,71 @@ async def test_read_config_flags_the_packaged_default(mock_ctx, tmp_path, monkey
     assert data["config_source"]["origin"] == paths.ORIGIN_PACKAGED
 
 
+async def test_read_config_names_a_cut_that_cannot_exclude_anything(mock_ctx, tmp_path, monkeypatch):
+    """A leitura tem de dizer o mesmo que a escrita, senão o aviso é de quem grava.
+
+    ``_config_notes`` era renderizado só por ``_search_plan``, chamado de um
+    único sítio: dentro do ``update_config``. Uma configuração inerte -- todas as
+    âncoras ao peso do corte -- avisava quem a escrevia e ficava muda para quem
+    apenas a lia, que é o caso de todo o agente a retomar um trabalho. O
+    ``config.json`` dos microplásticos é exactamente esta configuração, e lia-se
+    sem uma palavra.
+    """
+    from academic_hunter.core.infra import paths
+    from academic_hunter.core.infra.config import HunterConfig
+
+    target = tmp_path / paths.CONFIG_FILENAME
+    target.write_text(
+        json.dumps(
+            {
+                "settings": {
+                    "min_inclusion_score": 5,
+                    "context_rules": {"microplastics": ["water"]},
+                },
+                "anchors": {"Plastics": ["microplastics"]},
+                "technical_weights": {"microplastics": 5.0},
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv(paths.CONFIG_ENV, str(target))
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.configuration.get_config",
+        side_effect=HunterConfig,
+    ):
+        data = json.loads(await read_config(mock_ctx))
+
+    assert any("Excludes nothing" in note for note in data["notes"]), data["notes"]
+
+
+async def test_read_config_says_nothing_when_the_cut_still_excludes(mock_ctx, tmp_path, monkeypatch):
+    """A chave existe sempre, e vazia -- "nada encontrado" não é "nada procurado"."""
+    from academic_hunter.core.infra import paths
+    from academic_hunter.core.infra.config import HunterConfig
+
+    target = tmp_path / paths.CONFIG_FILENAME
+    target.write_text(
+        json.dumps(
+            {
+                "settings": {"min_inclusion_score": 5},
+                "anchors": {"Topic": ["blockchain"]},
+                "technical_weights": {"blockchain": 2.0},
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv(paths.CONFIG_ENV, str(target))
+
+    with patch(
+        "academic_hunter.interfaces.mcp.tools.configuration.get_config",
+        side_effect=HunterConfig,
+    ):
+        data = json.loads(await read_config(mock_ctx))
+
+    assert data["notes"] == [], data["notes"]
+
+
 def _notes(tmp_path, **raw):
     """``_config_notes`` over a configuration written to a throwaway file."""
     from academic_hunter.core.infra.config import HunterConfig
@@ -773,7 +838,13 @@ def test_notes_name_an_anchor_whose_weight_admits_on_its_own(tmp_path):
 
 
 def test_notes_leave_a_guarded_anchor_alone(tmp_path):
-    """A context rule is the whole remedy, so a term that has one is not named."""
+    """A context rule is the whole remedy, so a term that has one is not named.
+
+    Silencing ``Admits anything`` is all this rule buys: the rule constrains
+    which papers pass the gate, but every one that passes still has the term
+    counted, so the cut here removes nothing. ``Excludes nothing`` says that,
+    and it is a different claim about a different set of papers.
+    """
     notes = _notes(
         tmp_path,
         settings={"min_inclusion_score": 5, "context_rules": {"llm": ["language model"]}},
@@ -782,6 +853,120 @@ def test_notes_leave_a_guarded_anchor_alone(tmp_path):
     )
 
     assert not any("Admits anything" in line for line in notes)
+
+
+def test_notes_name_a_cut_that_cannot_exclude_anything(tmp_path):
+    """O defeito medido: todas as âncoras pesam exactamente o corte.
+
+    O gate só admite um paper que contenha um termo-âncora, e todas as âncoras
+    levam o peso do próprio corte — logo todo o paper admitido já pontua no corte
+    antes de mais nada ser verdade sobre ele. Medido: ``evaluated: 252,
+    included: 252, excluded: 0``.
+
+    As âncoras aqui têm todas regra de contexto, e é por isso que a verificação
+    antiga ficou calada: ``Admits anything`` exige que a regra esteja ausente.
+    """
+    notes = _notes(
+        tmp_path,
+        settings={
+            "min_inclusion_score": 5,
+            "context_rules": {"microplastics": ["water"], "nanoplastics": ["water"]},
+        },
+        anchors={"Plastics": ["microplastics", "nanoplastics"]},
+        technical_weights={"microplastics": 5.0, "nanoplastics": 5.0},
+    )
+
+    _note("\n".join(notes), "Excludes nothing")
+    assert not any("Admits anything" in note for note in notes)
+
+
+def test_an_anchor_under_the_cut_leaves_the_cut_working(tmp_path):
+    """Uma âncora abaixo do corte chega: os papers que ela admite podem cair."""
+    notes = _notes(
+        tmp_path,
+        settings={"min_inclusion_score": 5},
+        anchors={"Topic": ["blockchain", "ledger"]},
+        technical_weights={"blockchain": 5.0, "ledger": 2.0},
+    )
+
+    assert not any("Excludes nothing" in note for note in notes)
+
+
+def test_an_anchor_with_no_weight_at_all_leaves_the_cut_working(tmp_path):
+    """Uma âncora sem peso admite um paper que só pontua ``log10(citações + 1)``."""
+    notes = _notes(
+        tmp_path,
+        settings={"min_inclusion_score": 5},
+        anchors={"Topic": ["blockchain", "ledger"]},
+        technical_weights={"blockchain": 5.0},
+    )
+
+    assert not any("Excludes nothing" in note for note in notes)
+
+
+def test_a_weight_that_is_not_a_number_is_not_called_an_inert_cut(tmp_path):
+    """``Score nothing`` já é dono dessa configuração; dizer inerte seria adivinhar."""
+    notes = _notes(
+        tmp_path,
+        settings={"min_inclusion_score": 5},
+        anchors={"Topic": ["blockchain"]},
+        technical_weights={"blockchain": "high"},
+    )
+
+    assert not any("Excludes nothing" in note for note in notes)
+
+
+def test_a_cut_above_the_lightest_anchor_is_left_alone(tmp_path):
+    notes = _notes(
+        tmp_path,
+        settings={"min_inclusion_score": 6},
+        anchors={"Topic": ["blockchain", "ledger"]},
+        technical_weights={"blockchain": 5.0, "ledger": 5.0},
+    )
+
+    assert not any("Excludes nothing" in note for note in notes)
+
+
+def test_the_real_configuration_that_failed_is_not_called_inert(tmp_path):
+    """Três das suas âncoras não têm peso, logo lá o corte remove papers."""
+    notes = _notes(tmp_path, **_LOW_LEVEL_AI)
+
+    assert not any("Excludes nothing" in note for note in notes)
+
+
+def test_the_line_quotes_the_cut_and_the_lightest_anchor(tmp_path):
+    """Os dois números da aritmética, para o leitor poder conferi-la."""
+    notes = _notes(
+        tmp_path,
+        settings={"min_inclusion_score": 5},
+        anchors={"Topic": ["blockchain"]},
+        technical_weights={"blockchain": 6.0},
+    )
+
+    line = _note("\n".join(notes), "Excludes nothing")
+    assert "cut is 5" in line
+    assert "weighs 6" in line
+    assert "above the lightest anchor's weight" in line
+
+
+def test_an_unguarded_anchor_reads_as_both_cause_and_detail(tmp_path):
+    """Sem regras as duas linhas disparam, e não são a mesma afirmação.
+
+    ``Admits anything`` nomeia os termos que uma query admite sozinhos; esta diz
+    que o corte não remove nada de todo o conjunto admitido, o que é verdade
+    independentemente das regras. Ler as duas seguidas lê-se como causa e
+    detalhe.
+    """
+    notes = _notes(
+        tmp_path,
+        settings={"min_inclusion_score": 5},
+        anchors={"Topic": ["blockchain"]},
+        technical_weights={"blockchain": 5.0},
+    )
+
+    joined = "\n".join(notes)
+    assert "Admits anything" in joined
+    assert "Excludes nothing" in joined
 
 
 def test_notes_name_a_context_rule_that_can_never_fire(tmp_path):

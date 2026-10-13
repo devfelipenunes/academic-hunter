@@ -13,7 +13,7 @@ from ..models.published_version import (
     is_preprint,
 )
 from ..models.strategies import strategy_set_join
-from ..models.utils import arxiv_doi, arxiv_id_from_url
+from ..models.utils import arxiv_doi, arxiv_id_from_url, strip_abstract_placeholder
 
 logger = logging.getLogger("academic_hunter")
 
@@ -126,7 +126,7 @@ class MetadataEnricher:
         with self.lock:
             to_enrich = []
             for slug, paper in self.state.consolidated_results.items():
-                abstract = paper.get("Abstract") or ""
+                abstract = strip_abstract_placeholder(paper.get("Abstract"))
                 if not abstract.strip() and paper.get("DOI"):
                     to_enrich.append((slug, paper))
 
@@ -147,7 +147,7 @@ class MetadataEnricher:
                     if not metadata:
                         continue
                     with self.lock:
-                        abstract = metadata.get("Abstract") or ""
+                        abstract = strip_abstract_placeholder(metadata.get("Abstract"))
                         citation_count = metadata.get("Citations")
                         if abstract:
                             paper["Abstract"] = abstract
@@ -311,12 +311,12 @@ class MetadataEnricher:
         What this writes is ``Venue``, ``Year`` and ``Peer_Reviewed``. The DOI is
         **not** written, and that is the load-bearing decision: ``DOI`` is not
         only a bibliographic field here, it is the identity — ``doc_id_for``
-        turns it into the key that joins the pool, the grading page and the score
-        distribution, and the judgments a human has already recorded are indexed
-        by it. Replacing an arXiv DOI with a publisher DOI after the pool was
-        keyed would move those keys a second time and lose the same judgments the
-        DOI pass exists to protect. The published DOI is recorded beside the
-        paper's own, in the sidecar and in the report.
+        turns it into the key that names the paper in the run's own artifacts,
+        the score distribution and the full-text ``parent_id`` alike. Replacing
+        an arXiv DOI with a publisher DOI after those were keyed would move the
+        keys a second time, and whatever was indexed under the old ones would be
+        orphaned. The published DOI is recorded beside the paper's own, in the
+        sidecar and in the report.
 
         A paper that is not matched is left exactly as it was. A candidate that
         clears the title bar and shares no surname is refused rather than

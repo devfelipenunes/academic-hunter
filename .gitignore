@@ -30,6 +30,10 @@ __pycache__/
 *$py.class
 .coverage
 .pytest_cache/
+# ruff writes its own `.gitignore` holding `*` inside this directory, so it
+# stays out of `git status` without this line -- but only for as long as that
+# file survives, and nothing here would notice the day it does not.
+.ruff_cache/
 
 .claude/
 .gemini/
@@ -61,8 +65,8 @@ config.json.bak*
 
 # The neutral fallback that ships inside the package. Anchored on purpose: an
 # unanchored `!config.default.json` would re-include a file of that name at any
-# depth, which is how `mutants/config.example.json` once ended up in a build
-# (docs/audits/2026-09-16.md, C04). The cost of getting this wrong is silent —
+# depth, which is how `mutants/config.example.json` once ended up in a build.
+# The cost of getting this wrong is silent —
 # hatchling applies these rules to the wheel, so an ignored file is a file that
 # never embarks, and the symptom is a FileNotFoundError in production only.
 !src/academic_hunter/core/infra/config.default.json

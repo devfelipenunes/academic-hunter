@@ -106,8 +106,8 @@ def test_list_tools():
                      "cluster_papers", "find_novel_papers", "summarize_paper",
                      "search_europepmc", "search_openaire", "lookup_orcid"):
         assert expected in names, f"Tool '{expected}' not found"
-    assert len(tools) == 47, (
-        f"Expected 47 tools, got {len(tools)}. The total is the 46 functions "
+    assert len(tools) == 43, (
+        f"Expected 43 tools, got {len(tools)}. The total is the 42 functions "
         f"auto-discovered from tools/ plus server_status, registered by hand in "
         f"server.py:98 because it lives in interfaces/mcp/health.py, outside the "
         f"discovered package. A tool that loses its `Context` annotation stops "

@@ -1,9 +1,8 @@
-"""MCP tools for research landscape visualization using UMAP and BERTopic.
+"""MCP tools for research landscape visualization using BERTopic.
 
-Provides visualize_landscape and topic_evolution tools.
+Provides the topic_evolution tool.
 """
 
-import json
 import logging
 
 from academic_hunter.core.nlp.model_cache import get_sentence_transformer
@@ -14,92 +13,15 @@ from ._utils import _get_vector_store, corpus_of, run_blocking
 logger = logging.getLogger("academic_hunter.mcp.visualization")
 
 
-def _load_umap():
-    """Imported on use: umap-learn pulls in numba and scikit-learn.
-
-    At module scope these two cost 17 s of the MCP server's startup — measured,
-    and the whole of it — for tools most sessions never call.
-    """
-    import umap
-
-    return umap
-
-
 def _load_bertopic():
-    """Imported on use, for the same reason as UMAP."""
+    """Imported on use: BERTopic pulls in numba and scikit-learn.
+
+    At module scope these cost seconds of the MCP server's startup — measured —
+    for a tool most sessions never call.
+    """
     from bertopic import BERTopic
 
     return BERTopic
-
-
-async def visualize_landscape(ctx: Context, top_k: int = 500, n_neighbors: int = 15) -> str:
-    """Generates a 2D UMAP projection of the paper embedding space.
-
-    Returns a JSON array of 2D coordinates with paper metadata for
-    interactive visualization by the client.
-
-    Args:
-        ctx: FastMCP Context (auto-injected).
-        top_k: Max papers to include (default 500).
-        n_neighbors: UMAP neighborhood size (default 15).
-    """
-    await ctx.info(f"Generating landscape visualization for {top_k} papers...")
-
-    store = await run_blocking(_get_vector_store)
-    if store is None:
-        await ctx.error("Vector store not available")
-        return "Vector store not available."
-
-    results = (await run_blocking(corpus_of, store, top_k))[:top_k]
-    if not results or len(results) < 5:
-        await ctx.info("Too few papers for visualization")
-        return "Not enough papers for a meaningful visualization."
-
-    try:
-        umap = await run_blocking(_load_umap)
-    except ImportError:
-        await ctx.error("UMAP is not installed")
-        return (
-            "Required library not installed: umap-learn. Install the extra: "
-            "pip install 'academic-hunter[ml]'"
-        )
-
-    model = await run_blocking(get_sentence_transformer)
-    if model is None:
-        await ctx.error("SentenceTransformer is not installed")
-        return (
-            "Required library not installed: sentence-transformers. "
-            "Install the extra: pip install 'academic-hunter[ml]'"
-        )
-
-    try:
-        texts = [f"{p.get('title','')} {p.get('abstract_preview','')}" for p in results]
-        embeddings = await run_blocking(model.encode, texts)
-
-        reducer = umap.UMAP(n_neighbors=min(n_neighbors, len(results) - 1), min_dist=0.1, random_state=42)
-        coords_2d = await run_blocking(reducer.fit_transform, embeddings)
-
-        points = []
-        for i, paper in enumerate(results):
-            points.append({
-                "x": float(coords_2d[i, 0]),
-                "y": float(coords_2d[i, 1]),
-                "title": paper.get("title", "Untitled"),
-                "year": paper.get("year"),
-                "doi": paper.get("doi", ""),
-                "relevance": paper.get("semantic_relevance", 0),
-            })
-
-        output = {"papers": points, "shape": list(embeddings.shape)}
-        await ctx.info(f"Visualization generated: {len(points)} points in 2D")
-        return json.dumps(output, ensure_ascii=False)
-
-    except ImportError as e:
-        await ctx.error(f"Missing dependency: {e}")
-        return f"Required library not installed: {e}"
-    except Exception as e:
-        await ctx.error(f"Visualization failed: {e}")
-        return f"Visualization failed: {e}"
 
 
 async def topic_evolution(ctx: Context, top_k: int = 500) -> str:

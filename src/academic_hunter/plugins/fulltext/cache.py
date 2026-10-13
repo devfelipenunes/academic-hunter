@@ -1,7 +1,7 @@
 """On-disk cache for downloaded PDFs.
 
-Keyed by URL, which is the only identifier :meth:`FullTextSourcePort.download`
-receives. Wrapping the source instead of teaching the step about caching is what
+Keyed by URL, which is the only identifier a download receives. Wrapping the
+source instead of teaching the step about caching is what
 makes "a second run does not hit the network" a property of the wiring.
 """
 
@@ -56,7 +56,7 @@ class PdfCache:
 
 
 class CachedFullTextSource:
-    """Wraps a :class:`FullTextSourcePort` so a repeat download is free.
+    """Wraps a full-text source so a repeat download is free.
 
     Only ``download`` is cached; ``locate`` still asks the network, because
     knowing whether an OA copy exists is cheap and can change between runs.

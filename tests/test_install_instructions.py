@@ -1,13 +1,13 @@
-"""Como instalar está descrito em seis arquivos, e nada comparava as cópias.
+"""Como instalar está descrito em quatro arquivos, e nada comparava as cópias.
 
 Cada vez que o fluxo mudou, algumas foram atualizadas e outras não — o
 `install.py` instalava `.[fulltext]` enquanto o Dockerfile e o Makefile
-instalavam `ml`, e o `docs/index.html` anunciava um comando que não existe.
+instalavam `ml`.
 
 Estes testes casam texto, não semântica. Eles impedem que *esta* divergência
-volte; não provam que as cópias são equivalentes. Uma sétima cópia num arquivo
+volte; não provam que as cópias são equivalentes. Uma quinta cópia num arquivo
 fora das listas abaixo passa, e um bloco reescrito com outras palavras mas ainda
-coerente também. É o preço de comparar seis arquivos com formatos diferentes, e
+coerente também. É o preço de comparar quatro arquivos com formatos diferentes, e
 é mais honesto do que fingir que o problema está resolvido.
 """
 
@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 CANONICAL_DOCS = ("README.md", "docs/tutorial.md", "CONTRIBUTING.md", "docs/mcp_setup.md")
 
-ALL_DOCS = (*CANONICAL_DOCS, "docs/index.html", "docs/mcp/index.html", "docs/presentation/index.html")
+ALL_DOCS = CANONICAL_DOCS
 
 BANNED_FORMS = ("academic-hunter --limit",)
 
@@ -73,10 +73,10 @@ def test_every_install_doc_names_the_same_extras():
 def test_every_uvx_copy_names_the_same_extras():
     """The `uvx` line is the one a reader copies verbatim, and nothing compared it.
 
-    `_project_install_lines` matches `pip install` only, so the published-install
-    line in the HTML pages was checked by nothing — and
-    `docs/presentation/index.html` went on advertising `[ml,fulltext]`, the
-    3.15 GB form, while every other copy said `[fulltext]`.
+    `_project_install_lines` matches `pip install` only, so a published-install
+    line in another form was checked by nothing — and the presentation page went
+    on advertising `[ml,fulltext]`, the 3.15 GB form, while every other copy said
+    `[fulltext]`.
 
     Exact equality, not containment: the other tests use `_named_extras`, where a
     superset passes, so `[ml,fulltext]` satisfied them. Measured — this test was
@@ -111,7 +111,7 @@ def test_no_doc_installs_the_project_without_extras():
 
 
 def test_no_doc_advertises_a_command_that_does_not_exist():
-    """`docs/index.html` told readers to run a console script that was removed."""
+    """The retired HTML pages told readers to run a console script that was removed."""
     for name in ALL_DOCS:
         text = (ROOT / name).read_text(encoding="utf-8")
         found = [form for form in BANNED_FORMS if form in text]

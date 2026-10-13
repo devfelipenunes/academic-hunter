@@ -90,7 +90,7 @@ async def semantic_search(
         lines.append(f"## {i}. {paper['title']}\n")
         lines.append(f"- **Semantic Relevance:** {paper['semantic_relevance']:.2%}")
         if paper.get("score"):
-            lines.append(f" | **Keyword Score:** {paper['score']}")
+            lines.append(f" | **Relevance Score:** {paper['score']}")
         if paper.get("year"):
             lines.append(f" | **Year:** {paper['year']}")
         lines.append("\n")
@@ -161,7 +161,7 @@ async def vector_store_stats(ctx: Context = None) -> str:
     One collection per review, so this is the list of reviews this installation
     has searched and how big each corpus is. The **active** one — marked below —
     is the collection ``settings.collection_name`` points at, and it is the one
-    `semantic_search`, `ask_papers` and every corpus analysis read. The others are
+    `semantic_search`, `answer_question` and every corpus analysis read. The others are
     older reviews, or the shared ``papers`` collection that predates one
     collection per review; remove one with `delete_collection`.
 
@@ -277,57 +277,6 @@ async def delete_collection(collection: str, confirm: bool = False,
 
     await ctx.info(f"Deleted {collection}")
     return f"✅ Deleted `{collection}` and its {count} papers."
-
-
-
-async def ask_papers(question: str, top_k: int = 15, ctx: Context = None) -> str:
-    """Answers a research question using semantically retrieved papers as context.
-
-    Use this tool when you want an AI-powered answer grounded in the actual papers
-    stored in the vector database.
-
-    Args:
-        ctx: FastMCP Context (auto-injected).
-        question: Your research question (e.g., "What do papers say about CBDC latency?").
-        top_k: Number of papers to retrieve for context (default 15, max 20).
-    """
-    await ctx.info(f"Retrieving context for: '{question}'...")
-    store = await run_blocking(_get_vector_store)
-    if store is None:
-        await ctx.error("Vector store not available")
-        raise VectorStoreError("Vector store not available. Run a search first.")
-
-    top_k = min(top_k, 20)
-    results = await run_blocking(store.query, question, top_k=top_k)
-
-    if not results:
-        await ctx.info(f"No relevant papers found for: '{question}'")
-        return (
-            f"No relevant papers found for: '{question}'. "
-            "Try a different question or run a new search."
-        )
-
-    lines = [
-        "# Research Context\n",
-        f"**Question:** {question}\n",
-        f"**Retrieved {len(results)} papers as context:**\n",
-        "---\n",
-    ]
-
-    for i, paper in enumerate(results, 1):
-        lines.append(f"## Paper {i}: {paper['title']}\n")
-        lines.append(f"**Relevance:** {paper['semantic_relevance']:.2%}")
-        if paper.get("score"):
-            lines.append(f" | **Keyword Score:** {paper['score']}")
-        if paper.get("year"):
-            lines.append(f" | **Year:** {paper['year']}")
-        lines.append("\n")
-        if paper.get("abstract_preview"):
-            lines.append(f"{paper['abstract_preview']}\n")
-        lines.append("")
-
-    await ctx.info(f"Retrieved {len(results)} papers as context")
-    return "\n".join(lines)
 
 
 async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -> str:

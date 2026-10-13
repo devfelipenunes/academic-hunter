@@ -24,6 +24,7 @@ class HunterExporterMixin:
             tech_strings=self.config.tech_strings,
             timestamp=timestamp,
             output_dir=self.output_dir,
+            run_config=self.config.run_snapshot(),
         )
 
     def generate_prisma_report(self, timestamp: str):

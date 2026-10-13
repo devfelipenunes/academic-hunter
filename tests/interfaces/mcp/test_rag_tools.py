@@ -1,4 +1,4 @@
-"""Tests for RAG MCP tools (semantic_search, index_papers, vector_store_stats, ask_papers).
+"""Tests for RAG MCP tools (semantic_search, index_papers, vector_store_stats).
 
 Uses mock_ctx from conftest and patches ChromaVectorStore / AcademicHunter.
 """
@@ -10,7 +10,6 @@ import pytest
 from academic_hunter.interfaces.mcp.exceptions import VectorStoreError
 from academic_hunter.interfaces.mcp.tools.rag import (
     answer_question,
-    ask_papers,
     delete_collection,
     index_papers,
     semantic_search,
@@ -245,33 +244,6 @@ async def test_deleting_without_a_store(mock_ctx):
         result = await delete_collection("papers", confirm=True, ctx=mock_ctx)
 
     assert "not available" in result.lower()
-
-
-async def test_ask_papers(mock_vector_store, mock_ctx):
-    mock_vector_store.query.return_value = [
-        {
-            "title": "Relevant Paper",
-            "semantic_relevance": 0.92,
-            "year": 2024,
-            "abstract_preview": "This paper discusses important concepts.",
-        }
-    ]
-
-    result = await ask_papers("What is the main finding?", ctx=mock_ctx, top_k=5)
-
-    assert "Relevant Paper" in result
-    assert "92.00%" in result
-    assert "What is the main finding?" in result
-    mock_vector_store.query.assert_called_once()
-    mock_ctx.info.assert_called()
-
-
-async def test_ask_papers_no_results(mock_vector_store, mock_ctx):
-    mock_vector_store.query.return_value = []
-
-    result = await ask_papers("unknown", ctx=mock_ctx)
-
-    assert "No relevant papers found" in result
 
 
 async def test_answer_question(mock_vector_store, mock_ctx):

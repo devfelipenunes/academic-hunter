@@ -9,7 +9,7 @@ import logging
 import time
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
-from ..evaluation.qrels import doc_id_for
+from ..nlp.scorer import doc_id_for
 from ..ports.fulltext import (
     FullTextConfigError,
     FullTextTransientError,

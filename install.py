@@ -26,8 +26,8 @@ PROJECT_ROOT = Path(__file__).parent.absolute()
 #: embeds with ChromaDB's ONNX model, which comes with the base install.
 DEFAULT_EXTRAS = ("fulltext",)
 
-#: What `--ml` adds: sentence-transformers, scikit-learn, umap, bertopic and
-#: hdbscan, for the analysis tools — clustering, visualisation, dedup, novelty,
+#: What `--ml` adds: sentence-transformers, scikit-learn, bertopic and hdbscan,
+#: for the analysis tools — clustering, topic evolution, dedup, novelty,
 #: summarize. Those tools name this extra when it is missing rather than failing
 #: silently, so leaving it out costs nothing but the tools themselves.
 ML_EXTRAS = ("ml", "fulltext")

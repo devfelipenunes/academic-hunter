@@ -81,7 +81,7 @@ Conectado, basta pedir em linguagem natural:
 
 O agente orquestra as tools: `quick_topic_discovery` descobre o jargão da área,
 `update_config` monta a configuração, `run_search` executa a busca, e
-`cluster_papers`, `find_novel_papers` e `visualize_landscape` analisam o resultado.
+`cluster_papers` e `find_novel_papers` analisam o resultado.
 
 ## 3. Configuração Manual
 
@@ -133,7 +133,6 @@ ferramentas. O passo a passo de cada cliente está no
 | `cluster_papers`      | Agrupar por tema           | `cluster_papers(top_k=500, min_cluster_size=5)`                |
 | `find_novel_papers`   | Detectar outliers          | `find_novel_papers(top_k=200, contamination=0.1)`              |
 | `find_related_papers` | Snowballing semântico      | `find_related_papers(query="CBDC financial stability")`        |
-| `visualize_landscape` | Mapa 2D da pesquisa        | `visualize_landscape(top_k=500)`                               |
 | `topic_evolution`     | Evolução temporal          | `topic_evolution(top_k=500)`                                   |
 | `semantic_dedup`      | Duplicatas semânticas      | `semantic_dedup(threshold=0.88)`                               |
 | `summarize_paper`     | Resumo de um paper         | `summarize_paper(doi="10.1016/j.jfe.2023.01.001")`             |
@@ -170,8 +169,7 @@ O Claude vai:
 2. Configurar a busca com `update_config`
 3. Executar o pipeline com `run_search`
 4. Analisar resultados com `semantic_search`, `cluster_papers`, `find_novel_papers`
-5. Gerar o mapa da pesquisa com `visualize_landscape`
-6. Exportar para Obsidian com `export_to_obsidian`
+5. Exportar para Obsidian com `export_to_obsidian`
 
 ## 6. Exportação
 
@@ -186,6 +184,6 @@ export_report(format="json")
 
 ## Próximos passos
 
-- 📖 Leia a [documentação completa](https://devfelipenunes.github.io/academic-hunter)
+- 📖 Leia o [README completo](https://github.com/devfelipenunes/academic-hunter#readme)
 - 🐛 Reporte bugs em [github.com/devfelipenunes/academic-hunter/issues](https://github.com/devfelipenunes/academic-hunter/issues)
 - ⭐ Contribua com o projeto no GitHub

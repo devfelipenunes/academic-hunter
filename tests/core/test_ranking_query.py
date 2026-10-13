@@ -2,8 +2,9 @@
 
 When ``settings.ranking_query`` is set, the sparse signal switches from the
 domain-term count to BM25 over that query. The domain count answers "does this
-paper look like the domain?" — it never sees a question. Measured on the judged
-collection, having an actual query is what moved nDCG@10 from 0.28 to 0.67.
+paper look like the domain?" — it never sees a question. Measured on a
+hand-judged sample, having an actual query is what moved nDCG@10 from 0.28 to
+0.67.
 
 The default weights in query mode are BM25 alone, because adding the embedding
 lowered the score monotonically in that measurement.
@@ -188,7 +189,7 @@ def test_the_citation_signal_does_not_move_the_query_ranking():
     assert scored({"a": 410, "b": 75, "c": 0}, {"keyword": 1.0, "embedding": 0.0}) == baseline
 
 
-def test_query_mode_records_the_citation_signal_for_calibration():
+def test_query_mode_records_the_citation_signal():
     papers = sample_papers()
     papers["a"]["Citations"] = 9
     step = make_step(papers, {"ranking_query": "self-sovereign identity"})

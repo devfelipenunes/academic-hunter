@@ -91,8 +91,12 @@ async def test_trending_topics_below_threshold(mock_ctx):
 
         result = await trending_topics(mock_ctx, min_papers=3)
 
-        assert "No trending topics found" in result
-        assert "Index papers first" in result
+        assert "No topic reached the minimum of 3 papers" in result
+        assert "2 indexed papers" in result
+        assert "Index papers first" not in result, (
+            "the corpus is indexed; telling the caller to index it again is the "
+            "one thing this message must not say"
+        )
 
 
 async def test_compare_papers(mock_ctx, mock_openalex, openalex_work, openalex_response):

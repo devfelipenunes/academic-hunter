@@ -149,7 +149,9 @@ def test_a_failing_exporter_is_not_swallowed(tmp_path):
         exporters = [Broken()]
         consolidated_results = {}
         stats = {}
-        config = SimpleNamespace(settings={}, anchors={}, tech_strings={})
+        config = SimpleNamespace(
+            settings={}, anchors={}, tech_strings={}, run_snapshot=lambda: None
+        )
         state = SimpleNamespace(query_history=[])
         output_dir = tmp_path
 

@@ -27,7 +27,20 @@ from ._utils import _get_vector_store, _is_generic
 async def read_config(ctx: Context) -> str:
     """Returns the current full search configuration from config.json.
 
-    Use this tool to check which anchors or technical_strings are currently configured.
+    Use this tool to check which anchors or technical_strings are currently
+    configured, and what this configuration will fail to do.
+
+    ``notes`` carries what ``_config_notes`` finds: a context rule whose key is
+    not an anchor never fires, a weight no query asks for never brings a paper
+    in, an anchor that is also weighted is admitted by the gate and clears the
+    cut with nothing else true of the paper, and a cut the lightest anchor
+    already clears excludes nothing. Each of them runs to completion and
+    searches worse instead of raising, so the only moment to see one is before
+    the run is spent. ``update_config`` says these same sentences as it writes
+    them; reading the configuration back has to say them too, or the warning is
+    only ever visible to whoever happens to rewrite the file. The key is always
+    present -- an empty list means nothing was found, not that nothing was
+    looked for.
     """
     await ctx.info("Reading configuration...")
     try:
@@ -45,6 +58,7 @@ async def read_config(ctx: Context) -> str:
             "context_rules": config.context_rules,
             "keyword_only_terms": config.keyword_only_terms,
             "keyword_only_category": config.keyword_only_category,
+            "notes": _config_notes(config),
         }
         await ctx.info("Configuration read successfully")
         return json.dumps(data, indent=2, ensure_ascii=False)
@@ -175,6 +189,34 @@ def _config_notes(config, sent=None) -> list:
         notes.append(note + " Weigh the terms the field uses.")
 
     if cut > 0:
+        by_lower = {
+            str(term).strip().lower(): _as_number(weight)
+            for term, weight in weights.items()
+        }
+        anchor_weights = [by_lower.get(term.lower()) for term in anchors]
+        floor = (
+            min(anchor_weights)
+            if anchor_weights and all(w is not None for w in anchor_weights)
+            else None
+        )
+        if anchor_weights and not unnumbered and floor is not None and floor >= cut:
+            notes.append(
+                f"  Excludes nothing: the cut is {cut:g} and the lightest anchor "
+                f"weighs {floor:g}, so every paper the gate admits already scores "
+                "at or above the cut before anything else is true of it. It "
+                "contains one of those terms -- that is what the gate checks -- an "
+                "abstract hit counts the term at full weight and a title hit "
+                "counts more, and citations only add. So `min_inclusion_score` "
+                "removes nothing however many papers the queries return, and the "
+                "gate is doing all of the filtering by itself. Measured on a real "
+                "run: every anchor at 5.0 against a cut of 5.0 evaluated 252 "
+                "papers, included 252, excluded 0. For the cut to remove anything "
+                "it has to sit above the lightest anchor's weight; a gate that "
+                "filters with a cut deliberately set below it needs no change. "
+                "Note that a context rule does not help here -- every paper that "
+                "passes one still has the term counted."
+            )
+
         bare_anchors = [
             term for term in weights
             if term.lower() in anchor_keys and term.lower() not in rule_keys and clears_cut(term)

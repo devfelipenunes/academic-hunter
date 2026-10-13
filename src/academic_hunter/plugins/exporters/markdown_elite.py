@@ -1,7 +1,7 @@
 import logging
 
 from ...core.models.citations import citation_summary, citation_tokens
-from ...core.models.utils import paper_order_key
+from ...core.models.utils import abstract_summary, has_abstract, paper_order_key
 from .base import BaseExporter, ExportContext
 
 logger = logging.getLogger("academic_hunter.exporters")
@@ -45,6 +45,7 @@ class MarkdownEliteExporter(BaseExporter):
         distribution = stats.get("score_distribution") or {}
         admitted = distribution.get("n")
         coverage = citation_summary(sorted_papers)
+        abstracts = abstract_summary(sorted_papers)
         impact = stats.get("impact") or {}
 
         with open(report_file, 'w', encoding='utf-8') as f:
@@ -79,8 +80,21 @@ class MarkdownEliteExporter(BaseExporter):
             )
             f.write(
                 "- A `0` is therefore not the same statement as a low number: only "
-                "the papers in the first two groups have been measured at all.\n\n"
+                "the papers in the first two groups have been measured at all.\n"
             )
+            f.write(
+                f"- **Abstracts:** {abstracts['with_abstract']} of {abstracts['papers']} "
+                "papers carry an abstract.\n"
+            )
+            if abstracts["without_abstract"]:
+                f.write(
+                    f"- **Without an abstract:** {abstracts['without_abstract']}. Their "
+                    "anchor match and term score were read from the title alone, and "
+                    "their titles carry no multiplier. Each is marked below.\n"
+                )
+                for title in abstracts["without_abstract_titles"]:
+                    f.write(f"  - *{title}*\n")
+            f.write("\n")
 
             for row in sorted_papers:
                 f.write(
@@ -96,6 +110,11 @@ class MarkdownEliteExporter(BaseExporter):
                 f.write(f"- **Venue:** {row.get('Venue')} | **Peer-Reviewed:** {row.get('Peer_Reviewed')}\n")
                 f.write(f"- **Source:** {row.get('Source')} | **DOI:** {row.get('DOI')}\n")
                 f.write(f"- **Anchors:** {row.get('Anchor_Category')}\n")
+                if not has_abstract(row):
+                    f.write(
+                        "- **Abstract:** not recorded — this paper's anchors and term "
+                        "score were read from its title alone\n"
+                    )
                 f.write(f"- [Link]({row.get('URL')})\n\n")
 
             self._write_impact_section(f, sorted_papers, coverage, impact)

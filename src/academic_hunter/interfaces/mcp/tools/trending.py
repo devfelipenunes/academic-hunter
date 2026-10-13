@@ -91,8 +91,14 @@ async def trending_topics(ctx: Context, days: int = 30, min_papers: int = 3) -> 
     top_topics = candidates[:10]
 
     if not top_topics:
+        commonest = bigram_counter.most_common(1)
+        seen = commonest[0][1] if commonest else 0
         await ctx.info("No trending topics met the minimum threshold")
-        return "No trending topics found. Index papers first."
+        return (
+            f"No topic reached the minimum of {min_papers} papers. Analyzed "
+            f"{len(results)} indexed papers; the phrase the most of them share "
+            f"appears in {seen}. Lower `min_papers` to see the rest."
+        )
 
     lines = [
         "# Trending Research Topics\n",

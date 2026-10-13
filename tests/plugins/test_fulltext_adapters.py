@@ -162,6 +162,40 @@ def test_a_network_failure_is_transient():
             UnpaywallSource("a@b.c").locate("10.1/x")
 
 
+def test_the_remedy_names_a_key_the_configuration_actually_reads(tmp_path):
+    """A config error that names a key nothing reads is a dead end.
+
+    Both messages used to send the reader to ``settings.unpaywall_email``, which
+    no line of the code reads -- the e-mail is resolved by ``fulltext_config``
+    from ``settings.fulltext.email``, falling back to ``settings.user_email``.
+    Setting the named key changed nothing, and the reader had no way to tell.
+
+    The last assertion is the one that matters: it does not check the wording,
+    it checks that the key named is one the configuration resolves from.
+    """
+    import json
+
+    from academic_hunter.core.infra.config import HunterConfig
+
+    with patch(API, return_value=response(422)):
+        with pytest.raises(FullTextConfigError) as refused:
+            UnpaywallSource("someone@example.org").locate("10.1/x")
+    assert "settings.fulltext.email" in str(refused.value), str(refused.value)
+
+    with pytest.raises(FullTextConfigError) as unusable:
+        UnpaywallSource("")
+    assert "settings.fulltext.email" in str(unusable.value), str(unusable.value)
+
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({
+        "settings": {"fulltext": {"email": "someone@example.org"}},
+        "anchors": {"A": ["term"]},
+        "technical_strings": {"C": ["term"]},
+        "technical_weights": {"term": 1.0},
+    }))
+    assert HunterConfig(config_path=str(path)).fulltext_config()["email"] == "someone@example.org"
+
+
 def test_an_unusable_contact_email_is_refused_at_construction():
     """Before any request, not after hundreds of them."""
     with pytest.raises(FullTextConfigError):

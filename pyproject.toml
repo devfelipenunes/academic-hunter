@@ -35,7 +35,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-rag = ["chromadb>=1.5.0"]
 fulltext = [
     "pypdf>=4.0.0",
 ]
@@ -66,7 +65,7 @@ academic-mcp = "academic_hunter.interfaces.mcp.server:run_mcp_server"
 
 [project.urls]
 Homepage = "https://github.com/devfelipenunes/academic-hunter"
-Documentation = "https://devfelipenunes.github.io/academic-hunter"
+Documentation = "https://github.com/devfelipenunes/academic-hunter#readme"
 "Bug Tracker" = "https://github.com/devfelipenunes/academic-hunter/issues"
 
 [tool.hatch.build.targets.sdist]
@@ -142,14 +141,13 @@ quote-style = "double"
 #
 # `also_copy` is not optional — mutmut copies only `source_paths` into its
 # sandbox, and several test files read the repository root (pyproject.toml,
-# install.py, evaluation/*.json, and the two versioned MCP client templates).
-# Without them the baseline fails and nothing runs.
+# install.py, and the two versioned MCP client templates). Without them the
+# baseline fails and nothing runs.
 [tool.mutmut]
 source_paths = ["src/academic_hunter"]
 only_mutate = ["*core/nlp/fusion.py"]
 also_copy = [
     "tests",
-    "evaluation",
     "pyproject.toml",
     "install.py",
     "config.example.json",

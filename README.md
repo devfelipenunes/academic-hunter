@@ -88,13 +88,13 @@ Veja o [tutorial passo a passo](docs/tutorial.md) — 10 minutos para fazer sua 
 
 ### 🔍 Busca Multi-Fonte
 
-O pipeline consulta **6 fontes acadêmicas em paralelo**: arXiv, Crossref, Semantic Scholar, OpenAlex, CORE e DOAJ — com deduplicação entre todas. Outras 8 ficam disponíveis sob demanda pelas tools MCP: Europe PMC, OpenCitations, Unpaywall, Lens.org, OpenAIRE, bioRxiv, medRxiv e DataCite.
+O pipeline consulta **6 fontes acadêmicas em paralelo**: arXiv, Crossref, Semantic Scholar, OpenAlex, CORE e DOAJ — com deduplicação entre todas. Outras 9 ficam disponíveis sob demanda pelas tools MCP: Europe PMC, OpenCitations, Unpaywall, Lens.org, OpenAIRE, ORCID, bioRxiv, medRxiv e DataCite.
 
 ### 🧠 Weight-Bleeding Scoring
 
 Método original de ponderação semântica configurável via centroide ponderado em espaço de embeddings — permite que o pesquisador defina quais termos são mais importantes sem modificar o modelo, sem GPU, sem dados rotulados.
 
-### 📊 13 Análises com o Mesmo Modelo (MiniLM 22MB)
+### 📊 12 Análises com o Mesmo Modelo (MiniLM 22MB)
 
 | Análise         | Tool MCP              | O que faz                                           |
 | --------------- | --------------------- | --------------------------------------------------- |
@@ -105,7 +105,6 @@ Método original de ponderação semântica configurável via centroide ponderad
 | Snowballing     | `find_related_papers` | "Mais like this" para cada paper                    |
 | Tópicos         | `trending_topics`     | Identifica os assuntos mais frequentes              |
 | Evolução        | `topic_evolution`     | Mostra como os temas mudam ao longo dos anos        |
-| Mapa 2D         | `visualize_landscape` | Projeção UMAP de todos os papers                    |
 | Duplicatas      | `semantic_dedup`      | Detecta duplicatas por similaridade de embedding    |
 | Resumo          | `summarize_paper`     | Resumo extrativo via MMR                            |
 | Citações        | `get_citation_count`  | Contagem de citações via OpenCitations              |
@@ -114,7 +113,7 @@ Método original de ponderação semântica configurável via centroide ponderad
 
 ### 🤖 MCP Server — Integração com Agentes de IA
 
-O Academic Hunter expõe **47 ferramentas, 3 recursos (e um template de URI) e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
+O Academic Hunter expõe **43 ferramentas, 3 recursos (e um template de URI) e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
 
 Os comandos de lançamento estão na tabela de comandos, mais abaixo, e a conexão
 de cada cliente no [guia de conexão MCP](docs/mcp_setup.md) — o README não
@@ -154,7 +153,7 @@ CSV, BibTeX, RIS, JSON, Markdown, PRISMA — e exportação direta para **Obsidi
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    MCP Server (47 tools)                     │
+│                    MCP Server (43 tools)                     │
 │  4 Resources · 2 Prompts · Health Check · SSE Transport     │
 ├─────────────────────────────────────────────────────────────┤
 │ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐│
@@ -171,9 +170,7 @@ CSV, BibTeX, RIS, JSON, Markdown, PRISMA — e exportação direta para **Obsidi
 - **JOSS**: "Academic Hunter: An Open-Source Systematic Literature Review Tool with Agentic RAG and Embedding-Space Relevance Scoring"
 - **Conferência**: "Weight-Bleeding: Configurable Semantic Relevance Scoring via Input-Level Term Repetition in Bi-Encoders"
 
-Os manuscritos não acompanham este repositório, que publica só o software. A
-coleção julgada sobre a qual as medições de retrieval se apoiam está em
-[`evaluation/`](evaluation/).
+Os manuscritos não acompanham este repositório, que publica só o software.
 
 ---
 

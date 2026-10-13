@@ -197,7 +197,6 @@ _OFFLOADING_TOOLS = [
     ("trending", "trending_topics", {}),
     ("related", "find_related_papers", {"query": "term weighting"}),
     ("novelty", "find_novel_papers", {}),
-    ("visualization", "visualize_landscape", {}),
     ("visualization", "topic_evolution", {}),
     ("dedup", "semantic_dedup", {}),
     ("clustering", "cluster_papers", {}),
@@ -211,7 +210,6 @@ _OFFLOADING_TOOLS = [
     ("rag", "vector_store_stats", {}),
     ("rag", "delete_collection", {"collection": "papers"}),
     ("rag", "answer_question", {"question": "what is term weighting?"}),
-    ("rag", "ask_papers", {"question": "what is term weighting?"}),
 ]
 
 

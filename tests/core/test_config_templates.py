@@ -58,6 +58,45 @@ def test_the_packaged_default_carries_the_keyword_only_keys():
     assert data["keyword_only_category"] == ""
 
 
+def test_every_setting_a_run_archives_is_in_the_template(template):
+    """The keys that decide what a run does must be visible in the template.
+
+    ``RUN_ARCHIVE_SETTINGS`` is the positive list of settings a run records so
+    that its scores can be reproduced -- which makes it exactly the set a reader
+    has to be able to find. It did not: ``min_inclusion_score``, the cut that
+    decides inclusion, was read by ``HunterConfig.min_inclusion_score`` and
+    appeared in no template, so a review configured from the example had its cut
+    set by a fallback nobody could see.
+
+    The guard above this one compares top-level keys only, which is why these
+    went unnoticed.
+    """
+    settings = json.loads(template.read_text(encoding="utf-8"))["settings"]
+    missing = [key for key in HunterConfig.RUN_ARCHIVE_SETTINGS if key not in settings]
+    assert not missing, (
+        f"{template.name} does not mention {missing}, which a run archives and "
+        "which therefore decide its result: anyone reading the template to learn "
+        "the format cannot find them"
+    )
+
+
+def test_the_template_names_every_api_key_the_code_reads(template):
+    """``api_keys`` shipped as ``[]``, so no key could be named in it at all.
+
+    The code reads ``api_keys.semantic_scholar``, ``.openalex``, ``.core`` and
+    ``.lens``; a list holds none of them, and a reader had no way to learn the
+    names. ``lens`` is the one this hid longest: ``search_patents`` cannot run
+    without it, and no template said the key existed.
+    """
+    api_keys = json.loads(template.read_text(encoding="utf-8"))["settings"]["api_keys"]
+    assert isinstance(api_keys, dict), (
+        f"{template.name} has api_keys as {type(api_keys).__name__}, which cannot "
+        "name a key"
+    )
+    for name in ("semantic_scholar", "openalex", "core", "lens"):
+        assert name in api_keys, f"{template.name} does not name api_keys.{name}"
+
+
 def test_the_example_shows_the_shape_a_keyword_only_topic_needs():
     data = json.loads(TEMPLATES[0].read_text(encoding="utf-8"))
     assert isinstance(data["keyword_only_terms"], list)
@@ -105,21 +144,28 @@ def _weights_applied(template, ranking_query=""):
     return hunter.state.stats["fusion"]["weights"]
 
 
-def test_neither_template_names_fusion_weights():
-    """The key's presence is not neutral, so neither shipped template may carry it.
+def test_neither_template_decides_the_fusion_weights():
+    """The key's *value* is not neutral, so neither shipped template may carry one.
 
     With ``ranking_query`` empty, absent and ``{"keyword": 0.7, "embedding":
     0.3}`` score the same. With a query set they do not: absent lets the step
-    force 1.0/0.0, and an explicit key overrides that forcing. The shipped
-    example carried the key, so a user who added a query to it silently bought a
-    different behavior from a user of the packaged default — the same corpus,
-    two orderings, nothing saying which rule was in force.
+    force 1.0/0.0, and an explicit weight overrides that forcing. The shipped
+    example once carried such a value, so a user who added a query to it
+    silently bought a different behavior from a user of the packaged default —
+    the same corpus, two orderings, nothing saying which rule was in force.
+
+    What is asserted is therefore not absence but ``None``: the key may be
+    *named*, because a reader has to be able to find a setting the step reads and
+    a run archives, and ``null`` is the one value that names it while leaving the
+    forcing intact. ``settings.get`` cannot tell the two apart, which is the
+    point — they are the same thing to the step.
     """
     for template in TEMPLATES:
         settings = json.loads(template.read_text(encoding="utf-8"))["settings"]
-        assert "fusion_weights" not in settings, (
-            f"{template.name} names fusion_weights; the code default has to govern "
-            "it, or the two templates disagree as soon as a query is configured"
+        assert settings.get("fusion_weights") is None, (
+            f"{template.name} sets fusion_weights={settings['fusion_weights']!r}; the "
+            "code default has to govern it, or the two templates disagree as soon "
+            "as a query is configured"
         )
 
 

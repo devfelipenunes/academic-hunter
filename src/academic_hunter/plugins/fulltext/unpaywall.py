@@ -101,8 +101,8 @@ def fetch_record(doi: str, email: str, timeout: int = DEFAULT_TIMEOUT) -> Dict[s
 
     if response.status_code == 422:
         raise FullTextConfigError(
-            "Unpaywall rejected the configured e-mail. Set settings.unpaywall_email "
-            "to a valid address."
+            "Unpaywall rejected the configured e-mail. Set settings.fulltext.email "
+            "to an address it accepts, or settings.user_email to be the fallback."
         )
     if response.status_code == 404:
         raise NoOpenAccessVersion(doi)
@@ -116,13 +116,13 @@ def fetch_record(doi: str, email: str, timeout: int = DEFAULT_TIMEOUT) -> Dict[s
 
 
 class UnpaywallSource:
-    """A :class:`FullTextSourcePort` over the Unpaywall API."""
+    """Locating and fetching an open-access copy, over the Unpaywall API."""
 
     def __init__(self, email: str, timeout: int = DEFAULT_TIMEOUT) -> None:
         if not email or "@" not in email:
             raise FullTextConfigError(
                 f"Unpaywall needs a valid contact e-mail, got {email!r}. "
-                "Set settings.unpaywall_email."
+                "Set settings.fulltext.email, or settings.user_email as the fallback."
             )
         self.email = email
         self.timeout = timeout

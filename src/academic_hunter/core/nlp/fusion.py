@@ -1,10 +1,9 @@
 """Fusion of the keyword and embedding signals into the reported score.
 
 Kept as a pure function, separate from the pipeline step that calls it, so that
-the experiment scripts evaluate *the code that actually ships* rather than a
-reimplementation of it. A reimplemented fusion in the evaluation would be free
-to drift from the real one, and the measurement would silently stop meaning
-anything.
+anything measuring the fused score measures *the code that actually ships*. A
+second implementation of the same rule is free to drift from this one, and a
+measurement taken against it would silently stop describing what runs.
 """
 
 import math
@@ -62,8 +61,8 @@ def resolve_weights(
 
     Named and returned instead, so the run can record what it did. Nothing here
     chooses a weight: the caller's values are returned, or the defaults it did
-    not override. Choosing is a judgement about the corpus, and it needs the
-    judged collection to argue from.
+    not override. Choosing is a judgement about the corpus, and it needs judged
+    papers to argue from.
     """
     merged = {**DEFAULT_WEIGHTS, **(weights or {})}
     alpha = max(0.0, float(merged["keyword"]))
@@ -91,7 +90,7 @@ def fuse_scores(
 
     ``rank_geometric`` is the superseded rule, ``sqrt(rank_kw * rank_sem) * 10``,
     kept so earlier runs stay reproducible. It measured worse than either of its
-    own inputs on the judged collection: flattening both signals to percentile
+    own inputs on a hand-judged sample: flattening both signals to percentile
     ranks before combining discards magnitude. It takes the two signals it was
     defined on and ignores citations; a third term would stop it reproducing the
     runs it exists to reproduce.

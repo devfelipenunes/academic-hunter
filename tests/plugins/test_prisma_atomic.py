@@ -15,7 +15,7 @@ from academic_hunter.plugins.exporters.base import ExportContext
 from academic_hunter.plugins.exporters.prisma import PrismaExporter
 
 
-def context(output_dir, papers=1):
+def context(output_dir, papers=1, run_config=None):
     return ExportContext(
         papers=[{"Title": f"Paper {i}"} for i in range(papers)],
         stats={
@@ -33,6 +33,7 @@ def context(output_dir, papers=1):
         tech_strings={},
         timestamp="test_run",
         output_dir=output_dir,
+        run_config=run_config,
     )
 
 
@@ -101,6 +102,53 @@ def test_no_partial_file_survives_a_successful_write(tmp_path):
     leftovers = list(Path(tmp_path).rglob("*.part"))
 
     assert leftovers == [], f"a temp file was left behind: {leftovers}"
+
+
+def test_the_artifact_carries_the_configuration_the_run_executed(tmp_path):
+    """The weights and the rules are what decide admission and score.
+
+    They used to survive nowhere: the run kept the *names* of its anchor and
+    domain categories beside six scalars, so a score could not be reproduced
+    from the run that produced it once `config.json` moved on.
+    """
+    run_config = {
+        "anchors": {"Settlement": ["atomic settlement"]},
+        "technical_weights": {"atomic settlement": 5.0},
+        "context_rules": {"atomic settlement": ["ledger"]},
+        "settings": {"min_inclusion_score": 5.0, "ranking_query": "How?"},
+        "config_fingerprint": "sha256:abc",
+    }
+
+    PrismaExporter().export(context(tmp_path, run_config=run_config))
+
+    payload = json.loads(stats_file(tmp_path).read_text(encoding="utf-8"))
+    assert payload["configuration"] == run_config
+
+
+def test_a_caller_with_no_configuration_leaves_the_key_there_and_null(tmp_path):
+    """Absent means "written before the archive"; null means "archived nothing".
+
+    Dropping the key would make an old file and a new empty one read alike, and
+    a reader deciding whether to trust a score has to tell them apart.
+    """
+    PrismaExporter().export(context(tmp_path))
+
+    payload = json.loads(stats_file(tmp_path).read_text(encoding="utf-8"))
+    assert "configuration" in payload
+    assert payload["configuration"] is None
+
+
+def test_the_top_level_names_stay_a_list_of_names(tmp_path):
+    """``writing.py`` rebuilds the anchors by joining this list with ``, ``.
+
+    The full configuration is nested under its own key rather than replacing
+    these, so a key cannot change meaning in silence.
+    """
+    PrismaExporter().export(context(tmp_path))
+
+    payload = json.loads(stats_file(tmp_path).read_text(encoding="utf-8"))
+    assert all(isinstance(name, str) for name in payload["anchors"])
+    assert all(isinstance(name, str) for name in payload["technical_domains"])
 
 
 def test_the_temp_file_is_a_sibling_of_the_target(tmp_path, monkeypatch):

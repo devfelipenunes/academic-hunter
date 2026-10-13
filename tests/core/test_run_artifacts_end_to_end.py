@@ -203,9 +203,8 @@ def test_the_resolved_doi_is_the_identity_every_artifact_uses(preprint_run):
     """CSV, `.bib`, `.ris` e a distribuição de pontuações têm de concordar.
 
     A distribuição é escrita **antes** do filtro de inclusão, a partir do run
-    inteiro, e é o que `calibrate_inclusion_threshold` lê para ligar um
-    julgamento a uma pontuação. Se a passagem corresse depois dela, o mesmo paper
-    teria um id na distribuição e outro no dataset exportado.
+    inteiro. Se a passagem do DOI corresse depois dela, o mesmo paper teria um
+    id na distribuição e outro no dataset exportado.
     """
     _, csv_path, distribution = preprint_run
     resolved = "10.48550/arxiv.2401.00001"
@@ -287,6 +286,128 @@ def test_a_preprint_that_matches_nothing_keeps_the_venue_it_arrived_with(tmp_pat
     assert published["asked"] == 1
     assert published["promoted"] == 0
     assert published["unmatched"] == 1
+
+
+ARCHIVED_CONFIG = {
+    "settings": {
+        "min_relevance_score": 0.0,
+        "start_year": 2024,
+        "min_inclusion_score": 5.0,
+        "ranking_query": "How does blockchain meet latency?",
+        "user_email": "canary-user@example.org",
+        "semantic_scholar_api_key": "canary-flat-credential",
+        "api_keys": {"core": "canary-nested-credential", "openalex": ""},
+    },
+    "anchors": {"test": ["blockchain"]},
+    "technical_strings": {"test": ["latency"]},
+    "technical_weights": {"blockchain": 5.0, "latency": 3.0},
+    "context_rules": {"blockchain": ["consensus"]},
+}
+
+
+def _run_with_config(tmp_path, monkeypatch, config):
+    """The config is written *outside* the output directory, as in production.
+
+    ``config.json`` lives at the project root and the run lands under
+    ``results/``, so a scan for leaked credentials has to be over the run's own
+    directory — and a config sitting inside it would be a finding, not a fixture.
+    """
+    inputs = tmp_path / "inputs"
+    inputs.mkdir(exist_ok=True)
+    config_path = inputs / "config.json"
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    hunter = AcademicHunter(config_path=str(config_path), output_dir=str(tmp_path))
+    _silence_connectors(hunter, monkeypatch)
+    for name in CONNECTORS:
+        monkeypatch.setattr(
+            AcademicHunter, name, lambda *a, **k: [p.copy() for p in _papers()]
+        )
+    return hunter, hunter.run(limit_per_source=1)
+
+
+def _run_dir(tmp_path):
+    return next(tmp_path.rglob("run_stats_*.json")).parent
+
+
+def _files_under(root):
+    return [path for path in root.rglob("*") if path.is_file()]
+
+
+def test_the_run_archives_the_configuration_it_actually_executed(tmp_path, monkeypatch):
+    """The run states the weights and the rules, so its scores can be rebuilt.
+
+    Before this, ``config.json`` moving on — as it did when a later search
+    rewrote it — left the run's scoring configuration existing nowhere but a
+    manual backup.
+    """
+    _, returned = _run_with_config(tmp_path, monkeypatch, ARCHIVED_CONFIG)
+    stats = json.loads(
+        next(tmp_path.rglob("run_stats_*.json")).read_text(encoding="utf-8")
+    )
+    archived = stats["configuration"]
+
+    assert archived["technical_weights"] == {"blockchain": 5.0, "latency": 3.0}
+    assert archived["context_rules"] == {"blockchain": ["consensus"]}
+    assert archived["anchors"] == {"test": ["blockchain"]}
+    assert archived["settings"]["ranking_query"] == "How does blockchain meet latency?"
+    assert archived["settings"]["min_inclusion_score"] == 5.0
+    assert archived["config_fingerprint"].startswith("sha256:")
+    assert returned
+
+
+def test_no_credential_or_address_reaches_any_file_the_run_writes(tmp_path, monkeypatch):
+    """The canary test: ``results/`` is the directory people hand to an advisor.
+
+    Checked over every file the run leaves — not just the stats — because the
+    archive was added to one exporter and the next one to serialise settings
+    would be the leak.
+    """
+    _run_with_config(tmp_path, monkeypatch, ARCHIVED_CONFIG)
+
+    files = _files_under(_run_dir(tmp_path))
+    assert len(files) > 3, f"the run wrote only {[p.name for p in files]}"
+
+    canaries = (
+        "canary-flat-credential",
+        "canary-nested-credential",
+        "canary-user@example.org",
+    )
+    for path in files:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for canary in canaries:
+            assert canary not in text, f"{canary!r} reached {path}"
+
+
+def test_the_archived_configuration_rebuilds_the_score_the_csv_records(tmp_path, monkeypatch):
+    """The point of archiving: the run describes itself well enough to be re-scored.
+
+    Reconstructing the scorer from the archived block alone has to reproduce the
+    ``_kw_score`` the CSV carries — otherwise the archive is decoration.
+    """
+    from academic_hunter.core.nlp.scorer import AcademicScorer
+
+    _run_with_config(tmp_path, monkeypatch, ARCHIVED_CONFIG)
+    archived = json.loads(
+        next(tmp_path.rglob("run_stats_*.json")).read_text(encoding="utf-8")
+    )["configuration"]
+
+    scorer = AcademicScorer(
+        archived["anchors"],
+        archived["technical_strings"],
+        archived["technical_weights"],
+        archived["context_rules"],
+        archived["settings"],
+    )
+    csv_path = sorted(tmp_path.rglob("*.csv"))[0]
+    with open(csv_path, encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    assert rows, "the run exported nothing to re-score"
+
+    for row in rows:
+        rebuilt = scorer.calculate_score(
+            row["Title"], row["Abstract"], int(row["Citations"] or 0)
+        )
+        assert rebuilt == float(row["_kw_score"]), row["Title"]
 
 
 def test_an_empty_run_writes_its_own_artifacts(tmp_path, monkeypatch):

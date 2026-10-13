@@ -114,8 +114,8 @@ class RecomputeRanksStep(PipelineStep):
 
     **With ``settings.ranking_query``**, the sparse signal becomes BM25 over
     that query, computed across the collected papers. Having an actual question
-    is what moved nDCG@10 from 0.28 to 0.67 on the judged collection — far more
-    than any change of scoring rule achieved.
+    is what moved nDCG@10 from 0.28 to 0.67 on a hand-judged sample of the
+    corpus — far more than any change of scoring rule achieved.
 
     Fusion (``settings.fusion == "weighted_norm"``, the default)::
 
@@ -388,9 +388,10 @@ class RecomputeRanksStep(PipelineStep):
         threshold was a guess about a population nobody could see. The values are
         all in hand here, one line before the eviction, so the run keeps them.
 
-        ``title`` and ``doi`` travel with each row because they are what
-        ``doc_id_for`` turns into a qrels id: without them the calibration tool
-        could not line these papers up against a judged collection.
+        ``title`` and ``doi`` travel with each row because they are the paper's
+        identity: ``doc_id_for`` derives an id from those two fields and nothing
+        else, so a row without them cannot be joined back to the paper it
+        describes.
 
         ``fusion`` is recorded for the same reason. A run that computed the
         embedding and the citation signal and then weighed them at zero ranks on
@@ -446,8 +447,8 @@ class RecomputeRanksStep(PipelineStep):
         except Exception as e:
             logger.warning(
                 "Could not write the score distribution to %s (%s). The run is "
-                "unaffected; calibrating the threshold will have to use the "
-                "exported papers only, which are the ones that passed.",
+                "unaffected, but the record of what the threshold excluded for "
+                "this run is missing.",
                 path, e,
             )
             return
@@ -561,8 +562,7 @@ class ResolveDoiStep(PipelineStep):
     **It runs before the score distribution is written.** That file carries a
     ``doi`` per paper and is derived from the run's own papers; filling later
     would leave the distribution and the exported dataset disagreeing about the
-    identity of the same paper, which is the join ``calibrate_inclusion_threshold``
-    and the fusion comparison both read.
+    identity of the same paper, so a row of one could not be found in the other.
 
     **It makes no requests.** Everything comes from the paper itself, so the
     pass costs nothing and cannot fail. What it does move is identity downstream:

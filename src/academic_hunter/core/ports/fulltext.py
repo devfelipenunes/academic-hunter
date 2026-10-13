@@ -1,13 +1,16 @@
-"""Full-text port — obtaining a paper's body and turning it into text.
+"""Full-text outcomes — what an attempt to obtain a paper's body can return.
 
-``Protocol`` rather than ABC, for the same reason as
-:mod:`academic_hunter.core.ports.connector`: the adapters wrap third-party code
-(HTTP for Unpaywall, ``pypdf`` for extraction), and forcing them to inherit a
-domain ABC would drag transport concerns into ``core``.
+The exception hierarchy is the point of this module: "no open-access copy
+exists" and "the download broke" need different fixes and only one is worth
+retrying, so a run that reports a single failure count is reporting nothing it
+can act on.
+
+The adapters (HTTP for Unpaywall, ``pypdf`` for extraction) wrap third-party
+code and implement the shape by duck typing rather than inheriting from a base
+declared here, which would drag transport concerns into ``core``.
 """
 
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
 
 
 class FullTextError(Exception):
@@ -81,42 +84,3 @@ class ExtractedDocument:
     page_count: int = 0
     has_text_layer: bool = True
     source: str = ""
-
-
-@runtime_checkable
-class FullTextSourcePort(Protocol):
-    """Locating and fetching an open-access copy."""
-
-    def locate(self, doi: str) -> OpenAccessLocation:
-        """Return where the OA copy lives.
-
-        Raises:
-            NoOpenAccessVersion: there is none.
-            FullTextTransientError: the lookup itself failed.
-            FullTextConfigError: the request could never succeed as configured.
-        """
-        ...
-
-    def download(self, location: OpenAccessLocation, max_bytes: int = 40_000_000) -> bytes:
-        """Return the PDF bytes, never more than ``max_bytes``.
-
-        The cap is enforced while streaming: a Content-Length that lies, or is
-        absent, must not turn into an unbounded read into memory.
-
-        Raises:
-            FullTextTransientError: the download failed, or was not a PDF.
-        """
-        ...
-
-
-@runtime_checkable
-class TextExtractorPort(Protocol):
-    """Turning PDF bytes into text."""
-
-    def extract(self, pdf_bytes: bytes) -> ExtractedDocument:
-        """Return the document's text.
-
-        Raises:
-            FullTextTransientError: the file is corrupt or could not be parsed.
-        """
-        ...

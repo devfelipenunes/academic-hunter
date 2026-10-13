@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from ..infra import HunterConfig, SearchState
 from ..models import Paper
-from ..models.utils import collapse_whitespace
+from ..models.utils import strip_abstract_placeholder, strip_title_label
 from ..nlp import AcademicScorer
 from .resolvers import PaperResolver
 
@@ -87,8 +87,8 @@ class PaperProcessor:
         with self.lock:
             self.state.stats["identified"][source] = self.state.stats["identified"].get(source, 0) + 1
 
-        paper["Title"] = collapse_whitespace(paper.get("Title"))
-        paper["Abstract"] = collapse_whitespace(paper.get("Abstract"))
+        paper["Title"] = strip_title_label(paper.get("Title"))
+        paper["Abstract"] = strip_abstract_placeholder(paper.get("Abstract"))
         title = paper["Title"]
         if not title:
             return

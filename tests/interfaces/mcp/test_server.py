@@ -59,7 +59,7 @@ def test_discover_and_register(mock_ctx):
     mock_mcp = MagicMock()
     _discover_and_register(mock_mcp)
 
-    assert mock_mcp.tool.call_count == 46
+    assert mock_mcp.tool.call_count == 42
 
 
 DOCUMENTED_TOOL_COUNTS = (
@@ -130,17 +130,6 @@ async def test_the_collection_admin_tool_is_registered():
     names = {tool.name for tool in await server.list_tools()}
 
     assert {"vector_store_stats", "delete_collection"} <= names
-
-
-async def test_the_calibration_tool_is_registered():
-    """The inclusion threshold is a setting with a consequence, and this is the
-    only tool that can argue for a value of it."""
-    from academic_hunter.interfaces.mcp.server import create_mcp_server
-
-    server = create_mcp_server()
-    names = {tool.name for tool in await server.list_tools()}
-
-    assert "calibrate_inclusion_threshold" in names
 
 
 def test_server_status_imported():

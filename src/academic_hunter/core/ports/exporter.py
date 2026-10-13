@@ -18,6 +18,7 @@ class ExportContext:
     tech_strings: Dict[str, List[str]]
     timestamp: str
     output_dir: Path
+    run_config: Dict[str, Any] | None = None
 
 
 def run_dir_for(timestamp: str, output_dir: Path) -> Path:

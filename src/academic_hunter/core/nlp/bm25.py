@@ -3,9 +3,9 @@
 The existing "keyword" score is a weighted count of configured anchor and
 technical terms. It is computed once per document and **never sees the query**:
 it answers "how much does this paper look like the domain?", not "how much does
-it look like what was asked?". That is why the evaluation found every strategy
-to be query-independent, and why the best strategy turned out to depend on the
-topic rather than on the question.
+it look like what was asked?". A ranking built on it alone is therefore the
+same whichever question is asked — which is why the strategy a config chooses
+can only change what a run considers on-topic, never what it was asked for.
 
 BM25 is conditional on the query by construction, which makes it the first
 signal in this pipeline that can distinguish between two information needs

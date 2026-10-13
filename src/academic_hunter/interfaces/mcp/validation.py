@@ -13,13 +13,6 @@ def validate_doi(doi: str) -> str:
     return doi
 
 
-def validate_query(query: str, field: str = "query") -> str:
-    """Validate a search query string."""
-    if not query or not query.strip():
-        raise ValueError(f"{field} cannot be empty.")
-    return query.strip()
-
-
 def validate_limit(limit: int, default: int = 10, max_limit: int = 50) -> int:
     """Validate and clamp a limit parameter."""
     if limit is None:
@@ -27,13 +20,6 @@ def validate_limit(limit: int, default: int = 10, max_limit: int = 50) -> int:
     if not isinstance(limit, int) or limit < 1:
         return default
     return min(limit, max_limit)
-
-
-def validate_topic(topic: str) -> str:
-    """Validate a topic string."""
-    if not topic or not topic.strip():
-        raise ValueError("Topic cannot be empty.")
-    return topic.strip()
 
 
 def validate_email(email: str) -> str:

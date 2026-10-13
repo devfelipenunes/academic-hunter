@@ -427,12 +427,30 @@ class TestAcademicScorer:
             {"title_multiplier": 2.5, "score_precision": 1}
         )
 
-        title_score = scorer.calculate_score("Blockchain Technology", "", 0)
+        title_score = scorer.calculate_score("Blockchain Technology", "Unrelated prose.", 0)
         abstract_score = scorer.calculate_score("", "Blockchain technology paper", 0)
 
         assert title_score == abstract_score * 2.5, (
             f"Title score ({title_score}) should be 2.5× abstract ({abstract_score})"
         )
+
+    def test_the_title_multiplier_is_withheld_without_an_abstract(self):
+        """A title-only record is not boosted above papers whose abstract was read."""
+        from academic_hunter.core.nlp import AcademicScorer
+
+        scorer = AcademicScorer(
+            {"A": ["blockchain"]},
+            {"B": ["blockchain"]},
+            {"blockchain": 5.0},
+            {},
+            {"title_multiplier": 2.5, "score_precision": 1}
+        )
+
+        with_abstract = scorer.calculate_score("Blockchain Technology", "Unrelated prose.", 0)
+        without = scorer.calculate_score("Blockchain Technology", "", 0)
+
+        assert without == 5.0, f"A title-only record scored {without}, not its term at face value"
+        assert without < with_abstract
 
     def test_citation_bonus(self):
         """Citations should add a logarithmic bonus."""
@@ -467,51 +485,6 @@ class TestAcademicScorer:
         expected_cit = round(math.log10(100), 1)
         assert score_with_cit == expected_cit, (
             f"Score {score_with_cit} should be just citation bonus {expected_cit}"
-        )
-
-
-class TestCrossEncoderCorrelation:
-    """Verify cross-encoder (CE) scoring is distinct from Weight-Bleeding."""
-
-    def test_ce_scores_differ_from_bi_encoder(self):
-        """Cross-encoder and bi-encoder scores should differ (different objectives)."""
-        import json
-        from pathlib import Path
-
-        result_path = Path(__file__).parent.parent.parent / "evaluation/cross_encoder_correlation.json"
-        if not result_path.exists():
-            pytest.skip(f"cross-encoder results not found at {result_path}")
-
-        data = json.loads(result_path.read_text())
-        results = data.get("results", [])
-
-        assert len(results) >= 3, f"Need at least 3 results, got {len(results)}"
-
-        for r in results:
-            assert not (r["bi_encoder_vanilla"] == r["weight_bleeding"] == r["cross_encoder"]), (
-                f"All scores identical for {r['query']}"
-            )
-
-    def test_weight_bleeding_changes_ranking(self):
-        """Weight-Bleeding should produce different rankings from vanilla bi-encoder."""
-        import json
-        from pathlib import Path
-
-        result_path = Path(__file__).parent.parent.parent / "evaluation/cross_encoder_correlation.json"
-        if not result_path.exists():
-            pytest.skip(f"cross-encoder results not found at {result_path}")
-
-        data = json.loads(result_path.read_text())
-        results = data.get("results", [])
-
-        if len(results) < 2:
-            pytest.skip("Need at least 2 results for ranking comparison")
-
-        rank_vanilla = sorted(range(len(results)), key=lambda i: results[i]["bi_encoder_vanilla"])
-        rank_wb = sorted(range(len(results)), key=lambda i: results[i]["weight_bleeding"])
-
-        assert rank_vanilla != rank_wb, (
-            "Weight-Bleeding should change rankings from vanilla bi-encoder"
         )
 
 

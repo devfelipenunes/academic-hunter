@@ -20,7 +20,7 @@ MIN_TEXT_CHARS = 500
 
 
 class PdfExtractor:
-    """A :class:`TextExtractorPort` backed by ``pypdf``."""
+    """Turning PDF bytes into text, backed by ``pypdf``."""
 
     def extract(self, pdf_bytes: bytes) -> ExtractedDocument:
         """Text of every page, joined.

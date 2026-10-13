@@ -19,6 +19,10 @@ logger = logging.getLogger("academic_hunter.mcp.lens")
 async def search_patents(ctx: Context, query: str, limit: int = 10) -> str:
     """Searches patents related to a research topic via Lens.org.
 
+    Requires a token: Lens.org serves no anonymous caller. It is read from
+    ``LENS_API_KEY`` or ``settings.api_keys.lens``, and without one the call
+    cannot succeed -- so the reply says which, rather than returning nothing.
+
     Args:
         ctx: FastMCP Context (auto-injected).
         query: Search query (e.g., "blockchain consensus").

@@ -125,25 +125,6 @@ class PaperListingPort(Protocol):
 
 
 @runtime_checkable
-class CollectionAdminPort(Protocol):
-    """Managing the collections themselves, rather than the papers in them.
-
-    Separate from :class:`PaperListingPort` for the same reason it is separate
-    from :class:`BaseVectorStore`: listing is enough for an analysis, and a store
-    that cannot delete is still a valid store. Only the tool that manages
-    collections needs this.
-    """
-
-    def list_collections(self) -> List[str]:
-        """Every collection in the store, in no particular order."""
-        ...
-
-    def delete_collection(self, name: str) -> bool:
-        """Remove a collection and everything in it. Returns True on success."""
-        ...
-
-
-@runtime_checkable
 class ChunkStorePort(Protocol):
     """Retrieval over document *fragments* rather than whole papers.
 

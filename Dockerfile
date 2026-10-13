@@ -15,7 +15,7 @@ COPY src/ src/
 # The reason it is left out there does not apply here: an image is built once, so
 # the 3.15 GB is paid by whoever builds it, not by a client waiting on a spawn
 # with no progress bar — and an image that ships without the analysis tools is a
-# worse default than one that ships large. It used to install `.[rag]`, whose
+# worse default than one that ships large. It used to install an extra whose
 # only entry — chromadb — is already a base dependency, so the image shipped
 # without any of them.
 RUN pip install --no-cache-dir -e ".[ml,fulltext]"
