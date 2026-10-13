@@ -30,6 +30,11 @@ async def read_config(ctx: Context) -> str:
     Use this tool to check which anchors or technical_strings are currently
     configured, and what this configuration will fail to do.
 
+    ``ranking`` says what orders the papers -- BM25 against ``ranking_query``,
+    or the keyword score when there is none. It is a description rather than a
+    note because it is true of every configuration, and ``notes`` has to be able
+    to come back empty or the reader learns to skip it.
+
     ``notes`` carries what ``_config_notes`` finds: a context rule whose key is
     not an anchor never fires, a weight no query asks for never brings a paper
     in, an anchor that is also weighted is admitted by the gate and clears the
@@ -58,6 +63,7 @@ async def read_config(ctx: Context) -> str:
             "context_rules": config.context_rules,
             "keyword_only_terms": config.keyword_only_terms,
             "keyword_only_category": config.keyword_only_category,
+            "ranking": _ranking_summary(config),
             "notes": _config_notes(config),
         }
         await ctx.info("Configuration read successfully")
@@ -67,6 +73,42 @@ async def read_config(ctx: Context) -> str:
     except Exception as e:
         await ctx.error(f"Failed to read configuration: {e}")
         raise ConfigError(str(e))
+
+
+def _ranking_summary(config) -> str:
+    """What orders the papers, whichever of the two modes is in force.
+
+    A description, not a defect, which is why it is not in ``_config_notes``: it
+    is true of every configuration, and a report that always has something in it
+    teaches the reader to skip it. It is still something to be said, because the
+    two modes answer different questions and only one of them looks at what the
+    reader is looking for.
+
+    The no-query half quotes a measurement, because the difference is not
+    obvious from the code: with no query the ordering is ``_kw_score``, a
+    function of the paper and of the configured terms that never sees a question.
+    On a hand-judged blockchain pool (5 queries, 250 graded judgments) ordering
+    by it scored nDCG@10 0.25, against 0.67 for BM25 over a question — which
+    reproduces, on other judgments and another corpus, the 0.28-to-0.67 the
+    ``RecomputeRanksStep`` docstring records for introducing ``ranking_query``.
+    """
+    query = str(config.settings.get("ranking_query", "") or "").strip()
+    cut = _as_number(config.min_inclusion_score(), 5.0)
+    if query:
+        return (
+            "Rank every paper by BM25 of its title and abstract against "
+            f"`ranking_query` -- \"{query}\" -- and not by the keyword score. The "
+            f"inclusion cut is another number, `_kw_score >= {cut:g}`, so the order "
+            "of the CSV and the set of papers in it answer two different questions."
+        )
+    return (
+        "Rank every paper by the keyword score -- `_kw_score`, a function of the "
+        "paper and of the configured terms, which never sees what is being looked "
+        "for and therefore orders the corpus the same way whatever that is. "
+        "Measured on a hand-judged blockchain pool (5 queries, 250 graded "
+        "judgments): nDCG@10 0.25 by that score, against 0.67 for BM25 over a "
+        "question. Set `settings.ranking_query` to rank against a question instead."
+    )
 
 
 def _flatten_terms(mapping) -> list:
@@ -534,15 +576,7 @@ def _search_plan(config, sent=None, topic=None) -> str:
             "report as `excluded_year` and never as a term that missed."
         )
 
-    ranking_query = str(config.settings.get("ranking_query", "") or "").strip()
-    if ranking_query:
-        cut = _as_number(config.min_inclusion_score(), 5.0)
-        lines.append(
-            "  Rank every paper by BM25 of its title and abstract against "
-            f"`ranking_query` -- \"{ranking_query}\" -- and not by the keyword score. "
-            f"The inclusion cut is another number, `_kw_score >= {cut:g}`, so the order "
-            "of the CSV and the set of papers in it answer two different questions."
-        )
+    lines.append("  " + _ranking_summary(config))
 
     discovery = _discovery_note(config, topic)
     if discovery:

@@ -666,6 +666,89 @@ async def test_read_config_says_nothing_when_the_cut_still_excludes(mock_ctx, tm
     assert data["notes"] == [], data["notes"]
 
 
+def _summary(tmp_path, **raw):
+    """``_ranking_summary`` over a configuration written to a throwaway file."""
+    from academic_hunter.core.infra.config import HunterConfig
+    from academic_hunter.interfaces.mcp.tools.configuration import _ranking_summary
+
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    return _ranking_summary(HunterConfig(config_path=str(path)))
+
+
+def test_the_ranking_says_what_orders_the_papers_when_no_query_is_set(tmp_path):
+    """Empty ``ranking_query`` is the shipped default, and it was silent.
+
+    With no query the ordering is ``_kw_score`` -- a function of the paper and of
+    the configured terms, which never sees what is being looked for, and so is
+    the same ordering whatever the research question is. Measured on a hand-judged
+    blockchain pool (5 queries, 250 graded judgments): nDCG@10 0.25 by that score,
+    against 0.67 for BM25 over a question. The template ships the query empty, so
+    this is what a new configuration gets.
+    """
+    text = _summary(
+        tmp_path,
+        settings={"min_inclusion_score": 5},
+        anchors={"Plastics": ["microplastics"]},
+        technical_weights={"microplastics": 5.0},
+    )
+
+    assert "keyword score" in text, text
+    assert "0.25" in text, f"the measurement is missing: {text}"
+    assert "ranking_query" in text, f"the remedy is missing: {text}"
+
+
+def test_the_ranking_says_the_query_when_one_is_set(tmp_path):
+    """The other mode, and the one the template's 0.67 belongs to."""
+    text = _summary(
+        tmp_path,
+        settings={"min_inclusion_score": 5, "ranking_query": "How do microplastics move?"},
+        anchors={"Plastics": ["microplastics"]},
+        technical_weights={"microplastics": 5.0},
+    )
+
+    assert "How do microplastics move?" in text, text
+    assert "keyword score" in text, text
+
+
+def test_an_empty_query_does_not_turn_into_a_note(tmp_path):
+    """It is a description, not a defect, and ``notes`` has to stay able to be empty.
+
+    A note here would fire for every configuration the shipped template produces,
+    and a report that always has something in it is one the reader learns to skip
+    -- which is what ``test_notes_are_silent_about_a_configuration_with_nothing_wrong``
+    exists to protect.
+    """
+    notes = _notes(
+        tmp_path,
+        settings={
+            "min_inclusion_score": 5,
+            "title_multiplier": 1.5,
+            "context_rules": {"cbdc": ["central bank", "monetary authority"]},
+        },
+        anchors={"Topic": ["cbdc"]},
+        technical_strings={"Ledger": ["distributed ledger"]},
+        technical_weights={"distributed ledger": 3.0},
+    )
+
+    assert notes == [], notes
+
+
+def test_the_plan_says_what_ranks_the_papers_when_no_query_is_set(tmp_path):
+    """``update_config`` says the same thing as it writes the configuration."""
+    plan = _plan(
+        tmp_path,
+        set(),
+        settings={"min_inclusion_score": 5},
+        anchors={"Plastics": ["microplastics"]},
+        technical_strings={"Core": ["microplastics"]},
+        technical_weights={"microplastics": 5.0},
+    )
+
+    line = _note(plan, "Rank every paper by the keyword score")
+    assert "0.25" in line, line
+
+
 def _notes(tmp_path, **raw):
     """``_config_notes`` over a configuration written to a throwaway file."""
     from academic_hunter.core.infra.config import HunterConfig

@@ -214,6 +214,18 @@ class RecomputeRanksStep(PipelineStep):
                 weights = {"keyword": 1.0, "embedding": 0.0}
 
             logger.info("Ranking against the configured query (BM25).")
+        else:
+            # `info`, not `warning`: it is true of every run without a query, and
+            # a line that fires every time is a line that stops being read. The
+            # actionable half is said where it can still change something --
+            # `read_config` and `update_config`, before the run is spent.
+            logger.info(
+                "No ranking_query is configured, so every paper is ordered by "
+                "_kw_score -- a function of the paper and of the configured terms, "
+                "which never sees a question. Measured on a hand-judged blockchain "
+                "pool: nDCG@10 0.25 by that score, against 0.67 for BM25 over a "
+                "question."
+            )
 
         effective = resolve_weights(weights, cit_list)
         discarded = [
