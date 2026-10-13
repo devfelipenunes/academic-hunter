@@ -36,6 +36,31 @@ but it described an embedding the pipeline never loads, so it was replaced
 rather than kept. Two runtimes of the same model, and the difference is small;
 that is worth knowing too.
 
+**And the two instruments disagree.** Over the judged pool — 250 hand-graded
+judgments, which is the better instrument — the dense leg dominates and the
+blend is worse than dense alone:
+
+| configuration              | pool nDCG@10 | questions nDCG@10 |
+|----------------------------|--------------|-------------------|
+| BM25 alone                 | 0.6654       | 0.6203            |
+| dense + BM25, 0.7/0.3      | 0.7700       | 0.6447            |
+| + reranker                 | 0.7989       | 0.6845            |
+| dense alone, 0/1           | **0.8703**   | 0.5369            |
+
+Dense beats BM25 on every one of the five pool queries, and by 0.65 on
+``blockchain_governance_transparency`` — the one whose vocabulary ("government
+transparency, accountability and anti-corruption") does not appear in the titles
+of the papers that are relevant to it. That is the case dense retrieval exists
+for.
+
+The question set gives the opposite ordering, and it is the weaker instrument of
+the two: its candidate pool *is* the 78 papers the pipeline included, so it is
+selected by the score under test — the exact fault the salvaged pool's own
+provenance note warns against — and its questions are written in Portuguese
+against an English corpus, so BM25 matches mostly on the proper nouns inside
+them. Neither has been reconciled, and until they are, no change to the ranking
+should be justified by either alone.
+
 Usage::
 
     venv/bin/python tests/evaluation/harness.py \
@@ -153,22 +178,94 @@ def rank_for_question(
     return sorted(range(len(fused)), key=lambda i: (-fused[i], i))
 
 
+def _weights_from(args) -> Dict[str, float]:
+    """The fused weights, defaulting to what the step applies to a ranking query.
+
+    Every query here *is* a ranking query, so with no weights given this
+    reproduces that mode: the step drops the embedding to zero rather than
+    falling back to ``DEFAULT_WEIGHTS`` (steps.py:214). Without it the baseline
+    would be a scaling of the shipped ranking rather than the shipped ranking,
+    and the rounded scores break ties differently.
+    """
+    if args.weights:
+        keyword, embedding = (float(x) for x in args.weights.split(","))
+        return {"keyword": keyword, "embedding": embedding}
+    return {"keyword": 1.0, "embedding": 0.0}
+
+
+def ndcg_at_k(ranked: List[int], grades: List[float], k: int = CUTOFF) -> float:
+    """Graded nDCG@k, ``2**grade - 1`` being the gain.
+
+    Graded rather than binary because the pool's judgments are: 0/1/2, read off
+    title and abstract. Collapsing them to relevant/not would throw away the
+    distinction between a paper that is on the topic and one that is the topic.
+    """
+    def dcg(order: List[int]) -> float:
+        return sum(
+            (2.0 ** grades[i] - 1.0) / math.log2(position + 2)
+            for position, i in enumerate(order[:k])
+        )
+
+    ideal = sorted(range(len(grades)), key=lambda i: -grades[i])
+    best = dcg(ideal)
+    return dcg(ranked) / best if best > 0 else 0.0
+
+
+def evaluate_pool(pool_path: Path, args) -> Dict[str, Any]:
+    """Score a judged pool: rank its fixed candidate set and grade the order.
+
+    A different question from ``evaluate``. There the corpus is whatever run the
+    dataset holds and the metric asks whether the right paper was found at all;
+    here the candidates are fixed at 50 and the metric asks only how well they
+    were ordered. That is what a change to fusion or reranking moves, and it is
+    the only thing this pool can still measure — the 1538-paper corpus it was
+    drawn from is gone, and never was in git.
+    """
+    data = json.loads(pool_path.read_text())
+    documents = data["documents"]
+    weights = _weights_from(args)
+
+    per_query, ndcgs = [], []
+    for name, query in data["queries"].items():
+        ids = query["pool"]
+        texts = [
+            f"{documents[i].get('title', '')} {documents[i].get('abstract', '')}"
+            for i in ids
+        ]
+        grades = [float((query["judgments"] or {}).get(i, 0)) for i in ids]
+
+        dense = query_dense_scores(texts, query["text"]) if args.dense == "query" else None
+        order = rank_for_question(
+            texts, query["text"], weights=weights, dense=dense,
+            rerank=args.rerank, rerank_top_n=args.top_n,
+            rerank_model=args.rerank_model,
+        )
+        score = ndcg_at_k(order, grades)
+        ndcgs.append(score)
+        per_query.append({
+            "query": name,
+            "text": query["text"],
+            "ndcg@10": score,
+            "best_ranked": documents[ids[order[0]]].get("title", "")[:70],
+            "best_judged": documents[ids[grades.index(max(grades))]].get("title", "")[:70],
+        })
+
+    return {
+        "mode": "pool",
+        "queries": len(ndcgs),
+        "candidates": len(next(iter(data["queries"].values()))["pool"]),
+        "ndcg@10": sum(ndcgs) / len(ndcgs) if ndcgs else 0.0,
+        "per_query": per_query,
+    }
+
+
 def evaluate(run_dir: Path, qrels: Dict[str, Any], args) -> Dict[str, Any]:
     papers = load_papers(run_dir)
     texts = [document_text(p) for p in papers]
     by_doi = {(p.get("DOI") or "").strip().lower(): i for i, p in enumerate(papers)}
     by_slug = {title_slug(p.get("Title", "")): i for i, p in enumerate(papers)}
 
-    # Every question here *is* a ranking query, so with no weights given this
-    # reproduces what the step does in that mode: it drops the embedding to zero
-    # rather than falling back to `DEFAULT_WEIGHTS` (steps.py:214). Without this
-    # the baseline would be a scaling of the shipped ranking rather than the
-    # shipped ranking, and the rounded scores break ties differently.
-    if args.weights:
-        keyword, embedding = (float(x) for x in args.weights.split(","))
-        weights: Optional[Dict[str, float]] = {"keyword": keyword, "embedding": embedding}
-    else:
-        weights = {"keyword": 1.0, "embedding": 0.0}
+    weights = _weights_from(args)
 
     per_question = []
     for item in qrels["questions"]:
@@ -212,8 +309,10 @@ def evaluate(run_dir: Path, qrels: Dict[str, Any], args) -> Dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Retrieval quality over a saved run.")
-    parser.add_argument("--run", required=True, type=Path)
-    parser.add_argument("--qrels", required=True, type=Path)
+    parser.add_argument("--run", type=Path, default=None)
+    parser.add_argument("--qrels", type=Path, default=None)
+    parser.add_argument("--pool", type=Path, default=None,
+                        help="a judged pool: rank its fixed candidates and grade the order")
     parser.add_argument("--weights", default=None,
                         help="keyword,embedding — fused weights, e.g. '1,0' or '0.7,0.3'")
     parser.add_argument("--dense", default="none", choices=["none", "query"],
@@ -225,17 +324,29 @@ def main() -> int:
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
-    qrels = json.loads(args.qrels.read_text())
-    result = evaluate(args.run, qrels, args)
+    if not args.pool and not (args.run and args.qrels):
+        parser.error("give either --pool, or both --run and --qrels")
 
     label = f"weights={args.weights or 'default'} dense={args.dense} rerank={args.rerank}"
-    print(f"\n{args.run.name}  |  {label}")
-    print(f"  perguntas {result['questions']}  (com alvo no run: {result['answered']})")
-    print(f"  recall@10 {result['recall@10']:.4f}   nDCG@10 {result['ndcg@10']:.4f}"
-          f"   MRR {result['mrr']:.4f}   mediana da posicao {result['median_rank']}")
-    if args.verbose:
-        for q in result["per_question"]:
-            print(f"    {q['rank'] or '-':>4}  {q['question'][:70]}")
+    if args.pool:
+        result = evaluate_pool(args.pool, args)
+        print(f"\n{args.pool.name}  |  pool  |  {label}")
+        print(f"  consultas {result['queries']}  candidatos por consulta {result['candidates']}")
+        print(f"  nDCG@10 {result['ndcg@10']:.4f}")
+        for q in result["per_query"]:
+            print(f"    {q['ndcg@10']:.4f}  {q['query']}")
+            if args.verbose:
+                print(f"            posto 1  {q['best_ranked']}")
+                print(f"            melhor   {q['best_judged']}")
+    else:
+        result = evaluate(args.run, json.loads(args.qrels.read_text()), args)
+        print(f"\n{args.run.name}  |  {label}")
+        print(f"  perguntas {result['questions']}  (com alvo no run: {result['answered']})")
+        print(f"  recall@10 {result['recall@10']:.4f}   nDCG@10 {result['ndcg@10']:.4f}"
+              f"   MRR {result['mrr']:.4f}   mediana da posicao {result['median_rank']}")
+        if args.verbose:
+            for q in result["per_question"]:
+                print(f"    {q['rank'] or '-':>4}  {q['question'][:70]}")
     if args.json:
         args.json.write_text(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
