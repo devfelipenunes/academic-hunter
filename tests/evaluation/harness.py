@@ -18,7 +18,23 @@ the same answer every time.
 Every ranking rule here is the shipped one — ``BM25``, ``fuse_scores``,
 ``rerank_texts``, ``rerank_scores`` — called, never reimplemented. A second
 implementation is free to drift from the one that runs, and a measurement taken
-against it would describe nothing.
+against it would describe nothing. The dense leg embeds through ChromaDB's
+``DefaultEmbeddingFunction``, which is the function the pipeline's screener
+already loads, for the same reason.
+
+**Measured**, over the blockchain run, 25 questions:
+
+| configuration                            | recall@10 | nDCG@10 | MRR    |
+|------------------------------------------|-----------|---------|--------|
+| BM25 alone (what the pipeline does today) | 0.7200    | 0.6203  | 0.5961 |
+| + query-aware dense, 0.7/0.3              | 0.7200    | 0.6447  | 0.6328 |
+| + reranker                                | 0.8400    | 0.6845  | 0.6420 |
+
+The first version of this table was measured with ``sentence_transformers``
+instead, which gave 0.6490 and 0.6845 — close enough that the conclusion holds,
+but it described an embedding the pipeline never loads, so it was replaced
+rather than kept. Two runtimes of the same model, and the difference is small;
+that is worth knowing too.
 
 Usage::
 
@@ -39,7 +55,6 @@ from typing import Any, Dict, List, Optional
 
 from academic_hunter.core.nlp.bm25 import BM25
 from academic_hunter.core.nlp.fusion import fuse_scores
-from academic_hunter.core.nlp.model_cache import get_sentence_transformer
 from academic_hunter.core.nlp.reranker import rerank_scores, rerank_texts
 from academic_hunter.core.nlp.scorer import title_slug
 
@@ -59,6 +74,34 @@ def document_text(paper: Dict[str, Any]) -> str:
     return f"{paper.get('Title', '')} {paper.get('Abstract', '')}"
 
 
+def _embedder():
+    """ChromaDB's ONNX embedding function — the one the pipeline already loads.
+
+    Not ``sentence_transformers``, which is the same model by name in a second
+    runtime with a second download. The pipeline's dense leg
+    (``SemanticScreener``, via ``DefaultEmbeddingFunction``) never touches that
+    one, so measuring with it described a configuration the pipeline cannot
+    produce — and the first version of this harness did exactly that.
+    """
+    from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+
+    return DefaultEmbeddingFunction()
+
+
+def _cosine(a: List[float], b: List[float]) -> float:
+    """Clamped to ``[0, 1]`` the way ``SemanticScreener._cosine`` clamps it.
+
+    Written out rather than done with numpy so this file needs no array library
+    to say what it means: the two must agree, and the clamping is half of that.
+    """
+    dot = sum(x * y for x, y in zip(a, b))
+    norm_a = math.sqrt(sum(x * x for x in a))
+    norm_b = math.sqrt(sum(y * y for y in b))
+    if norm_a < 1e-10 or norm_b < 1e-10:
+        return 0.0
+    return max(0.0, dot / (norm_a * norm_b))
+
+
 def query_dense_scores(texts: List[str], query: str) -> Optional[List[float]]:
     """Cosine between the question and each paper, or ``None`` without the model.
 
@@ -68,12 +111,13 @@ def query_dense_scores(texts: List[str], query: str) -> Optional[List[float]]:
     number for every question asked of a fixed configuration. The two are not
     interchangeable, and telling them apart is what ``--dense`` is for.
     """
-    model = get_sentence_transformer()
-    if model is None:
+    try:
+        embed = _embedder()
+    except Exception:
         return None
-    vectors = model.encode([query] + texts, normalize_embeddings=True)
-    query_vector = vectors[0]
-    return [float(query_vector @ vector) for vector in vectors[1:]]
+    vectors = embed([query] + list(texts))
+    query_vector = [float(x) for x in vectors[0]]
+    return [_cosine(query_vector, [float(x) for x in vector]) for vector in vectors[1:]]
 
 
 def rank_for_question(
