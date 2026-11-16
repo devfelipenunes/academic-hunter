@@ -47,6 +47,13 @@ class MarkdownEliteExporter(BaseExporter):
         coverage = citation_summary(sorted_papers)
         abstracts = abstract_summary(sorted_papers)
         impact = stats.get("impact") or {}
+        unavailable_sources = stats.get("unavailable_sources") or {}
+        blocked_sources = set(stats.get("blocked_source_names") or [])
+        queried_sources = {
+            str(item.get("Source"))
+            for item in context.query_history
+            if item.get("Source")
+        }
 
         with open(report_file, 'w', encoding='utf-8') as f:
             f.write(f"# Academic Hunter Elite Report - {timestamp}\n\n")
@@ -95,6 +102,30 @@ class MarkdownEliteExporter(BaseExporter):
                 for title in abstracts["without_abstract_titles"]:
                     f.write(f"  - *{title}*\n")
             f.write("\n")
+
+            f.write("## Source Coverage\n\n")
+            identified = stats.get("identified") or {}
+            if identified:
+                f.write("| Source | Records | Status |\n| :--- | ---: | :--- |\n")
+                for source, count in identified.items():
+                    if source in unavailable_sources:
+                        status = f"not queried — {unavailable_sources[source]}"
+                    elif source in blocked_sources:
+                        status = "partially queried — rate limited; count is a floor"
+                    elif source in queried_sources:
+                        status = "queried"
+                    else:
+                        status = "not queried"
+                    f.write(f"| {source} | {count} | {status} |\n")
+                if stats.get("blocked_sources"):
+                    domains = ", ".join(stats["blocked_sources"])
+                    f.write(
+                        f"\nRate-limited domains: {domains}. Results from affected "
+                        "sources may be incomplete.\n"
+                    )
+                f.write("\n")
+            else:
+                f.write("No per-source counts were recorded for this run.\n\n")
 
             for row in sorted_papers:
                 f.write(

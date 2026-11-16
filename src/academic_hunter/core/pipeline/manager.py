@@ -272,6 +272,11 @@ class SearchPipeline:
             t.join()
 
         self.hunter.state.stats["blocked_sources"] = sorted(self.hunter.blocked_sources)
+        self.hunter.state.stats["blocked_source_names"] = sorted(
+            name
+            for name, connector in self.hunter.connectors.items()
+            if getattr(connector, "domain", "") in self.hunter.blocked_sources
+        )
 
         elapsed = round(time.time() - self.hunter.last_request_time, 2)
         logger.info(f"⏱️ Mining completed in {elapsed} seconds.")

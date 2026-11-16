@@ -15,6 +15,8 @@
       "lens": ""
     },
     "context_rules": {},
+    "context_rules_title_only": false,
+    "context_exclude_title_terms": [],
     "ranking_query": "",
     "fusion": "weighted_norm",
     "fusion_weights": null,

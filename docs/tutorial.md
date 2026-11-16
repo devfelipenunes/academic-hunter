@@ -103,6 +103,8 @@ For fine control, edit `config.json`. The three sections that carry the topic ar
 
 Note what is **not** here: the topic is not a key of its own. `anchors` is where a search's subject lives, and every anchor × technical-term pair is what the four source-specific connectors query with — so a configuration with `anchors` but no `technical_strings` is a narrower search than it looks, and `run_search` says so in its reply.
 
+By default, `context_rules` can match in the title or abstract. For a narrow scope, set `settings.context_rules_title_only` to `true` to require that context in the title, and use `settings.context_exclude_title_terms` to reject titles containing out-of-scope terms such as `marine` or `coastal`. These stricter checks improve precision but can miss relevant papers whose titles omit the setting.
+
 Then run the search through the connected agent — the `run_search` tool.
 
 ## 4. Deeper analyses (over MCP)

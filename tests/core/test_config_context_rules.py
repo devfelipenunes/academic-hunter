@@ -185,3 +185,61 @@ def test_a_saved_rule_reaches_the_scorer(nested):
 
     assert scorer.validate_anchor_context("a cbdc payment system", "drex") is True
     assert scorer.validate_anchor_context("unrelated prose", "drex") is False
+
+
+def test_context_can_be_required_in_the_title(tmp_path):
+    """A narrow topic can reject papers whose only scope match is incidental in the abstract."""
+    from academic_hunter.core.nlp import AcademicScorer
+    from academic_hunter.core.screening.validators import PaperValidator
+
+    path = _write(tmp_path / "title-context.json", {
+        "settings": {
+            "context_rules": {"microplastic": ["freshwater", "river", "lake"]},
+            "context_rules_title_only": True,
+            "context_exclude_title_terms": ["marine", "coastal", "estuary"],
+        },
+        "anchors": {"Pollutant": ["microplastic"]},
+        "technical_strings": {},
+        "technical_weights": {"microplastic": 5},
+    })
+    config = HunterConfig(config_path=str(path))
+    scorer = AcademicScorer(
+        config.anchors, config.tech_strings, config.tech_weights, config.context_rules, config.settings
+    )
+    validator = PaperValidator(config, scorer)
+
+    paper = {
+        "Title": "Microplastic particles in coastal sediments",
+        "Abstract": "We compare marine samples with freshwater river samples.",
+    }
+    assert validator.match_anchor(paper) == ("", "")
+
+    paper["Title"] = "Microplastic particles in a freshwater river"
+    assert validator.match_anchor(paper) == ("Pollutant", "microplastic")
+
+    paper["Title"] = "Microplastic particles in a freshwater river estuary"
+    assert validator.match_anchor(paper) == ("", "")
+
+
+def test_abstract_context_remains_the_default(tmp_path):
+    """Existing configs keep their established title plus abstract behavior."""
+    from academic_hunter.core.nlp import AcademicScorer
+    from academic_hunter.core.screening.validators import PaperValidator
+
+    path = _write(tmp_path / "default-context.json", {
+        "settings": {"context_rules": {"microplastic": ["freshwater", "river"]}},
+        "anchors": {"Pollutant": ["microplastic"]},
+        "technical_strings": {},
+        "technical_weights": {"microplastic": 5},
+    })
+    config = HunterConfig(config_path=str(path))
+    scorer = AcademicScorer(
+        config.anchors, config.tech_strings, config.tech_weights, config.context_rules, config.settings
+    )
+    validator = PaperValidator(config, scorer)
+
+    paper = {
+        "Title": "Microplastic particles in coastal sediments",
+        "Abstract": "We compare marine samples with freshwater river samples.",
+    }
+    assert validator.match_anchor(paper) == ("Pollutant", "microplastic")

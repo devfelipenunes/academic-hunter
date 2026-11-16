@@ -103,6 +103,12 @@ class PrismaExporter(BaseExporter):
             "exclusions_by_source": stats.get("exclusions_by_source", {}),
             "unavailable_sources": stats.get("unavailable_sources", {}),
             "blocked_sources": stats.get("blocked_sources", []),
+            "blocked_source_names": stats.get("blocked_source_names", []),
+            "queried_sources": sorted({
+                str(item.get("Source"))
+                for item in query_history
+                if item.get("Source")
+            }),
             "settings": {
                 "start_year": settings.get("start_year"),
                 "min_relevance_score": settings.get("min_relevance_score"),

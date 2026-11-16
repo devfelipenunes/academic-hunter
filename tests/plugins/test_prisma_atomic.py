@@ -61,12 +61,16 @@ def test_the_artifact_says_which_sources_were_never_queried(tmp_path):
     ctx = context(tmp_path)
     ctx.stats["unavailable_sources"] = {"CORE": "no API key. Set CORE_API_KEY"}
     ctx.stats["blocked_sources"] = ["api.semanticscholar.org"]
+    ctx.stats["blocked_source_names"] = ["Semantic Scholar"]
+    ctx.query_history = [{"Source": "OpenAlex", "Query": "blockchain"}]
 
     PrismaExporter().export(ctx)
 
     payload = json.loads(stats_file(tmp_path).read_text(encoding="utf-8"))
     assert payload["unavailable_sources"] == {"CORE": "no API key. Set CORE_API_KEY"}
     assert payload["blocked_sources"] == ["api.semanticscholar.org"]
+    assert payload["blocked_source_names"] == ["Semantic Scholar"]
+    assert payload["queried_sources"] == ["OpenAlex"]
 
 
 def test_a_run_that_could_query_everything_writes_empty_ones(tmp_path):
@@ -76,6 +80,8 @@ def test_a_run_that_could_query_everything_writes_empty_ones(tmp_path):
     payload = json.loads(stats_file(tmp_path).read_text(encoding="utf-8"))
     assert payload["unavailable_sources"] == {}
     assert payload["blocked_sources"] == []
+    assert payload["blocked_source_names"] == []
+    assert payload["queried_sources"] == []
 
 
 def test_a_failed_write_leaves_the_previous_file_intact(tmp_path, monkeypatch):

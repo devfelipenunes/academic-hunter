@@ -27,9 +27,23 @@ class PaperValidator:
         categories and the terms of one.
         """
         text = self._text(paper, title)
+        title_text = str(title or paper.get("Title", "")).lower()
+        excluded_title_terms = self.config.settings.get("context_exclude_title_terms", [])
+        if isinstance(excluded_title_terms, str):
+            excluded_title_terms = [excluded_title_terms]
+        if isinstance(excluded_title_terms, (list, tuple)) and any(
+            str(term).strip().lower() in title_text
+            for term in excluded_title_terms
+            if str(term).strip()
+        ):
+            return "", ""
+
+        context_text = text
+        if self.config.settings.get("context_rules_title_only") is True:
+            context_text = title_text
         for cat, keywords in self.config.anchors.items():
             found_terms = self.scorer.find_matching_terms(text, keywords)
-            if found_terms and self.scorer.validate_anchor_context(text, found_terms):
+            if found_terms and self.scorer.validate_anchor_context(context_text, found_terms):
                 return cat, found_terms
         return "", ""
 

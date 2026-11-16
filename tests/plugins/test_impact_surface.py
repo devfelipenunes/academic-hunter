@@ -109,6 +109,29 @@ def test_the_preamble_decomposes_the_coverage_it_claims(tmp_path):
     assert "1 could not be resolved" in content
 
 
+def test_the_report_distinguishes_queried_skipped_and_rate_limited_sources(tmp_path):
+    ctx = context(
+        tmp_path,
+        [paper("A", 0, "unresolved")],
+        stats={
+            "identified": {"Crossref": 12, "OpenAlex": 3, "CORE": 0, "DOAJ": 0},
+            "unavailable_sources": {"CORE": "no API key"},
+            "blocked_source_names": ["OpenAlex"],
+            "blocked_sources": ["api.openalex.org"],
+        },
+    )
+    ctx.query_history = [{"Source": "Crossref", "Query": "microplastics"}]
+
+    MarkdownEliteExporter().export(ctx)
+    content = next(Path(tmp_path).rglob("*.md")).read_text(encoding="utf-8")
+
+    assert "| Crossref | 12 | queried |" in content
+    assert "| OpenAlex | 3 | partially queried — rate limited; count is a floor |" in content
+    assert "| CORE | 0 | not queried — no API key |" in content
+    assert "| DOAJ | 0 | not queried |" in content
+    assert "Rate-limited domains: api.openalex.org" in content
+
+
 def test_the_impact_section_puts_the_count_next_to_where_the_ranking_put_it(tmp_path):
     """The measured disagreement — 410 citations at Relevance_Score 1.4 — stated in the report."""
     papers = [
