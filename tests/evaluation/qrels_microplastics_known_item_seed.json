@@ -12,7 +12,13 @@
       "target_doi": "10.1016/j.envpol.2020.114481",
       "target_slug": "freshwatermicroplasticconcentrationsvarythroughbothspaceandtime",
       "category": "river_field",
-      "label_status": "seed_target_needs_human_validation"
+      "label_status": "seed_target_needs_human_validation",
+      "source_validation": {
+        "status": "ai_source_verified_title_and_abstract",
+        "url": "https://nottingham-repository.worktribe.com/output/4312821/freshwater-microplastic-concentrations-vary-through-both-space-and-time",
+        "note": "O registro institucional confirma o título e o resumo relata variação espacial e temporal em amostras de água doce.",
+        "human_review": "pending"
+      }
     },
     {
       "question": "What study examines how dams affect microplastic transport in rivers?",
@@ -20,7 +26,13 @@
       "target_doi": "10.1016/j.scitotenv.2019.02.028",
       "target_slug": "theeffectofdamsonrivertransportofmicroplasticpollution",
       "category": "river_transport",
-      "label_status": "seed_target_needs_human_validation"
+      "label_status": "seed_target_needs_human_validation",
+      "source_validation": {
+        "status": "ai_source_verified_title_and_abstract",
+        "url": "https://www.sciencedirect.com/science/article/pii/S0048969719305078",
+        "note": "A página do editor confirma a amostragem acima, abaixo e dentro de seis reservatórios represados para estudar transporte de microplásticos.",
+        "human_review": "pending"
+      }
     },
     {
       "question": "Which paper tests a method for detecting 20–100 μm microplastics in freshwater samples?",
@@ -28,7 +40,13 @@
       "target_doi": "10.1016/j.scitotenv.2020.139218",
       "target_slug": "howtodetectsmallmicroplastics20100μminfreshwatermunicipalwastewatersandlandfillleachatesatrialfromsamplingtoidentification",
       "category": "freshwater_methods",
-      "label_status": "seed_target_needs_human_validation"
+      "label_status": "seed_target_needs_human_validation",
+      "source_validation": {
+        "status": "ai_source_verified_title_and_abstract",
+        "url": "https://www.sciencedirect.com/science/article/pii/S0048969720327352",
+        "note": "A página do editor confirma o desenvolvimento e aplicação do método para MPs de 20–100 μm em água doce, rios, águas residuais e lixiviado.",
+        "human_review": "pending"
+      }
     },
     {
       "question": "Qual estudo avalia os efeitos de fragmentos de PLA microplástico em Daphnia magna após intemperismo UV?",
@@ -36,7 +54,13 @@
       "target_doi": "10.1016/j.ecoenv.2024.115974",
       "target_slug": "ecotoxicityofpolylacticacidmicroplasticfragmentstodaphniamagnaandtheeffectofultravioletweathering",
       "category": "freshwater_ecotoxicology",
-      "label_status": "seed_target_needs_human_validation"
+      "label_status": "seed_target_needs_human_validation",
+      "source_validation": {
+        "status": "ai_source_verified_title_and_abstract",
+        "url": "https://www.sciencedirect.com/science/article/pii/S0147651324000496",
+        "note": "A página do editor confirma os ensaios de MPs de PLA/PE, com e sem UV, em Daphnia magna.",
+        "human_review": "pending"
+      }
     },
     {
       "question": "Which study compares microscopy, Pyr-GC/MS, and FTIR to measure microplastics in Lake Superior?",
@@ -44,7 +68,13 @@
       "target_doi": "10.1021/acs.est.7b05829",
       "target_slug": "microplasticabundanceandcompositioninwesternlakesuperiorasdeterminedviamicroscopypyrgcmsandftir",
       "category": "lake_monitoring",
-      "label_status": "seed_target_needs_human_validation"
+      "label_status": "seed_target_needs_human_validation",
+      "source_validation": {
+        "status": "ai_source_verified_title_and_abstract",
+        "url": "https://pubs.acs.org/doi/10.1021/acs.est.7b05829",
+        "note": "A página ACS confirma microplásticos em águas superficiais do Lago Superior e as técnicas de microscopia, Pyr-GC/MS e FTIR.",
+        "human_review": "pending"
+      }
     },
     {
       "question": "Que trabalho usa Gammarus fossarum para estudar efeitos de microplásticos na assimilação?",
@@ -52,7 +82,13 @@
       "target_doi": "10.1007/s11356-016-7584-2",
       "target_slug": "microplasticsaffectassimilationefficiencyinthefreshwateramphipodgammarusfossarum",
       "category": "freshwater_biota",
-      "label_status": "seed_target_needs_human_validation"
+      "label_status": "seed_target_needs_human_validation",
+      "source_validation": {
+        "status": "ai_source_verified_title_and_abstract",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/27614640/",
+        "note": "PubMed confirma o anfípode de água doce Gammarus fossarum e o desfecho de eficiência de assimilação.",
+        "human_review": "pending"
+      }
     },
     {
       "question": "Which paper estimates uncertainty in microplastic sampling in rivers?",
@@ -60,7 +96,13 @@
       "target_doi": "10.1016/j.scitotenv.2020.137319",
       "target_slug": "afirstestimationofuncertaintiesrelatedtomicroplasticsamplinginrivers",
       "category": "sampling_quality",
-      "label_status": "seed_target_needs_human_validation"
+      "label_status": "seed_target_needs_human_validation",
+      "source_validation": {
+        "status": "ai_source_verified_title_and_abstract",
+        "url": "https://www.sciencedirect.com/science/article/pii/S0048969720308299",
+        "note": "A página do editor confirma análise de estratégias amostrais e incerteza de concentração em um rio.",
+        "human_review": "pending"
+      }
     },
     {
       "question": "What study identifies microplastic polymers in fish from Lake Amatitlán, Guatemala?",
@@ -68,7 +110,13 @@
       "target_doi": "10.15343/0104-7809.202448e15762023p",
       "target_slug": "identificationofmicroplasticpolymersfoundinthedigestivetractoffishfromlakeamatitlánguatemala",
       "category": "lake_biota",
-      "label_status": "seed_target_needs_human_validation"
+      "label_status": "seed_target_needs_human_validation",
+      "source_validation": {
+        "status": "ai_source_verified_title_and_abstract",
+        "url": "https://revistamundodasaude.emnuvens.com.br/mundodasaude/article/view/1576",
+        "note": "A página da revista confirma identificação FTIR-ATR de MPs no trato digestivo de peixes coletados no Lago Amatitlán.",
+        "human_review": "pending"
+      }
     },
     {
       "question": "Which study simulates microplastic trapping in Germany’s largest drinking water reservoir?",
@@ -76,7 +124,13 @@
       "target_doi": "10.1186/s12302-025-01192-9",
       "target_slug": "trappingofmicroplasticparticlesingermanyslargestdrinkingwaterreservoirasimulationstudy",
       "category": "reservoir_transport",
-      "label_status": "seed_target_needs_human_validation"
+      "label_status": "seed_target_needs_human_validation",
+      "source_validation": {
+        "status": "ai_source_verified_title_and_abstract",
+        "url": "https://link.springer.com/article/10.1186/s12302-025-01192-9",
+        "note": "A página Springer confirma o estudo de simulação hidrodinâmica sobre retenção de MPs em reservatório alemão de água potável.",
+        "human_review": "pending"
+      }
     },
     {
       "question": "What modeling study examines the fate of nano- and microplastics in freshwater systems?",
@@ -84,7 +138,14 @@
       "target_doi": "10.1016/j.envpol.2016.10.001",
       "target_slug": "fateofnanoandmicroplasticinfreshwatersystemsamodelingstudy",
       "category": "freshwater_fate",
-      "label_status": "seed_target_needs_human_validation"
+      "label_status": "seed_target_needs_human_validation",
+      "source_validation": {
+        "status": "ai_source_verified_title_and_abstract",
+        "url": "https://research.wur.nl/en/publications/fate-of-nano-and-microplastic-in-freshwater-systems-a-modeling-st/",
+        "note": "O registro institucional confirma modelo hidrológico para destino e transporte de partículas nano/microplásticas em água doce.",
+        "human_review": "pending"
+      }
     }
-  ]
+  ],
+  "source_validation_method": "DOI title checked against Crossref; question-to-record match checked against publisher, PubMed, or institutional repository page. AI source review only; human confirmation remains pending."
 }

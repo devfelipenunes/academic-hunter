@@ -23,6 +23,8 @@ RUN = EVALUATION / "fixtures" / "run_20261013_093241"
 MICROPLASTICS_DATASET = EVALUATION.parent.parent / "research" / "microplastics-freshwater" / "consolidated-adjudication-round3.csv"
 MICROPLASTICS_QRELS = EVALUATION / "qrels_microplastics_known_item_seed.json"
 MICROPLASTICS_REVIEW = EVALUATION / "qrels_microplastics_known_item_review.csv"
+MICROPLASTICS_POOL = EVALUATION / "microplastics_relevance_pool_seed.json"
+MICROPLASTICS_POOL_REVIEW = EVALUATION / "microplastics_relevance_pool_review.csv"
 
 
 def args(**overrides) -> Namespace:
@@ -87,6 +89,28 @@ def test_microplastics_seed_has_a_human_validation_worksheet():
 
     assert len(rows) == 10
     assert all(row["Query_Clear"] == "" and row["Target_Correct"] == "" for row in rows)
+
+
+def test_microplastics_relevance_pool_is_labeled_provisional_and_reviewable():
+    import csv
+
+    pool = json.loads(MICROPLASTICS_POOL.read_text())
+    assert pool["provenance"]["annotation_status"] == "ai_provisional_pending_human_validation"
+    assert len(pool["queries"]) == 5
+    assert all(len(query["pool"]) == 12 for query in pool["queries"].values())
+    assert all(query["judgment_status"] == "ai_provisional_pending_human_validation"
+               for query in pool["queries"].values())
+
+    result = harness.evaluate_pool(MICROPLASTICS_POOL, args())
+    assert result["queries"] == 5
+    assert result["candidates"] == 12
+    assert result["annotation_status"] == "ai_provisional_pending_human_validation"
+    assert 0.0 <= result["ndcg@10"] <= 1.0
+
+    with MICROPLASTICS_POOL_REVIEW.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    assert len(rows) == 60
+    assert all(row["Human_Grade"] == "" for row in rows)
 
 
 def test_the_pool_records_the_judged_run_the_qrels_names():

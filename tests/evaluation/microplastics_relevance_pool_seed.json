@@ -1,0 +1,484 @@
+{
+  "provenance": {
+    "source_csv": "research/microplastics-freshwater/consolidated-adjudication-round3.csv",
+    "corpus_size": 149,
+    "pool_size_per_query": 12,
+    "selection": "purposeful topic-matched positives, adjacent records, and scope-negative examples from the review matrix",
+    "annotators": 1,
+    "annotation_method": "single AI proposal based on titles/abstracts and existing matrix decisions; grades 0-2",
+    "annotation_status": "ai_provisional_pending_human_validation",
+    "note": "Not human gold labels. Validate every query-candidate grade in microplastics_relevance_pool_review.csv before treating ranking metrics as scientific evaluation."
+  },
+  "documents": {
+    "doi:10.1016/j.envpol.2020.114481": {
+      "title": "Freshwater microplastic concentrations vary through both space and time",
+      "doi": "10.1016/j.envpol.2020.114481",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1021/acs.est.7b05829": {
+      "title": "Microplastic Abundance and Composition in Western Lake Superior As Determined via Microscopy, Pyr-GC/MS, and FTIR",
+      "doi": "10.1021/acs.est.7b05829",
+      "year": "2018",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1002/ecs2.1556": {
+      "title": "Microplastic in surface waters of urban rivers: concentration, sources, and associated bacterial assemblages",
+      "doi": "10.1002/ecs2.1556",
+      "year": "2016",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2020.113935": {
+      "title": "Microplastic pollution of the Tamsui River and its tributaries in northern Taiwan: Spatial heterogeneity and correlation with precipitation",
+      "doi": "10.1016/j.envpol.2020.113935",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.3390/ijerph16091650": {
+      "title": "Microplastic Pollution in Surface Water of Urban Lakes in Changsha, China",
+      "doi": "10.3390/ijerph16091650",
+      "year": "2019",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1007/s10661-019-7843-z": {
+      "title": "Assessment of microplastic pollution: occurrence and characterisation in Vesijärvi lake and Pikku Vesijärvi pond, Finland",
+      "doi": "10.1007/s10661-019-7843-z",
+      "year": "2019",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.3390/hydrology12050124": {
+      "title": "Microplastic Pollution in Tropical River: Fourier Transform Infrared Spectroscopy-Based Characterization of Abundance and Polymer Composition in Water and Sediments from Filobobos River, Mexico",
+      "doi": "10.3390/hydrology12050124",
+      "year": "2025",
+      "source": "DOAJ",
+      "abstract": ""
+    },
+    "doi:10.1016/j.scitotenv.2020.140201": {
+      "title": "Microplastic pollution in surface water of Lake Victoria",
+      "doi": "10.1016/j.scitotenv.2020.140201",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2018.01.044": {
+      "title": "The influence of exposure and physiology on microplastic ingestion by the freshwater fish Rutilus rutilus (roach) in the River Thames, UK",
+      "doi": "10.1016/j.envpol.2018.01.044",
+      "year": "2018",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2019.113445": {
+      "title": "Advances and challenges of microplastic pollution in freshwater ecosystems: A UK perspective",
+      "doi": "10.1016/j.envpol.2019.113445",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.chemosphere.2017.02.024": {
+      "title": "Microplastic in the surface waters of the Ross Sea (Antarctica): Occurrence, distribution and characterization by FTIR",
+      "doi": "10.1016/j.chemosphere.2017.02.024",
+      "year": "2017",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1021/acs.est.9b04838": {
+      "title": "Riverine Microplastic Pollution in the Pearl River Delta, China: Are Modeled Estimates Accurate?",
+      "doi": "10.1021/acs.est.9b04838",
+      "year": "2019",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.ecoenv.2024.115974": {
+      "title": "Ecotoxicity of polylactic acid microplastic fragments to Daphnia magna and the effect of ultraviolet weathering",
+      "doi": "10.1016/j.ecoenv.2024.115974",
+      "year": "2024",
+      "source": "DOAJ",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2017.05.048": {
+      "title": "Ingestion of micro- and nanoplastics in Daphnia magna – Quantification of body burdens and assessment of feeding rates and reproduction",
+      "doi": "10.1016/j.envpol.2017.05.048",
+      "year": "2017",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2016.10.037": {
+      "title": "Uptake and effects of microplastic textile fibers on freshwater crustacean Daphnia magna",
+      "doi": "10.1016/j.envpol.2016.10.037",
+      "year": "2016",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2019.113233": {
+      "title": "Effects of microplastic particles and leaching additive on the life history and morphology of Daphnia magna",
+      "doi": "10.1016/j.envpol.2019.113233",
+      "year": "2019",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1002/etc.3093": {
+      "title": "Responses of <i>Hyalella azteca</i> to acute and chronic microplastic exposures",
+      "doi": "10.1002/etc.3093",
+      "year": "2015",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1007/s11356-016-7584-2": {
+      "title": "Microplastics affect assimilation efficiency in the freshwater amphipod Gammarus fossarum",
+      "doi": "10.1007/s11356-016-7584-2",
+      "year": "2016",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.3390/fishes9020076": {
+      "title": "Impact of <i>Chlorella vulgaris</i> Bioremediation and Selenium on Genotoxicity, Nephrotoxicity and Oxidative/Antioxidant Imbalance Induced by Polystyrene Nanoplastics in African Catfish (<i>Clarias gariepinus</i>)",
+      "doi": "10.3390/fishes9020076",
+      "year": "2024",
+      "source": "DOAJ",
+      "abstract": ""
+    },
+    "doi:10.1016/j.marpolbul.2016.12.055": {
+      "title": "Assessment of microplastic-sorbed contaminant bioavailability through analysis of biomarker gene expression in larval zebrafish",
+      "doi": "10.1016/j.marpolbul.2016.12.055",
+      "year": "2017",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2017.11.029": {
+      "title": "The effects of microplastic on freshwater Hydra attenuata feeding, morphology &amp; reproduction",
+      "doi": "10.1016/j.envpol.2017.11.029",
+      "year": "2018",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1021/acs.est.5b04099": {
+      "title": "Ingestion of Nanoplastics and Microplastics by Pacific Oyster Larvae",
+      "doi": "10.1021/acs.est.5b04099",
+      "year": "2015",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.scitotenv.2020.139218": {
+      "title": "How to detect small microplastics (20–100 μm) in freshwater, municipal wastewaters and landfill leachates? A trial from sampling to identification",
+      "doi": "10.1016/j.scitotenv.2020.139218",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1002/etc.4698": {
+      "title": "Single-Pot Method for the Collection and Preparation of Natural Water for Microplastic Analyses: Microplastics in the Mississippi River System during and after Historic Flooding",
+      "doi": "10.1002/etc.4698",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1007/s00216-018-1185-5": {
+      "title": "Comparison of μ-ATR-FTIR spectroscopy and py-GCMS as identification tools for microplastic particles and fibers isolated from river sediments",
+      "doi": "10.1007/s00216-018-1185-5",
+      "year": "2018",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.scitotenv.2020.137319": {
+      "title": "A first estimation of uncertainties related to microplastic sampling in rivers",
+      "doi": "10.1016/j.scitotenv.2020.137319",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.2166/wst.2020.173": {
+      "title": "Optimized microplastic analysis based on size fractionation, density separation and μ-FTIR",
+      "doi": "10.2166/wst.2020.173",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1039/c9ay01245a": {
+      "title": "Implementation of an open source algorithm for particle recognition and morphological characterisation for microplastic analysis by means of Raman microspectroscopy",
+      "doi": "10.1039/c9ay01245a",
+      "year": "2019",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.3390/molecules28093713": {
+      "title": "Complementary Analysis for Undetectable Microplastics from Contact Lenses to Aquatic Environments via Fourier Transform Infrared Spectroscopy",
+      "doi": "10.3390/molecules28093713",
+      "year": "2023",
+      "source": "DOAJ",
+      "abstract": ""
+    },
+    "doi:10.3390/molecules28196913": {
+      "title": "Microplastics’ Shape and Morphology Analysis in the Presence of Natural Organic Matter Using Flow Imaging Microscopy",
+      "doi": "10.3390/molecules28196913",
+      "year": "2023",
+      "source": "DOAJ",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2019.113862": {
+      "title": "A new thermoanalytical method for the quantification of microplastics in industrial wastewater",
+      "doi": "10.1016/j.envpol.2019.113862",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.2166/wst.2023.186": {
+      "title": "A review of microplastic removal from water and wastewater by membrane technologies",
+      "doi": "10.2166/wst.2023.186",
+      "year": "2023",
+      "source": "DOAJ",
+      "abstract": ""
+    },
+    "doi:10.1016/j.watres.2017.07.005": {
+      "title": "Solutions to microplastic pollution – Removal of microplastics from wastewater effluent with advanced wastewater treatment technologies",
+      "doi": "10.1016/j.watres.2017.07.005",
+      "year": "2017",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.scitotenv.2019.02.028": {
+      "title": "The effect of dams on river transport of microplastic pollution",
+      "doi": "10.1016/j.scitotenv.2019.02.028",
+      "year": "2019",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1186/s12302-025-01192-9": {
+      "title": "Trapping of microplastic particles in Germany’s largest drinking water reservoir: a simulation study",
+      "doi": "10.1186/s12302-025-01192-9",
+      "year": "2025",
+      "source": "DOAJ",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2016.10.001": {
+      "title": "Fate of nano- and microplastic in freshwater systems: A modeling study",
+      "doi": "10.1016/j.envpol.2016.10.001",
+      "year": "2017",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1039/c6em00206d": {
+      "title": "A theoretical assessment of microplastic transport in river catchments and their retention by soils and river sediments",
+      "doi": "10.1039/c6em00206d",
+      "year": "2016",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.marpolbul.2020.111024": {
+      "title": "Modeling the three-dimensional transport and distribution of multiple microplastic polymer types in Lake Erie",
+      "doi": "10.1016/j.marpolbul.2020.111024",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.scitotenv.2018.12.313": {
+      "title": "Occurrence and fate of microplastic debris in middle and lower reaches of the Yangtze River – From inland to the sea",
+      "doi": "10.1016/j.scitotenv.2018.12.313",
+      "year": "2019",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1021/acs.est.7b00369": {
+      "title": "Occurrence and Characteristics of Microplastic Pollution in Xiangxi Bay of Three Gorges Reservoir, China",
+      "doi": "10.1021/acs.est.7b00369",
+      "year": "2017",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.15343/0104-7809.202448e15762023p": {
+      "title": "Identification of microplastic polymers found in the digestive tract of fish from Lake Amatitlán, Guatemala",
+      "doi": "10.15343/0104-7809.202448e15762023p",
+      "year": "2024",
+      "source": "DOAJ",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2017.11.075": {
+      "title": "Using the Asian clam as an indicator of microplastic pollution in freshwater ecosystems",
+      "doi": "10.1016/j.envpol.2017.11.075",
+      "year": "2018",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.1016/j.envpol.2016.11.068": {
+      "title": "Microplastics ingestion by a common tropical freshwater fishing resource",
+      "doi": "10.1016/j.envpol.2016.11.068",
+      "year": "2017",
+      "source": "Crossref",
+      "abstract": ""
+    },
+    "doi:10.3390/toxics8020022": {
+      "title": "‘The Plastic Nile’: First Evidence of Microplastic Contamination in Fish from the Nile River (Cairo, Egypt)",
+      "doi": "10.3390/toxics8020022",
+      "year": "2020",
+      "source": "Crossref",
+      "abstract": ""
+    }
+  },
+  "queries": {
+    "field_occurrence": {
+      "text": "Which studies report microplastic concentrations in freshwater rivers, lakes, or reservoirs?",
+      "pool": [
+        "doi:10.1016/j.envpol.2020.114481",
+        "doi:10.1021/acs.est.7b05829",
+        "doi:10.1002/ecs2.1556",
+        "doi:10.1016/j.envpol.2020.113935",
+        "doi:10.3390/ijerph16091650",
+        "doi:10.1007/s10661-019-7843-z",
+        "doi:10.3390/hydrology12050124",
+        "doi:10.1016/j.scitotenv.2020.140201",
+        "doi:10.1016/j.envpol.2018.01.044",
+        "doi:10.1016/j.envpol.2019.113445",
+        "doi:10.1016/j.chemosphere.2017.02.024",
+        "doi:10.1021/acs.est.9b04838"
+      ],
+      "judgments": {
+        "doi:10.1016/j.envpol.2020.114481": 2,
+        "doi:10.1021/acs.est.7b05829": 2,
+        "doi:10.1002/ecs2.1556": 2,
+        "doi:10.1016/j.envpol.2020.113935": 2,
+        "doi:10.3390/ijerph16091650": 2,
+        "doi:10.1007/s10661-019-7843-z": 2,
+        "doi:10.3390/hydrology12050124": 2,
+        "doi:10.1016/j.scitotenv.2020.140201": 2,
+        "doi:10.1016/j.envpol.2018.01.044": 1,
+        "doi:10.1016/j.envpol.2019.113445": 1,
+        "doi:10.1016/j.chemosphere.2017.02.024": 0,
+        "doi:10.1021/acs.est.9b04838": 0
+      },
+      "judgment_status": "ai_provisional_pending_human_validation"
+    },
+    "freshwater_ecotoxicology": {
+      "text": "Which studies test ecological or physiological effects of microplastics on freshwater organisms?",
+      "pool": [
+        "doi:10.1016/j.ecoenv.2024.115974",
+        "doi:10.1016/j.envpol.2017.05.048",
+        "doi:10.1016/j.envpol.2016.10.037",
+        "doi:10.1016/j.envpol.2019.113233",
+        "doi:10.1002/etc.3093",
+        "doi:10.1007/s11356-016-7584-2",
+        "doi:10.3390/fishes9020076",
+        "doi:10.1016/j.marpolbul.2016.12.055",
+        "doi:10.1016/j.envpol.2017.11.029",
+        "doi:10.1021/acs.est.5b04099",
+        "doi:10.1016/j.envpol.2020.114481",
+        "doi:10.1021/acs.est.9b04838"
+      ],
+      "judgments": {
+        "doi:10.1016/j.ecoenv.2024.115974": 2,
+        "doi:10.1016/j.envpol.2017.05.048": 2,
+        "doi:10.1016/j.envpol.2016.10.037": 2,
+        "doi:10.1016/j.envpol.2019.113233": 2,
+        "doi:10.1002/etc.3093": 2,
+        "doi:10.1007/s11356-016-7584-2": 2,
+        "doi:10.3390/fishes9020076": 2,
+        "doi:10.1016/j.marpolbul.2016.12.055": 2,
+        "doi:10.1016/j.envpol.2017.11.029": 2,
+        "doi:10.1021/acs.est.5b04099": 0,
+        "doi:10.1016/j.envpol.2020.114481": 0,
+        "doi:10.1021/acs.est.9b04838": 0
+      },
+      "judgment_status": "ai_provisional_pending_human_validation"
+    },
+    "freshwater_methods": {
+      "text": "Which studies develop or evaluate methods for sampling, identifying, or quantifying microplastics in freshwater?",
+      "pool": [
+        "doi:10.1016/j.scitotenv.2020.139218",
+        "doi:10.1002/etc.4698",
+        "doi:10.1007/s00216-018-1185-5",
+        "doi:10.1016/j.scitotenv.2020.137319",
+        "doi:10.2166/wst.2020.173",
+        "doi:10.1039/c9ay01245a",
+        "doi:10.3390/molecules28093713",
+        "doi:10.3390/molecules28196913",
+        "doi:10.1016/j.envpol.2019.113862",
+        "doi:10.2166/wst.2023.186",
+        "doi:10.1016/j.watres.2017.07.005",
+        "doi:10.1016/j.chemosphere.2017.02.024"
+      ],
+      "judgments": {
+        "doi:10.1016/j.scitotenv.2020.139218": 2,
+        "doi:10.1002/etc.4698": 2,
+        "doi:10.1007/s00216-018-1185-5": 2,
+        "doi:10.1016/j.scitotenv.2020.137319": 2,
+        "doi:10.2166/wst.2020.173": 1,
+        "doi:10.1039/c9ay01245a": 1,
+        "doi:10.3390/molecules28093713": 1,
+        "doi:10.3390/molecules28196913": 1,
+        "doi:10.1016/j.envpol.2019.113862": 1,
+        "doi:10.2166/wst.2023.186": 0,
+        "doi:10.1016/j.watres.2017.07.005": 0,
+        "doi:10.1016/j.chemosphere.2017.02.024": 0
+      },
+      "judgment_status": "ai_provisional_pending_human_validation"
+    },
+    "freshwater_transport": {
+      "text": "Which studies model or measure microplastic transport, retention, or fate in freshwater rivers and reservoirs?",
+      "pool": [
+        "doi:10.1016/j.scitotenv.2019.02.028",
+        "doi:10.1186/s12302-025-01192-9",
+        "doi:10.1016/j.envpol.2016.10.001",
+        "doi:10.1039/c6em00206d",
+        "doi:10.1016/j.marpolbul.2020.111024",
+        "doi:10.1016/j.scitotenv.2018.12.313",
+        "doi:10.1021/acs.est.7b00369",
+        "doi:10.1016/j.scitotenv.2020.137319",
+        "doi:10.1016/j.envpol.2020.114481",
+        "doi:10.1016/j.ecoenv.2024.115974",
+        "doi:10.1016/j.scitotenv.2020.139218",
+        "doi:10.1016/j.chemosphere.2017.02.024"
+      ],
+      "judgments": {
+        "doi:10.1016/j.scitotenv.2019.02.028": 2,
+        "doi:10.1186/s12302-025-01192-9": 2,
+        "doi:10.1016/j.envpol.2016.10.001": 2,
+        "doi:10.1039/c6em00206d": 2,
+        "doi:10.1016/j.marpolbul.2020.111024": 2,
+        "doi:10.1016/j.scitotenv.2018.12.313": 2,
+        "doi:10.1021/acs.est.7b00369": 1,
+        "doi:10.1016/j.scitotenv.2020.137319": 1,
+        "doi:10.1016/j.envpol.2020.114481": 1,
+        "doi:10.1016/j.ecoenv.2024.115974": 0,
+        "doi:10.1016/j.scitotenv.2020.139218": 0,
+        "doi:10.1016/j.chemosphere.2017.02.024": 0
+      },
+      "judgment_status": "ai_provisional_pending_human_validation"
+    },
+    "freshwater_biota": {
+      "text": "Which studies report microplastics in freshwater fish or invertebrates?",
+      "pool": [
+        "doi:10.15343/0104-7809.202448e15762023p",
+        "doi:10.1016/j.envpol.2018.01.044",
+        "doi:10.1016/j.envpol.2017.11.075",
+        "doi:10.1007/s11356-016-7584-2",
+        "doi:10.1016/j.envpol.2016.11.068",
+        "doi:10.1016/j.envpol.2017.05.048",
+        "doi:10.1016/j.envpol.2017.11.029",
+        "doi:10.3390/fishes9020076",
+        "doi:10.3390/toxics8020022",
+        "doi:10.1021/acs.est.5b04099",
+        "doi:10.1016/j.envpol.2020.114481",
+        "doi:10.1021/acs.est.9b04838"
+      ],
+      "judgments": {
+        "doi:10.15343/0104-7809.202448e15762023p": 2,
+        "doi:10.1016/j.envpol.2018.01.044": 2,
+        "doi:10.1016/j.envpol.2017.11.075": 2,
+        "doi:10.1007/s11356-016-7584-2": 2,
+        "doi:10.1016/j.envpol.2016.11.068": 2,
+        "doi:10.1016/j.envpol.2017.05.048": 2,
+        "doi:10.1016/j.envpol.2017.11.029": 2,
+        "doi:10.3390/fishes9020076": 2,
+        "doi:10.3390/toxics8020022": 0,
+        "doi:10.1021/acs.est.5b04099": 0,
+        "doi:10.1016/j.envpol.2020.114481": 0,
+        "doi:10.1021/acs.est.9b04838": 0
+      },
+      "judgment_status": "ai_provisional_pending_human_validation"
+    }
+  }
+}

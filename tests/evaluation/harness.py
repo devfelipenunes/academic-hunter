@@ -324,6 +324,9 @@ def evaluate_pool(pool_path: Path, args) -> Dict[str, Any]:
 
     return {
         "mode": "pool",
+        "annotation_status": data.get("provenance", {}).get(
+            "annotation_status", "not_recorded"
+        ),
         "queries": len(ndcgs),
         "candidates": len(next(iter(data["queries"].values()))["pool"]),
         "ndcg@10": sum(ndcgs) / len(ndcgs) if ndcgs else 0.0,
@@ -433,6 +436,11 @@ def _run(args, label: str) -> Dict[str, Any]:
         print(f"  queries {result['queries']}  candidates per query {result['candidates']}")
         print(f"  nDCG@10 {result['ndcg@10']:.4f}")
         print(legs_line(result))
+        if result["annotation_status"] != "human_adjudicated":
+            print(
+                "  !  grades are not marked human-adjudicated; treat this as an "
+                "exploratory run, not a scientific ranking benchmark."
+            )
         for q in result["per_query"]:
             print(f"    {q['ndcg@10']:.4f}  {q['query']}")
             if args.verbose:

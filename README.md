@@ -151,7 +151,8 @@ uv run python tests/evaluation/harness.py \
 ```
 
 Initial BM25, dense, and hybrid measurements are recorded in [`microplastics-seed-baseline-20261116.md`](tests/evaluation/microplastics-seed-baseline-20261116.md), with the same warning about provisional labels.
-Use [`qrels_microplastics_known_item_review.csv`](tests/evaluation/qrels_microplastics_known_item_review.csv) to check whether each question is clear and its target article is correct. These checks validate known-item pairs; a scientific relevance benchmark will still need judged alternatives and hard negatives.
+The ten known-item article titles and question claims were checked by AI against publisher or institutional source pages; [`microplastics-source-validation-20261116.md`](tests/evaluation/microplastics-source-validation-20261116.md) records the evidence. Human validation is still pending in [`qrels_microplastics_known_item_review.csv`](tests/evaluation/qrels_microplastics_known_item_review.csv).
+For a broader ranking stress test, [`microplastics_relevance_pool_seed.json`](tests/evaluation/microplastics_relevance_pool_seed.json) contains five queries and 60 provisional AI grades over 44 unique papers. These are not gold labels. Review or replace the grades in [`microplastics_relevance_pool_review.csv`](tests/evaluation/microplastics_relevance_pool_review.csv) before using pool scores to compare ranking quality. The harness reports the annotation status with every pool result.
 
 The architectural decision on LangChain/LangGraph is recorded in [`docs/adr/0001-agent-orchestration.md`](docs/adr/0001-agent-orchestration.md): they remain optional integrations until a concrete long-running, resumable human-review workflow justifies graph orchestration.
 
