@@ -1,0 +1,53 @@
+{
+  "search_date": "2026-11-16",
+  "source": "OpenAlex public API, queried directly without API key",
+  "queries": [
+    {
+      "query": "microplastic freshwater river",
+      "retrieved": 100,
+      "page_limit": 100,
+      "estimated_results_not_retrieved": true
+    },
+    {
+      "query": "microplastic freshwater lake",
+      "retrieved": 100,
+      "page_limit": 100,
+      "estimated_results_not_retrieved": true
+    },
+    {
+      "query": "microplastic freshwater ecotoxicity",
+      "retrieved": 100,
+      "page_limit": 100,
+      "estimated_results_not_retrieved": true
+    },
+    {
+      "query": "microplastic freshwater analytical methods",
+      "retrieved": 100,
+      "page_limit": 100,
+      "estimated_results_not_retrieved": true
+    },
+    {
+      "query": "microplastic freshwater sediment",
+      "retrieved": 100,
+      "page_limit": 100,
+      "estimated_results_not_retrieved": true
+    }
+  ],
+  "retrieved_across_queries": 500,
+  "unique_after_exact_doi_or_normalized_title_dedup": 426,
+  "novel_before_internal_duplicate_removal": 323,
+  "novel_after_internal_duplicate_removal": 318,
+  "screening_decisions": {
+    "primary_candidate": 168,
+    "review_context": 91,
+    "grey_literature": 41,
+    "exclude": 15,
+    "full_text_scope_check": 3
+  },
+  "limitations": [
+    "Maximum 100 results per query; result set is relevance-ranked, not exhaustive.",
+    "Exact DOI/title matching against local and OpenAIRE records does not resolve all versions.",
+    "Single AI title/abstract screening; not independently double-screened.",
+    "Does not establish full-text eligibility or replace database searches in Web of Science/Scopus."
+  ]
+}
