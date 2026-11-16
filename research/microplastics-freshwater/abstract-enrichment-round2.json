@@ -1,0 +1,620 @@
+{
+  "10.1002/anie.201606957": {
+    "DOI": "10.1002/anie.201606957",
+    "abstract": "AbstractThe contamination of marine and freshwater ecosystems with plastic, and especially with microplastic (MP), is a global ecological problem of increasing scientific concern. This has stimulated a great deal of research on the occurrence of MP, interaction of MP with chemical pollutants, the uptake of MP by aquatic organisms, and the resulting (negative) impact of MP. Herein, we review the major issues of MP in aquatic environments, with the principal aims 1) to characterize the methods applied for MP analysis (including sampling, processing, identification and quantification), indicate the most reliable techniques, and discuss the required further improvements; 2) to estimate the abundance of MP in marine/freshwater ecosystems and clarify the problems that hamper the comparability of such results; and 3) to summarize the existing literature on the uptake of MP by living organisms. Finally, we identify knowledge gaps, suggest possible strategies to assess environmental risks arising from MP, and discuss prospects to minimize MP abundance in aquatic ecosystems.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1002/anie.201606957"
+  },
+  "10.23885/1993-6621-2020-8-237-255": {
+    "DOI": "10.23885/1993-6621-2020-8-237-255",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.48550/arxiv.2307.16289": {
+    "DOI": "10.48550/arxiv.2307.16289",
+    "abstract": "Plastic has imbibed itself as an indispensable part of our day to day activities, becoming a source of problems due to its non-biodegradable nature and cheaper production prices. With these problems, comes the challenge of mitigating and responding to the aftereffects of disposal or the lack of proper disposal which leads to waste concentrating in locations and disturbing ecosystems for both plants and animals. As plastic debris levels continue to rise with the accumulation of waste in garbage patches in landfills and more hazardously in natural water bodies, swift action is necessary to plug or cease this flow. While manual sorting operations and detection can offer a solution, they can be augmented using highly advanced computer imagery linked with robotic appendages for removing wastes. The primary application of focus in this report are the much-discussed Computer Vision and Open Vision which have gained novelty for their light dependence on internet and ability to relay information in remote areas. These applications can be applied to the creation of edge-based mobility devices that can as a counter to the growing problem of plastic debris in oceans and rivers, demanding little connectivity and still offering the same results with reasonably timed maintenance. The principal findings of this project cover the various methods that were tested and deployed to detect waste in images, as well as comparing them against different waste types. The project has been able to produce workable models that can perform on time detection of sampled images using an augmented CNN approach. Latter portions of the project have also achieved a better interpretation of the necessary preprocessing steps required to arrive at the best accuracies, including the best hardware for expanding waste detection studies to larger environments.",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/2307.16289v1"
+  },
+  "10.1016/j.scitotenv.2020.139218": {
+    "DOI": "10.1016/j.scitotenv.2020.139218",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1051/e3sconf/202021103012": {
+    "DOI": "10.1051/e3sconf/202021103012",
+    "abstract": "The Citarum River is one of the most polluted rivers in the world because of the inadequate waste management system and community ignorance. Plastic is one of the contaminants in the Citarum watershed. In general, plastics less than 5 mm in size are defined as microplastics. Microplastics are persistent and harm the environment. This article aims to determine the potential for pollution and distribution of microplastics in freshwater systems, especially in the Citarum watershed area. Using a combination of literature study methods with Geographical Information Systems (GIS) analysis, this article explains that microplastic contamination has occurred along the Citarum watershed from upstream to downstream, found in water and sediment and fish samples. Facilitated by their small size and high stability in the environment, microplastics can move from the aquatic environment into the food chain and cause longterm damage. This case causes a severe threat to the quality of freshwater in the Citarum watershed. Therefore, this article can be used as a reference for managing pollution in the Citarum watershed area.",
+    "source": "run_record",
+    "url": "https://www.e3s-conferences.org/articles/e3sconf/pdf/2020/71/e3sconf_jessd2020_03012.pdf"
+  },
+  "10.22124/cjes.2024.8016": {
+    "DOI": "10.22124/cjes.2024.8016",
+    "abstract": "Microplastics (MPs) have become a symbol of modern life and their fate in the environment is an issue of great concern. MPs have attracted attention for their widespread distribution, especially in the aquatic ecosystems. MPs can act as a vector of various heavy metals in the environment and pose a threat to marine and freshwater organisms as well as human health. The MP surfaces play a defining role in the adsorption of heavy metal. Aged or biofouled MPs further induce the adsorption of metals. Particular microplastic (MPs) polymers have a higher tendency for adsorption of some metals specifically. Evidence shows that MPs are vectors for persistent organic pollutants (POPs), pharmaceuticals, and especially heavy metals. MP surfaces can retain chemical contaminants over six-fold higher than the surrounding environment. Since plastic materials offer different surface characteristics, therefore chemical composition, functional groups, crystallinity, and carbon chains vary significantly. The differences between plastic materials determine how they interact and become vectors for chemicals in aquatic systems. MPs could be enriched with heavy metals such as cadmium (Cd), chromium (Cr), copper (Cu), Pb, Mn, etc. The biofilms developed on the MP surface can enhance the adsorption capacities of heavy metals. It is urgent to understand the pattern of interactions of MPs with heavy metals in various aquatic systems. This allows us to understand the severity of ecotoxic effects which in turn helps regulate these pollutants. The adsorption of heavy metals on MPs increases their bioaccumulation. In this paper, we summarize the occurrence of MPs in a given aquatic ecosystem and patterns of interaction with heavy metals.",
+    "source": "run_record",
+    "url": "https://cjes.guilan.ac.ir/article_8016_0b6b95179daaf5cd5e39175e6a1972b8.pdf"
+  },
+  "10.1039/c8en01427b": {
+    "DOI": "10.1039/c8en01427b",
+    "abstract": "Over the last five decades, plastics production has increased as a consequence of their use in strategic sectors causing damage on aquatic ecosystems.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1039/c8en01427b"
+  },
+  "10.1002/etc.3408": {
+    "DOI": "10.1002/etc.3408",
+    "abstract": "Abstract Captain Charles Moore introduced the world to the “Great Pacific Garbage Patch” in the mid-1990s, and images of plastic debris in the oceans began to sweep the media. Since then, there has been increasing interest from scientists, the public, and policy makers regarding plastic debris in the environment. Today, there remains no doubt that plastic debris contaminates aquatic (marine and freshwater) habitats and animals globally. The growing scientific evidence demonstrates widespread contamination from plastic debris, and researchers are beginning to understand the sources, fate, and effects of the material. As new scientific understanding breeds new questions, scientists are working to fill data gaps regarding the fate and effects of plastic debris and the mechanisms that drive these processes. In parallel, policy makers are working to mitigate this contamination. The authors focus on what is known about plastic debris that is relevant to policy by reviewing some of the weight of evidence regarding contamination, fate, and effects of the material. Moreover, they highlight some examples of how science has already been used to inform policy change and mitigation and discuss opportunities for future linkages between science and policy to continue the relationship and contribute to effective solutions for plastic debris. Environ Toxicol Chem 2016;35:1617–1626. © 2016 SETAC",
+    "source": "run_record",
+    "url": "https://doi.org/10.1002/etc.3408"
+  },
+  "10.48550/arxiv.2408.02162": {
+    "DOI": "10.48550/arxiv.2408.02162",
+    "abstract": "Since their invention, plastics have become ubiquitous in modern societies all around the world, and their impact on the environment has, in recent years, become nearly as well-known. Plastics produced by humans have reached nearly every corner of the world, and throughout their centuries-long lifetimes, plastics continually break down into smaller and smaller particles due to the physical stresses which they are subjected to. These stresses eventually, inevitably, break these plastics down into microplastics -pieces of plastic small enough to be consumed by organisms in bodies of water throughout the globe. These microplastics can very easily bioaccumulate, and have been found everywhere from the Great Lakes to the bloodstreams of humans. The effects of these plastics are poorly understood, however, they have been linked to infertility, halted growth, and a host of other maladies in aquatic organisms. Currently, removal of these plastics has been neglected, with no governmental action to remove them from marine environments, and this project aims to begin prototyping a solution to this issue. A significant percentage of microplastics are found at the surface of waterways, thus trawling in surface waters using an autonomously propelled net is proposed as a way to solve this seemingly intractable issue. By attaching motors and a guidance system to a manta trawl, a device currently used for collecting microorganisms, the process of collecting microplastics in open water can be automated, and thus the work of removing plastics from the environment on a large scale can begin.",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/2408.02162v1"
+  },
+  "10.1021/acs.est.5b04099": {
+    "DOI": "10.1021/acs.est.5b04099",
+    "abstract": "Abstract Plastic debris is a prolific contaminant effecting freshwater and marine ecosystems across the globe. Of growing environmental concern are “microplastics”and “nanoplastics” encompassing tiny particles of plastic derived from manufacturing and macroplastic fragmentation. Pelagic zooplankton are susceptible to consuming microplastics, however the threat posed to larvae of commercially important bivalves is currently unknown. We exposed Pacific oyster (Crassostrea gigas) larvae (3–24 d.p.f.) to polystyrene particles spanning 70 nm-20 μm in size, including plastics with differing surface properties, and tested the impact of microplastics on larval feeding and growth. The frequency and magnitude of plastic ingestion over 24 h varied by larval age and size of polystyrene particle (ANOVA, P &lt; 0.01), and surface properties of the plastic, with aminated particles ingested and retained more frequently (ANOVA, P &lt; 0.01). A strong, significant correlation between propensity for plastic consumption and plastic load per organism was identified (Spearmans, r = 0.95, P &lt; 0.01). Exposure to 1 and 10 μm PS for up to 8 days had no significant effect on C. gigas feeding or growth at &lt;100 microplastics mL–1. In conclusion, whil micro- and nanoplastics were readily ingested by oyster larvae, exposure to plastic concentrations exceeding those observed in the marine environment resulted in no measurable effects on the development or feeding capacity of the larvae over the duration of the study.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1021/acs.est.5b04099"
+  },
+  "10.26416/farm.192.1.2020.2899": {
+    "DOI": "10.26416/farm.192.1.2020.2899",
+    "abstract": "Plastic pollution in the oceans and inland waters is a serious problem that affects not only the aquatic environment, but also humans. People are potentially exposed to microplastics through food, drink and air. Polyester fiber is one of the most abundant types of microplastics in the environment. Much of the fiber that enters wastewater treatment plants reaches sewage sludge, which is used as soil fertilizer in many countries. Therefore, preventive and corrective measures should be taken at international, governmental and consumer level to assess the toxicity of common polymers, to reduce the use of plastic and to encourage the use of alternative materials, recycling and the adoption of sustainable practices in the use of plastics and plastic pollution management. There is growing evidence that microplastic pollution (plastic particles below 5 mm in size) is now present in almost all marine ecosystems, even in remote areas, such as the Arctic and Antarctic. Once released into the marine environment the ecological fate of microplastics primarily depends on the density of the polymer that influences buoyancy, position in the water column and possible interaction with the biota.",
+    "source": "run_record",
+    "url": "https://doi.org/10.26416/farm.192.1.2020.2899"
+  },
+  "10.1002/etc.3311": {
+    "DOI": "10.1002/etc.3311",
+    "abstract": "Abstract Microplastic has become an emerging contaminant of global concern. Bulk plastic can degrade to form smaller particles down to the nanoscale (&lt;100 nm), which are referred to as nanoplastics. Because of their high surface area, nanoplastic may bind hydrophobic chemicals very effectively, increasing their hazard when such nanoplastics are taken up by biota. The present study reports distribution coefficients for sorption of polycyclic aromatic hydrocarbons (PAHs) to 70 nm polystyrene in freshwater, and PAH adsorption isotherms spanning environmentally realistic aqueous concentrations of 10−5 μg/L to 1 μg/L. Nanopolystyrene aggregate state was assessed using dynamic light scattering. The adsorption isotherms were nonlinear, and the distribution coefficients at the lower ends of the isotherms were very high, with values up to 109 L/kg. The high and nonlinear sorption was explained from π–π interactions between the planar PAHs and the surface of the aromatic polymer polystyrene and was higher than for micrometer-sized polystyrene. Reduction of nanopolystyrene aggregate sizes had no significant effect on sorption, which suggests that the PAHs could reach the sorption sites on the pristine nanoparticles regardless of the aggregation state. Pre-extraction of the nanopolystyrene with C18 polydimethylsiloxane decreased sorption of PAHs, which could be explained by removal of the most hydrophobic fraction of the nanopolystyrene. Environ Toxicol Chem 2016;35:1650–1655. © 2015 SETAC",
+    "source": "run_record",
+    "url": "https://doi.org/10.1002/etc.3311"
+  },
+  "10.1016/j.envpol.2016.10.061": {
+    "DOI": "10.1016/j.envpol.2016.10.061",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.18307/2019.0209": {
+    "DOI": "10.18307/2019.0209",
+    "abstract": "微塑料作为新型环境污染物正日益受到人们密切关注，为探索微塑料在鄱阳湖流域的污染状况，以鄱阳湖流域五河入湖口的沉积物为研究对象，分别在3个水文周期（平水期、丰水期和枯水期）选择6个典型区域采集沉积物进行分析.采用浮选分离方法及金相显微鉴定技术，分析鄱阳湖五河入湖口沉积物中微塑料的类型、丰度和表面形貌等特征，旨在揭示鄱阳湖沉积物中微塑料的空间分布规律及不同水位期的动态变化.研究结果显示微塑料的类型有碎片类、发泡类、薄膜类和纤维类，其中主要以碎片类微塑料为主，所占百分比为51.95%；70%的微塑料粒径<1 mm，微塑料（<5 mm）的平均丰度为811.11 n/kg，6个样点的微塑料丰度值表现为朱港 > 吴城 > 渡头乡 > 龙口 > 瑞洪镇 > 南矶山.6个样点的微塑料丰度值与鄱阳湖水位动态均具一致性，在枯水期所占比例最高，达到44.41%；平水期次之，达到31.52%；丰水期所占比例最低，仅占24.07%.不同水期、不同样地存在不同程度的微塑料污染问题警示人们要重视塑料垃圾的排放及其污染问题，以减少对湖泊、河流等湿地生态环境的影响.;As an emerging environmental pollutant, microplastics are receiving increasing attention. In order to explore microplastics pollution in the Lake Poyang, we selected six typical sampling sites in the wetland beach of the five rivers of Lake Poyang Basin as the study area, and collected the sediments in the beach of each sampling sites as the materials and used the sampling profiling method to analyze and identify microplastics in the sediments during the three different hydrological periods of the normal season, wet season and dry season respectively. Flotation separation and metallographic microscopic identification technology are used to study the types, abundance, surface morphology and other characteristics of the microplastics in the sediments of the Lake Poyang wetland, reveal the spatial distribution and temporal dynamic characteristics of the microplastics in the sediments of different wetland beach in Lake Poyang during different water level periods. The results showed that the types of microplastics were debris, foams, films and fibers. Debris-based microplastics were most abundant accounting 51.95% of total microplastics. 70% of the microplastics have a particle size of less than 1 mm, and these tiny microplastics can be easily eaten by organisms and pose a threat to its survival. The average abundance of microplastics is 811.11 n/kg (n denotes the number of microplastics particles and kg denotes the dry weight of sediments), and the abundance value of the spatial distribution of microplastics for the six samples is expressed as in Zhugang > Wucheng > Dutou Village > Longkou > Ruihong Town > Nanji Mountain. The abundance values of microplastics of six samples are consistent with the dynamics of Lake Poyang water level. Highest proportion was found in dry season, reaching 44.41% of the total; lower proportion was found in normal season, reaching 31.52% of the total; and the lowest proportion was found in wet season, and accounting for only 24.07% of the total. The fact of the different pollution problem of microplastics in different sampling sites and different water periods suggests that people should pay attention to the discharge of plastic wastes and the management of the pollution in order to reduce the impact on lakes, rivers and other wetland ecological environment and ecosystems.",
+    "source": "run_record",
+    "url": "https://doi.org/10.18307/2019.0209"
+  },
+  "10.15343/0104-7809.202448e15762023p": {
+    "DOI": "10.15343/0104-7809.202448e15762023p",
+    "abstract": "The objective of this research was the identification, through Fourier transform infrared spectroscopy combined with attenuated total reflectance (FTIR-ATR), of microplastics extracted from the gastrointestinal tract of fish collected in Lake Amatitlán, to determine the main polymers and the possible origin of contamination by these materials. 68 microplastics were analyzed, corresponding to 10% of the total microplastics extracted. These originated from 36 specimens, 35 of the species Oreochromis niloticus and one of Parachromis managuensis, of which 1 to 5 microplastics per specimen were analyzed. The polymers identified were polypropylene (PP), nylon, high-density polyethylene (HDPE), polyethylene terephthalate (PET), latex, polystyrene (PE), low-density polyethylene (LDPE) and polyurethane (PU). Polypropylene (32), high-density polyethylene (13) and nylon (10) were the most frequent polymers. Possible plastic items that may have caused microplastics include toys, laboratory equipment, buckets, food packaging, pipes, insulation for cables, textiles, ropes and furniture that are produced in the plastics industry, located mainly on the south side of Guatemala City. Furthermore, the fish species in the present study support important fisheries, which raises human health concerns, since the ingestion of fish that consume plastics has the potential to increase the body load of dangerous chemicals, as they adhere superficially to the plastics in the environment and are subsequently bioaccumulated.",
+    "source": "run_record",
+    "url": "https://revistamundodasaude.emnuvens.com.br/mundodasaude/article/view/1576"
+  },
+  "10.48550/arxiv.2103.16246": {
+    "DOI": "10.48550/arxiv.2103.16246",
+    "abstract": "Floating photovoltaics (FPV) is an emerging technology that is gaining attention worldwide. However, little information is still available on its possible impacts in the aquatic ecosystems, as well as on the durability of its components. Therefore, this work intends to provide a contribution to this field, analysing possible obstacles that can compromise the performance of this technology, adding to an increase of its reliability and assessing possible impacts. The problem under study is related to the potential submersion of photovoltaic cables, that can lead to a degradation of its electrical insulation capabilities and, consequently, higher energy production losses and water contamination. In the present study, the submersion of photovoltaic cables (with two different insulation materials) in freshwater and artificial seawater was tested, in order to replicate real life conditions, when FPV systems are located in reservoirs or in the marine environment. Electrical insulation tests were carried out weekly to assess possible cable degradation, the physical-chemical characteristics of the water were also periodically monitored, complemented by analysis to detect traces of copper and microplastics in the water. The results showed that the submersion of photovoltaic cables with rubber sheath in saltwater can lead to a cable accelerated degradation, with reduction of its electrical insulation and, consequently, copper release into the aquatic environment.",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/2103.16246v1"
+  },
+  "10.1186/s12302-025-01192-9": {
+    "DOI": "10.1186/s12302-025-01192-9",
+    "abstract": "Abstract Background Microplastic (MP) pollution has garnered global attention due to its ubiquity in marine and freshwater systems, as well as its potential—though still uncertain—risks to human health. While MP concentrations in drinking water remain relatively low, safeguarding reservoir-based drinking water supplies against potential contamination remains a pressing concern. In this study, we applied a rigorously validated, two-dimensional hydrodynamic model (CE-QUAL-W2) to Germany’s largest drinking water reservoir, the Rappbode Reservoir, to examine MP retention under realistic inflow, meteorological, and operational conditions. Our primary aim was to quantify how varying particle settling velocities (0.1–1.0 m d⁻1) influence MP transport, sedimentation, and breakthrough to the raw water outlet over a 2-year simulation period. Results We demonstrate that reservoir-scale retention efficiency rises sharply with increasing MP settling velocity, with near-complete retention (> 95%) achieved at settling velocities of 0.9 m d⁻1 or higher. Conversely, slower-sinking particles (≤ 0.3 m d⁻1) exhibit significant downstream export, indicating that weak sedimentation can negate the reservoir’s inherent trapping capacity even under long residence times (~ 1 year). Furthermore, episodic phenomena such as stratification breakdown or shortcut currents can rapidly redistribute or mobilise MP particles, bypassing much of the reservoir volume and potentially delivering MP particles directly to outflows. These findings highlight the critical roles of both hydrodynamics (stratification, mixing, and lateral transport) and particle-specific traits such as settling velocity in determining MP fate. Conclusions By integrating comprehensive field-derived meteorological inputs and a validated numerical framework, this study provides novel insights into MP retention in drinking water reservoirs and underscores the vulnerability of such systems to episodic transport events. Our approach offers a robust tool for reservoir managers and policy-makers to anticipate MP contaminant pathways, optimise withdrawal strategies, and develop early warning systems for drinking water preparation. This work thus advances both the scientific understanding of MP dynamics in lentic systems and supports more informed, adaptive water-resource management.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1186/s12302-025-01192-9"
+  },
+  "10.1002/lol2.10040": {
+    "DOI": "10.1002/lol2.10040",
+    "abstract": "AbstractMounting evidence of global plastic pollution has prompted many studies of its potential effects on aquatic ecosystems. In particular, most research has focused on organismal responses to microplastics and the effects of microplastics when introduced as food. However, there has been far less research into the possible effects of microplastics on primary producers. In this review, we document the available evidence for possible effects from the literature and from a laboratory experiment using cyanobacteria and microplastic fragments. Our review shows that primary producer–microplastic interactions can alter algal photosynthesis, growth, gene expression, and colony size and morphology, possibly via adhesion and/or transfer of adsorbed pollutants from microplastics; and, these effects could be transferred up the food web, including to humans. We recommend that the effects of microplastics on primary producers be incorporated into microplastic research to better understand its full effects on freshwater and marine ecosystems.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1002/lol2.10040"
+  },
+  "10.48550/arxiv.2301.02504": {
+    "DOI": "10.48550/arxiv.2301.02504",
+    "abstract": "Entry of micro- or nano-sized objects into cells or vesicles made of lipid membranes occur in many processes such as entry of viruses in host cells, microplastics pollution, drug delivery or biomedical imaging. Here, we investigated the microparticle crossing of lipid membranes in giant unilamellar vesicles in the absence of strong binding interactions (e.g. streptavidin-biotin binding). In these conditions, we observed that organic and inorganic particles can always penetrate inside the vesicles provided that an external picoNewton force is applied and for relatively low membrane tensions. In the limit of a vanishing adhesion, we pointed out the role of the membrane area reservoir and show that a force minimum exists when the particle size is comparable to the bendocapillary length.",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/2301.02504v1"
+  },
+  "10.48550/arxiv.2303.14990": {
+    "DOI": "10.48550/arxiv.2303.14990",
+    "abstract": "Microplastic (MP) pollution is a well document threat to our aquatic and terrestrial ecosystems, however, the mechanisms by which MPs are transported in river flows are still unknown. The transport of MPs and natural sediment in aquatic flows could be somewhat comparable, as particles are similar in size. However, it is unknown how the lower density of MPs and their different material properties impact their transport dynamics. To answer this, novel laboratory experiments on bed load saltation dynamics in an open-channel flow, using high-speed camera imaging and the detection of 11,035 individual saltation events were used to identify the similarities and differences between spherical MPs and spherical natural sediments transport. The tested MPs varied in terms of size and material properties (density and elasticity). Our analysis shows that the Rouse number accurately describes saltation length, height, transport velocity and collision angles equally well for both MPs and natural sediments. Through statistical inference, the distribution functions of saltation trajectory characteristics for MPs were analogous to natural sediment with only one sediment experiment (1.4 % of cases) differing from all other plastic experiments. Similarly, only nine experiments (9.3 % of cases) showed that collision angles for MPs differed from those of natural sediment experiments. Differences observed in terms of restitution become negligible in overall transport dynamics as turbulence overcomes the kinetic energy lost at particle-bed impact, which keeps particle motion independent from impact. Overall, spherical MP particles behave similarly to spherical natural sediments in aquatic environments under the examined experimental conditions. This is significant because there is an established body of knowledge for sediment transport that can serve as a foundation for the study of MP transport.",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/2303.14990v2"
+  },
+  "10.1016/j.scitotenv.2019.135979": {
+    "DOI": "10.1016/j.scitotenv.2019.135979",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s10661-017-6305-8": {
+    "DOI": "10.1007/s10661-017-6305-8",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2019.113445": {
+    "DOI": "10.1016/j.envpol.2019.113445",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1071/en14218": {
+    "DOI": "10.1071/en14218",
+    "abstract": "Environmental context Plastic, and particularly microplastic, pollution is a growing environmental concern worldwide. Research regarding marine environments has led to a substantial increase in knowledge, yet little is known as regards the situation in freshwater environments. Although the occurrence of microplastics was demonstrated in Lake Geneva in 2012, the present research aims at confirming this pollution and expanding the data set for other lakes and environments of Switzerland. Abstract Marine microplastic (&lt;5 mm) water pollution has met growing public and scientific interest in the last few years. The situation in freshwater environments remains largely unknown, although it appears that they play an important role as part of the origin of marine pollution. Apart from the physical impacts on biota, chemical effects are to be expected as well, especially with smaller particles. This study aims at assessing plastic abundance in Lakes Geneva, Constance, Neuchâtel, Maggiore, Zurich and Brienz, and identifying the nature of the particles, potential ingestion by birds and fishes, and the associated pollutants. Lake surface transects and a few rivers were sampled using a floating manta net, and beach sediments were analysed. Plastics were sorted by type (fragments, pellets, cosmetic beads, lines, fibres, films, foams) and composition (polypropylene, polyethylene, polystyrene, etc.); fish and water birds were dissected to assess their potential exposure, and analyses were conducted on the hydrophobic micropollutants adsorbed to the microplastics as well as some potentially toxic additives they contained. Evidence of this pollution is shown for all lakes, microplastics of all types and diverse composition having been found in all samples. Birds and fish are prone to microplastic ingestion, and all the tested chemicals (both adsorbed micropollutants and contained additives) were found above the detection limit, and often the quantification limit. The sources and their respective contribution need to be confirmed and quantified, and the ecotoxicological effects need further investigation. Other questions remain open, including the transport and fate of plastic particles in the environment.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1071/en14218"
+  },
+  "10.1002/etc.3093": {
+    "DOI": "10.1002/etc.3093",
+    "abstract": "Abstract Limited information is available on the presence of microplastics in freshwater systems, and even less is known about the toxicological implications of the exposure of aquatic organisms to plastic particles. The present study was conducted to evaluate the effects of microplastic ingestion on the freshwater amphipod, Hyalella azteca. Hyalella azteca was exposed to fluorescent polyethylene microplastic particles and polypropylene microplastic fibers in individual 250-mL chambers to determine 10-d mortality. In acute bioassays, polypropylene microplastic fibers were significantly more toxic than polyethylene microplastic particles; 10-d lethal concentration 50% values for polyethylene microplastic particles and polypropylene microplastic fibers were 4.64 × 104 microplastics/mL and 71.43 microplastics/mL, respectively. A 42-d chronic bioassay using polyethylene microplastic particles was conducted to quantify effects on reproduction, growth, and egestion. Chronic exposure to polyethylene microplastic particles significantly decreased growth and reproduction at the low and intermediate exposure concentrations. During acute exposures to polyethylene microplastic particles, the egestion times did not significantly differ from the egestion of normal food materials in the control; egestion times for polypropylene microplastic fibers were significantly slower than the egestion of food materials in the control. Amphipods exposed to polypropylene microplastic fibers also had significantly less growth. The greater toxicity of microplastic fibers than microplastic particles corresponded with longer residence times for the fibers in the gut. The difference in residence time might have affected the ability to process food, resulting in an energetic effect reflected in sublethal endpoints. Environ Toxicol Chem 2015;34:2564–2572. © 2015 SETAC",
+    "source": "run_record",
+    "url": "https://doi.org/10.1002/etc.3093"
+  },
+  "10.48550/arxiv.2401.06157": {
+    "DOI": "10.48550/arxiv.2401.06157",
+    "abstract": "Invasive signal crayfish have a detrimental impact on ecosystems. They spread the fungal-type crayfish plague disease (Aphanomyces astaci) that is lethal to the native white clawed crayfish, the only native crayfish species in Britain. Invasive signal crayfish extensively burrow, causing habitat destruction, erosion of river banks and adverse changes in water quality, while also competing with native species for resources leading to declines in native populations. Moreover, pollution exacerbates the vulnerability of White-clawed crayfish, with their populations declining by over 90%. To safeguard aquatic ecosystems, it is imperative to address the challenges posed by invasive species and pollution in aquatic ecosystem's. This article introduces the Cognitive Edge Device (CED) computing platform for the detection of crayfish and plastic. It also presents two publicly available underwater datasets, annotated with sequences of crayfish and aquatic plastic debris. Four You Only Look Once (YOLO) variants were trained and evaluated for crayfish and plastic object detection. YOLOv5s achieved the highest detection accuracy, with an mAP@0.5 of 0.90, and achieved the best precision",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/2401.06157v3"
+  },
+  "10.1016/j.scitotenv.2019.07.167": {
+    "DOI": "10.1016/j.scitotenv.2019.07.167",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1021/acs.est.6b02917": {
+    "DOI": "10.1021/acs.est.6b02917",
+    "abstract": "Abstract Plastic debris is a growing contaminant of concern in freshwater environments, yet sources, transport, and fate remain unclear. This study characterized the quantity and morphology of floating micro- and macroplastics in 29 Great Lakes tributaries in six states under different land covers, wastewater effluent contributions, population densities, and hydrologic conditions. Tributaries were sampled three or four times each using a 333 μm mesh neuston net. Plastic particles were sorted by size, counted, and categorized as fibers/lines, pellets/beads, foams, films, and fragments. Plastics were found in all 107 samples, with a maximum concentration of 32 particles/m3 and a median of 1.9 particles/m3. Ninety-eight percent of sampled plastic particles were less than 4.75 mm in diameter and therefore considered microplastics. Fragments, films, foams, and pellets/beads were positively correlated with urban-related watershed attributes and were found at greater concentrations during runoff-event conditions. Fibers, the most frequently detected particle type, were not associated with urban-related watershed attributes, wastewater effluent contribution, or hydrologic condition. Results from this study add to the body of information currently available on microplastics in different environmental compartments, including unique contributions to quantify their occurrence and variability in rivers with a wide variety of different land-use characteristics while highlighting differences between surface samples from rivers compared with lakes.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1021/acs.est.6b02917"
+  },
+  "10.3390/hydrology12050124": {
+    "DOI": "10.3390/hydrology12050124",
+    "abstract": "Veracruz is a megadiverse state facing great water resource management challenges. The contamination of water bodies with external materials of anthropogenic origin stands out, including those derived from plastic products, which are deemed ubiquitous, emerging contaminants that have gained notoriety in recent decades due to the extent and effects of their presence, persistence and distribution in aquatic ecosystems. Being a significant environmental threat, their presence, persistence and distribution in aquatic ecosystems are deserving of a more detailed study. This research focused on analyzing microplastic (MP) retention and characterization in environmental matrixes (water and sediment) in the Bobos River’s lower basin, also taking into account other water physicochemical parameters, including a pH range from slightly acidic (5.17) to slightly alkaline (8.94) as the maximum value and an average temperature of 28.87 °C (83.96 °F). MPs are most frequently found in the form of blue-colored fibers. A polymer analysis by Fourier Transform Infrared Spectroscopy (FTIR) revealed that the most common polymer was polyethylene (PE), which is the main component of most agricultural mulch and agrochemical containers. This research aims to enhance the understanding of the plastic matter contamination of water bodies, pointing out the need for further and deeper research on this subject.",
+    "source": "run_record",
+    "url": "https://www.mdpi.com/2306-5338/12/5/124"
+  },
+  "10.1016/j.scitotenv.2018.02.300": {
+    "DOI": "10.1016/j.scitotenv.2018.02.300",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.marpolbul.2016.09.004": {
+    "DOI": "10.1016/j.marpolbul.2016.09.004",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1002/ecs2.1556": {
+    "DOI": "10.1002/ecs2.1556",
+    "abstract": "Abstract The ecological dynamics of microplastic (<5 mm) are well documented in marine ecosystems, but the sources, abundance, and ecological role of microplastic in rivers are unknown and likely to be substantial. Microplastic fibers (e.g., synthetic fabrics) and pellets (e.g., abrasives in personal care products) are abundant in wastewater treatment plant ( WWTP ) effluent, and can serve as a point source of microplastic in rivers. The buoyancy, hydrophobic surface, and long transport distance of microplastic make it a novel substrate for the selection and dispersal of unique microbial assemblages. We measured microplastic concentration and bacterial assemblage composition on microplastic and natural surfaces upstream and downstream of WWTP effluent sites at nine rivers in Illinois, United States. Microplastic concentration was higher downstream of WWTP effluent outfall sites in all but two rivers. Pellets, fibers, and fragments were the dominant microplastic types, and polymers were identified as polypropylene, polyethylene, and polystyrene. Mean microplastic flux was 1,338,757 pieces per day, although the flux was highly variable among nine sites (min = 15,520 per day, max = 4,721,709 per day). High‐throughput sequencing of 16S rRNA genes showed bacterial assemblage composition was significantly different among microplastic, seston, and water column substrates. Microplastic bacterial assemblages had lower taxon richness, diversity, and evenness than those on other substrates, and microplastic selected for taxa that may degrade plastic polymers (e.g., Pseudomonas ) and those representing common human intestinal pathogens (e.g., Arcobacter ). Effluent from WWTP s in rivers is an important component of the global plastic “life cycle,” and microplastic serves as a novel substrate that selects and transports distinct bacterial assemblages in urban rivers. Rates of microplastic deposition, consumption by stream biota, and the metabolic capacity of microplastic biofilms in rivers are unknown and merit further research.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1002/ecs2.1556"
+  },
+  "10.48550/arxiv.1905.07610": {
+    "DOI": "10.48550/arxiv.1905.07610",
+    "abstract": "An extremely broad and important class of phenomena in nature involves the settling and aggregation of matter under gravitation in fluid systems. Some examples include: sedimenting marine snow particles in lakes and oceans (central to carbon sequestration), dense microplastics in the oceans (which impact ocean ecology and the food chain), and even iron snow on Mercury (conjectured as its magnetic field source). These fluid systems all have stable density stratification, which is known to trap particulates through upper lightweight fluid coating the sinking particles, thus providing transient buoyancy. The current understanding of aggregation of such trapped matter involves collisions (due to Brownian motion, shear, and differential settling) and adhesion. Here, we observe and rationalize a new fundamental effective attractive mechanism by which particles suspended within stratification may self-assemble and form large aggregates without need for short range binding effects. This phenomenon arises through a complex interplay involving solute diffusion, impermeable boundaries, and aggregate geometry, which produces toroidal flows. We show that these toroidal flows yield attractive horizontal forces between particles. We observe that many particles demonstrate a collective motion revealing a system which self-assembles, appearing to solve jigsaw-like puzzles on its way to organizing into a disc-like shape, with the effective force increasing as the collective disc radius grows. Control experiments with two objects isolate the individual dynamics, which are quantitatively predicted through numerical integration of the underlying equations of motion. This new mechanism may be an important process in formation of marine snow aggregates and distribution of phytoplankton in lakes and oceans. Further, it potentially provides a new mechanism for general sorting and packing of layered material.",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/1905.07610v1"
+  },
+  "10.1007/s10661-019-7297-3": {
+    "DOI": "10.1007/s10661-019-7297-3",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.jglr.2016.07.032": {
+    "DOI": "10.1016/j.jglr.2016.07.032",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1002/etc.4698": {
+    "DOI": "10.1002/etc.4698",
+    "abstract": "Abstract We describe a simple single-pot method for collection and preparation of natural water for microplastic analyses. The method prepares samples in the same vessel (mason jars) that they are collected in right up until the microplastics are transferred onto filters or spectroscopic windows for analyses. The method minimized contamination, degradation, and losses, while increasing recoveries and throughput when compared with conventional sieving. We applied it to surface grab samples collected from the Mississippi River and its major tributaries during and after historic flooding in 2019. Microplastics (&gt;~30 µm) were quantified using Nile red fluorescence detection, and a small subset of samples were identified by micro-Fourier transform infrared imaging spectroscopy. Concentrations were lower during the flooding, likely due to dilution. Concentrations ranged from approximately 14 microplastics/L in the Tennessee River during flooding to approximately 83 microplastics/L in the Ohio River during low-flow (summer) conditions. Loads of microplastics tended to increase downriver and ranged from approximately 87 to approximately 129 trillion microplastics/d near New Orleans. Most of the microplastics (&gt;60%) were in the lower size fraction (~30–90 µm) and consisted primarily of fragments (~85%), followed by fibers (~8%) and beads (~7%), with polyester, polyethylene, polypropylene, and polyacrylate as the primary microplastic types. Overall, we demonstrate that the single-pot method is effective and versatile and, because it uses relatively inexpensive and easily assembled materials, can be adapted for microplastic surveys worldwide, especially those involving sample collection by volunteers from the community and schools. Environ Toxicol Chem 2020;39:986–995. © 2020 SETAC Abstract Impact of flooding on microplastics in the Mississippi River system.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1002/etc.4698"
+  },
+  "10.5614/j.eng.technol.sci.2020.52.2.7": {
+    "DOI": "10.5614/j.eng.technol.sci.2020.52.2.7",
+    "abstract": "Microplastics are emerging contaminants owing to their potential to adsorb and release pollutants from the environment, transferring these pollutants to the food web. Most marine microplastics come from the terrestrial environment, mainly from inland freshwaters that are direct receivers of runoff from urban, industrial, and agricultural areas. The present study investigated the occurrence of microplastics in surface water samples taken from the Cherating river and the Cherating mangrove, Pahang along with a review of recent studies on microplastics abundance in aquatic ecosystems. Three sampling sites were established (two sites along the river and one site in a mangrove in the downstream of the river). In the up- and midstream regions, the river passes by residential, fishery and tourism areas, while the mangrove is located close to Cherating Beach. The highest microplastics abundance was discovered in the midstream region, with an average abundance 0.0070 ± 0.0033 particles/m3, followed by the mangrove (0.0051 ± 0.0053 particles/m3). Fragments with a size of 0.5 to 1.0 mm and white-colored microplastics were prevalent. The findings are similar to those from other microplastic studies (e.g. in Aveiro and Lisbon, Portugal; New England, USA; Kingston Harbour, Jamaica), but lower than microplastics studies in Asia (e.g. Yangtze river estuary and Hangjiang river, China). Overall, the findings provide background information on microplastics pollution in aquatic ecosystems.",
+    "source": "run_record",
+    "url": "https://doi.org/10.5614/j.eng.technol.sci.2020.52.2.7"
+  },
+  "10.1016/j.envpol.2017.11.075": {
+    "DOI": "10.1016/j.envpol.2017.11.075",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1021/acs.est.7b05829": {
+    "DOI": "10.1021/acs.est.7b05829",
+    "abstract": "While plastic pollution in marine and freshwater systems is an active area of research, there is not yet an in-depth understanding of the distributions, chemical compositions, and fates of plastics in aquatic environments. In this study, the magnitude, distribution, and common polymers of microplastic pollution in surface waters in western Lake Superior are determined. Analytical methodology, including estimates of ambient contamination during sample collection and processing, are described and employed. Microscopy, pyrolysis-gas chromatography/mass spectrometry (Pyr-GC/MS), and Fourier transform infrared spectroscopy (FTIR) were used to quantify and identify microplastic particles. In surface waters, fibers were the most frequently observed morphology, and, based upon PyGC/MS analysis, polyvinyl chloride was the most frequently observed polymer, followed by polypropylene and polyethylene. The most common polymer identified by FTIR was polyethylene. Despite the low human population in Lake Superior's watershed, microplastic particles (particularly fibers, fragments, and films) were identified in western-lake surface waters at levels comparable to average values reported in studies within Lake Michigan, the North Atlantic Ocean, and the South Pacific Ocean. This study provides insight into the magnitude of microplastic pollution in western Lake Superior, and describes in detail methodology to improve future microplastics studies in aquatic systems.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1021/acs.est.7b05829"
+  },
+  "10.1007/s10661-019-7843-z": {
+    "DOI": "10.1007/s10661-019-7843-z",
+    "abstract": "Abstract In the last few years, several studies have investigated microplastics (MPs) in marine ecosystems, but data monitoring and assessing the occurrence in freshwater environments are still scarce. The present study aims to investigate the occurrence, distribution, and chemical composition of MP pollution in Vesijärvi lake and Pikku Vesijärvi pond close to the city of Lahti (Finland) in winter. Sediment, snow, and ice core samples were collected near the shore of these two aquatic systems. MPs were analysed and identified by a non-destructive method using Fourier transform infrared spectroscopy (FTIR) 2D imaging. The mean concentrations of MPs detected in sediment, snow, and ice samples were 395.5 ± 90.7 MPs/kg, 117.1 ± 18.4 MPs/L, and 7.8 ± 1.2 MPs/L, respectively. FTIR results showed the predominant abundance of microplastics, such as polyamides (up to 53.3%), polyethylene and polypropylene (up to 17.1%), and natural fragments such as cellulose (up to 45.8%) and wool (up 18.8%) in the same size range. The potential release of MPs arising from stormwaters and sport and recreational activities was evidenced.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1007/s10661-019-7843-z"
+  },
+  "10.2166/wst.2020.173": {
+    "DOI": "10.2166/wst.2020.173",
+    "abstract": "Abstract Microplastic particles have been recognized as global hazardous pollutants in the last few decades pointing to the importance of analyzing and monitoring microplastics, especially in soils and sediments. This study focused on a multi-step approach for microplastic analysis combining grain size fractionation, density separation and identification by μ-FTIR-spectroscopy. Eight widely used polymers (polyethylene (PE), polypropylene (PP), polyvinylchloride (PVC), polystyrol (PS), polyethylenterephthalate (PET), polymethylmethacrylate (PMMA), polyurethane (PU) and polyamide (PA)) were fractionated into four groups of grain sizes (0.1–5 mm). Thereafter, sea sand was spiked with these particles to test a ZnCl2-based density separation for the polymer types and the various grain sizes. The obtained recovery rates were close to 100% showing that ZnCl2-based density separation is suitable to separate the polymer particles from a sandy matrix. This approach was extended on three further environmental matrices and recovery rates for two of them (sandy-silty and fine-grained sediment) also provided reliable values (94–106%). Lastly, the developed multi-step approach was verified by analyzing an environmental sample (sediment from river Tiranë, Albania) characterized by smaller grain size and moderate organic matter content. Identification of two polymer types in different grain size classes verified the suitability of the developed approach for microplastic analyses on particulate matter such as soils and sediments.",
+    "source": "run_record",
+    "url": "https://doi.org/10.2166/wst.2020.173"
+  },
+  "10.1080/00288330.2019.1703015": {
+    "DOI": "10.1080/00288330.2019.1703015",
+    "abstract": "ABSTRACT Microplastic pollution in aquatic systems has been reported globally at an alarming rate, with an increasing number of documented negative biological consequences. Research on microplastic pollution in freshwaters has barely begun in New Zealand, and few studies from smaller lotic systems such as streams exist globally. We investigated the extent of microplastic pollution within urban streams across New Zealand and determined if microplastic concentrations were related to human population density and urbanisation of streams. Fifty‐two streams were surveyed across five urban agglomerations in January 2019. Microplastics were found in samples from all sites at densities ranging from <1 to 44 items/m 3 . This concentration range was comparable to global data but lower than reported in another recent New Zealand study, probably due to differences in sampling methodology. Microplastic pollution was similar across all urban centres, and neither length of urbanised catchment nor urban proportion of the stream were significant predictors of microplastic concentrations. These findings suggest microplastic pollution in New Zealand streams are comparable to larger aquatic systems globally, and that smaller urban streams are significant transport pathways for microplastics. We also recommend standardising microplastic sampling methods to a greater extent in the future, to improve comparability across studies.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1080/00288330.2019.1703015"
+  },
+  "10.1021/acs.est.7b00369": {
+    "DOI": "10.1021/acs.est.7b00369",
+    "abstract": "Microplastic pollution in inland waters is receiving growing attentions. Reservoirs are suspected to be particularly vulnerable to microplastic pollution. However, very limited information is currently available on pollution characteristics of microplastics in reservoir ecosystems. This work studied the distribution and characteristics of microplastics in the backwater area of Xiangxi River, a typical tributary of the Three Gorges Reservoir. Microplastics were detected in both surface water and sediment with concentrations ranging from 0.55 × 105 to 342 × 105 items km–2 and 80 to 864 items m–2, respectively. Polyethylene, polypropylene, and polystyrene were identified in surface water, whereas polyethylene, polypropylene, and polyethylene terephthalate, and pigments were observed in sediment. In addition, microplastics were also detected in the digestion tracts of 25.7% of fish samples, and polyethylene and nylon were identified. Redundancy analysis indicates a weak correlation between microplastics and water quality variables but a negative correlation with water level of the reservoir and Secchi depth. Results from this study confirm the presence of high abundance microplastics in reservoir impacted tributaries, and suggest that water level regulated hydrodynamic condition and input of nonpoint sources are important regulators for microplastic accumulation and distribution in the backwater area of reservoir tributaries.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1021/acs.est.7b00369"
+  },
+  "10.1016/j.watres.2015.02.012": {
+    "DOI": "10.1016/j.watres.2015.02.012",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s11356-016-7584-2": {
+    "DOI": "10.1007/s11356-016-7584-2",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.48550/arxiv.2501.01962": {
+    "DOI": "10.48550/arxiv.2501.01962",
+    "abstract": "Microscale hydrogels comprised of macromolecular networks have increasingly been used for applications involving cell encapsulation, tissue engineering and for the storage and release of active cargo molecules. However, the majority of such microgels are formed from nonbiodegradable synthetic polymers, involving harmful solvents, or using animal proteins, such as silk and gelatin, which can have a negative environmental impact and lack sustainability. Furthermore, most encapsulation techniques involve either protecting hydrophobic or hydrophilic cargo, but rarely both. In order to address these issues, we employed droplet-microfluidics to develop novel, plant protein microcapsules capable of containing both hydrophilic and hydrophobic cargo molecules. The microcapsule structure and cargo release rates were controlled by balancing osmotic pressures between the outer and inner phases of the capsules. Moreover, the digestibility of the microcapsules was comparable with that of pure pea protein, thereby enabling the use of these microcapsules for food and beverage applications. In addition, digestive enzymes can trigger the release of the encapsulated active ingredients, and hence, these microcapsules are well suited for the controlled delivery of active nutraceutical or pharmaceutical ingredients. Finally, we investigated the biodegradability of the microcapsules. It was determined that the plant protein microcapsules exhibited 98.0% biodegradability (as compared with cellulose), thereby fulfilling the biodegradability standards stipulated by the International Organization for Standardization (ISO 14851) for microplastics in freshwater conditions (90%). Hence, the plant protein microcapsules can have numerous applications in the food, nutraceutical, pharmaceutical, cosmetic, personal care, and agriculture industries.",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/2501.01962v1"
+  },
+  "10.1016/j.envpol.2018.01.044": {
+    "DOI": "10.1016/j.envpol.2018.01.044",
+    "abstract": "Microplastics are widespread throughout aquatic environments. However, there is currently insufficient understanding of the factors influencing ingestion of microplastics by organisms, especially higher predators such as fish. In this study we link ingestion of microplastics by the roach Rutilus rutilus, within the non-tidal part of the River Thames, to exposure and physiological factors. Microplastics were found within the gut contents of roach from six out of seven sampling sites. Of sampled fish, 33% contained at least one microplastic particle. The majority of particles were fibres (75%), with fragments and films also seen (22.7% and 2.3% respectively). Polymers identified were polyethylene, polypropylene and polyester, in addition to a synthetic dye. The maximum number of ingested microplastic particles for individual fish was strongly correlated to exposure (based on distance from the source of the river). Additionally, at a given exposure, the size of fish correlated with the actual quantity of microplastics in the gut. Larger (mainly female) fish were more likely to ingest the maximum possible number of particles than smaller (mainly male) fish. This study is the first to show microplastic ingestion within freshwater fish in the UK and provides valuable new evidence of the factors influencing ingestion that can be used to inform future studies on exposure and hazard of microplastics to fish.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1016/j.envpol.2018.01.044"
+  },
+  "10.1016/j.envpol.2016.11.068": {
+    "DOI": "10.1016/j.envpol.2016.11.068",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.3390/ijerph16091650": {
+    "DOI": "10.3390/ijerph16091650",
+    "abstract": "As emerging pollutants, microplastics have attracted the attention of scholars from all over the world. However, there is a lack of research on freshwater areas, even in densely populated urban areas. This study investigated eight urban lakes in Changsha, China. It was found that microplastic concentrations ranged from 2425 ± 247.5 items/m3 to 7050 ± 1060.66 items/m3 in the surface water of research areas and the maximum concentration was found in Yuejin Lake, a tourist spot in the center of the city. Anthropogenic factors are an important reason for microplastic abundance in urban lakes. The major shape of microplastics was linear and most of the microplastics were transparent. More than 89.5% of the microplastics had a size of less than 2 mm. Polypropylene was the dominant type in the studied waters. This study can provide a valuable reference for a better understanding of microplastic pollution in urban areas of China.",
+    "source": "run_record",
+    "url": "https://doi.org/10.3390/ijerph16091650"
+  },
+  "10.1071/en14167": {
+    "DOI": "10.1071/en14167",
+    "abstract": "Environmental context Plastics production has increased considerably in recent years, leading to pollution by plastics, including microplastics (comprising particles smaller than 5 mm). This work addresses the issue of microplastics from urban sources and in receiving waters in Greater Paris. Microplastics were found in all urban compartments investigated, namely atmospheric fallout, waste- and treated water, and surface water. Abstract This study investigates the microplastic contamination of both urban compartments (wastewater and total atmospheric fallout) and surface water in a continental environment. These first investigations on an urban environment confirm the presence of microplastics in sewage, fresh water and total atmospheric fallout and provide knowledge on the type and size distribution of microplastics in the 100–5000-µm range. For the first time, the presence of microplastics, mostly fibres, is highlighted in total atmospheric fallout (29–280 particles m–2 day–1). High levels of fibres were found in wastewater (260–320 × 103 particles m–3). In treated effluent, the contamination significantly decreased to 14–50 × 103 particles m–3. In the River Seine, two sampling devices were used to collect both large and small microplastic particles: (i) a plankton net (80-µm mesh), and (ii) a manta trawl (330-µm mesh). Sampling with the plankton net showed a predominance of fibres, with concentrations ranging from 3 to 108 particles m–3. A greater diversity of both microplastic shapes and types was found during manta trawl sampling but at much lower concentrations (0.28–0.47 particles m–3). This combined approach could be relevant and implemented in future studies to provide an accurate overview of microplastic distribution in freshwater.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1071/en14167"
+  },
+  "10.1021/acs.est.9b01363": {
+    "DOI": "10.1021/acs.est.9b01363",
+    "abstract": "Rivers are major transport vectors for microplastics (MP) toward the sea. However, there is evidence that MP can temporarily or permanently be inhibited from migrating downstream by retention in sediments or ingestion by organisms. MP concentrations, compositions, and fate within the different compartments of the fluvial environment are poorly understood. Here, benthic, midstream sediments of two undammed, open-flowing stretches were investigated in the Rhine River, one of the world’s busiest inland waterways. Twenty-five samples were collected at ten sites via riverbed access through a diving bell or dredging. We performed the first comprehensive analysis of riverbed sediment aliquots that avoids visual selection bias using state-of-the art automated micro-Fourier-transform infrared spectroscopy (μFTIR) imaging. MP numbers ranged between 0.26 ± 0.01 and 11.07 ± 0.6 × 10 3 MP kg –1 while MP particles <75 μm accounted for a mean numerical proportion ± SD of 96 ± 6%. MP concentrations decreased with sediment depth. Eighteen polymers were identified in the size range of 11–500 μm; the acrylates/polyurethane/varnish (APV) cluster was found at all sites (mean numerical proportion, 70 ± 19%), possibly indicating particulate pollution from ship antifouling paint. Overall, polymers denser than freshwater (>1 g cm –3 ) dominated (85 ± 18%), which contrasts the large proportions of low-density polymers previously reported in near-surface compartments of the Rhine.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1021/acs.est.9b01363"
+  },
+  "10.1016/j.jglr.2014.12.020": {
+    "DOI": "10.1016/j.jglr.2014.12.020",
+    "abstract": "Pollution by plastic debris is an increasing environmental concern in the Laurentian Great Lakes where it affects open-water, shoreline, and benthic environments. Open-water surveys reveal that, in certain areas of the Great Lakes, surface water densities of plastics are as high as those reported for areas of litter accumulation within oceanic gyres. Data from volunteer beach cleanups show that typically more than 80% of anthropogenic litter along the shorelines of the Great Lakes is comprised of plastics. The distribution of plastics in bottom sediments of the Great Lakes is essentially unknown. Sources of plastic debris to the Great Lakes include microplastic beads from consumer products, pellets from the plastic manufacturing industry, and waste from beach-goers, shipping, and fishing activities. Many plastics degrade slowly in the environment and may have long-term adverse ecological and economic impacts, including the dispersal of persistent organic pollutants. Plans to combat and curtail plastic debris pollution in the Great Lakes will come at a significant economic cost, likely in excess of $400 million annually. Here, we review the current state of knowledge on plastic pollution in the Great Lakes, identify knowledge gaps, and suggest future research directions.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1016/j.jglr.2014.12.020"
+  },
+  "10.1021/acs.est.9b04838": {
+    "DOI": "10.1021/acs.est.9b04838",
+    "abstract": "Plastic pollution has caused increasing global concern. Currently, model estimates of the riverine plastic inputs to the global oceans based on the concept of Mismanaged Plastic Waste (MPW) varied substantially, and no field measurements of riverine inputs were available. We conducted sampling at the eight major river outlets of the Pearl River Delta, South China with rapid economic growth and urbanization to provide field measured data for fine-tuning modeling results. Floating microplastics (MPs) were collected with a Manta net (mesh size of 0.33 mm) five times during 2018. Microplastic particles (0.3–5.0 mm) widely occurred in all sampling sites. The number and mass concentrations of MPs were in the ranges of 0.005–0.7 particles m –3 and 0.004–1.28 mg m –3 and were positively correlated with water discharges. The annual riverine input of MPs from the Pearl River Delta was estimated at 39 billion particles or 66 tons, which converts to 2400–3800 tons of plastic debris based on calculations described in Text S2. These values were substantially below the MPW-based model estimates (91,000–170,000 tons). The large difference between measured and modeling results may have derived from the large uncertainty in the MPW values assigned to the world’s countries/regions.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1021/acs.est.9b04838"
+  },
+  "10.1071/en14236": {
+    "DOI": "10.1071/en14236",
+    "abstract": "Environmental context Microplastics are a new source of toxic compounds in marine and freshwater environments. This research documents the discovery of microplastic fibres in the seawater column and the chemical analysis of associated toxic chemicals in microplastic marine debris. Microplastic pollution is pervasive and hazardous. Abstract Initial studies of floating plastic debris in the oceans dealt with macroscopic particles. This research found microscale plastic present as well. Chemical analysis of sorbed materials revealed toxic materials associated with the microparticles. Seawater and plastic fragment samples were collected in September 2007 in the North Pacific Central Gyre. Polycyclic aromatic hydrocarbons and polychlorinated biphenyls (PCBs) were detected by mass spectrometry in extracts from the plastic fragments. Net concentrations of PCBs ranged from 1 to 223 ng g–1 plastic. The most common synthetic polymers were found to be polypropylene and polyethylene. Microscopic plastic fibres and particles were also discovered in the seawater samples and examined by scanning electron microscopy. Analysis of filtered seawater samples also revealed toxic materials in concentrations lower than found on the plastic particles.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1071/en14236"
+  },
+  "10.1007/s13201-022-01712-5": {
+    "DOI": "10.1007/s13201-022-01712-5",
+    "abstract": "Abstract Microplastic pollution is an emerging threat to marine environments with potential environmental, social, economic, and health consequences and has become a major global environmental issue. The objective of the present study was to evaluate microplastic contamination in the ecosystem of the Qara Su River in Ardabil, Iran. Fifteen sampling sites along the Qara Su River in the Ardabil urban area were selected to collect sediment samples. The abundance and morphological characteristics of microplastics were determined by counting using a digital stereomicroscope. Micro-Fourier transform-infrared spectroscopy (μ-FTIR) analysis was used to identify polymer type of the microplastics. In this study, the frequency and distribution of microplastics (< 5 mm) in the sediment of Qara Su River were investigated as one of the sources containing microplastics. Sediment samples were collected from five different sites (Karkarq, Sar band, Anzab Sulfa, Dolat abad, and Samian) from September to March 2020. For microplastic examination in sediment, the amount (approximately 1000 g of fresh sediment from each site) was sampled from 15 sites. Fiber microplastics (53%) and fragments (33%) microplastics were predominant. It has shown the abundance and heterogeneity of space. In this study, the highest amount of microplastics detected in sediment samples was related to the size of less than 5000 µm (92%). The frequency of microplastics below 5000 µm in sediment was attributed to the low capacity of existing processes in Ardabil wastewater treatment plant. The abundance of microplastics shows significant differences between sampling sites. The Qara Su River along the city of Ardabil, like many other rivers, is contaminated with microplastics. This study was the first study conducted for evaluation of the sediment environment in terms of the microplastic pollution of Qara Su River in Ardabil. Considering the amount of microplastics in sediments, further research is required to estimate the amount of microplastics released by Ardabil wastewater treatment plants and industrial town wastewater, and other possible sources of emission and to evaluate their contribution to microplastic pollution in water, sediment, and soil. This study provided a framework for future studies of microplastics pollution in the sediment of urban areas around the Qara Su River in Iran.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1007/s13201-022-01712-5"
+  },
+  "10.1039/c6em00206d": {
+    "DOI": "10.1039/c6em00206d",
+    "abstract": "The presence of microplastics in soils and surface waters is a problem of growing concern.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1039/c6em00206d"
+  },
+  "10.1016/j.envpol.2016.10.001": {
+    "DOI": "10.1016/j.envpol.2016.10.001",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.48550/arxiv.1910.08844": {
+    "DOI": "10.48550/arxiv.1910.08844",
+    "abstract": "Underwater imagery has enabled numerous civilian applications in various domains, ranging from academia to industry, and from industrial surveillance and maintenance to environmental protection and behavior of marine creatures studies. The accumulation of litter and plastic debris at the seafloor and the bottom of rivers are extremely harmful for the aquatic life. We propose a solution for this problem using a team of Autonomous Underwater Vehicles (AUVs) to exchange the recorded video in order to reconstruct the seafloor regions of interest. However, underwater video transmission is a challenge in the harsh environment in which radio-frequency waves are absorbed for distances above a few tens of meters, optical waves require narrow laser beams and suffer from scattering and ocean wave motion, and acoustic waves, while long range, provide a very low bandwidth and unreliable channel for communication. In our solution, the scalable coded video of each vehicle is shared with a selected group of receiving videos, pseudo-multicasting, through the acoustic channel. Presented evaluations, including both simulations and experiments, confirm the efficiency and flexibility of the proposed solution using acoustic software-defined modems.",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/1910.08844v1"
+  },
+  "10.1016/j.envpol.2016.05.006": {
+    "DOI": "10.1016/j.envpol.2016.05.006",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2016.10.037": {
+    "DOI": "10.1016/j.envpol.2016.10.037",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2019.113391": {
+    "DOI": "10.1016/j.envpol.2019.113391",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2018.10.088": {
+    "DOI": "10.1016/j.envpol.2018.10.088",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2020.114481": {
+    "DOI": "10.1016/j.envpol.2020.114481",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.3390/toxics8020022": {
+    "DOI": "10.3390/toxics8020022",
+    "abstract": "The presence of microplastics (MPs) in the world’s longest river, the Nile River, has yet to be reported. This small-scale study aimed to provide the first information about MPs in the Nile River by sampling the digestive tracts of two fish species, the Nile tilapia (Oreochromis niloticus, n = 29) and catfish (Bagrus bayad, n = 14). Fish were purchased from local sellers in Cairo, and then their gastrointestinal tracts were dissected and examined for MPs. Over 75% of the fish sampled contained MPs in their digestive tract (MP prevalence of 75.9% and 78.6% for Nile tilapia and catfish, respectively). The most abundant MP type was fibers (65%), the next most abundant type was films (26.5%), and the remaining MPs were fragments. Polyethylene (PE), polyethylene terephthalate (PET) and polypropylene (PP) were all non-destructively identified by attenuated total reflectance Fourier transform infrared spectroscopy. A comparison with similar studies from marine and freshwater environments shows that this high level of MP ingestion is rarely found and that fish sampled from the Nile River in Cairo are potentially among the most in danger of consuming MPs worldwide. Further research needs to be conducted, but, in order to mitigate microplastic pollution in the Nile River, we must act now.",
+    "source": "run_record",
+    "url": "https://doi.org/10.3390/toxics8020022"
+  },
+  "10.1016/j.envpol.2016.06.036": {
+    "DOI": "10.1016/j.envpol.2016.06.036",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s11356-018-3609-3": {
+    "DOI": "10.1007/s11356-018-3609-3",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s11356-019-05300-0": {
+    "DOI": "10.1007/s11356-019-05300-0",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2017.11.029": {
+    "DOI": "10.1016/j.envpol.2017.11.029",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1071/en14143": {
+    "DOI": "10.1071/en14143",
+    "abstract": "Environmental context Although microplastics are known to adsorb and transport contaminants in the aquatic environment, there is no information on the significance of the effect in fresh waters. We studied the adsorption of metals to new and aged plastic pellets in river water, and show interactions that are dependent on time, pH and metal concentration. Because metals have a higher affinity for aged pellets than for new pellets, weathered microplastics could represent a significant vehicle for the transport of metals in aquatic environments. Abstract Adsorption of trace metals (Ag, Cd, Co, Cr, Cu, Hg, Ni, Pb, Zn) to new (virgin) and aged (beached) plastic production pellets suspended in river water (pH ~ 6.5) has been studied under laboratory conditions. Over a 7-day period, reaction kinetics largely conformed to a pseudo-first-order reversible mechanism with forward rate constants that were typically at least an order of magnitude greater for beached pellets than virgin pellets. Adsorption isotherms were defined by a linear model in many cases, with maximum distribution coefficients of ~6 mL g–1 for virgin pellets (Hg and Pb) and of the order of 102 mL g–1 for beached pellets (Ag and Pb). However, more significant fits to the data were obtained using Freundlich or Langmuir models with adsorption constants that were orders of magnitude greater for beached pellets than virgin pellets and, regarding the former, that were greatest for Ag, Hg and Pb. Increasing pH of river water resulted in an increase in adsorption of Ag, Cd, Co, Ni, Pb and Zn, a reduction in adsorption of Cr and no clear trend for Cu or Hg, and adsorption was always greater to beached pellets than virgin pellets. The ability of pellets to adsorb metals was attributed to the modification of the surface through the attachment of organic matter during the experiments and, with regard to beached pellets, their long-term pre-modification through photooxidation and attrition of charged material. Interactions at the pellet surface likely involve metal cations, oxyanions (HCrO4–/CrO42–) and organic complexes.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1071/en14143"
+  },
+  "10.48550/arxiv.2003.02806": {
+    "DOI": "10.48550/arxiv.2003.02806",
+    "abstract": "Comprehensive understanding of particle motion in microfluidic devices is essential to unlock novel technologies for shape-based separation and sorting of microparticles like microplastics, cells and crystal polymorphs. Such particles interact hydrodynamically with confining surfaces, thus altering their trajectories. These hydrodynamic interactions are shape-dependent and can be tuned to guide a particle along a specific path. We produce strongly confined particles with various shapes in a shallow microfluidic channel via stop flow lithography. Regardless of their exact shape, particles with a single mirror plane have identical modes of motion: in-plane rotation and cross-stream translation along a bell-shaped path. Each mode has a characteristic time, determined by particle geometry. Furthermore, each particle trajectory can be scaled by its respective characteristic times onto two master curves. We propose minimalistic relations linking these timescales to particle shape. Together these master curves yield a trajectory universal to particles with a single mirror plane.",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/2003.02806v2"
+  },
+  "10.1007/s11356-019-04632-1": {
+    "DOI": "10.1007/s11356-019-04632-1",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s11356-019-04885-w": {
+    "DOI": "10.1007/s11356-019-04885-w",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s11356-020-07833-1": {
+    "DOI": "10.1007/s11356-020-07833-1",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2016.03.012": {
+    "DOI": "10.1016/j.envpol.2016.03.012",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2020.113935": {
+    "DOI": "10.1016/j.envpol.2020.113935",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.marpolbul.2016.11.061": {
+    "DOI": "10.1016/j.marpolbul.2016.11.061",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.48550/arxiv.2005.04436": {
+    "DOI": "10.48550/arxiv.2005.04436",
+    "abstract": "In this paper, we developed a mathematical model for the sedimentation process of small particles in a lid-driven cavity flow with an obstacle to model the transport of microplastic particles in rivers. A stationary incompressible Navier-Stokes simulation at moderate Reynolds-numbers provides the background flow field. Spherical particles are injected into this flow field and their equation of motion is solved to determine the number of particles that sediment on the surface of the obstacle. To capture the effect of typical biological organisms and biofilms on the bottom surface of river beds, the obstacle can exert an attraction force onto the particles. Various simulations and parameter studies are carried out to determine the influence of the obstacle geometry, particle densities, and the attraction force on the sedimentation process.",
+    "source": "run_record",
+    "url": "http://arxiv.org/abs/2005.04436v1"
+  },
+  "10.1016/j.scitotenv.2018.12.313": {
+    "DOI": "10.1016/j.scitotenv.2018.12.313",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2016.09.078": {
+    "DOI": "10.1016/j.envpol.2016.09.078",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1039/c9ay01245a": {
+    "DOI": "10.1039/c9ay01245a",
+    "abstract": "The implementation of Otsu ’s algorithm and an additional watershed transform enables the recognition and morphological characterization of microplastic particles.",
+    "source": "run_record",
+    "url": "https://doi.org/10.1039/c9ay01245a"
+  },
+  "10.1016/j.envpol.2019.113442": {
+    "DOI": "10.1016/j.envpol.2019.113442",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.marpolbul.2020.111024": {
+    "DOI": "10.1016/j.marpolbul.2020.111024",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s00216-018-1185-5": {
+    "DOI": "10.1007/s00216-018-1185-5",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2018.02.005": {
+    "DOI": "10.1016/j.envpol.2018.02.005",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s11270-020-04653-4": {
+    "DOI": "10.1007/s11270-020-04653-4",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s11356-019-04663-8": {
+    "DOI": "10.1007/s11356-019-04663-8",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s11356-020-08640-4": {
+    "DOI": "10.1007/s11356-020-08640-4",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s11356-020-08747-8": {
+    "DOI": "10.1007/s11356-020-08747-8",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1007/s11356-020-09622-2": {
+    "DOI": "10.1007/s11356-020-09622-2",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2016.01.018": {
+    "DOI": "10.1016/j.envpol.2016.01.018",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2016.05.048": {
+    "DOI": "10.1016/j.envpol.2016.05.048",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2017.02.072": {
+    "DOI": "10.1016/j.envpol.2017.02.072",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2018.02.008": {
+    "DOI": "10.1016/j.envpol.2018.02.008",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2018.09.136": {
+    "DOI": "10.1016/j.envpol.2018.09.136",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2019.03.022": {
+    "DOI": "10.1016/j.envpol.2019.03.022",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2019.03.105": {
+    "DOI": "10.1016/j.envpol.2019.03.105",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.scitotenv.2019.136356": {
+    "DOI": "10.1016/j.scitotenv.2019.136356",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.marpolbul.2019.04.070": {
+    "DOI": "10.1016/j.marpolbul.2019.04.070",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.scitotenv.2020.137319": {
+    "DOI": "10.1016/j.scitotenv.2020.137319",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.scitotenv.2020.139065": {
+    "DOI": "10.1016/j.scitotenv.2020.139065",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.envpol.2015.02.019": {
+    "DOI": "10.1016/j.envpol.2015.02.019",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.scitotenv.2020.140201": {
+    "DOI": "10.1016/j.scitotenv.2020.140201",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  },
+  "10.1016/j.scitotenv.2019.02.028": {
+    "DOI": "10.1016/j.scitotenv.2019.02.028",
+    "abstract": "",
+    "source": "none",
+    "url": ""
+  }
+}

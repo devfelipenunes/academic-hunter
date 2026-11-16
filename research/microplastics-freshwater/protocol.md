@@ -14,7 +14,7 @@ Como microplásticos e nanoplásticos ocorrem, são transportados e se acumulam 
 
 ## Inclusão automática atual
 
-O sistema exige correspondência com âncoras de microplásticos e contexto de água doce encontrado no título ou resumo, aplica termos de exclusão no título e conserva `_kw_score >= 6`. A comparação controlada mostrou 24 candidatos adicionais ao aceitar o resumo como contexto; essa opção foi escolhida para favorecer recuperação e exige triagem manual dos falsos positivos. A triagem preliminar marcou 20 dos 22 registros abaixo do corte anterior (12) como potencialmente relevantes, um como incerto e um fora do escopo; o corte 6 é um piso para manter candidatos à revisão, não um critério científico de inclusão. A inclusão final exige leitura humana de título e resumo e, nos casos incertos, texto integral.
+O sistema exige âncora de micro/nanoplástico e contexto no título ou resumo, aplica termos de exclusão no título e conserva `_kw_score >= 6`. O contexto também aceita táxons-modelo de água doce (por exemplo, *Daphnia*, *zebrafish*), água superficial e vias de efluente/tratamento: a auditoria confirmou falsos negativos de ecotoxicidade com *Daphnia magna*. Essa ampliação favorece recuperação, mas também traz estudos de tratamento, água potável e ambientes marinhos para triagem manual. Resultados somente de wastewater/tratamento não equivalem automaticamente a resultados de água doce; mantê-los separados como vias/fontes e incluir apenas se pertinentes à pergunta. A comparação controlada encontrou 24 candidatos adicionais ao aceitar contexto do resumo em vez de apenas do título. A triagem preliminar marcou 20 dos 22 registros abaixo do corte anterior (12) como potencialmente relevantes, um como incerto e um fora do escopo; o corte 6 é um piso para manter candidatos à revisão, não um critério científico de inclusão. A inclusão final exige leitura humana de título e resumo e, nos casos incertos, texto integral.
 
 ## Critérios de triagem humana
 
@@ -26,7 +26,7 @@ Marcar cada candidato com uma decisão: `incluir`, `excluir` ou `incerto`.
 
 Não excluir automaticamente uma palavra ambígua sem validar o estudo. Em particular, registros com `brackish`, `estuary/estuaries`, `mangrove`, `coastal` e `freshwater` misturados exigem adjudicação humana.
 
-Cada execução salva os candidatos pontuados em `screening_candidates_*.csv` e os itens únicos descartados antes da pontuação em `screening_exclusions_*.csv`. Revise todos os candidatos pontuados; para aferir o portão de âncora/contexto, sorteie e revise uma amostra estratificada dos excluídos por motivo (`year`, `title_exclusion`, `context_missing`, `anchor_missing`) e por fonte.
+Cada execução salva os candidatos pontuados em `screening_candidates_*.csv` e os itens únicos descartados antes da pontuação em `screening_exclusions_*.csv`. Revise todos os candidatos e os desacordos entre revisores. Para aferir o portão, use amostras estratificadas por motivo (`year`, `title_exclusion`, `context_missing`, `anchor_missing`) e fonte. As amostras atuais usam 10 por estrato quando disponível, portanto são diagnósticas e não estimam uma taxa global ponderada de falsos negativos.
 
 ## Registro de método
 
