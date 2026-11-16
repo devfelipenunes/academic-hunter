@@ -47,6 +47,11 @@ def _term_pattern(term: str) -> "re.Pattern[str]":
     return re.compile(pattern)
 
 
+def term_matches(text: Any, term: str) -> bool:
+    """Whether ``term`` appears as a token or phrase, not inside another word."""
+    return bool(_term_pattern(str(term)).search(str(text or "").lower()))
+
+
 def terms_of(groups: Dict[str, List[str]]) -> List[str]:
     """The terms of a ``{category: [term]}`` mapping, flattened in order."""
     return [term for group in groups.values() for term in group]
@@ -205,6 +210,6 @@ class AcademicScorer:
         for term in found_list:
             required_keywords = self.context_rules.get(term)
             if required_keywords:
-                if not any(cw in text_lower for cw in required_keywords):
+                if not any(term_matches(text_lower, str(keyword)) for keyword in required_keywords):
                     return False
         return True

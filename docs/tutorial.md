@@ -35,9 +35,9 @@ You do not need to create a `config.json`. The server starts on a neutral defaul
 
 Without anchors, `run_search` refuses to run rather than querying every source for nothing. Without `technical_strings` it runs and warns which sources it left out — the four that query by anchor × technical term are not called, and their `0` in the report is not a result.
 
-### Two API keys are worth having
+### API keys for broader source coverage
 
-Four of the six parallel sources work with no credentials: arXiv, Crossref, OpenAlex and DOAJ. **Semantic Scholar** and **CORE** need one each, and without it they are reported as never queried rather than as a source that found nothing. Both are free and both live under `settings.api_keys` in `config.json`, or in `SEMANTIC_SCHOLAR_API_KEY` and `CORE_API_KEY`. The README has the links.
+arXiv, Crossref and DOAJ work without credentials. **OpenAlex** needs a free key for this connector's cursor paging beyond the first page; **Semantic Scholar** and **CORE** also need keys. Without a key, each source is reported as not queried instead of as a source that found nothing. Configure them under `settings.api_keys` in `config.json`, or use `OPENALEX_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY` and `CORE_API_KEY`. See the [README](../README.md#before-your-first-search-api-keys) for key links and details.
 
 <details>
 <summary>Install from a clone (development)</summary>

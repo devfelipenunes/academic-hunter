@@ -12,6 +12,7 @@ import pytest
 
 from academic_hunter.plugins.connectors.base import BaseConnector
 from academic_hunter.plugins.connectors.core_ac import CoreConnector
+from academic_hunter.plugins.connectors.openalex import OpenAlexConnector
 from academic_hunter.plugins.connectors.semanticscholar import SemanticScholarConnector
 
 KEY = "s2-test-key-do-not-use"
@@ -65,6 +66,34 @@ def test_a_whitespace_key_does_not_count(monkeypatch):
     monkeypatch.setenv("SEMANTIC_SCHOLAR_API_KEY", "")
 
     assert SemanticScholarConnector.unavailable_reason({}) != ""
+
+
+def test_openalex_names_its_cursor_paging_key_requirement(monkeypatch):
+    monkeypatch.delenv("OPENALEX_API_KEY", raising=False)
+    reason = OpenAlexConnector.unavailable_reason({})
+
+    assert "cursor paging" in reason
+    assert "OPENALEX_API_KEY" in reason
+    assert "settings.api_keys.openalex" in reason
+
+
+@pytest.mark.parametrize(
+    "settings",
+    [
+        {"openalex_api_key": KEY},
+        {"api_keys": {"openalex": KEY}},
+    ],
+)
+def test_openalex_runs_once_a_key_is_configured(settings, monkeypatch):
+    monkeypatch.delenv("OPENALEX_API_KEY", raising=False)
+
+    assert OpenAlexConnector.unavailable_reason(settings) == ""
+
+
+def test_openalex_environment_key_opens_the_gate(monkeypatch):
+    monkeypatch.setenv("OPENALEX_API_KEY", KEY)
+
+    assert OpenAlexConnector.unavailable_reason({}) == ""
 
 
 class TestCore:

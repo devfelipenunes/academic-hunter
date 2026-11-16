@@ -401,12 +401,13 @@ async def test_update_config_puts_the_source_back_once_it_has_a_key(mock_ctx, tm
     from "never runs" -- and the promise above would be wrong in the other
     direction.
 
-    Both credentials are configured here: the assertion is that no source is
+    All credentials are configured here: the assertion is that no source is
     left out, and one source left out of six would make it fail for a reason
     that has nothing to do with the gate this test is about.
     """
     monkeypatch.setenv("SEMANTIC_SCHOLAR_API_KEY", "s2-test-key-do-not-use")
     monkeypatch.setenv("CORE_API_KEY", "core-test-key-do-not-use")
+    monkeypatch.setenv("OPENALEX_API_KEY", "openalex-test-key-do-not-use")
 
     result = await _apply(
         SearchConfigUpdate(

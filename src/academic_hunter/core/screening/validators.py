@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Tuple
 
 from ..infra import HunterConfig
 from ..nlp import AcademicScorer
+from ..nlp.scorer import term_matches
 from .ablation import ablation_mode, semantic_scoring_enabled
 
 
@@ -32,7 +33,7 @@ class PaperValidator:
         if isinstance(excluded_title_terms, str):
             excluded_title_terms = [excluded_title_terms]
         if isinstance(excluded_title_terms, (list, tuple)) and any(
-            str(term).strip().lower() in title_text
+            term_matches(title_text, str(term).strip())
             for term in excluded_title_terms
             if str(term).strip()
         ):

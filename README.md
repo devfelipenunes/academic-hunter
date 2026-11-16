@@ -45,16 +45,19 @@ Without anchors, `run_search` refuses to run — instead of querying every sourc
 
 To check before a run, `update_config`'s reply says what the configuration will query, and `run_search`'s says what was actually queried.
 
-### Before your first search: two API keys
+### Before your first search: API keys
 
-Four of the six parallel sources work with no credentials: **arXiv, Crossref, OpenAlex and DOAJ**. The other two need a key, and report themselves as *not queried* without one rather than returning a `0` that reads like an empty result:
+arXiv, Crossref and DOAJ work with no credentials. **OpenAlex needs a free API key for this connector's cursor paging beyond the first page**; without it the source is reported as *not queried*, rather than returning a `0` that reads like an empty result. See [OpenAlex authentication and paging](https://help.openalex.org/api/authentication/).
+
+Semantic Scholar and CORE also need a key:
 
 | Source | Key | Where to get it |
 | --- | --- | --- |
 | **Semantic Scholar** | `SEMANTIC_SCHOLAR_API_KEY` or `settings.api_keys.semantic_scholar` | Free, from the [Semantic Scholar API page](https://www.semanticscholar.org/product/api). Without it the shared pool rate-limits the run a few requests in. |
 | **CORE** | `CORE_API_KEY` or `settings.api_keys.core` | Free for research, from [core.ac.uk/services/api](https://core.ac.uk/services/api). The endpoint answers 401 without one. |
+| **OpenAlex** | `OPENALEX_API_KEY` or `settings.api_keys.openalex` | Free key from [OpenAlex](https://openalex.org/); required to page beyond the first results page. |
 
-Both are optional — a run on the other four is a complete run, and the report says which ones it never asked. `settings.api_keys.lens` is a third: `search_source(source="lens")` cannot run without a Lens.org token either.
+These keys are optional — the report names any sources it did not query. `settings.api_keys.lens` is separate: `search_source(source="lens")` cannot run without a Lens.org token either.
 
 <details>
 <summary>Install from a clone (development)</summary>
@@ -87,7 +90,7 @@ See the [step-by-step tutorial](https://github.com/devfelipenunes/academic-hunte
 
 ### 🔍 Multi-source search
 
-The pipeline queries **six academic sources in parallel**: arXiv, Crossref, OpenAlex and DOAJ with no credentials, plus Semantic Scholar and CORE once you supply their keys (see [above](#before-your-first-search-two-api-keys)). Everything found is deduplicated across sources.
+The pipeline queries **six academic sources in parallel**: arXiv, Crossref and DOAJ without credentials, plus OpenAlex, Semantic Scholar and CORE when their keys are configured (see [above](#before-your-first-search-api-keys)). Everything found is deduplicated across sources.
 
 A further six sources are reachable one at a time through MCP tools: OpenCitations, Unpaywall, Lens.org, OpenAIRE, ORCID and DataCite. Three of them are one tool with a `source` argument — `search_source` — because searching one source is one operation, and peers of `run_search` in the tool list are how an agent comes to pick one of them instead of the review.
 

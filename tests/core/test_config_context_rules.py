@@ -243,3 +243,39 @@ def test_abstract_context_remains_the_default(tmp_path):
         "Abstract": "We compare marine samples with freshwater river samples.",
     }
     assert validator.match_anchor(paper) == ("Pollutant", "microplastic")
+
+
+def test_context_keywords_do_not_match_inside_other_words():
+    from academic_hunter.core.nlp import AcademicScorer
+
+    scorer = AcademicScorer({}, {}, {}, {"plastic debris": ["river", "rivers"]}, {})
+
+    assert scorer.validate_anchor_context("drivers of plastic debris on beaches", "plastic debris") is False
+    assert scorer.validate_anchor_context("plastic debris in rivers", "plastic debris") is True
+
+
+def test_title_exclusions_match_whole_terms_and_plural_variants(tmp_path):
+    from academic_hunter.core.nlp import AcademicScorer
+    from academic_hunter.core.screening.validators import PaperValidator
+
+    path = _write(tmp_path / "title-exclusions.json", {
+        "settings": {
+            "context_rules": {"microplastic": ["freshwater", "river"]},
+            "context_rules_title_only": True,
+            "context_exclude_title_terms": ["marine", "estuary", "estuaries"],
+        },
+        "anchors": {"Pollutant": ["microplastic"]},
+        "technical_strings": {},
+        "technical_weights": {"microplastic": 5},
+    })
+    config = HunterConfig(config_path=str(path))
+    scorer = AcademicScorer(
+        config.anchors, config.tech_strings, config.tech_weights, config.context_rules, config.settings
+    )
+    validator = PaperValidator(config, scorer)
+
+    paper = {"Title": "Microplastic debris in a submarine freshwater river", "Abstract": ""}
+    assert validator.match_anchor(paper) == ("Pollutant", "microplastic")
+
+    paper["Title"] = "Microplastic debris in freshwater river estuaries"
+    assert validator.match_anchor(paper) == ("", "")

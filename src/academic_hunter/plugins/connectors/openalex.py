@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 
 from academic_hunter import __version__
 
+from ...core.infra.config import openalex_key
 from ...core.infra.openalex import (
     OPENALEX_BASE,
     OPENALEX_DEFAULT_DELAY,
@@ -24,6 +25,16 @@ class OpenAlexConnector(BaseConnector):
     domain = OPENALEX_DOMAIN
     default_delay = OPENALEX_DEFAULT_DELAY
     resolve_priority = 3
+
+    @classmethod
+    def unavailable_reason(cls, settings: Dict[str, Any]) -> str:
+        """Cursor paging beyond OpenAlex's first page requires an API key."""
+        if openalex_key(settings):
+            return ""
+        return (
+            "no API key. OpenAlex requires a free key for cursor paging beyond the first page. "
+            "Set OPENALEX_API_KEY or settings.api_keys.openalex."
+        )
 
     def detect_peer_review(self, doc_type: str) -> str:
         cleaned_type = str(doc_type).lower()
