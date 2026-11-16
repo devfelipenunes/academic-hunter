@@ -10,7 +10,8 @@ code and implement the shape by duck typing rather than inheriting from a base
 declared here, which would drag transport concerns into ``core``.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List
 
 
 class FullTextError(Exception):
@@ -84,3 +85,13 @@ class ExtractedDocument:
     page_count: int = 0
     has_text_layer: bool = True
     source: str = ""
+    page_spans: List["PageSpan"] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class PageSpan:
+    """Character offsets for one source page in the extracted document text."""
+
+    start: int
+    end: int
+    page: int

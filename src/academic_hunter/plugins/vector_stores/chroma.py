@@ -382,7 +382,7 @@ class ChromaVectorStore(BaseVectorStore):
                 if not text or not chunk_id:
                     continue
                 documents.append(text)
-                metadatas.append({
+                metadata = {
                     "parent_id": _as_str(chunk.get("parent_id")),
                     "section": _as_str(chunk.get("section")),
                     "index": _as_int(chunk.get("index")),
@@ -392,7 +392,11 @@ class ChromaVectorStore(BaseVectorStore):
                     "doi": _as_str(chunk.get("doi")),
                     "year": _as_str(chunk.get("year")),
                     "source": _as_str(chunk.get("source")),
-                })
+                }
+                for page_key in ("page_start", "page_end"):
+                    if chunk.get(page_key) is not None:
+                        metadata[page_key] = _as_int(chunk[page_key])
+                metadatas.append(metadata)
                 ids.append(chunk_id)
 
             if not documents:
@@ -436,6 +440,8 @@ class ChromaVectorStore(BaseVectorStore):
                     "index": metadata.get("index", 0),
                     "start": metadata.get("start", 0),
                     "end": metadata.get("end", 0),
+                    "page_start": metadata.get("page_start"),
+                    "page_end": metadata.get("page_end"),
                     "title": metadata.get("title", ""),
                     "doi": metadata.get("doi", ""),
                     "year": metadata.get("year", ""),

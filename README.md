@@ -117,6 +117,8 @@ Titles and abstracts are embedded by one model — `all-MiniLM-L6-v2`, 22M param
 | Summaries | `summarize_paper` | Extractive summary via MMR |
 | Inside a paper | `chunk_search` | Searches the full text, with section and offsets |
 
+`answer_question` now prefers indexed full-text passages and returns evidence IDs with DOI, section, page range when available, and character offsets. If full text is not indexed, it falls back to retrieved abstract excerpts and labels that limitation. It packages evidence for the connected agent; it does not claim that a generated synthesis has been verified against the papers.
+
 Two more analyses the table used to mix in with these do **not** use the model — they are single HTTP lookups: `get_citation_count` (OpenCitations) and `find_open_access` (Unpaywall).
 
 ### 🤖 MCP server — agent integration
@@ -136,6 +138,22 @@ Launch commands are in the table below, and each client's connection is in the [
 ### 📦 Multi-format export
 
 Every run writes **CSV, BibTeX, RIS, Markdown and PRISMA** artifacts into its own directory, plus `screening_candidates_*.csv` with every paper that passed year and anchor checks, and `screening_exclusions_*.csv` with unique papers rejected at the year/anchor stage. Both screening files include the automatic reason and blank columns for human adjudication, preserving candidates for recall audits. **Obsidian** notes are written on request. `export_report` additionally offers **JSON**, for pulling the included rows out of the latest run.
+
+### Retrieval evaluation
+
+The evaluation harness accepts either a saved run directory or a direct CSV. `tests/evaluation/qrels_microplastics_known_item_seed.json` is a small known-item retrieval seed for the freshwater microplastics review. Its target pairs come from the current AI-adjudicated matrix and are **not human gold labels**; validate them before using scores as evidence of scientific relevance. Example:
+
+```bash
+uv run python tests/evaluation/harness.py \
+  --dataset research/microplastics-freshwater/consolidated-adjudication-round3.csv \
+  --qrels tests/evaluation/qrels_microplastics_known_item_seed.json \
+  --weights 1,0
+```
+
+Initial BM25, dense, and hybrid measurements are recorded in [`microplastics-seed-baseline-20261116.md`](tests/evaluation/microplastics-seed-baseline-20261116.md), with the same warning about provisional labels.
+Use [`qrels_microplastics_known_item_review.csv`](tests/evaluation/qrels_microplastics_known_item_review.csv) to check whether each question is clear and its target article is correct. These checks validate known-item pairs; a scientific relevance benchmark will still need judged alternatives and hard negatives.
+
+The architectural decision on LangChain/LangGraph is recorded in [`docs/adr/0001-agent-orchestration.md`](docs/adr/0001-agent-orchestration.md): they remain optional integrations until a concrete long-running, resumable human-review workflow justifies graph orchestration.
 
 ---
 

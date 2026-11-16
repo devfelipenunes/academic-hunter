@@ -9,7 +9,7 @@ import pytest
 
 from academic_hunter.core.fulltext import chunk_document, detect_sections
 from academic_hunter.core.fulltext.chunker import TARGET_WORDS
-from academic_hunter.core.ports.fulltext import ExtractedDocument
+from academic_hunter.core.ports.fulltext import ExtractedDocument, PageSpan
 
 
 def build(*sections, preamble="Journal of Examples\nA. Author\n"):
@@ -85,6 +85,35 @@ def test_offsets_are_document_local_not_section_local():
 
     assert methods, "fixture should produce method chunks"
     assert all(c.text.split()[0].startswith("beta") for c in methods)
+
+
+def test_chunks_keep_pdf_page_ranges_from_extracted_text():
+    text = "Abstract\na b c d e f g h"
+    doc = ExtractedDocument(
+        text=text,
+        page_count=2,
+        page_spans=[PageSpan(start=9, end=16, page=4), PageSpan(start=17, end=24, page=5)],
+    )
+
+    chunks = chunk_document(
+        doc, "doi:10.1/pages", target_words=4, overlap_words=0, min_chunk_words=1
+    )
+
+    assert [(c.page_start, c.page_end) for c in chunks] == [(4, 4), (5, 5)]
+
+
+def test_chunk_crossing_a_pdf_page_boundary_cites_both_pages():
+    text = "Abstract\na b c d e f"
+    doc = ExtractedDocument(
+        text=text,
+        page_count=2,
+        page_spans=[PageSpan(start=9, end=13, page=2), PageSpan(start=14, end=20, page=3)],
+    )
+
+    chunks = chunk_document(doc, "doi:10.1/crossing", target_words=6, overlap_words=0)
+
+    assert len(chunks) == 1
+    assert (chunks[0].page_start, chunks[0].page_end) == (2, 3)
 
 
 def test_a_chunk_never_crosses_a_section_boundary():

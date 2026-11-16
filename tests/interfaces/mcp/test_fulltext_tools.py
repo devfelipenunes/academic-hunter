@@ -106,7 +106,8 @@ def env(tmp_path):
     patch.stopall()
 
 
-def hit(parent_id, relevance, title="", section="method", index=0, text="passage"):
+def hit(parent_id, relevance, title="", section="method", index=0, text="passage",
+        page_start=None, page_end=None):
     return {
         "chunk_id": f"{parent_id}::{index}",
         "parent_id": parent_id,
@@ -114,6 +115,8 @@ def hit(parent_id, relevance, title="", section="method", index=0, text="passage
         "index": index,
         "start": index * 100,
         "end": index * 100 + 90,
+        "page_start": page_start,
+        "page_end": page_end,
         "title": title,
         "doi": "",
         "year": "",
@@ -283,20 +286,23 @@ async def test_chunk_search_caps_the_chunks_per_paper(mock_ctx, env):
     assert result.count("chunk ") == 2
 
 
-async def test_chunk_search_reports_section_and_offsets_and_no_page(mock_ctx, env):
-    """There is no page number to report: PDF has pages, the JATS source has none.
-
-    A `page` field would be present for one source and absent for the other,
-    which is worse than not having it. The offsets locate the passage in the
-    extracted text instead.
-    """
+async def test_chunk_search_reports_page_when_the_source_provides_it(mock_ctx, env):
     env(store=FakeStore(hits=[hit("doi:10.1/a", 0.9, title="Paper", index=3)]))
 
     result = await ft.chunk_search("latency", ctx=mock_ctx)
 
     assert "method" in result
     assert "chars 300–390" in result
-    assert "page" not in result.lower().replace("passage", "")
+
+
+async def test_chunk_search_reports_pdf_page_range(mock_ctx, env):
+    env(store=FakeStore(hits=[hit(
+        "doi:10.1/a", 0.9, title="Paper", page_start=4, page_end=5,
+    )]))
+
+    result = await ft.chunk_search("latency", ctx=mock_ctx)
+
+    assert "pp. 4–5" in result
 
 
 async def test_chunk_search_falls_back_to_the_run_dataset_for_the_title(mock_ctx, env):

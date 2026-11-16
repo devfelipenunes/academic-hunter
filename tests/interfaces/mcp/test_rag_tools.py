@@ -264,10 +264,38 @@ async def test_answer_question(mock_vector_store, mock_ctx):
     assert "What is the main finding?" in result
     assert "Relevant Paper" in result
     assert "10.1234/paper" in result
-    assert "Retrieved Abstracts" in result
+    assert "Abstract excerpts" in result
     assert "Sources" in result
     mock_vector_store.query.assert_called_once()
     mock_ctx.info.assert_called()
+
+
+async def test_answer_question_prefers_citable_full_text_chunks(mock_vector_store, mock_ctx):
+    mock_vector_store.query_chunks.return_value = [
+        {
+            "title": "Reservoir transport study",
+            "doi": "10.1234/reservoir",
+            "year": "2025",
+            "source": "open access PDF",
+            "section": "results",
+            "index": 2,
+            "start": 300,
+            "end": 480,
+            "page_start": 7,
+            "page_end": 8,
+            "text": "The reservoir retained microplastic particles during the study.",
+            "relevance": 0.91,
+        }
+    ]
+
+    result = await answer_question("How do reservoirs affect transport?", ctx=mock_ctx)
+
+    assert "Retrieved Evidence" in result
+    assert "[E1] results · pp. 7–8 · chars 300–480" in result
+    assert "10.1234/reservoir" in result
+    assert "retained microplastic particles" in result
+    assert "does not generate conclusions" in result
+    mock_vector_store.query.assert_not_called()
 
 
 async def test_the_finding_is_not_the_preview_chopped_mid_sentence(mock_vector_store, mock_ctx):

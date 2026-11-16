@@ -280,13 +280,12 @@ async def delete_collection(collection: str, confirm: bool = False,
 
 
 async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -> str:
-    """Retrieves the papers that best match a question and quotes their abstracts.
+    """Collects citable evidence from indexed full text, with an abstract fallback.
 
-    Nothing here reads the abstracts and answers the question: what comes back is
-    the most relevant indexed papers, their abstracts as indexed, and their titles
-    and DOIs to cite. The reading is the caller's. The description this tool used
-    to publish promised a composed answer, which described a tool that does not
-    exist — and the headings said the same thing.
+    Full-text passages include their article, section, source, and page when the
+    PDF extractor could map one. This tool retrieves evidence; it does not write
+    a scientific conclusion. The caller can synthesize the returned evidence
+    while keeping each claim attached to a source.
 
     Use it to gather citable sources on a question. Works best after papers have
     been indexed via ``index_papers`` or after running the automatic pipeline.
@@ -296,13 +295,84 @@ async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -
         top_k: Number of papers to retrieve for context (default 15, max 20).
         ctx: FastMCP Context (auto-injected).
     """
-    await ctx.info(f"Answering question: '{question}'")
+    await ctx.info(f"Collecting evidence for: '{question}'")
     store = await run_blocking(_get_vector_store)
     if store is None:
         await ctx.error("Vector store not available")
         raise VectorStoreError("Vector store not available. Run a search first.")
 
-    top_k = min(top_k, 20)
+    top_k = max(1, min(top_k, 20))
+
+    query_chunks = getattr(store, "query_chunks", None)
+    if callable(query_chunks):
+        max_passages = min(top_k * 2, 20)
+        try:
+            raw_chunks = await run_blocking(
+                query_chunks, question, max_passages * 2, "paper_chunks"
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.info("Full-text evidence retrieval unavailable: %s", e)
+            raw_chunks = []
+        if isinstance(raw_chunks, list) and raw_chunks:
+            grouped: dict[str, dict] = {}
+            passage_count = 0
+            for chunk in raw_chunks:
+                key = str(chunk.get("doi") or chunk.get("parent_id") or chunk.get("title") or "")
+                if not key:
+                    continue
+                if key not in grouped and len(grouped) >= top_k:
+                    continue
+                group = grouped.setdefault(key, {"paper": chunk, "chunks": []})
+                if len(group["chunks"]) < 2 and passage_count < max_passages:
+                    group["chunks"].append(chunk)
+                    passage_count += 1
+                if passage_count >= max_passages and len(grouped) >= top_k:
+                    break
+
+            if grouped:
+                lines = [
+                    "# Retrieved Evidence\n",
+                    f"**Question:** {question}\n",
+                    f"**Papers with full-text evidence:** {len(grouped)}\n",
+                    f"**Passages returned:** {passage_count}\n",
+                    "Each excerpt is retrieved source text. Use its evidence ID when "
+                    "writing a claim; this tool does not generate conclusions.\n",
+                    "---\n",
+                ]
+                evidence_number = 0
+                for group in grouped.values():
+                    paper = group["paper"]
+                    title = paper.get("title") or "Untitled paper"
+                    meta = []
+                    if paper.get("doi"):
+                        meta.append(f"DOI: `{paper['doi']}`")
+                    if paper.get("year"):
+                        meta.append(f"Year: {paper['year']}")
+                    if paper.get("source"):
+                        meta.append(f"Full-text source: {paper['source']}")
+                    lines.append(f"## {title}")
+                    if meta:
+                        lines.append(" · ".join(meta))
+                    for chunk in group["chunks"]:
+                        evidence_number += 1
+                        location = [str(chunk.get("section") or "body")]
+                        page_start = chunk.get("page_start")
+                        page_end = chunk.get("page_end")
+                        if page_start is not None:
+                            page_label = f"p. {page_start}"
+                            if page_end is not None and page_end != page_start:
+                                page_label = f"pp. {page_start}–{page_end}"
+                            location.append(page_label)
+                        location.append(f"chars {chunk.get('start', 0)}–{chunk.get('end', 0)}")
+                        lines.append(
+                            f"\n**[E{evidence_number}] {' · '.join(location)} · "
+                            f"relevance {chunk.get('relevance', 'unknown')}**\n"
+                            f"> {' '.join(str(chunk.get('text') or '').split())}"
+                        )
+                    lines.append("")
+                await ctx.info(f"Retrieved full-text evidence from {len(grouped)} papers")
+                return "\n".join(lines)
+
     results = await run_blocking(store.query, question, top_k=top_k)
 
     if not results:
@@ -329,18 +399,18 @@ async def answer_question(question: str, top_k: int = 15, ctx: Context = None) -
             citations.append(f"- **{title}**")
 
     lines = [
-        "# Retrieved Context\n",
+        "# Retrieved Context — Abstract Evidence\n",
         f"**Question:** {question}\n",
         f"**Papers consulted:** {len(results)}\n",
         "---\n",
-        "## Retrieved Abstracts\n",
+        "## Abstract excerpts\n",
         *findings,
         "",
         "## Sources\n",
         *citations,
         "",
         "---",
-        "*These abstracts were retrieved from the indexed paper database; no answer was generated.*",
+        "*These abstracts were retrieved from the indexed paper database; no conclusion was generated. Full-text search was unavailable or returned no passages.*",
     ]
 
     await ctx.info(f"Answered question using {len(results)} papers")

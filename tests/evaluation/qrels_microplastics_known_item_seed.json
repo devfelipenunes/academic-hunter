@@ -1,0 +1,90 @@
+{
+  "name": "microplastics freshwater known-item retrieval seed",
+  "task": "known_item_retrieval",
+  "corpus": "research/microplastics-freshwater/consolidated-adjudication-round3.csv",
+  "created": "2026-11-16",
+  "annotation_status": "seed_targets_from_ai_adjudicated_include_or_provisional_records; not gold labels",
+  "instructions": "Before interpreting scores as scientific relevance, a human reviewer must validate each question-target pair and add hard negatives / graded relevance judgments. This set only tests whether a described known record can be retrieved.",
+  "questions": [
+    {
+      "question": "Que estudo relata variação espacial e temporal de microplásticos em água doce?",
+      "target_title": "Freshwater microplastic concentrations vary through both space and time",
+      "target_doi": "10.1016/j.envpol.2020.114481",
+      "target_slug": "freshwatermicroplasticconcentrationsvarythroughbothspaceandtime",
+      "category": "river_field",
+      "label_status": "seed_target_needs_human_validation"
+    },
+    {
+      "question": "What study examines how dams affect microplastic transport in rivers?",
+      "target_title": "The effect of dams on river transport of microplastic pollution",
+      "target_doi": "10.1016/j.scitotenv.2019.02.028",
+      "target_slug": "theeffectofdamsonrivertransportofmicroplasticpollution",
+      "category": "river_transport",
+      "label_status": "seed_target_needs_human_validation"
+    },
+    {
+      "question": "Which paper tests a method for detecting 20–100 μm microplastics in freshwater samples?",
+      "target_title": "How to detect small microplastics (20–100 μm) in freshwater, municipal wastewaters and landfill leachates? A trial from sampling to identification",
+      "target_doi": "10.1016/j.scitotenv.2020.139218",
+      "target_slug": "howtodetectsmallmicroplastics20100μminfreshwatermunicipalwastewatersandlandfillleachatesatrialfromsamplingtoidentification",
+      "category": "freshwater_methods",
+      "label_status": "seed_target_needs_human_validation"
+    },
+    {
+      "question": "Qual estudo avalia os efeitos de fragmentos de PLA microplástico em Daphnia magna após intemperismo UV?",
+      "target_title": "Ecotoxicity of polylactic acid microplastic fragments to Daphnia magna and the effect of ultraviolet weathering",
+      "target_doi": "10.1016/j.ecoenv.2024.115974",
+      "target_slug": "ecotoxicityofpolylacticacidmicroplasticfragmentstodaphniamagnaandtheeffectofultravioletweathering",
+      "category": "freshwater_ecotoxicology",
+      "label_status": "seed_target_needs_human_validation"
+    },
+    {
+      "question": "Which study compares microscopy, Pyr-GC/MS, and FTIR to measure microplastics in Lake Superior?",
+      "target_title": "Microplastic Abundance and Composition in Western Lake Superior As Determined via Microscopy, Pyr-GC/MS, and FTIR",
+      "target_doi": "10.1021/acs.est.7b05829",
+      "target_slug": "microplasticabundanceandcompositioninwesternlakesuperiorasdeterminedviamicroscopypyrgcmsandftir",
+      "category": "lake_monitoring",
+      "label_status": "seed_target_needs_human_validation"
+    },
+    {
+      "question": "Que trabalho usa Gammarus fossarum para estudar efeitos de microplásticos na assimilação?",
+      "target_title": "Microplastics affect assimilation efficiency in the freshwater amphipod Gammarus fossarum",
+      "target_doi": "10.1007/s11356-016-7584-2",
+      "target_slug": "microplasticsaffectassimilationefficiencyinthefreshwateramphipodgammarusfossarum",
+      "category": "freshwater_biota",
+      "label_status": "seed_target_needs_human_validation"
+    },
+    {
+      "question": "Which paper estimates uncertainty in microplastic sampling in rivers?",
+      "target_title": "A first estimation of uncertainties related to microplastic sampling in rivers",
+      "target_doi": "10.1016/j.scitotenv.2020.137319",
+      "target_slug": "afirstestimationofuncertaintiesrelatedtomicroplasticsamplinginrivers",
+      "category": "sampling_quality",
+      "label_status": "seed_target_needs_human_validation"
+    },
+    {
+      "question": "What study identifies microplastic polymers in fish from Lake Amatitlán, Guatemala?",
+      "target_title": "Identification of microplastic polymers found in the digestive tract of fish from Lake Amatitlán, Guatemala",
+      "target_doi": "10.15343/0104-7809.202448e15762023p",
+      "target_slug": "identificationofmicroplasticpolymersfoundinthedigestivetractoffishfromlakeamatitlánguatemala",
+      "category": "lake_biota",
+      "label_status": "seed_target_needs_human_validation"
+    },
+    {
+      "question": "Which study simulates microplastic trapping in Germany’s largest drinking water reservoir?",
+      "target_title": "Trapping of microplastic particles in Germany’s largest drinking water reservoir: a simulation study",
+      "target_doi": "10.1186/s12302-025-01192-9",
+      "target_slug": "trappingofmicroplasticparticlesingermanyslargestdrinkingwaterreservoirasimulationstudy",
+      "category": "reservoir_transport",
+      "label_status": "seed_target_needs_human_validation"
+    },
+    {
+      "question": "What modeling study examines the fate of nano- and microplastics in freshwater systems?",
+      "target_title": "Fate of nano- and microplastic in freshwater systems: A modeling study",
+      "target_doi": "10.1016/j.envpol.2016.10.001",
+      "target_slug": "fateofnanoandmicroplasticinfreshwatersystemsamodelingstudy",
+      "category": "freshwater_fate",
+      "label_status": "seed_target_needs_human_validation"
+    }
+  ]
+}

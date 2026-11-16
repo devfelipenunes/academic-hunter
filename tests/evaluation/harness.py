@@ -75,6 +75,7 @@ import glob
 import json
 import math
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -88,7 +89,7 @@ CUTOFF = 10
 
 
 def load_papers(run_dir: Path) -> List[Dict[str, Any]]:
-    """The run's dataset, in a defined order.
+    """Load a run's dataset or an explicit CSV, preserving its row order.
 
     Sorted and guarded. The glob's order is not defined, and ``[0]`` over an
     empty one was an ``IndexError`` raised from inside this file: on a fresh
@@ -96,14 +97,18 @@ def load_papers(run_dir: Path) -> List[Dict[str, Any]]:
     instrument that measures the pipeline died with a traceback naming neither
     the directory it had searched nor what a run puts there.
     """
-    matches = sorted(glob.glob(str(run_dir / "academic_dataset_*.csv")))
-    if not matches:
+    if run_dir.is_file():
+        dataset = run_dir
+    else:
+        matches = sorted(glob.glob(str(run_dir / "academic_dataset_*.csv")))
+        dataset = Path(matches[0]) if matches else None
+    if dataset is None:
         raise FileNotFoundError(
             f"no academic_dataset_*.csv under {run_dir}. A run writes one into "
             f"results/run_<timestamp>/; point --run at such a directory, or at "
             f"tests/evaluation/fixtures/ for the run the qrels was measured on."
         )
-    with open(matches[0], encoding="utf-8") as fh:
+    with dataset.open(encoding="utf-8-sig", newline="") as fh:
         return list(csv.DictReader(fh))
 
 
@@ -140,6 +145,14 @@ def _cosine(a: List[float], b: List[float]) -> float:
     return max(0.0, dot / (norm_a * norm_b))
 
 
+@lru_cache(maxsize=2)
+def _embedded_corpus(texts: tuple[str, ...]):
+    """Encode one corpus once per process, not once for every query."""
+    embed = _embedder()
+    vectors = embed(list(texts))
+    return embed, tuple(tuple(float(x) for x in vector) for vector in vectors)
+
+
 def query_dense_scores(texts: List[str], query: str) -> Optional[List[float]]:
     """Cosine between the question and each paper, or ``None`` without the model.
 
@@ -150,12 +163,11 @@ def query_dense_scores(texts: List[str], query: str) -> Optional[List[float]]:
     interchangeable, and telling them apart is what ``--dense`` is for.
     """
     try:
-        embed = _embedder()
-    except Exception:
+        embed, corpus_vectors = _embedded_corpus(tuple(texts))
+        query_vector = [float(x) for x in embed([query])[0]]
+    except Exception:  # noqa: BLE001
         return None
-    vectors = embed([query] + list(texts))
-    query_vector = [float(x) for x in vectors[0]]
-    return [_cosine(query_vector, [float(x) for x in vector]) for vector in vectors[1:]]
+    return [_cosine(query_vector, list(vector)) for vector in corpus_vectors]
 
 
 def rank_for_question(
@@ -374,7 +386,10 @@ def evaluate(run_dir: Path, qrels: Dict[str, Any], args) -> Dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Retrieval quality over a saved run.")
-    parser.add_argument("--run", type=Path, default=None)
+    parser.add_argument("--run", type=Path, default=None,
+                        help="saved run directory containing academic_dataset_*.csv")
+    parser.add_argument("--dataset", type=Path, default=None,
+                        help="explicit CSV dataset (for a review corpus or benchmark fixture)")
     parser.add_argument("--qrels", type=Path, default=None)
     parser.add_argument("--pool", type=Path, default=None,
                         help="a judged pool: rank its fixed candidates and grade the order")
@@ -389,8 +404,10 @@ def main() -> int:
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
-    if not args.pool and not (args.run and args.qrels):
-        parser.error("give either --pool, or both --run and --qrels")
+    if not args.pool and not ((args.run or args.dataset) and args.qrels):
+        parser.error("give either --pool, or --qrels with --run or --dataset")
+    if args.run and args.dataset:
+        parser.error("use only one of --run and --dataset")
 
     label = f"weights={args.weights or 'default'} dense={args.dense} rerank={args.rerank}"
     try:
@@ -423,8 +440,9 @@ def _run(args, label: str) -> Dict[str, Any]:
                 print(f"            best      {q['best_judged']}")
     else:
         qrels = json.loads(args.qrels.read_text())
-        result = evaluate(args.run, qrels, args)
-        print(f"\n{args.run.name}  |  {label}")
+        dataset = args.dataset or args.run
+        result = evaluate(dataset, qrels, args)
+        print(f"\n{dataset.name}  |  {label}")
         print(f"  questions {result['questions']}"
               f"  (with their target in the run: {result['answered']})")
         print(f"  recall@10 {result['recall@10']:.4f}   nDCG@10 {result['ndcg@10']:.4f}"

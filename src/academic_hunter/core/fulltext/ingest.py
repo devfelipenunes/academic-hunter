@@ -149,6 +149,11 @@ def _ingest_one(
             "doi": doi,
             "year": str(paper.get("Year") or ""),
             "source": document.source,
+            **(
+                {"page_start": c.page_start, "page_end": c.page_end}
+                if c.page_start is not None and c.page_end is not None
+                else {}
+            ),
         }
         for c in chunks
     ]

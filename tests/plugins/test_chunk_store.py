@@ -94,6 +94,8 @@ def test_the_paper_identity_round_trips_with_the_chunk(store):
             "doi": "10.1/a",
             "year": 2024,
             "source": "EuropePmcSource",
+        "page_start": 4,
+        "page_end": 5,
         }
     ]
 
@@ -104,6 +106,8 @@ def test_the_paper_identity_round_trips_with_the_chunk(store):
     assert top["doi"] == "10.1/a"
     assert top["year"] == "2024"
     assert top["source"] == "EuropePmcSource"
+    assert top["page_start"] == 4
+    assert top["page_end"] == 5
 
 
 def test_a_missing_identity_round_trips_as_empty(store):

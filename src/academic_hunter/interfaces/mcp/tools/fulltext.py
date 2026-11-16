@@ -342,8 +342,15 @@ async def chunk_search(
             lines.append(f"_{meta}_")
         for chunk in group["chunks"]:
             text = " ".join(str(chunk.get("text") or "").split())
+            page_start = chunk.get("page_start")
+            page_end = chunk.get("page_end")
+            page_label = ""
+            if page_start is not None:
+                page_label = f" · p. {page_start}"
+                if page_end is not None and page_end != page_start:
+                    page_label = f" · pp. {page_start}–{page_end}"
             lines.append(
-                f"\n**[{chunk.get('section') or 'body'} · chunk "
+                f"\n**[{chunk.get('section') or 'body'}{page_label} · chunk "
                 f"{chunk.get('index')} · chars {chunk.get('start')}–{chunk.get('end')} · "
                 f"relevance {chunk.get('relevance')}]**\n"
                 f"{text[:PREVIEW_CHARS]}{'…' if len(text) > PREVIEW_CHARS else ''}"

@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from typing import List
 
-from ..ports.fulltext import ExtractedDocument
+from ..ports.fulltext import ExtractedDocument, PageSpan
 
 TARGET_WORDS = 180
 
@@ -63,6 +63,8 @@ class Chunk:
     index: int
     start: int
     end: int
+    page_start: int | None = None
+    page_end: int | None = None
 
 
 def _classify(line: str) -> str:
@@ -115,6 +117,7 @@ def _chunk_span(
     target_words: int,
     overlap_words: int,
     min_chunk_words: int,
+    page_spans: List[PageSpan],
 ) -> List[Chunk]:
     """Fragment one span of ``text``, never letting a chunk cross its boundary.
 
@@ -150,6 +153,10 @@ def _chunk_span(
 
         start = span_start + window[0].start()
         end = span_start + window[-1].end()
+        pages = [
+            page.page for page in page_spans
+            if page.start < end and page.end > start
+        ]
         index = base_index + len(chunks)
         chunks.append(Chunk(
             chunk_id=f"{parent_id}::{index}",
@@ -159,6 +166,8 @@ def _chunk_span(
             index=index,
             start=start,
             end=end,
+            page_start=min(pages) if pages else None,
+            page_end=max(pages) if pages else None,
         ))
 
         if len(window) < target_words:
@@ -204,5 +213,6 @@ def chunk_document(
             target_words=target_words,
             overlap_words=overlap_words,
             min_chunk_words=min_chunk_words,
+            page_spans=doc.page_spans,
         ))
     return chunks

@@ -18,6 +18,7 @@ from .fulltext import (
     FullTextTransientError,
     NoOpenAccessVersion,
     OpenAccessLocation,
+    PageSpan,
 )
 from .screener import BaseScreener
 from .vector_store import BaseVectorStore, ChunkStorePort
@@ -35,4 +36,5 @@ __all__ = [
     "FullTextTransientError",
     "NoOpenAccessVersion",
     "OpenAccessLocation",
+    "PageSpan",
 ]

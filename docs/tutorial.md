@@ -143,7 +143,7 @@ Everything up to here works on title plus abstract, which truncates method and r
 | `index_fulltext` | Download, extract and index the last run's papers | `index_fulltext(limit=20)` |
 | `chunk_search` | Search a passage, not a paper | `chunk_search(query="how many annotators coded the corpus")` |
 
-`chunk_search` answers what the abstract cannot — which dataset they used, how many annotators, what the method actually did — returning the passages grouped under their source paper, with the section and the offsets into the extracted text (there is no page number: a PDF has pages, Europe PMC's JATS source does not). It needs the `fulltext` extra, already included in the installation above; without it only Europe PMC can supply text, and `fulltext_status` says so.
+`chunk_search` answers what the abstract cannot — which dataset they used, how many annotators, what the method actually did — returning passages grouped under their source paper, with section and character offsets. PDF passages also show their page range; JATS passages from Europe PMC have no PDF page number. `answer_question` uses the same indexed passages first, assigns evidence IDs, and falls back to clearly labeled abstract excerpts when full text is not available. Both tools retrieve evidence for the connected agent; neither claims to verify a generated synthesis. Full-text indexing needs the `fulltext` extra, already included in the installation above; without it only Europe PMC can supply text, and `fulltext_status` says so.
 
 ## 5. A complete flow over MCP
 
