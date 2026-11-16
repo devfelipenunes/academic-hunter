@@ -22,10 +22,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # `dev` brings pytest-asyncio (without it the ~188 async tests never run at
-      # all), `ml` brings sentence-transformers — the analysis tests import it and
-      # fail with ModuleNotFoundError when it is missing, which is 15 failures
-      # measured on a machine that skipped it — and `fulltext` brings pypdf for
+      # `dev` brings pytest-asyncio (without it no async test runs at all), `ml`
+      # brings sentence-transformers — the analysis tests import it and fail with
+      # ModuleNotFoundError when it is missing — and `fulltext` brings pypdf for
       # the full-text step. The same set the Dockerfile, the Makefile and
       # install.py install.
       - name: Install dependencies

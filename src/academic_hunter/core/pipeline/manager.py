@@ -121,11 +121,7 @@ class SearchPipeline:
         if fetch_func is not None:
             fetch_fn = fetch_func
         else:
-            suffix = getattr(connector, "fetch_suffix", source_name.lower().replace(" ", "_"))
-            method_name = f"fetch_{suffix}"
-            fetch_fn = getattr(self.hunter, method_name, None)
-            if not fetch_fn:
-                fetch_fn = connector.fetch
+            fetch_fn = connector.fetch
 
         for anchor_cat, anchor_list in self.hunter.anchors.items():
             if is_keyword_only:
@@ -185,10 +181,20 @@ class SearchPipeline:
         """
         self.hunter.state.reset(list(self.hunter.connectors.keys()))
         self.hunter.blocked_sources.clear()
+        # All connectors point at this same mapping. Clear it once before
+        # restoring connector-specific pacing, or each later connector erases
+        # the delays restored by the previous one.
+        cleared_delay_maps = set()
         for connector in self.hunter.connectors.values():
             delays = getattr(connector, "pacing_delays", None)
-            if delays is not None:
+            if isinstance(delays, dict) and id(delays) not in cleared_delay_maps:
                 delays.clear()
+                cleared_delay_maps.add(id(delays))
+        if not cleared_delay_maps:
+            delays = getattr(self.hunter, "pacing_delays", None)
+            if isinstance(delays, dict):
+                delays.clear()
+        for connector in self.hunter.connectors.values():
             setup = getattr(connector, "setup_pacing", None)
             if setup is not None:
                 setup()
@@ -218,8 +224,7 @@ class SearchPipeline:
         Asked here rather than at construction: a credential can be configured
         between this run and the next, and `run_search` builds a fresh hunter
         that re-reads the config file. The connectors stay registered and
-        instantiated either way -- the facades reach into `hunter.connectors` by
-        name -- so this only decides who gets a thread.
+        instantiated either way, so this only decides who gets a thread.
 
         The answer is written to ``stats`` so the run's artifact can carry it.
         A source that was never queried and a source that was queried and found

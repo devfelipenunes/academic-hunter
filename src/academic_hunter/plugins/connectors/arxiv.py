@@ -11,7 +11,6 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 
 class ArxivConnector(BaseConnector):
-    fetch_suffix = "arxiv"
     SOURCE_NAME = "ArXiv"
     is_keyword_only = False
     domain = "export.arxiv.org"

@@ -28,7 +28,13 @@ async def test_find_novel_papers_too_few(mock_ctx):
 
 
 async def test_find_novel_papers_import_error(mock_ctx):
-    """Returns message when dependencies missing."""
+    """The reply names the extra to install, not the library that went missing.
+
+    This tool was the one that still answered ``Required library not installed:
+    No sklearn``. A reader who does not already know this project's extras
+    cannot get from "sklearn" to ``pip install 'academic-hunter[ml]'``, and the
+    other four tools that need the same extra had already been fixed to say it.
+    """
     from academic_hunter.interfaces.mcp.tools.novelty import find_novel_papers
 
     mock_store = MagicMock()
@@ -39,7 +45,7 @@ async def test_find_novel_papers_import_error(mock_ctx):
         with patch("sklearn.covariance.EllipticEnvelope") as m_env:
             m_env.side_effect = ImportError("No sklearn")
             result = await find_novel_papers(mock_ctx)
-    assert "Required library" in result
+    assert "academic-hunter[ml]" in result
 
 
 async def test_find_novel_papers_no_outliers(mock_ctx):

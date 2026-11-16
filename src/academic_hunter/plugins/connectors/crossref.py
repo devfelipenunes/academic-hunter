@@ -32,7 +32,6 @@ def clean_abstract(value: Any) -> str:
 
 
 class CrossrefConnector(BaseConnector):
-    fetch_suffix = "crossref"
     SOURCE_NAME = "Crossref"
     is_keyword_only = False
     domain = "api.crossref.org"

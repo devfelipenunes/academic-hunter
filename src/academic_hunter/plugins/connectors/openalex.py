@@ -1,7 +1,16 @@
 import logging
 from typing import Any, Dict, List
 
-from ...core.infra.config import openalex_key
+from academic_hunter import __version__
+
+from ...core.infra.openalex import (
+    OPENALEX_BASE,
+    OPENALEX_DEFAULT_DELAY,
+    OPENALEX_DOMAIN,
+    openalex_headers,
+    openalex_params,
+)
+from ...core.infra.transport import polite_email
 from ...core.models.authors import openalex_authors
 from ...core.models.utils import decode_abstract, normalize_doi
 from .base import BaseConnector
@@ -10,11 +19,10 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 
 class OpenAlexConnector(BaseConnector):
-    fetch_suffix = "openalex"
     SOURCE_NAME = "OpenAlex"
     is_keyword_only = False
-    domain = "api.openalex.org"
-    default_delay = 1.5
+    domain = OPENALEX_DOMAIN
+    default_delay = OPENALEX_DEFAULT_DELAY
     resolve_priority = 3
 
     def detect_peer_review(self, doc_type: str) -> str:
@@ -24,17 +32,12 @@ class OpenAlexConnector(BaseConnector):
         return "N/A"
 
     def get_headers(self) -> Dict[str, str]:
-        headers = super().get_headers()
-        key = openalex_key(self.settings)
-        if key:
-            headers["Authorization"] = f"Bearer {key}"
-        return headers
+        return openalex_headers(self.settings, __version__)
 
     def resolve_metadata_by_doi(self, doi: str) -> Dict[str, Any]:
         try:
-            url = f"https://api.openalex.org/works/https://doi.org/{doi}"
-            email = self.settings.get('user_email', 'academic_hunter@example.com')
-            data = self._make_request(url, params={"mailto": email}, timeout=10)
+            url = f"{OPENALEX_BASE}/works/https://doi.org/{doi}"
+            data = self._make_request(url, params=openalex_params(self.settings), timeout=10)
             return self.work_metadata(data)
         except Exception as e:
             logger.warning("OpenAlex metadata lookup failed for %s: %s", doi, e)
@@ -90,7 +93,7 @@ class OpenAlexConnector(BaseConnector):
         """
         counts: Dict[str, int] = {}
         keys = sorted({normalize_doi(d) for d in dois if d})
-        email = self.settings.get('user_email', 'academic_hunter@example.com')
+        email = polite_email(self.settings)
 
         for start in range(0, len(keys), chunk_size):
             chunk = keys[start:start + chunk_size]
@@ -117,7 +120,7 @@ class OpenAlexConnector(BaseConnector):
         return counts
 
     def fetch(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
-        email = self.settings.get('user_email', 'academic_hunter@example.com')
+        email = polite_email(self.settings)
         anchor_q = ' OR '.join([f'"{a}"' for a in anchors])
         tech_q = ' OR '.join([f'"{t}"' for t in tech_strings])
         query = f"({anchor_q}) AND ({tech_q})"

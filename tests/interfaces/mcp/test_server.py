@@ -59,12 +59,12 @@ def test_discover_and_register(mock_ctx):
     mock_mcp = MagicMock()
     _discover_and_register(mock_mcp)
 
-    assert mock_mcp.tool.call_count == 42
+    assert mock_mcp.tool.call_count == 38
 
 
 DOCUMENTED_TOOL_COUNTS = (
-    ("README.md", r"\*\*(\d+) ferramentas"),
-    ("README.md", r"MCP Server \((\d+) tools\)"),
+    ("README.md", r"\*\*(\d+) tools, 3 resources"),
+    ("README.md", r"MCP Server \((\d+) tools"),
     ("docs/mcp_setup.md", r"the agent sees (\d+) tools"),
     ("docs/mcp_setup.md", r"the same (\d+) tools"),
 )
@@ -298,3 +298,75 @@ def test_run_mcp_server_debug_log_level():
         run_mcp_server()
 
         m_get_logger.assert_any_call("academic_hunter")
+
+
+async def test_the_server_publishes_instructions_naming_the_pipeline_in_order():
+    """The one channel that reaches an agent before it picks a tool.
+
+    A connected agent saw 43 tools and nothing saying a flow existed: the flow
+    was written only in the MCP prompts, which a client delivers when the *user*
+    invokes one. A fresh install therefore chose tools by name — measured, it
+    left the pipeline at the first step and queried a single source directly.
+    `instructions` is the field the protocol sends at connect, and it was unset.
+    """
+    from academic_hunter.interfaces.mcp.server import PIPELINE_TOOLS, create_mcp_server
+
+    instructions = create_mcp_server().instructions
+
+    assert instructions, "an agent learns the flow from here or not at all"
+    assert len(instructions) <= 4096, (
+        "Claude Code truncates server instructions past 4096 characters, so a "
+        "step written after the cut is a step no agent is told about"
+    )
+
+    missing = [name for name in PIPELINE_TOOLS if name not in instructions]
+    assert not missing, f"the flow names tools the instructions do not: {missing}"
+
+    positions = [instructions.index(name) for name in PIPELINE_TOOLS]
+    assert positions == sorted(positions), (
+        f"the instructions name the steps out of order: {PIPELINE_TOOLS}"
+    )
+
+
+async def test_every_registered_tool_is_classified():
+    """A tool the grouping does not know about is one the agent is not told about.
+
+    Registration is by convention — a new `async def` with a `Context`
+    parameter joins the surface by existing — so the grouping only stays true if
+    something fails when a name is missing from it.
+    """
+    from academic_hunter.interfaces.mcp.server import (
+        ON_DEMAND_SOURCES,
+        PIPELINE_TOOLS,
+        SUPPORT_TOOLS,
+        create_mcp_server,
+    )
+
+    registered = {tool.name for tool in await create_mcp_server().list_tools()}
+    declared = set(PIPELINE_TOOLS) | set(ON_DEMAND_SOURCES) | set(SUPPORT_TOOLS)
+
+    assert registered == declared, (
+        f"registered but undeclared: {sorted(registered - declared)}; "
+        f"declared but not registered: {sorted(declared - registered)}"
+    )
+
+
+async def test_the_on_demand_tools_say_they_bypass_the_pipeline():
+    """The description is what an agent reads at the moment it chooses a tool.
+
+    A name alone never said which tools are the flow, and this server cannot see
+    the request that would disambiguate them. With tool search on, only names
+    load and this does not reach a first-party client — the marker is the
+    closest thing to that moment that the server controls, not a guarantee.
+    """
+    from academic_hunter.interfaces.mcp.server import ON_DEMAND_SOURCES, create_mcp_server
+
+    by_name = {tool.name: tool for tool in await create_mcp_server().list_tools()}
+
+    silent = [
+        name
+        for name in ON_DEMAND_SOURCES
+        if "bypass" not in (by_name[name].description or "").lower()
+    ]
+
+    assert not silent, f"these never say they bypass the pipeline: {silent}"

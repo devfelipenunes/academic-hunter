@@ -26,6 +26,81 @@ from .resources import (
 
 logger = logging.getLogger("academic_hunter.mcp")
 
+PIPELINE_TOOLS = (
+    "quick_topic_discovery",
+    "update_config",
+    "run_search",
+    "read_latest_report",
+)
+
+ON_DEMAND_SOURCES = (
+    "search_source",
+    "find_open_access",
+    "lookup_orcid",
+    "get_citation_count",
+    "get_citing_papers",
+    "fetch_paper_by_doi",
+    "fetch_multiple_abstracts",
+    "explore_citation_graph",
+)
+
+SUPPORT_TOOLS = (
+    "cluster_papers",
+    "find_novel_papers",
+    "semantic_search",
+    "rerank_search",
+    "answer_question",
+    "semantic_dedup",
+    "find_related_papers",
+    "trending_topics",
+    "topic_evolution",
+    "chunk_search",
+    "index_fulltext",
+    "index_papers",
+    "compare_papers",
+    "summarize_paper",
+    "export_report",
+    "outline_paper",
+    "paper_context",
+    "verify_citations",
+    "verify_numbers",
+    "export_to_obsidian",
+    "read_config",
+    "list_config_history",
+    "restore_config_by_id",
+    "server_status",
+    "fulltext_status",
+    "vector_store_stats",
+    "delete_collection",
+)
+
+SERVER_INSTRUCTIONS = """\
+Academic Hunter runs a literature-review pipeline. When the user asks to
+research, review or find the literature on a topic, run that pipeline; do not
+reach for a single-source tool instead.
+
+The pipeline, in this order:
+
+1. quick_topic_discovery — the terms the field's own titles use, counted, with
+   sample titles. It returns no anchors, no categories and no weights: it is
+   evidence, not a configuration. You write the configuration from those terms.
+2. update_config — applies the anchors and technical terms you wrote. Its reply
+   states what the configuration will do and what it will fail to do; read the
+   second part before searching.
+3. run_search — runs the pipeline. It refuses a configuration with no anchors.
+   Read the coverage it reports: a source listed as never queried was never
+   asked, which is a defect in the configuration and not an empty result.
+4. read_latest_report — reads the consolidated report of that run.
+
+These tools query one external source directly and bypass the pipeline, so they
+produce no run and no report: search_source — which takes the source as an
+argument, and reaches OpenAIRE, DataCite and Lens.org — plus find_open_access,
+lookup_orcid, get_citation_count,
+get_citing_papers, fetch_paper_by_doi, fetch_multiple_abstracts and
+explore_citation_graph. Reach for one only when the user asks for something
+specific — a DOI, a patent, a dataset, a preprint, one source by name.
+"""
+
 
 def _setup_logging():
     """Configure structured logging and quieten noisy third-party loggers."""
@@ -88,6 +163,7 @@ def create_mcp_server(host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
 
     mcp = FastMCP(
         "academic-hunter",
+        instructions=SERVER_INSTRUCTIONS,
         host=host,
         port=port,
         dependencies=["requests", "pandas", "chromadb"],

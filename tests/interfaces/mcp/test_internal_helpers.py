@@ -1,8 +1,12 @@
 """Tests for internal helper functions used across tools."""
 
+import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+from academic_hunter.core.infra.openalex import OPENALEX_DEFAULT_DELAY
+from academic_hunter.core.infra.transport import HttpTransport
 
 
 async def test_coci_request_success(mock_ctx):
@@ -73,12 +77,39 @@ def test_openalex_get_returns_the_payload(mock_openalex):
     assert m_get.call_args.args[0] == "https://api.openalex.org/works"
 
 
-def test_openalex_get_retries_a_429_then_succeeds(mock_openalex):
+def _with_mcp_transport(monkeypatch, clock, delay: float = 0.0) -> None:
+    """Point the MCP path at a transport this test drives.
+
+    The pacing and the retry belong to ``core.infra.transport`` now, and these
+    tests are about the waiting the shared fixture exists to remove — so they
+    build their own, with the arithmetic clock and without the no-op sleep.
+    """
+    from academic_hunter.core.infra import transport as transport_module
+    from academic_hunter.interfaces.mcp.tools import _utils
+
+    transport = HttpTransport(
+        lock=threading.Lock(),
+        semaphore=threading.Semaphore(2),
+        pacing_delays={},
+        last_request_by_domain={},
+        blocked_sources=set(),
+        default_delay=delay,
+        block_sources=False,
+        sleep=clock.sleep,
+    )
+    monkeypatch.setattr(transport_module, "time", clock)
+    monkeypatch.setattr(_utils, "_openalex_transport", lambda: transport)
+    monkeypatch.setattr(_utils, "_openalex_headers_and_params", lambda: ({}, {}))
+
+
+def test_openalex_get_retries_a_429_then_succeeds(monkeypatch):
+    """The wait is the one the API asked for, taken by the shared policy."""
     from academic_hunter.interfaces.mcp.tools import _utils
 
     clock = _FakeClock()
-    with patch.object(_utils, "time", clock), \
-         patch.object(_utils.requests, "get") as m_get:
+    _with_mcp_transport(monkeypatch, clock)
+
+    with patch.object(_utils.requests, "get") as m_get:
         m_get.side_effect = [
             _openalex_test_response(429, retry_after="1"),
             _openalex_test_response(200, {"ok": True}),
@@ -89,53 +120,55 @@ def test_openalex_get_retries_a_429_then_succeeds(mock_openalex):
     assert clock.slept == [1.0]
 
 
-def test_openalex_get_makes_at_most_attempts_requests(mock_openalex):
+def test_openalex_get_makes_at_most_attempts_requests(monkeypatch):
     """A spent budget costs `attempts` requests, not one more.
 
     The helper this replaced slept through its loop and then issued a further
     request *outside* it, so an exhausted retry cost four calls where the
-    parameter promised three.
+    parameter promised three. How long each wait is now belongs to the shared
+    policy; what this holds it to is the count, and that nothing is waited after
+    the last attempt.
     """
     import requests
 
     from academic_hunter.interfaces.mcp.tools import _utils
 
-    spent = _openalex_test_response(429)
+    spent = _openalex_test_response(429, retry_after="1")
     spent.raise_for_status.side_effect = requests.HTTPError("429 Too Many Requests")
 
     clock = _FakeClock()
-    with patch.object(_utils, "time", clock), \
-         patch.object(_utils.requests, "get") as m_get:
+    _with_mcp_transport(monkeypatch, clock)
+
+    with patch.object(_utils.requests, "get") as m_get:
         m_get.return_value = spent
         with pytest.raises(requests.HTTPError):
             _utils._openalex_get_sync("/works", attempts=3)
 
     assert m_get.call_count == 3
-    assert clock.slept == [1.0, 2.0]
+    assert clock.slept == [1.0, 1.0]
 
 
-def test_openalex_get_paces_successive_calls():
-    """Two calls in a row are held apart by the minimum interval.
+def test_openalex_get_paces_successive_calls(monkeypatch):
+    """Two calls in a row are held apart by the delay the source declares.
 
-    Deliberately without ``mock_openalex``: that fixture patches ``_pace_openalex``
-    away, which is exactly the behaviour under test here. Only the config read is
-    neutralised, and the clock is supplied so the wait is arithmetic, not wall
-    clock.
+    The half-second constant this used to assert went with the private policy:
+    the MCP path now paces by ``OPENALEX_DEFAULT_DELAY``, the same number the
+    pipeline's connector uses, so this imports it rather than restating it. If
+    a second half-second ever reappears here, this is what fails.
     """
     from academic_hunter.interfaces.mcp.tools import _utils
 
     clock = _FakeClock()
-    with patch.object(_utils, "_openalex_credentials", return_value=({}, {})), \
-         patch.object(_utils, "time", clock), \
-         patch.object(_utils, "_openalex_last_call", 0.0), \
-         patch.object(_utils.requests, "get") as m_get:
+    _with_mcp_transport(monkeypatch, clock, delay=OPENALEX_DEFAULT_DELAY)
+
+    with patch.object(_utils.requests, "get") as m_get:
         m_get.return_value = _openalex_test_response()
         _utils._openalex_get_sync("/works")
         assert clock.slept == [], "the first call should not be paced"
 
         _utils._openalex_get_sync("/works")
 
-    assert clock.slept == [_utils._OPENALEX_MIN_INTERVAL]
+    assert clock.slept == [OPENALEX_DEFAULT_DELAY]
 
 
 def test_openalex_key_prefers_the_environment(monkeypatch):
@@ -202,7 +235,7 @@ def test_extract_bigrams_ignores_stopwords():
 
 def test_extract_meta_parses_openai_response():
     """Extracts metadata from OpenAIRE-style nested response."""
-    from academic_hunter.interfaces.mcp.tools.openaire import _extract_meta
+    from academic_hunter.interfaces.mcp.tools.sources import _openaire_meta as _extract_meta
 
     oaf = {
         "title": [{"@classid": "main title", "$": "Test Paper Title"}],
@@ -223,7 +256,7 @@ def test_extract_meta_parses_openai_response():
 
 def test_extract_meta_empty_fallback():
     """Returns fallback values when fields are missing."""
-    from academic_hunter.interfaces.mcp.tools.openaire import _extract_meta
+    from academic_hunter.interfaces.mcp.tools.sources import _openaire_meta as _extract_meta
 
     meta = _extract_meta({})
     assert meta["title"] == ""
@@ -354,90 +387,3 @@ def test_make_hunter(mock_ctx):
             result = _utils._make_hunter()
     m_h.assert_called_once_with(output_dir="/tmp/test_project/results")
     assert result == mock_hunter
-
-
-def test_write_bibtex_creates_entries(tmp_path):
-    """Writes BibTeX entries to file."""
-    from academic_hunter.interfaces.mcp.tools.export import _write_bibtex
-
-    papers = [
-        {"Title": "Paper One", "DOI": "10.1000/one", "Authors": "Author A", "Year": 2024},
-    ]
-    out = tmp_path / "test.bib"
-    _write_bibtex(papers, str(out))
-
-    content = out.read_text()
-    assert "@article{" in content
-    assert "Paper One" in content
-    assert "Author A" in content
-    assert "2024" in content
-
-
-def test_write_bibtex_empty_fields(tmp_path):
-    """Writes BibTeX entries when optional fields are empty."""
-    from academic_hunter.interfaces.mcp.tools.export import _write_bibtex
-
-    papers = [
-        {"Title": "", "DOI": "", "Authors": "", "Year": "", "Source": "", "URL": "", "Abstract": ""},
-    ]
-    out = tmp_path / "empty.bib"
-    _write_bibtex(papers, str(out))
-
-    content = out.read_text()
-    assert "@article{" in content
-    assert "}" in content
-
-
-def test_write_bibtex_no_doi_key(tmp_path):
-    """A paper with no DOI still gets the key the agent was told to cite."""
-    from academic_hunter.core.writing import format_bibtex_key
-    from academic_hunter.interfaces.mcp.tools.export import _write_bibtex
-
-    papers = [{"Title": "No DOI Paper", "Year": "2024"}]
-    out = tmp_path / "test.bib"
-    _write_bibtex(papers, str(out))
-
-    expected = format_bibtex_key("No DOI Paper", "2024")
-    assert f"@article{{{expected}," in out.read_text()
-
-
-def test_write_ris_creates_entries(tmp_path):
-    """Writes RIS entries to file."""
-    from academic_hunter.interfaces.mcp.tools.export import _write_ris
-
-    papers = [
-        {"Title": "Paper One", "DOI": "10.1000/one", "Authors": ["Author A"], "Year": 2024},
-    ]
-    out = tmp_path / "test.ris"
-    _write_ris(papers, str(out))
-
-    content = out.read_text()
-    assert "TY  - JOUR" in content
-    assert "TI  - Paper One" in content
-    assert "DO  - 10.1000/one" in content
-    assert "PY  - 2024" in content
-
-
-def test_write_ris_string_author(tmp_path):
-    """Writes RIS with string author (not list)."""
-    from academic_hunter.interfaces.mcp.tools.export import _write_ris
-
-    papers = [
-        {"Title": "Paper", "Authors": "Single Author"},
-    ]
-    out = tmp_path / "test.ris"
-    _write_ris(papers, str(out))
-
-    content = out.read_text()
-    assert "AU  - Single Author" in content
-
-
-def test_write_ris_empty_papers(tmp_path):
-    """Writes empty RIS when no papers provided."""
-    from academic_hunter.interfaces.mcp.tools.export import _write_ris
-
-    out = tmp_path / "empty.ris"
-    _write_ris([], str(out))
-
-    content = out.read_text()
-    assert content.strip() == ""

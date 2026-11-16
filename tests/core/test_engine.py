@@ -3,7 +3,7 @@ import json
 from academic_hunter import AcademicHunter
 
 
-def test_threaded_execution_integrity(tmp_path, monkeypatch):
+def test_threaded_execution_integrity(tmp_path, stub_connector_fetch):
     config = {
         "settings": {"min_relevance_score": 0.5, "start_year": 2024},
         "anchors": {"test": ["artificial intelligence"]},
@@ -27,17 +27,7 @@ def test_threaded_execution_integrity(tmp_path, monkeypatch):
         "Venue": "Mock Venue"
     }
     
-    def mock_fetch(self, *args, **kwargs):
-        p = dummy_paper.copy()
-        p["Source"] = self.__class__.__name__
-        return [p]
-
-    monkeypatch.setattr(AcademicHunter, "fetch_arxiv", lambda *args, **kwargs: [dummy_paper.copy()])
-    monkeypatch.setattr(AcademicHunter, "fetch_crossref", lambda *args, **kwargs: [dummy_paper.copy()])
-    monkeypatch.setattr(AcademicHunter, "fetch_semantic_scholar", lambda *args, **kwargs: [dummy_paper.copy()])
-    monkeypatch.setattr(AcademicHunter, "fetch_openalex", lambda *args, **kwargs: [dummy_paper.copy()])
-    monkeypatch.setattr(AcademicHunter, "fetch_core_ac", lambda *args, **kwargs: [dummy_paper.copy()])
-    monkeypatch.setattr(AcademicHunter, "fetch_doaj", lambda *args, **kwargs: [dummy_paper.copy()])
+    stub_connector_fetch([dummy_paper])
 
     hunter.run(limit_per_source=1)
     

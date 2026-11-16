@@ -9,47 +9,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
-def _epmc_response(papers):
-    response = MagicMock()
-    response.json.return_value = {"hitCount": len(papers), "resultList": {"result": papers}}
-    return response
-
-
-async def _epmc_report(mock_ctx, **fields):
-    from academic_hunter.interfaces.mcp.tools.europepmc import search_europepmc
-
-    paper = {
-        "title": "A study",
-        "authorString": "A. Author",
-        "firstPublicationDate": "2024-01-01",
-        "source": "MED",
-        **fields,
-    }
-    with patch("requests.get", return_value=_epmc_response([paper])):
-        return await search_europepmc(mock_ctx, query="ledgers")
-
-
-async def test_europe_pmc_badges_an_open_paper(mock_ctx):
-    assert "[OA]" in await _epmc_report(mock_ctx, isOpenAccess="Y")
-
-
-async def test_europe_pmc_does_not_badge_a_closed_one(mock_ctx):
-    """`isOpenAccess` comes as the strings "Y" and "N".
-
-    Used for its truthiness, `"N"` is a non-empty string and therefore true — so
-    every closed-access paper was badged open.
-    """
-    report = await _epmc_report(mock_ctx, isOpenAccess="N")
-
-    assert "[OA]" not in report, report
-
-
-async def test_europe_pmc_without_the_field_badges_nothing(mock_ctx):
-    report = await _epmc_report(mock_ctx)
-
-    assert "[OA]" not in report, report
-
-
 async def test_unpaywall_falls_back_when_the_pdf_field_is_null(mock_ctx):
     """`.get("url_for_pdf", fallback)` returns the fallback only when the key is
     **absent**.
@@ -163,13 +122,13 @@ async def test_the_patent_search_sends_the_token_the_api_requires(mock_ctx, monk
     and the module docstring's "1,000 requests/day with token" described a
     capability the tool had no path to.
     """
-    from academic_hunter.interfaces.mcp.tools.lens import search_patents
+    from academic_hunter.interfaces.mcp.tools.sources import search_source
 
     monkeypatch.setenv("LENS_API_KEY", "secret-token")
     captured = {}
 
-    with patch("academic_hunter.interfaces.mcp.tools.lens.requests.post", _lens_post(captured)):
-        await search_patents(mock_ctx, query="ledgers")
+    with patch("academic_hunter.interfaces.mcp.tools.sources.requests.post", _lens_post(captured)):
+        await search_source(mock_ctx, "lens", query="ledgers")
 
     assert captured["headers"].get("Authorization") == "Bearer secret-token"
 
@@ -177,27 +136,27 @@ async def test_the_patent_search_sends_the_token_the_api_requires(mock_ctx, monk
 async def test_without_a_token_it_says_which_one_is_missing(mock_ctx, monkeypatch):
     """A bare 401 does not tell anyone what to configure."""
     from academic_hunter.interfaces.mcp.exceptions import DiscoveryError
-    from academic_hunter.interfaces.mcp.tools.lens import search_patents
+    from academic_hunter.interfaces.mcp.tools.sources import search_source
 
     monkeypatch.delenv("LENS_API_KEY", raising=False)
 
     with patch("academic_hunter.core.get_config", return_value=MagicMock(settings={})):
         with pytest.raises(DiscoveryError) as exc:
-            await search_patents(mock_ctx, query="ledgers")
+            await search_source(mock_ctx, "lens", query="ledgers")
 
     assert "LENS_API_KEY" in str(exc.value), str(exc.value)
 
 
 async def test_the_token_can_come_from_the_config_instead(mock_ctx, monkeypatch):
-    from academic_hunter.interfaces.mcp.tools.lens import search_patents
+    from academic_hunter.interfaces.mcp.tools.sources import search_source
 
     monkeypatch.delenv("LENS_API_KEY", raising=False)
     config = MagicMock(settings={"api_keys": {"lens": "from-config"}})
     captured = {}
 
     with patch("academic_hunter.core.get_config", return_value=config), \
-         patch("academic_hunter.interfaces.mcp.tools.lens.requests.post", _lens_post(captured)):
-        await search_patents(mock_ctx, query="ledgers")
+         patch("academic_hunter.interfaces.mcp.tools.sources.requests.post", _lens_post(captured)):
+        await search_source(mock_ctx, "lens", query="ledgers")
 
     assert captured["headers"].get("Authorization") == "Bearer from-config"
 
@@ -211,10 +170,10 @@ def _openaire_response(oaf):
 
 
 async def _openaire_report(mock_ctx, oaf):
-    from academic_hunter.interfaces.mcp.tools.openaire import search_openaire
+    from academic_hunter.interfaces.mcp.tools.sources import search_source
 
     with patch("requests.get", return_value=_openaire_response(oaf)):
-        return await search_openaire(mock_ctx, query="ledgers")
+        return await search_source(mock_ctx, "openaire", query="ledgers")
 
 
 async def test_openaire_reads_a_single_valued_field(mock_ctx):
@@ -251,49 +210,6 @@ async def test_openaire_reads_a_multi_valued_field(mock_ctx):
 
     assert "The real title" in report, report
     assert "Ada; Grace" in report, report
-
-
-def _biorxiv_page(items, cursor):
-    response = MagicMock()
-    response.json.return_value = {
-        "messages": [{"status": "ok", "cursor": cursor, "count": len(items)}],
-        "collection": items,
-    }
-    return response
-
-
-async def test_biorxiv_follows_the_cursor_to_find_a_match(mock_ctx):
-    """The API answers by date range, and one page does not cover 90 days.
-
-    Only the first page was read, so "no matching preprints found" could mean
-    "none on the page we happened to read" — reported as a result about the whole
-    window the tool announces.
-    """
-    from academic_hunter.interfaces.mcp.tools.biorxiv import search_biorxiv
-
-    pages = [
-        _biorxiv_page([{"title": "Something unrelated", "abstract": ""}], cursor=100),
-        _biorxiv_page([{"title": "Ledger methods", "abstract": ""}], cursor=200),
-        _biorxiv_page([], cursor=200),
-    ]
-
-    with patch("requests.get", side_effect=pages):
-        report = await search_biorxiv(mock_ctx, query="ledger")
-
-    assert "Ledger methods" in report, report
-
-
-async def test_biorxiv_stops_when_the_cursor_stops_moving(mock_ctx):
-    """A cursor that does not advance would repeat the same page forever."""
-    from academic_hunter.interfaces.mcp.tools.biorxiv import search_biorxiv
-
-    page = _biorxiv_page([{"title": "Something unrelated", "abstract": ""}], cursor=0)
-
-    with patch("requests.get", return_value=page) as m_get:
-        report = await search_biorxiv(mock_ctx, query="ledger")
-
-    assert "No matching preprints" in report
-    assert m_get.call_count <= 2, f"the loop did not stop: {m_get.call_count} pages"
 
 
 async def test_a_store_that_cannot_be_read_makes_the_status_degrade(mock_ctx):

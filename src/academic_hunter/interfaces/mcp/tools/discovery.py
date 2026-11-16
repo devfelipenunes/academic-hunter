@@ -42,6 +42,10 @@ def _rate_limit_error() -> DiscoveryError:
 async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Context = None) -> str:
     """Explore the citation graph of a paper using its DOI via OpenAlex.
 
+    Bypasses the pipeline: one source directly, so no run and no report. For a
+    literature review run `quick_topic_discovery`, then `update_config`, then
+    `run_search`; use this for the specific lookup the user asked for.
+
     Both directions are answered from OpenAlex: "citations" filters works by
     `cites:<id>`, and "references" resolves the IDs the work carries. The DOI
     lookup itself is free; each direction costs one credit.
@@ -128,6 +132,10 @@ async def explore_citation_graph(doi: str, direction: str = "citations", ctx: Co
 async def fetch_paper_by_doi(doi: str, ctx: Context) -> str:
     """Fetches the abstract and metadata for a specific paper using its DOI.
 
+    Bypasses the pipeline: one source directly, so no run and no report. For a
+    literature review run `quick_topic_discovery`, then `update_config`, then
+    `run_search`; use this for the specific lookup the user asked for.
+
     Useful when you need specific details about a single paper without
     running a full search.
     """
@@ -149,6 +157,10 @@ async def fetch_paper_by_doi(doi: str, ctx: Context) -> str:
 
 async def fetch_multiple_abstracts(dois: list[str], ctx: Context) -> str:
     """Fetches the abstracts for a list of DOIs.
+
+    Bypasses the pipeline: one source directly, so no run and no report. For a
+    literature review run `quick_topic_discovery`, then `update_config`, then
+    `run_search`; use this for the specific lookup the user asked for.
 
     Useful for reading multiple papers at once to generate a literature
     review matrix or summary.

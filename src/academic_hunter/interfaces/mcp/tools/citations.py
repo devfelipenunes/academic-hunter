@@ -30,6 +30,10 @@ async def _coci_request(endpoint: str, doi: str) -> list:
 async def get_citation_count(ctx: Context, doi: str) -> str:
     """Returns the number of citations a paper has received via OpenCitations.
 
+    Bypasses the pipeline: one source directly, so no run and no report. For a
+    literature review run `quick_topic_discovery`, then `update_config`, then
+    `run_search`; use this for the specific lookup the user asked for.
+
     Args:
         ctx: FastMCP Context (auto-injected).
         doi: The DOI of the paper to look up.
@@ -51,6 +55,10 @@ async def get_citation_count(ctx: Context, doi: str) -> str:
 @cached(citation_cache)
 async def get_citing_papers(ctx: Context, doi: str, limit: int = 10) -> str:
     """Lists the papers that cite a given DOI.
+
+    Bypasses the pipeline: one source directly, so no run and no report. For a
+    literature review run `quick_topic_discovery`, then `update_config`, then
+    `run_search`; use this for the specific lookup the user asked for.
 
     Args:
         ctx: FastMCP Context (auto-injected).

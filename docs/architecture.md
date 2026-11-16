@@ -18,9 +18,12 @@ graph TD
     end
 
     subgraph Interfaces["Interfaces (Delivery Layer)"]
-        App["app/main.py (Hunter facade)"]:::interface
         MCP_Server["FastMCP Server"]:::interface
         DB["SQLite DB (.academic_hunter)"]:::interface
+    end
+
+    subgraph App["App (Composition Root)"]
+        App["app/main.py (AcademicHunter)"]:::interface
     end
 
     subgraph Core["Core Engine (Domain Layer)"]

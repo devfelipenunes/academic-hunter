@@ -1,4 +1,4 @@
-"""Regression tests for the hunter's HTTP facade.
+"""Regression tests for the hunter's request routing.
 
 ``AcademicHunter._make_request`` used to dispatch *every* URL through the
 OpenAlex connector, whatever the destination. Pacing was unaffected — the

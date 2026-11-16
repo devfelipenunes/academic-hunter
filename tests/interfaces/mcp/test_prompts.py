@@ -70,3 +70,22 @@ async def test_quick_discovery_contains_steps():
     assert "quick_topic_discovery" in result
     assert "semantic_search" in result
     assert "Export the findings" in result or "Obsidian" in result
+
+
+async def test_no_prompt_promises_a_config_from_the_discovery():
+    """The tool's own docstring says the configuration is written by the caller.
+
+    ``quick_topic_discovery`` returns the terms the titles use, counted, and no
+    anchors, no categories and no weights — pinned in ``test_discovery_tools``.
+    Both prompts told the agent it returns "a draft config", so an agent
+    following them ran step 1, waited for a configuration that never arrived and
+    improvised: measured, it left the pipeline there and queried a single source
+    directly. The order was already checked here; the promise was not.
+    """
+    for text in (
+        await systematic_review("AI", "AI question"),
+        await quick_discovery("AI"),
+    ):
+        lowered = text.lower()
+        assert "draft config" not in lowered
+        assert "rascunho" not in lowered

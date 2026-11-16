@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 sys.path.append(str(Path(__file__).parent.parent / 'src'))
 
 from academic_hunter import AcademicHunter
+from academic_hunter.core.pipeline.manager import SearchPipeline
 
 
 class TestAcademicHunterEnhancements(unittest.TestCase):
@@ -79,7 +80,7 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
             }
         }
         mock_get.return_value = mock_resp
-        res = self.hunter.fetch_crossref(["Pix payment"], ["blockchain"])
+        res = self.hunter.connectors["Crossref"].fetch(["Pix payment"], ["blockchain"])
         self.assertEqual(res[0]["Year"], 2023)
 
         mock_resp.json.return_value = {
@@ -96,7 +97,7 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
                 ]
             }
         }
-        res = self.hunter.fetch_crossref(["Pix payment"], ["blockchain"])
+        res = self.hunter.connectors["Crossref"].fetch(["Pix payment"], ["blockchain"])
         self.assertEqual(res[0]["Year"], 2024)
 
         mock_resp.json.return_value = {
@@ -113,7 +114,7 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
                 ]
             }
         }
-        res = self.hunter.fetch_crossref(["Pix payment"], ["blockchain"])
+        res = self.hunter.connectors["Crossref"].fetch(["Pix payment"], ["blockchain"])
         self.assertEqual(res[0]["Year"], 2022)
 
         mock_resp.json.return_value = {
@@ -130,7 +131,7 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
                 ]
             }
         }
-        res = self.hunter.fetch_crossref(["Pix payment"], ["blockchain"])
+        res = self.hunter.connectors["Crossref"].fetch(["Pix payment"], ["blockchain"])
         self.assertEqual(res[0]["Year"], 2021)
 
     @patch('requests.get')
@@ -304,11 +305,11 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
         self.hunter.tech_strings["Infra2"] = ["interoperability"]
         
         calls.clear()
-        self.hunter._api_worker("DOAJ", mock_fetch, limit_per_source=5)
+        SearchPipeline(self.hunter)._api_worker("DOAJ", mock_fetch, limit_per_source=5)
         self.assertEqual(len(calls), 2)
-        
+
         calls.clear()
-        self.hunter._api_worker("Crossref", mock_fetch, limit_per_source=5)
+        SearchPipeline(self.hunter)._api_worker("Crossref", mock_fetch, limit_per_source=5)
         self.assertEqual(len(calls), 4)
 
     def test_prisma_consensus_and_rigor_stats(self):
@@ -377,7 +378,7 @@ class TestAcademicHunterEnhancements(unittest.TestCase):
             
             s2_hunter = AcademicHunter(config_path=temp_cfg_path, output_dir=self.output_dir)
             
-            self.assertEqual(s2_hunter._pacing_delays["api.semanticscholar.org"], 1.0)
+            self.assertEqual(s2_hunter.pacing_delays["api.semanticscholar.org"], 1.0)
             
             for name, conn in s2_hunter.connectors.items():
                 self.assertEqual(conn.pacing_delays["api.semanticscholar.org"], 1.0)

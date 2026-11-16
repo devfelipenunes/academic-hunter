@@ -88,9 +88,22 @@ CUTOFF = 10
 
 
 def load_papers(run_dir: Path) -> List[Dict[str, Any]]:
-    """The run's dataset, in the order it was written."""
-    path = glob.glob(str(run_dir / "academic_dataset_*.csv"))[0]
-    with open(path, encoding="utf-8") as fh:
+    """The run's dataset, in a defined order.
+
+    Sorted and guarded. The glob's order is not defined, and ``[0]`` over an
+    empty one was an ``IndexError`` raised from inside this file: on a fresh
+    clone — where ``results/`` does not exist, because it is not versioned — the
+    instrument that measures the pipeline died with a traceback naming neither
+    the directory it had searched nor what a run puts there.
+    """
+    matches = sorted(glob.glob(str(run_dir / "academic_dataset_*.csv")))
+    if not matches:
+        raise FileNotFoundError(
+            f"no academic_dataset_*.csv under {run_dir}. A run writes one into "
+            f"results/run_<timestamp>/; point --run at such a directory, or at "
+            f"tests/evaluation/fixtures/ for the run the qrels was measured on."
+        )
+    with open(matches[0], encoding="utf-8") as fh:
         return list(csv.DictReader(fh))
 
 
@@ -154,6 +167,7 @@ def rank_for_question(
     rerank: bool,
     rerank_top_n: int,
     rerank_model: str,
+    legs: Optional[Dict[str, Any]] = None,
 ) -> List[int]:
     """The order the pipeline would report for ``question``, best first.
 
@@ -161,6 +175,11 @@ def rank_for_question(
     written today: BM25 over the question as the sparse leg, the weighted-sum
     fusion at ``settings.fusion_weights``, and — when enabled — the cross-encoder
     over the head only, redistributing those scores rather than replacing them.
+
+    ``legs`` is told whether the rerank actually applied. It is requested and it
+    happens in two different places — ``rerank_texts`` returns ``None`` when the
+    cross-encoder is missing, and the head can come back non-finite — so "the
+    caller asked for it" is not the same fact as "it ran".
     """
     sparse = BM25(texts).score(question)
     dense = dense if dense is not None else [0.0] * len(texts)
@@ -175,7 +194,45 @@ def rank_for_question(
         if scores is not None and all(math.isfinite(s) for s in scores):
             order = sorted(range(len(scores)), key=lambda i: (-scores[i], i))
             fused = rerank_scores(fused, [head[i] for i in order], DECIMALS)
+            if legs is not None:
+                legs["rerank_ran"] = True
     return sorted(range(len(fused)), key=lambda i: (-fused[i], i))
+
+
+def new_legs(args) -> Dict[str, Any]:
+    """What was asked of each leg, before anything has run.
+
+    ``dense_ran`` and ``rerank_ran`` are filled in by the callers, because they
+    are facts about the run rather than about the request.
+    """
+    return {
+        "dense_requested": args.dense == "query",
+        "dense_ran": False,
+        "rerank_requested": bool(args.rerank),
+        "rerank_ran": False,
+    }
+
+
+def legs_line(result: Dict[str, Any]) -> str:
+    """Which legs actually ran, in the output, next to the number they produced.
+
+    A dense leg whose embedder will not load scores zero for every paper, and a
+    rerank whose cross-encoder is missing is skipped outright — neither raises,
+    and the metric prints the same as a measured one. This harness is what makes
+    a change to the ranking argueable, so it cannot be where a leg goes quiet:
+    the number below this line is only the number it claims to be if the legs it
+    names are the legs that ran.
+    """
+    def describe(requested: bool, ran: bool) -> str:
+        if not requested:
+            return "off"
+        return "ran" if ran else "REQUESTED BUT DID NOT RUN"
+
+    return (
+        f"  legs:  sparse=bm25  "
+        f"dense={describe(result['dense_requested'], result['dense_ran'])}  "
+        f"rerank={describe(result['rerank_requested'], result['rerank_ran'])}"
+    )
 
 
 def _weights_from(args) -> Dict[str, float]:
@@ -224,6 +281,7 @@ def evaluate_pool(pool_path: Path, args) -> Dict[str, Any]:
     data = json.loads(pool_path.read_text())
     documents = data["documents"]
     weights = _weights_from(args)
+    legs = new_legs(args)
 
     per_query, ndcgs = [], []
     for name, query in data["queries"].items():
@@ -235,10 +293,12 @@ def evaluate_pool(pool_path: Path, args) -> Dict[str, Any]:
         grades = [float((query["judgments"] or {}).get(i, 0)) for i in ids]
 
         dense = query_dense_scores(texts, query["text"]) if args.dense == "query" else None
+        if dense is not None:
+            legs["dense_ran"] = True
         order = rank_for_question(
             texts, query["text"], weights=weights, dense=dense,
             rerank=args.rerank, rerank_top_n=args.top_n,
-            rerank_model=args.rerank_model,
+            rerank_model=args.rerank_model, legs=legs,
         )
         score = ndcg_at_k(order, grades)
         ndcgs.append(score)
@@ -255,6 +315,7 @@ def evaluate_pool(pool_path: Path, args) -> Dict[str, Any]:
         "queries": len(ndcgs),
         "candidates": len(next(iter(data["queries"].values()))["pool"]),
         "ndcg@10": sum(ndcgs) / len(ndcgs) if ndcgs else 0.0,
+        **legs,
         "per_query": per_query,
     }
 
@@ -266,6 +327,7 @@ def evaluate(run_dir: Path, qrels: Dict[str, Any], args) -> Dict[str, Any]:
     by_slug = {title_slug(p.get("Title", "")): i for i, p in enumerate(papers)}
 
     weights = _weights_from(args)
+    legs = new_legs(args)
 
     per_question = []
     for item in qrels["questions"]:
@@ -274,17 +336,19 @@ def evaluate(run_dir: Path, qrels: Dict[str, Any], args) -> Dict[str, Any]:
             target = by_slug.get(item["target_slug"])
         if target is None:
             per_question.append({"question": item["question"], "rank": None,
-                                 "note": "alvo ausente do run"})
+                                 "note": "target missing from the run"})
             continue
 
         dense = None
         if args.dense == "query":
             dense = query_dense_scores(texts, item["question"])
+            if dense is not None:
+                legs["dense_ran"] = True
 
         order = rank_for_question(
             texts, item["question"], weights=weights, dense=dense,
             rerank=args.rerank, rerank_top_n=args.top_n,
-            rerank_model=args.rerank_model,
+            rerank_model=args.rerank_model, legs=legs,
         )
         rank = order.index(target) + 1
         per_question.append({
@@ -303,6 +367,7 @@ def evaluate(run_dir: Path, qrels: Dict[str, Any], args) -> Dict[str, Any]:
         "ndcg@10": sum(1.0 / math.log2(r + 1) for r in hits) / n if n else 0.0,
         "mrr": sum(1.0 / r for r in ranks) / n if n else 0.0,
         "median_rank": sorted(ranks)[len(ranks) // 2] if ranks else None,
+        **legs,
         "per_question": per_question,
     }
 
@@ -328,28 +393,60 @@ def main() -> int:
         parser.error("give either --pool, or both --run and --qrels")
 
     label = f"weights={args.weights or 'default'} dense={args.dense} rerank={args.rerank}"
-    if args.pool:
-        result = evaluate_pool(args.pool, args)
-        print(f"\n{args.pool.name}  |  pool  |  {label}")
-        print(f"  consultas {result['queries']}  candidatos por consulta {result['candidates']}")
-        print(f"  nDCG@10 {result['ndcg@10']:.4f}")
-        for q in result["per_query"]:
-            print(f"    {q['ndcg@10']:.4f}  {q['query']}")
-            if args.verbose:
-                print(f"            posto 1  {q['best_ranked']}")
-                print(f"            melhor   {q['best_judged']}")
-    else:
-        result = evaluate(args.run, json.loads(args.qrels.read_text()), args)
-        print(f"\n{args.run.name}  |  {label}")
-        print(f"  perguntas {result['questions']}  (com alvo no run: {result['answered']})")
-        print(f"  recall@10 {result['recall@10']:.4f}   nDCG@10 {result['ndcg@10']:.4f}"
-              f"   MRR {result['mrr']:.4f}   mediana da posicao {result['median_rank']}")
-        if args.verbose:
-            for q in result["per_question"]:
-                print(f"    {q['rank'] or '-':>4}  {q['question'][:70]}")
+    try:
+        result = _run(args, label)
+    except FileNotFoundError as exc:
+        print(f"\n{exc}", file=sys.stderr)
+        return 1
     if args.json:
         args.json.write_text(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
+
+
+def _run(args, label: str) -> Dict[str, Any]:
+    """Run the requested mode and print it.
+
+    Separated so ``main`` can turn a missing dataset into one readable line: the
+    message ``load_papers`` raises is the whole point of raising it, and a
+    traceback stacked under it buries it.
+    """
+    if args.pool:
+        result = evaluate_pool(args.pool, args)
+        print(f"\n{args.pool.name}  |  pool  |  {label}")
+        print(f"  queries {result['queries']}  candidates per query {result['candidates']}")
+        print(f"  nDCG@10 {result['ndcg@10']:.4f}")
+        print(legs_line(result))
+        for q in result["per_query"]:
+            print(f"    {q['ndcg@10']:.4f}  {q['query']}")
+            if args.verbose:
+                print(f"            ranked 1  {q['best_ranked']}")
+                print(f"            best      {q['best_judged']}")
+    else:
+        qrels = json.loads(args.qrels.read_text())
+        result = evaluate(args.run, qrels, args)
+        print(f"\n{args.run.name}  |  {label}")
+        print(f"  questions {result['questions']}"
+              f"  (with their target in the run: {result['answered']})")
+        print(f"  recall@10 {result['recall@10']:.4f}   nDCG@10 {result['ndcg@10']:.4f}"
+              f"   MRR {result['mrr']:.4f}   median rank {result['median_rank']}")
+        print(legs_line(result))
+        if result["answered"] == 0:
+            print(
+                "  !  none of the qrels' targets is in this run, so these metrics "
+                "compare nothing.\n"
+                f"     The qrels was written against {qrels.get('run', '?')}; point "
+                "--run at that run, or leave it unset for the versioned fixture."
+            )
+        elif result["answered"] < result["questions"]:
+            print(
+                f"  !  {result['questions'] - result['answered']} of the qrels' targets "
+                "is not in this run; the metrics are computed over all "
+                f"{result['questions']} questions regardless."
+            )
+        if args.verbose:
+            for q in result["per_question"]:
+                print(f"    {q['rank'] or '-':>4}  {q['question'][:70]}")
+    return result
 
 
 if __name__ == "__main__":

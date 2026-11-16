@@ -51,18 +51,12 @@ def _edges(markdown):
 
 
 @pytest.fixture
-def run_output(tmp_path, monkeypatch):
+def run_output(tmp_path, stub_connector_fetch):
     config_path = tmp_path / "config.json"
     config_path.write_text(json.dumps(CONFIG), encoding="utf-8")
     hunter = AcademicHunter(config_path=str(config_path), output_dir=str(tmp_path))
 
-    for name in (
-        "fetch_arxiv", "fetch_crossref", "fetch_semantic_scholar", "fetch_openalex",
-        "fetch_core_ac", "fetch_doaj",
-    ):
-        monkeypatch.setattr(
-            AcademicHunter, name, lambda *a, **k: [p.copy() for p in PAPERS]
-        )
+    stub_connector_fetch(PAPERS)
 
     returned = hunter.run(limit_per_source=1)
 

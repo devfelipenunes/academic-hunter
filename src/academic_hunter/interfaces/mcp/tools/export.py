@@ -4,27 +4,23 @@ Accepts a ``ctx: Context`` parameter (auto-injected by FastMCP)
 for logging and progress reporting.
 """
 
-import json
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from academic_hunter import AcademicHunter
 from academic_hunter.core.infra import paths
-from academic_hunter.core.models.authors import split_authors
-from academic_hunter.core.models.utils import (
-    bibtex_authors,
-    escape_bibtex,
-    neutralise_formula,
-    one_line,
-)
-from academic_hunter.core.writing.style import paper_citation_key
+from academic_hunter.core.writing import renderers
 from mcp.server.fastmcp import Context
 
 from ..exceptions import SearchError
 from ._utils import _load_latest_papers, get_project_root, run_blocking
 
 logger = logging.getLogger("academic_hunter.mcp.export")
+
+SUPPORTED_FORMATS = ("csv", "json", "bibtex", "ris")
+EXTENSIONS = {"csv": "csv", "json": "json", "bibtex": "bib", "ris": "ris"}
 
 
 def _free_path(directory, stem: str, ext: str):
@@ -43,10 +39,29 @@ def _free_path(directory, stem: str, ext: str):
     return candidate
 
 
+def _renderer_for(format_lower: str):
+    """The one function that renders this format, looked up at call time.
+
+    Resolved per call rather than held in a module-level map on purpose: the same
+    function renders the run's own artefacts inside the pipeline, and a lookup
+    bound at import would keep serving the old object if anything ever replaced
+    it.
+    """
+    return {
+        "csv": renderers.render_csv,
+        "json": renderers.render_json,
+        "bibtex": renderers.render_bibtex,
+        "ris": renderers.render_ris,
+    }[format_lower]
+
+
 async def export_report(
     ctx: Context, format: str = "csv", output_path: Optional[str] = None
 ) -> str:
     """Exports the latest consolidated search results in CSV, JSON, BibTeX, or RIS format.
+
+    The file's text comes from ``core.writing.renderers``, the same functions the
+    pipeline writes a run's own ``academic_dataset_*`` files with.
 
     Args:
         ctx: FastMCP Context (auto-injected).
@@ -74,130 +89,26 @@ async def export_report(
             return "No search results to export."
 
         format_lower = format.lower()
-        supported_formats = ("csv", "json", "bibtex", "ris")
-        if format_lower not in supported_formats:
+        if format_lower not in SUPPORTED_FORMATS:
             await ctx.error(f"Unsupported format: {format}")
             return "Unsupported format. Use 'csv', 'json', 'bibtex', or 'ris'."
-
-        ext_map = {"csv": "csv", "json": "json", "bibtex": "bib", "ris": "ris"}
-        ext = ext_map[format_lower]
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         results_dir = project_root / paths.RESULTS_DIRNAME
         results_dir.mkdir(parents=True, exist_ok=True)
 
         if output_path is None:
-            output_path = str(_free_path(results_dir, f"export_{timestamp}", ext))
+            path = _free_path(results_dir, f"export_{timestamp}", EXTENSIONS[format_lower])
+        else:
+            path = Path(output_path)
 
-        if format_lower == "csv":
-            import pandas as pd
+        path.write_text(_renderer_for(format_lower)(papers), encoding="utf-8")
 
-            df = pd.DataFrame(papers)
-            for column in df.columns:
-                df[column] = df[column].map(neutralise_formula)
-            df.to_csv(output_path, index=False)
-
-        elif format_lower == "json":
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(papers, f, indent=2, ensure_ascii=False, default=str)
-
-        elif format_lower == "bibtex":
-            _write_bibtex(papers, output_path)
-
-        elif format_lower == "ris":
-            _write_ris(papers, output_path)
-
-        await ctx.info(f"Exported {len(papers)} papers to {output_path}")
-        return f"Successfully exported {len(papers)} papers to {output_path}"
+        await ctx.info(f"Exported {len(papers)} papers to {path}")
+        return f"Successfully exported {len(papers)} papers to {path}"
 
     except SearchError:
         raise
     except Exception as e:
         await ctx.error(f"Failed to export report: {e}")
         raise SearchError(str(e))
-
-
-def _write_bibtex(papers: list, output_path: str) -> None:
-    """Write papers to a BibTeX file.
-
-    Each paper produces an ``@article{...}`` entry with author, title,
-    journal, year, url, doi, and abstract fields where available.
-
-    The key comes from ``paper_citation_key``, the same function
-    ``paper_context`` names keys with — the agent is told to cite a key
-    verbatim, so the two writers must not derive it differently.
-    """
-    lines = []
-    for paper in papers:
-        doi = paper.get("DOI", "")
-        title = paper.get("Title", "")
-        year = paper.get("Year", "")
-        key = paper_citation_key(paper)
-
-        authors = bibtex_authors(paper.get("Authors", paper.get("author", "")))
-
-        journal = paper.get("Venue", "")
-        url = paper.get("URL", "")
-        abstract = paper.get("Abstract", "")
-
-        lines.append(f"@article{{{key},")
-        for field, value in (
-            ("author", authors),
-            ("title", title),
-            ("journal", journal),
-            ("year", year),
-            ("url", url),
-            ("doi", doi),
-            ("abstract", abstract),
-        ):
-            if value:
-                lines.append(f"  {field} = {{{escape_bibtex(value)}}},")
-        lines.append("}")
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
-
-
-def _write_ris(papers: list, output_path: str) -> None:
-    """Write papers to a RIS file.
-
-    Each paper produces a RIS record with fields for type (JOUR),
-    title (TI), authors (AU), year (PY), journal (JO), DOI (DO),
-    abstract (AB), and URL (UR).
-    """
-    records = []
-    for paper in papers:
-        entry = ["TY  - JOUR"]
-
-        title = paper.get("Title", "")
-        if title:
-            entry.append(f"TI  - {one_line(title)}")
-
-        for author in split_authors(paper.get("Authors", paper.get("author", ""))):
-            entry.append(f"AU  - {one_line(author)}")
-
-        year = paper.get("Year", "")
-        if year:
-            entry.append(f"PY  - {year}")
-
-        journal = paper.get("Venue", "")
-        if journal:
-            entry.append(f"JO  - {one_line(journal)}")
-
-        doi = paper.get("DOI", "")
-        if doi:
-            entry.append(f"DO  - {one_line(doi)}")
-
-        abstract = paper.get("Abstract", "")
-        if abstract:
-            entry.append(f"AB  - {one_line(abstract)}")
-
-        url = paper.get("URL", "")
-        if url:
-            entry.append(f"UR  - {one_line(url)}")
-
-        entry.append("ER  - ")
-        records.append("\n".join(entry))
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write("\n\n".join(records) + "\n")

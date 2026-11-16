@@ -30,6 +30,10 @@ logger = logging.getLogger("academic_hunter.mcp.unpaywall")
 async def find_open_access(ctx: Context, doi: str, email: str = "") -> str:
     """Finds the open-access version of a paper by DOI via Unpaywall.
 
+    Bypasses the pipeline: one source directly, so no run and no report. For a
+    literature review run `quick_topic_discovery`, then `update_config`, then
+    `run_search`; use this for the specific lookup the user asked for.
+
     Returns OA status, best location URL, and license info.
 
     With no ``email`` passed, the address configured under

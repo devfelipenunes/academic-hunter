@@ -25,11 +25,6 @@ CONFIG = {
     "technical_weights": {"blockchain": 5.0, "latency": 3.0, "consensus": 2.0},
 }
 
-CONNECTORS = (
-    "fetch_arxiv", "fetch_crossref", "fetch_semantic_scholar", "fetch_openalex",
-    "fetch_core_ac", "fetch_doaj",
-)
-
 WITH_DOI = [
     ("Blockchain latency in payment rails", "https://doi.org/10.1234/ALPHA"),
     ("Blockchain consensus protocols", "http://dx.doi.org/10.1234/Beta"),
@@ -54,17 +49,17 @@ def _papers():
     ]
 
 
-def _silence_connectors(hunter, monkeypatch, published=None):
+def _silence_connectors(hunter, monkeypatch, papers, published=None):
     """No connector-level lookup reaches the network from this file.
 
-    Stubbing ``fetch_arxiv`` and its siblings leaves the connectors themselves
-    untouched, and the pipeline asks them twice more once the search threads have
-    joined: for the citations no source reported, and for the published version of
-    each preprint. Both are real HTTP calls, so without this the suite would
+    The pipeline asks each connector more than once: for the search itself, for
+    the citations no source reported, and for the published version of each
+    preprint. All of them are real HTTP calls, so without this the suite would
     measure whichever API happened to answer — and would fail on a machine with
     no network for a reason that has nothing to do with the artifacts.
     """
     for connector in hunter.connectors.values():
+        monkeypatch.setattr(connector, "fetch", lambda *a, _p=papers, **k: [p.copy() for p in _p])
         if hasattr(connector, "fetch_citations_by_dois"):
             monkeypatch.setattr(connector, "fetch_citations_by_dois", lambda dois, **k: {})
         if hasattr(connector, "resolve_metadata_by_doi"):
@@ -82,12 +77,7 @@ def _run(tmp_path, monkeypatch, papers, published=None):
     config_path = tmp_path / "config.json"
     config_path.write_text(json.dumps(CONFIG), encoding="utf-8")
     hunter = AcademicHunter(config_path=str(config_path), output_dir=str(tmp_path))
-    _silence_connectors(hunter, monkeypatch, published)
-
-    for name in CONNECTORS:
-        monkeypatch.setattr(
-            AcademicHunter, name, lambda *a, **k: [p.copy() for p in papers]
-        )
+    _silence_connectors(hunter, monkeypatch, papers, published)
     return hunter, hunter.run(limit_per_source=1)
 
 
@@ -317,11 +307,7 @@ def _run_with_config(tmp_path, monkeypatch, config):
     config_path = inputs / "config.json"
     config_path.write_text(json.dumps(config), encoding="utf-8")
     hunter = AcademicHunter(config_path=str(config_path), output_dir=str(tmp_path))
-    _silence_connectors(hunter, monkeypatch)
-    for name in CONNECTORS:
-        monkeypatch.setattr(
-            AcademicHunter, name, lambda *a, **k: [p.copy() for p in _papers()]
-        )
+    _silence_connectors(hunter, monkeypatch, _papers())
     return hunter, hunter.run(limit_per_source=1)
 
 

@@ -41,6 +41,7 @@ async def test_compare_papers_fallback_arxiv(mock_ctx, mock_openalex):
     from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
 
     mock_fail = MagicMock()
+    mock_fail.status_code = 404
     mock_fail.raise_for_status.side_effect = __import__("requests").HTTPError("Not found")
 
     with patch("academic_hunter.interfaces.mcp.tools.comparison.requests.get") as m_get:
@@ -72,6 +73,7 @@ async def test_compare_papers_not_found(mock_ctx, mock_openalex):
     from academic_hunter.interfaces.mcp.tools.comparison import compare_papers
 
     mock_fail = MagicMock()
+    mock_fail.status_code = 404
     mock_fail.raise_for_status.side_effect = __import__("requests").HTTPError("Not found")
 
     with patch("academic_hunter.interfaces.mcp.tools.comparison.requests.get") as m_get:

@@ -1,7 +1,6 @@
 import logging
 
-from academic_hunter.core.models.authors import split_authors
-from academic_hunter.core.models.utils import one_line, paper_order_key
+from academic_hunter.core.writing import renderers
 
 from .base import BaseExporter, ExportContext
 
@@ -9,26 +8,16 @@ logger = logging.getLogger("academic_hunter.exporters")
 
 
 class RisExporter(BaseExporter):
+    """The run as RIS, written into the run directory.
+
+    The text comes from ``renderers.render_ris``, which the ``export_report``
+    tool also calls — the two used to render it separately, and disagreed on the
+    abstract's tag.
+    """
+
     def export(self, context: ExportContext) -> None:
-        papers = context.papers
-        timestamp = context.timestamp
-        output_dir = context.output_dir
+        run_dir = self._get_run_dir(context.timestamp, context.output_dir)
+        ris_file = run_dir / f"academic_dataset_{context.timestamp}.ris"
 
-        run_dir = self._get_run_dir(timestamp, output_dir)
-        ris_file = run_dir / f"academic_dataset_{timestamp}.ris"
-
-        with open(ris_file, 'w', encoding='utf-8') as f:
-            for row in sorted(papers, key=paper_order_key):
-                f.write("TY  - JOUR\n")
-                f.write(f"TI  - {one_line(row.get('Title', ''))}\n")
-                for author in split_authors(row.get('Authors', '')):
-                    f.write(f"AU  - {one_line(author)}\n")
-                f.write(f"JO  - {one_line(row.get('Venue', 'Unknown'))}\n")
-                year = str(row.get('Year', ''))[:4]
-                if year:
-                    f.write(f"PY  - {year}\n")
-                f.write(f"UR  - {one_line(row.get('URL', ''))}\n")
-                f.write(f"DO  - {one_line(row.get('DOI', ''))}\n")
-                f.write(f"N2  - {one_line(row.get('Abstract', ''))}\n")
-                f.write("ER  - \n\n")
+        ris_file.write_text(renderers.render_ris(context.papers), encoding="utf-8")
         logger.info("RIS Export: %s", ris_file)

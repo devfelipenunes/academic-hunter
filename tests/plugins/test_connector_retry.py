@@ -38,7 +38,7 @@ def attempt_with(connector, outcomes, max_retries=3):
     if not isinstance(outcomes, list):
         outcomes = [outcomes] * max_retries
     with patch("academic_hunter.plugins.connectors.base.requests.get") as get, patch(
-        "academic_hunter.plugins.connectors.base.time.sleep"
+        "academic_hunter.core.infra.transport.time.sleep"
     ) as sleep:
         get.side_effect = outcomes
         result = connector._raw_request(URL, max_retries=max_retries)
@@ -123,7 +123,7 @@ def test_a_backoff_does_not_hold_the_shared_semaphore():
     free_during_sleep = []
 
     with patch("academic_hunter.plugins.connectors.base.requests.get") as get, patch(
-        "academic_hunter.plugins.connectors.base.time.sleep"
+        "academic_hunter.core.infra.transport.time.sleep"
     ) as sleep:
         get.return_value = response(503)
         sleep.side_effect = lambda seconds: free_during_sleep.append(
@@ -146,7 +146,7 @@ def test_a_rate_limit_wait_does_not_hold_the_shared_semaphore():
     free_during_sleep = []
 
     with patch("academic_hunter.plugins.connectors.base.requests.get") as get, patch(
-        "academic_hunter.plugins.connectors.base.time.sleep"
+        "academic_hunter.core.infra.transport.time.sleep"
     ) as sleep:
         get.return_value = throttled
         sleep.side_effect = lambda seconds: free_during_sleep.append(

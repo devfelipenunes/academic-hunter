@@ -1,0 +1,127 @@
+"""Delegating accessors of ``AcademicHunter`` — one of the parts it is assembled from."""
+
+from typing import Any, Dict, List
+
+
+class HunterAccessorsMixin:
+    """Properties and operations that delegate to the hunter's collaborators."""
+
+    @property
+    def settings(self) -> Dict[str, Any]:
+        return self.config.settings
+
+    @property
+    def anchors(self) -> Dict[str, list]:
+        return self.config.anchors
+
+    @anchors.setter
+    def anchors(self, val):
+        self.config.anchors = val
+        self.scorer.anchors = val
+        self.scorer.recompile()
+
+    @property
+    def tech_strings(self) -> Dict[str, list]:
+        return self.config.tech_strings
+
+    @tech_strings.setter
+    def tech_strings(self, val):
+        self.config.tech_strings = val
+        self.scorer.tech_strings = val
+        self.scorer.recompile()
+
+    @property
+    def tech_weights(self) -> Dict[str, float]:
+        return self.config.tech_weights
+
+    @tech_weights.setter
+    def tech_weights(self, val):
+        self.config.tech_weights = val
+        self.scorer.tech_weights = val
+        self.scorer.recompile()
+
+    @property
+    def pacing_delays(self) -> Dict[str, float]:
+        return self.config.pacing_delays
+
+    @pacing_delays.setter
+    def pacing_delays(self, val):
+        self.config.pacing_delays = val
+        for conn in self.connectors.values():
+            conn.pacing_delays = val
+
+    @property
+    def blocked_sources(self) -> set:
+        return self.config.blocked_sources
+
+    @blocked_sources.setter
+    def blocked_sources(self, val):
+        self.config.blocked_sources = val
+        for conn in self.connectors.values():
+            conn.blocked_sources = val
+
+    @property
+    def stats(self): return self.state.stats
+    @stats.setter
+    def stats(self, val): self.state.stats = val
+
+    @property
+    def consolidated_results(self): return self.state.consolidated_results
+    @consolidated_results.setter
+    def consolidated_results(self, val): self.state.consolidated_results = val
+
+    @property
+    def seen_ids(self): return self.state.seen_ids
+    @seen_ids.setter
+    def seen_ids(self, val): self.state.seen_ids = val
+
+    @property
+    def query_history(self): return self.state.query_history
+
+    @property
+    def last_request_time(self): return self.state.last_request_time
+    @last_request_time.setter
+    def last_request_time(self, val): self.state.last_request_time = val
+
+    @property
+    def last_request_by_domain(self): return self.state.last_request_by_domain
+    @last_request_by_domain.setter
+    def last_request_by_domain(self, val):
+        self.state.last_request_by_domain = val
+        for conn in self.connectors.values():
+            conn.last_request_by_domain = val
+
+    @property
+    def compiled_patterns(self): return self.scorer.compiled_patterns
+    @compiled_patterns.setter
+    def compiled_patterns(self, val): self.scorer.compiled_patterns = val
+
+    @property
+    def anchor_patterns(self): return self.scorer.anchor_patterns
+    @anchor_patterns.setter
+    def anchor_patterns(self, val): self.scorer.anchor_patterns = val
+
+    def calculate_score(self, title: str, abstract: str, citations: int = 0) -> float:
+        return self.scorer.calculate_score(title, abstract, citations)
+
+    def generate_slug(self, title: str) -> str:
+        return self.scorer.generate_slug(title)
+
+    def _enricher(self):
+        from ..core.pipeline import MetadataEnricher
+        return MetadataEnricher(self.connectors, self.state, self.lock, self.settings)
+
+    def fetch_abstract_by_doi(self, doi: str) -> str:
+        return self._enricher().fetch_abstract_by_doi(doi)
+
+    def enrich_metadata(self):
+        return self._enricher().enrich()
+
+    def resolve_published_versions(self):
+        return self._enricher().resolve_published_versions()
+
+    def _process_paper(self, paper: Dict, anchor_cat: str, tech_cat: str, anchor_list: List[str], tech_list: List[str]):
+        self.processor.process(paper, anchor_cat, tech_cat, anchor_list, tech_list)
+
+    def run(self, limit_per_source: int = 100) -> str:
+        return self.pipeline.run(limit_per_source)

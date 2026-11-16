@@ -161,6 +161,11 @@ def setup_config() -> None:
     if example.exists():
         shutil.copy(example, config)
         print("✅ Copied config.example.json to config.json.")
+        print(
+            "   Its anchors are placeholders (`term one`, `term two`). Replace them, "
+            "or ask the agent to write the configuration with "
+            "quick_topic_discovery + update_config."
+        )
     else:
         print("⚠️  Warning: config.example.json not found.")
 

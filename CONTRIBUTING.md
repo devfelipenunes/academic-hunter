@@ -71,7 +71,7 @@ long version.
    aggregates results and invokes filters.
 3. **`plugins/`** — the adapters:
    - **`connectors/`**: isolated academic database clients (e.g. ArXiv, OpenAlex, Semantic Scholar). Every client inherits from `BaseConnector`.
-   - **`exporters/`**: Specialized document generators (CSV, RIS, BibTeX, PRISMA flow, and Markdown reports). Every format client inherits from `BaseExporter`.
+   - **`exporters/`**: Specialized document generators (CSV, RIS, BibTeX, PRISMA flow, and Markdown reports). The registered five — `CsvExporter`, `BibtexExporter`, `RisExporter`, `MarkdownEliteExporter` and `PrismaExporter`, listed in `exporters/__init__.py` — each inherit from `BaseExporter`. Obsidian is the exception and is worth reading as one: `obsidian.py` is a pair of functions the pipeline never calls, not a registered exporter.
 4. **`interfaces/`** — the MCP server and its tools. It is the only public
    surface; the interactive CLI was removed.
 
@@ -139,16 +139,7 @@ a connector that stamps a different name than the one it is filed under —
 otherwise a run reports the same source twice, once with a count and once with a
 zero.
 
-### 3. Expose Proxy Method (Optional)
-
-Add a facade proxy fetch method on `AcademicHunter` inside [src/academic_hunter/app/facades.py](src/academic_hunter/app/facades.py) to enable direct queries:
-
-```python
-    def fetch_pubmed(self, anchors: List[str], tech_strings: List[str], limit: int = 50) -> List[Dict[str, Any]]:
-        return self.connectors["PubMed"].fetch(anchors, tech_strings, limit)
-```
-
-### 4. Write Unit Tests
+### 3. Write Unit Tests
 
 Add a new mock-based test suite (e.g., `tests/test_pubmed_mock.py`) to verify the correctness of the parser and integration with the database responses. Note that the suite runs offline by default — the tests that reach real APIs carry the `integration` marker and are deselected. Make sure everything passes:
 

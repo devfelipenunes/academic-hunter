@@ -8,7 +8,6 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 
 class CoreConnector(BaseConnector):
-    fetch_suffix = "core_ac"
     SOURCE_NAME = "CORE"
     is_keyword_only = False
     domain = "api.core.ac.uk"

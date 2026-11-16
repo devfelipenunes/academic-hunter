@@ -1,179 +1,165 @@
-# Tutorial: Primeira SLR em 10 Minutos
+# Tutorial: your first SLR in 10 minutes
 
-Este tutorial guia você por uma Revisão Sistemática da Literatura completa usando o Academic Hunter — sem precisar editar JSON, sem programação, sem GPU.
+This tutorial walks you through a complete Systematic Literature Review with Academic Hunter — no JSON editing, no programming, no GPU.
 
-## O que você vai aprender
+## What you will learn
 
-1. Instalar o Academic Hunter
-2. Fazer uma SLR completa conversando com um agente de IA
-3. Explorar os resultados com análises automáticas
-4. Exportar para seu formato preferido
+1. Install Academic Hunter
+2. Run a complete SLR by talking to an AI agent
+3. Explore the results with the automatic analyses
+4. Export to the format you prefer
 
 ---
 
-## 1. Instalação
+## 1. Installation
 
-Sem clone e sem venv — o `uvx` monta o ambiente a partir do pacote publicado.
+No clone and no virtualenv — `uvx` builds the environment from the published package.
 
 ```bash
-# 1. uv, uma vez por máquina
+# 1. uv, once per machine
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 2. Aqueça o cache AQUI, fora do cliente: é neste passo que os 439 MB
-#    (medidos) são baixados. Deixando o cliente fazer isso, ele espera sem
-#    barra de progresso e desiste com "failed to connect".
+# 2. Warm the cache HERE, outside the client: this is the step that downloads the
+#    439 MB (measured). Left to the client, it waits with no progress bar and
+#    gives up with a generic "failed to connect".
 uvx --from 'academic-hunter[fulltext]' academic-mcp --help
 
-# 3. Registre no Claude Code (escopo user: conecta sem prompt de aprovação)
+# 3. Register it with Claude Code (user scope: connects without an approval prompt)
 claude mcp add --scope user academic-hunter -- \
   uvx --from 'academic-hunter[fulltext]' academic-mcp
 ```
 
-O `--from` não é enfeite: a distribuição chama `academic-hunter` e o script
-chama `academic-mcp`, então o nome pelado não resolve nada. O `fulltext` é o
-extra padrão documentado; o `ml` é opcional — a busca funciona sem ele, e as
-tools de análise avisam nomeando o extra em vez de falhar em silêncio.
-Adicioná-lo custa 3,15 GB (medidos, ~2,5 GB de build CUDA que máquina sem GPU
-nunca carrega).
+The `--from` is not decoration: the distribution is called `academic-hunter` and the console script is called `academic-mcp`, so the bare name resolves to nothing. `fulltext` is the documented default extra; `ml` is optional — search works without it, and the tools that need it name the extra instead of failing silently. Adding it costs 3.15 GB (measured, of which ~2.5 GB is a CUDA build that a machine without a GPU never loads).
 
-Não é preciso criar `config.json`. O servidor sobe com um default neutro e avisa
-no log que nenhum config foi encontrado; o tópico você define pelo agente. Ele
-começa por `quick_topic_discovery`, que devolve os títulos mais relevantes e um
-rascunho de config montado com o jargão deles, e aplica o rascunho revisado com
-`update_config`.
+You do not need to create a `config.json`. The server starts on a neutral default and says in its log that no configuration was found; the topic is set through the agent. It starts with `quick_topic_discovery`, which returns the most relevant titles and the terms they use, counted — with no configuration at all — writes the anchors from that vocabulary and applies them with `update_config`.
 
-Sem âncoras, `run_search` se recusa a rodar em vez de consultar todas as fontes
-para nada. Sem `technical_strings`, ele roda e avisa quais fontes ficaram de
-fora — as quatro que consultam por âncora × termo técnico não são chamadas, e o
-`0` delas no relatório não é um resultado.
+Without anchors, `run_search` refuses to run rather than querying every source for nothing. Without `technical_strings` it runs and warns which sources it left out — the four that query by anchor × technical term are not called, and their `0` in the report is not a result.
+
+### Two API keys are worth having
+
+Four of the six parallel sources work with no credentials: arXiv, Crossref, OpenAlex and DOAJ. **Semantic Scholar** and **CORE** need one each, and without it they are reported as never queried rather than as a source that found nothing. Both are free and both live under `settings.api_keys` in `config.json`, or in `SEMANTIC_SCHOLAR_API_KEY` and `CORE_API_KEY`. The README has the links.
 
 <details>
-<summary>Instalar a partir do clone (desenvolvimento)</summary>
+<summary>Install from a clone (development)</summary>
 
 ```bash
-# Clone o repositório
+# Clone the repository
 git clone https://github.com/devfelipenunes/academic-hunter.git
 cd academic-hunter
 
-# Crie um ambiente virtual e instale
+# Create a virtualenv and install
 python3 -m venv venv
 source venv/bin/activate
 pip install -e ".[fulltext]"
 
-# Opcional: um config seu, no lugar do default neutro
+# Optional: a config of your own, in place of the neutral default
 cp config.example.json config.json
 ```
 
+`config.example.json` is a **template, not a starting configuration**: its anchors read `term one`, `term two`. Replace them before searching, or let `quick_topic_discovery` and `update_config` write the configuration for you — which is the path this tutorial takes.
+
 </details>
 
-## 2. Uso via MCP (recomendado)
+## 2. Using it over MCP (recommended)
 
-O Academic Hunter é um **servidor MCP** — a forma de usá-lo é conectá-lo a um agente de IA. Com `uvx`, é o passo 3 acima; a partir do clone:
+Academic Hunter is an **MCP server** — the way to use it is to connect it to an AI agent. With `uvx`, that is step 3 above; from a clone:
 
 ```bash
 academic-mcp          # stdio
-academic-mcp -t sse   # HTTP/SSE, para acesso remoto
+academic-mcp -t sse   # HTTP/SSE, for remote access
 ```
 
-Conectado, basta pedir em linguagem natural:
+Once connected, just ask in plain language:
 
-> "Rode uma revisão sistemática sobre Central Bank Digital Currencies and Financial Stability"
+> "Run a systematic review on Central Bank Digital Currencies and Financial Stability"
 
-O agente orquestra as tools: `quick_topic_discovery` descobre o jargão da área,
-`update_config` monta a configuração, `run_search` executa a busca, e
-`cluster_papers` e `find_novel_papers` analisam o resultado.
+The agent orchestrates the tools: `quick_topic_discovery` discovers the field's jargon, `update_config` writes the configuration, `run_search` executes the search, and `cluster_papers` and `find_novel_papers` analyse the result.
 
-## 3. Configuração Manual
+## 3. Manual configuration
 
-Para controle fino, edite o arquivo `config.json`:
+For fine control, edit `config.json`. The three sections that carry the topic are `anchors` (what the search is about), `technical_strings` (terms that qualify it) and `technical_weights` (how much each term pulls the ranking):
 
 ```json
 {
-  "topic": "CBDC and atomic settlement",
   "anchors": {
     "Settlement": ["atomic settlement", "finality"],
     "CBDC": ["central bank digital currency"]
   },
+  "technical_strings": {
+    "Method": ["comparative analysis", "taxonomy"]
+  },
   "technical_weights": {
     "atomic settlement": 5.0,
-    "finality": 3.0,
     "cbdc": 5.0,
-    "digital currency": 4.0
+    "finality": 3.0
   },
   "settings": {
     "start_year": 2020,
     "limit_per_query": 100,
-    "user_email": "seu@email.com"
+    "user_email": "you@example.com"
   }
 }
 ```
 
-Depois, execute a busca pelo agente conectado — tool `run_search`.
+Note what is **not** here: the topic is not a key of its own. `anchors` is where a search's subject lives, and every anchor × technical-term pair is what the four source-specific connectors query with — so a configuration with `anchors` but no `technical_strings` is a narrower search than it looks, and `run_search` says so in its reply.
 
-## 4. Análises Avançadas (via MCP)
+Then run the search through the connected agent — the `run_search` tool.
 
-Após a busca, você pode usar as ferramentas MCP para análises mais profundas.
-Inicie o servidor MCP:
+## 4. Deeper analyses (over MCP)
+
+After a search you can use the MCP tools for deeper analysis. Start the MCP server:
 
 ```bash
 uvx --from 'academic-hunter[fulltext]' academic-mcp
 ```
 
-As ferramentas de análise desta seção são as que usam o extra opcional `ml`;
-sem ele, cada uma avisa nomeando o extra.
+Four of the tools below need the optional `ml` extra — `trending_topics`, `cluster_papers`, `find_novel_papers`, `topic_evolution` and `summarize_paper` name it when it is missing, rather than returning nothing. The rest work on the base install.
 
-Conecte qualquer cliente MCP — Claude Code, Claude Desktop, Cursor — e use as
-ferramentas. O passo a passo de cada cliente está no
-[guia de conexão MCP](mcp_setup.md):
+Connect any MCP client — Claude Code, Claude Desktop, Cursor — and use the tools. The step-by-step for each client is in the [MCP connection guide](mcp_setup.md):
 
-| Tool                  | Para que serve             | Exemplo                                                        |
-| --------------------- | -------------------------- | -------------------------------------------------------------- |
-| `semantic_search`     | Buscar papers por conceito | `semantic_search(query="CBDC banking implications", top_k=10)` |
-| `trending_topics`     | Ver tópicos quentes        | `trending_topics(min_papers=3)`                                |
-| `cluster_papers`      | Agrupar por tema           | `cluster_papers(top_k=500, min_cluster_size=5)`                |
-| `find_novel_papers`   | Detectar outliers          | `find_novel_papers(top_k=200, contamination=0.1)`              |
-| `find_related_papers` | Snowballing semântico      | `find_related_papers(query="CBDC financial stability")`        |
-| `topic_evolution`     | Evolução temporal          | `topic_evolution(top_k=500)`                                   |
-| `semantic_dedup`      | Duplicatas semânticas      | `semantic_dedup(threshold=0.88)`                               |
-| `summarize_paper`     | Resumo de um paper         | `summarize_paper(doi="10.1016/j.jfe.2023.01.001")`             |
-| `get_citation_count`  | Citações de um paper       | `get_citation_count(doi="10.1016/j.jfe.2023.01.001")`          |
+| Tool | What it is for | Example |
+| --- | --- | --- |
+| `semantic_search` | Find papers by concept | `semantic_search(query="CBDC banking implications", top_k=10)` |
+| `trending_topics` | See the hot subjects | `trending_topics(min_papers=3)` |
+| `cluster_papers` | Group by topic | `cluster_papers(top_k=500, min_cluster_size=5)` |
+| `find_novel_papers` | Detect outliers | `find_novel_papers(top_k=200, contamination=0.1)` |
+| `find_related_papers` | Semantic snowballing | `find_related_papers(query="CBDC financial stability")` |
+| `topic_evolution` | Change over time | `topic_evolution(top_k=500)` |
+| `semantic_dedup` | Duplicates by meaning | `semantic_dedup(threshold=0.88)` |
+| `summarize_paper` | Summary of one paper | `summarize_paper(doi="10.1016/j.jfe.2023.01.001")` |
+| `get_citation_count` | Citations of one paper | `get_citation_count(doi="10.1016/j.jfe.2023.01.001")` |
 
-### Full-text: procurar dentro dos papers
+`get_citation_count` and `find_open_access` are the two in this family that do not touch the embedding model at all — each is a single lookup against one service.
 
-Até aqui tudo trabalha sobre título + abstract, que trunca método e resultado.
-O full-text é **opt-in e desligado por padrão** — ligue com
-`settings.fulltext.enabled: true` no `config.json`, ou peça direto ao agente:
+### Full text: searching inside the papers
 
-| Tool              | Para que serve                                    | Exemplo                                                      |
-| ----------------- | ------------------------------------------------- | ------------------------------------------------------------ |
-| `fulltext_status` | Quanto full text o corpus tem, e de onde veio     | `fulltext_status()`                                          |
-| `index_fulltext`  | Baixar, extrair e indexar os papers do último run | `index_fulltext(limit=20)`                                   |
-| `chunk_search`    | Procurar um trecho, não um paper                  | `chunk_search(query="how many annotators coded the corpus")` |
+Everything up to here works on title plus abstract, which truncates method and results. Full text is **opt-in and off by default** — turn it on with `settings.fulltext.enabled: true` in `config.json`, or just ask the agent:
 
-O `chunk_search` responde o que o abstract não responde — qual dataset usaram,
-quantos anotadores, o que o método realmente fez — devolvendo os trechos
-agrupados sob o paper de origem, com a seção e os offsets no texto extraído
-(não há número de página: o PDF tem páginas, a fonte JATS do Europe PMC não).
-Requer o extra `fulltext`, já incluído na instalação acima; sem ele só o Europe
-PMC consegue entregar texto, e o `fulltext_status` avisa.
+| Tool | What it is for | Example |
+| --- | --- | --- |
+| `fulltext_status` | How much full text the corpus has, and where it came from | `fulltext_status()` |
+| `index_fulltext` | Download, extract and index the last run's papers | `index_fulltext(limit=20)` |
+| `chunk_search` | Search a passage, not a paper | `chunk_search(query="how many annotators coded the corpus")` |
 
-## 5. Exemplo de Fluxo Completo via MCP
+`chunk_search` answers what the abstract cannot — which dataset they used, how many annotators, what the method actually did — returning the passages grouped under their source paper, with the section and the offsets into the extracted text (there is no page number: a PDF has pages, Europe PMC's JATS source does not). It needs the `fulltext` extra, already included in the installation above; without it only Europe PMC can supply text, and `fulltext_status` says so.
 
-Conectando o Claude Desktop ao Academic Hunter, você pode simplesmente dizer:
+## 5. A complete flow over MCP
 
-> "Faça uma revisão sistemática sobre o impacto de CBDCs na estabilidade financeira"
+With Claude Desktop connected to Academic Hunter, you can simply say:
 
-O Claude vai:
+> "Do a systematic review on the impact of CBDCs on financial stability"
 
-1. Explorar o tópico com `quick_topic_discovery`
-2. Configurar a busca com `update_config`
-3. Executar o pipeline com `run_search`
-4. Analisar resultados com `semantic_search`, `cluster_papers`, `find_novel_papers`
-5. Exportar para Obsidian com `export_to_obsidian`
+The agent will:
 
-## 6. Exportação
+1. Explore the topic with `quick_topic_discovery`
+2. Write the configuration with `update_config`
+3. Run the pipeline with `run_search`
+4. Analyse the results with `semantic_search`, `cluster_papers`, `find_novel_papers`
+5. Export to Obsidian with `export_to_obsidian`
 
-Pelo MCP:
+## 6. Export
+
+Over MCP:
 
 ```
 export_report(format="csv")
@@ -182,8 +168,12 @@ export_report(format="ris")
 export_report(format="json")
 ```
 
-## Próximos passos
+Every run also writes its own `academic_dataset_*.csv`, `.bib` and `.ris`, a Markdown report and the PRISMA flow into its `results/run_*/` directory, whether or not you ask. `export_report` produces the same four formats for a path of your choosing — and the CSV, BibTeX and RIS it writes are the same bytes the run's own files carry, from the same renderer.
 
-- 📖 Leia o [README completo](https://github.com/devfelipenunes/academic-hunter#readme)
-- 🐛 Reporte bugs em [github.com/devfelipenunes/academic-hunter/issues](https://github.com/devfelipenunes/academic-hunter/issues)
-- ⭐ Contribua com o projeto no GitHub
+`json` is the one format only `export_report` offers: the run does not write one, because the CSV already carries every column.
+
+## Next steps
+
+- 📖 Read the [full README](https://github.com/devfelipenunes/academic-hunter#readme)
+- 🐛 Report bugs at [github.com/devfelipenunes/academic-hunter/issues](https://github.com/devfelipenunes/academic-hunter/issues)
+- ⭐ Contribute to the project on GitHub

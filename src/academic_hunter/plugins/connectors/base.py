@@ -1,16 +1,13 @@
 import json
 import logging
-import time
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import requests
 
 from academic_hunter import __version__
+from academic_hunter.core.infra.transport import HttpTransport, host_of
 
 logger = logging.getLogger("academic_hunter.connectors")
-
-_RETRY_BACKOFF_SECONDS = 0.5
 
 
 KEYWORD_QUERY_MAX_TERMS = 5
@@ -75,7 +72,6 @@ def quoted_ors(terms: List[str]) -> str:
 
 class BaseConnector:
     """Base API connector handling domain pacing, concurrency limits, retries, and caching."""
-    fetch_suffix = ""
     is_keyword_only = False
     domain = ""
     default_delay = 1.5
@@ -138,23 +134,27 @@ class BaseConnector:
         """Determines if a document is peer reviewed based on its type/venue. Override in subclasses."""
         return "N/A"
 
-    def _apply_pacing(self, domain: str) -> None:
-        """Waits the required pacing delay for a domain (thread-safe).
+    def _transport(self) -> HttpTransport:
+        """The shared policy, bound to this connector's state as it is right now.
 
-        The slot is claimed *before* sleeping — the map holds the instant this
-        thread intends to fire, not the one it last fired at. Reading the
-        timestamp under the lock, sleeping outside it and writing afterwards let
-        two threads compute the same wait and issue simultaneously, which is
-        exactly what the per-domain delay exists to prevent.
+        Built per call rather than stored: ``app/main.py`` re-points
+        ``pacing_delays``, ``last_request_by_domain`` and ``blocked_sources`` at
+        the run's dictionaries *after* constructing the connectors, and the
+        pipeline clears them between runs. A policy that had captured them at
+        construction would pace against a map nobody reads any more.
         """
-        with self.lock:
-            delay = self.pacing_delays.get(domain, self.default_delay)
-            now = time.time()
-            wait_time = max(0.0, delay - (now - self.last_request_by_domain.get(domain, 0.0)))
-            self.last_request_by_domain[domain] = now + wait_time
+        return HttpTransport(
+            lock=self.lock,
+            semaphore=self.semaphore,
+            pacing_delays=self.pacing_delays,
+            last_request_by_domain=self.last_request_by_domain,
+            blocked_sources=self.blocked_sources,
+            default_delay=self.default_delay,
+        )
 
-        if wait_time > 0:
-            time.sleep(wait_time)
+    def _apply_pacing(self, domain: str) -> None:
+        """Waits the required pacing delay for a domain (thread-safe)."""
+        self._transport().pace(domain)
 
     def _raw_request(self, url: str, params: Dict[str, Any] = None, timeout: int = 20, max_retries: int = 2) -> Optional[requests.Response]:
         """
@@ -162,103 +162,16 @@ class BaseConnector:
         Returns the raw Response object (or None on failure).
         Use this for non-JSON responses (e.g. ArXiv XML).
 
-        Every wait happens *outside* the concurrency semaphore. The semaphore is
-        shared by all connectors and has two slots, so a 30-second rate-limit
-        wait taken inside it stopped the other sources from fetching too: one
-        throttled API stalled the whole run, which is the opposite of what a
-        per-source backoff is for. ``_apply_pacing`` already separates deciding
-        the wait from taking it, for the same reason.
+        The policy lives in ``core.infra.transport``, which the MCP tools share;
+        what differs between the two callers is what a spent budget means, and a
+        run has to carry on without the source rather than raise.
         """
-        domain = url.split('/')[2]
-
-        with self.lock:
-            if domain in self.blocked_sources:
-                return None
-
-        headers = self.get_headers()
-
-        for attempt in range(max_retries):
-            self._apply_pacing(domain)
-            wait = 0.0
-
-            with self.semaphore:
-                try:
-                    resp = requests.get(url, params=params, headers=headers, timeout=timeout)
-                    if resp.status_code == 429:
-                        wait = self._note_rate_limit(domain, resp, attempt, max_retries)
-                        if wait is None:
-                            return None
-                    elif resp.status_code != 200:
-                        if resp.status_code >= 500:
-                            wait = self._backoff(domain, attempt, max_retries)
-                        else:
-                            continue
-                    else:
-                        return resp
-                except Exception as e:
-                    logger.debug(f"Request to {domain} failed (attempt {attempt + 1}): {e}")
-                    wait = self._backoff(domain, attempt, max_retries)
-
-            if wait:
-                time.sleep(wait)
-        return None
-
-    def _note_rate_limit(self, domain: str, response: requests.Response, attempt: int, max_retries: int) -> Optional[float]:
-        """How long to wait after a 429, or ``None`` when the source must be blocked.
-
-        Split out of the request loop so the caller can leave the semaphore
-        before taking the wait; see ``_raw_request``.
-        """
-        retry_after_sec = 30
-
-        if 'Retry-After' in response.headers:
-            try:
-                retry_after_sec = int(response.headers['Retry-After'])
-            except ValueError:
-                pass
-
-        elif 'X-Ratelimit-Retry-After' in response.headers:
-            try:
-                ts_str = response.headers['X-Ratelimit-Retry-After']
-                dt_target = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
-                dt_now = datetime.now(timezone.utc)
-                diff = (dt_target - dt_now).total_seconds()
-                if diff > 0:
-                    retry_after_sec = int(diff) + 1
-            except Exception:  # noqa: S110
-                pass
-
-        if retry_after_sec > 60:
-            logger.error(f"HTTP 429 from {domain}. API requested wait of {retry_after_sec}s. Too long! Blocking source immediately.")
-            with self.lock:
-                self.blocked_sources.add(domain)
-            return None
-
-        if attempt >= max_retries - 1:
-            logger.error(f"HTTP 429 from {domain}. Max retries exceeded. Blocking source.")
-            with self.lock:
-                self.blocked_sources.add(domain)
-            return None
-
-        with self.lock:
-            old_delay = self.pacing_delays.get(domain, self.default_delay)
-            new_delay = old_delay * 2.0
-            self.pacing_delays[domain] = new_delay
-            logger.warning(f"HTTP 429 from {domain}. Waiting {retry_after_sec}s. Escalating pacing: {old_delay}s -> {new_delay}s.")
-        return retry_after_sec
-
-    def _backoff(self, domain: str, attempt: int, max_retries: int) -> float:
-        """How long to wait before the next attempt, or 0 on the last one.
-
-        Pacing spaces different queries apart; this spaces the retries of one
-        failing request, which nothing else covers. The caller takes the wait —
-        see ``_raw_request``.
-        """
-        if attempt >= max_retries - 1:
-            return 0.0
-        wait = _RETRY_BACKOFF_SECONDS * (2 ** attempt)
-        logger.debug("Retrying %s in %.1fs (attempt %d).", domain, wait, attempt + 1)
-        return wait
+        attempt = self._transport().perform(
+            lambda: requests.get(url, params=params, headers=self.get_headers(), timeout=timeout),
+            domain=host_of(url),
+            max_retries=max_retries,
+        )
+        return attempt.response if attempt.ok else None
 
     def _make_request(self, url: str, params: Dict[str, Any] = None, timeout: int = 20, max_retries: int = 2) -> Any:
         """

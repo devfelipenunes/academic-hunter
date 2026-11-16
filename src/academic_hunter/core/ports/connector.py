@@ -20,7 +20,6 @@ from typing import Any, Dict, List, Protocol, runtime_checkable
 class ConnectorPort(Protocol):
     """Minimal surface the pipeline uses on a source connector."""
 
-    fetch_suffix: str
     domain: str
     default_delay: float
     resolve_priority: int

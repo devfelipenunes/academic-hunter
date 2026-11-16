@@ -10,7 +10,6 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 
 class SemanticScholarConnector(BaseConnector):
-    fetch_suffix = "semantic_scholar"
     SOURCE_NAME = "Semantic Scholar"
     is_keyword_only = True
     domain = "api.semanticscholar.org"

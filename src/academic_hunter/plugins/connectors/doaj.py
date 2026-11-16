@@ -8,7 +8,6 @@ logger = logging.getLogger("academic_hunter.connectors")
 
 
 class DoajConnector(BaseConnector):
-    fetch_suffix = "doaj"
     SOURCE_NAME = "DOAJ"
     is_keyword_only = True
     domain = "doaj.org"

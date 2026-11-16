@@ -81,3 +81,19 @@ def hunter(test_config, tmp_dir):
     config_path = Path(tmp_dir) / "config.json"
     config_path.write_text(json.dumps(test_config))
     return AcademicHunter(config_path=str(config_path), output_dir=tmp_dir, use_cache=False)
+
+
+@pytest.fixture
+def stub_connector_fetch(monkeypatch):
+    """Make every registered connector return ``papers`` instead of calling out."""
+    from academic_hunter.plugins.connectors import CONNECTORS
+
+    def _stub(papers):
+        payload = list(papers)
+        for cls in CONNECTORS.values():
+            monkeypatch.setattr(
+                cls, "fetch", lambda self, *a, _p=payload, **k: [p.copy() for p in _p]
+            )
+        return payload
+
+    return _stub

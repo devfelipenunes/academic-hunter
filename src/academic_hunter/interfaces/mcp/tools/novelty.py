@@ -68,9 +68,12 @@ async def find_novel_papers(ctx: Context, top_k: int = 500, contamination: float
             lines.append("")
         await ctx.info(f"Found {len(outliers)} outlier papers")
         return "\n".join(lines)
-    except ImportError as e:
-        await ctx.error(f"Missing dependency: {e}")
-        return f"Required library not installed: {e}"
+    except ImportError:
+        await ctx.error("Novelty detection needs the ml extra")
+        return (
+            "Novelty detection needs scikit-learn and sentence-transformers. "
+            "Install the extra: pip install 'academic-hunter[ml]'"
+        )
     except Exception as e:
         await ctx.error(f"Novelty detection failed: {e}")
         return f"Novelty detection failed: {e}"

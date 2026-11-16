@@ -121,6 +121,7 @@ async def test_compare_papers(mock_ctx, mock_openalex, openalex_work, openalex_r
         ) as m_get:
             def _side_effect(url, **kwargs):
                 resp = MagicMock()
+                resp.status_code = 200
                 resp.raise_for_status.return_value = None
                 if "doi:10.1000/alpha" in url:
                     resp.json.return_value = work_a
@@ -157,6 +158,7 @@ async def test_compare_papers_one_not_found(mock_ctx, mock_openalex, openalex_wo
         ) as m_get:
             def _side_effect(url, **kwargs):
                 resp = MagicMock()
+                resp.status_code = 200
                 resp.raise_for_status.return_value = None
                 if "doi:10.1000/alpha" in url:
                     resp.json.return_value = work_a
@@ -394,7 +396,14 @@ async def test_export_report_ris(mock_ctx, tmp_path):
 
 
 async def test_export_report_write_error(mock_ctx):
-    """File write errors raise SearchError."""
+    """A file that cannot be written is an error the agent is told about.
+
+    The assertion used to be on "Cannot save file", which is pandas' wording:
+    the CSV leg went through ``DataFrame.to_csv`` and its message was what the
+    test happened to observe. The formats are rendered by one function now, and
+    what the test is entitled to pin is that the failure surfaces as a
+    ``SearchError`` naming the path, rather than being swallowed.
+    """
     with patch(
         "academic_hunter.interfaces.mcp.tools.export.AcademicHunter"
     ) as m_hunter:
@@ -406,7 +415,7 @@ async def test_export_report_write_error(mock_ctx):
         with pytest.raises(SearchError) as exc_info:
             await export_report(mock_ctx, format="csv", output_path="/nonexistent_dir/file.csv")
 
-        assert "Cannot save file" in str(exc_info.value)
+        assert "/nonexistent_dir/file.csv" in str(exc_info.value)
         mock_ctx.error.assert_called()
 
 

@@ -4,15 +4,22 @@ import asyncio
 import logging
 import re
 import threading
-import time
 from pathlib import Path
 from typing import Any, Callable
 
 import requests
 
-from academic_hunter import AcademicHunter
+from academic_hunter import AcademicHunter, __version__
 from academic_hunter.core.infra import paths
-from academic_hunter.core.infra.config import HunterConfig, openalex_key
+from academic_hunter.core.infra.config import HunterConfig
+from academic_hunter.core.infra.openalex import (
+    OPENALEX_BASE,
+    OPENALEX_DEFAULT_DELAY,
+    OPENALEX_DOMAIN,
+    openalex_headers,
+    openalex_params,
+)
+from academic_hunter.core.infra.transport import HttpTransport
 from academic_hunter.core.ports.vector_store import LEGACY_COLLECTION, PaperListingPort
 from academic_hunter.plugins.vector_stores import ChromaVectorStore
 
@@ -120,19 +127,37 @@ def _make_hunter() -> AcademicHunter:
     return AcademicHunter(output_dir=str(get_project_root() / paths.RESULTS_DIRNAME))
 
 
-OPENALEX_BASE = "https://api.openalex.org"
+OPENALEX_BASE = OPENALEX_BASE
 
-_OPENALEX_MIN_INTERVAL = 0.5
-_openalex_pace_lock = threading.Lock()
-_openalex_last_call = 0.0
+_OPENALEX_TRANSPORT = HttpTransport(
+    lock=threading.Lock(),
+    semaphore=threading.Semaphore(2),
+    pacing_delays={},
+    last_request_by_domain={},
+    blocked_sources=set(),
+    default_delay=OPENALEX_DEFAULT_DELAY,
+    block_sources=False,
+)
 
 
-def _openalex_credentials() -> tuple[dict, dict]:
-    """Headers and query parameters for an OpenAlex request.
+def _openalex_transport() -> HttpTransport:
+    """The policy this process paces and retries OpenAlex with.
 
-    A key is optional — the data is free and keyless use works — but it raises
-    the daily budget tenfold, so it is sent whenever one is configured. The
-    contact address is what puts a caller in OpenAlex's polite pool.
+    One instance, shared by every MCP call, because pacing is about the session
+    rather than the request — and it is deliberately *not* ``block_sources``:
+    a review run has to finish and report the sources it could not ask, while a
+    one-shot call has nothing to finish and has to say what happened. Blocking
+    here would turn the second 429 of a session into a call that fails without a
+    response, which is a worse message than the one the 429 itself supports.
+    """
+    return _OPENALEX_TRANSPORT
+
+
+def _openalex_headers_and_params() -> tuple[dict, dict]:
+    """What to send alongside an OpenAlex request, or empty dicts.
+
+    Reading the config is file I/O and can fail; a caller that cannot read it
+    still gets its answer, anonymously.
     """
     try:
         settings = HunterConfig().settings
@@ -140,58 +165,39 @@ def _openalex_credentials() -> tuple[dict, dict]:
         logger.warning("Could not read the config for OpenAlex credentials: %s", e)
         return {}, {}
 
-    key = openalex_key(settings)
-    headers = {"Authorization": f"Bearer {key}"} if key else {}
-    email = settings.get("user_email") or ""
-    return headers, ({"mailto": email} if email else {})
-
-
-def _pace_openalex() -> None:
-    """Block until the minimum interval since the last OpenAlex call has passed."""
-    global _openalex_last_call
-    with _openalex_pace_lock:
-        wait = _OPENALEX_MIN_INTERVAL - (time.time() - _openalex_last_call)
-        if wait > 0:
-            time.sleep(wait)
-        _openalex_last_call = time.time()
-
-
-def _retry_after_seconds(response) -> float | None:
-    """The wait OpenAlex asked for, when it asks for one."""
-    raw = response.headers.get("Retry-After")
-    if not raw:
-        return None
-    try:
-        return float(raw)
-    except (TypeError, ValueError):
-        return None
+    return (
+        openalex_headers(settings, __version__),
+        openalex_params(settings),
+    )
 
 
 def _openalex_get_sync(path: str, params: dict | None = None, attempts: int = 3) -> dict:
-    """Blocking GET against OpenAlex: paced, keyed, and at most `attempts` calls.
+    """Blocking GET against OpenAlex, over the shared transport.
 
-    The last attempt falls through to `raise_for_status` rather than looping
-    again, so a spent budget surfaces as the 429 it is — callers can tell "the
-    day's credits are gone" apart from "this query matched nothing".
+    No loop and no sleeping here: how long to wait, when to retry and when to
+    give up are ``core.infra.transport``'s, and the pipeline's connectors use
+    the same object. What stays local is what a spent budget *means* — the
+    failed attempt is handed back with its response so ``raise_for_status`` can
+    raise the 429 it is, and callers can tell "the day's credits are gone" apart
+    from "this query matched nothing".
     """
-    headers, credentials = _openalex_credentials()
+    headers, credentials = _openalex_headers_and_params()
     merged = {**credentials, **(params or {})}
 
-    response = None
-    for attempt in range(attempts):
-        _pace_openalex()
-        response = requests.get(
+    attempt = _openalex_transport().perform(
+        lambda: requests.get(
             OPENALEX_BASE + path, params=merged, headers=headers, timeout=20
-        )
-        if response.status_code == 429 and attempt < attempts - 1:
-            delay = _retry_after_seconds(response) or float(2 ** attempt)
-            logger.warning("OpenAlex is rate limiting; waiting %.1fs", delay)
-            time.sleep(min(delay, 30.0))
-            continue
-        break
-
-    response.raise_for_status()
-    return response.json()
+        ),
+        domain=OPENALEX_DOMAIN,
+        max_retries=attempts,
+    )
+    if attempt.ok:
+        return attempt.response.json()
+    if attempt.response is not None:
+        attempt.response.raise_for_status()
+    if attempt.error is not None:
+        raise attempt.error
+    raise requests.RequestException(f"OpenAlex did not answer {path}.")
 
 
 async def openalex_get(path: str, params: dict | None = None) -> dict:

@@ -252,6 +252,71 @@ def test_a_configured_impact_percentile_bands_the_corpus_as_the_absent_key_does(
     assert _band(example) == _band(default)
 
 
+#: Every path at which the two templates are allowed to disagree, and no others.
+#:
+#: The asymmetry is deliberate in both directions. What the example carries and
+#: the runtime default does not — ``impact_percentile``, ``published_version`` —
+#: is there for a reader to find: a key the code reads and no template names is a
+#: key nobody can configure, which this file has already paid for once. What the
+#: default must not carry is the topic: ``anchors``, ``technical_strings`` and
+#: ``technical_weights`` stay empty so the packaged fallback is not scorable
+#: (``test_paths.py`` and ``test_config_resolution.py``), and ``user_email`` stays
+#: empty so nothing contacts a service on a stranger's behalf.
+#:
+#: Written as paths rather than as a list of keys because the two files nest
+#: differently — ``anchors`` is a section, ``impact_percentile`` is a setting —
+#: and a reader of this list should not have to know which is which.
+DECLARED_TEMPLATE_DELTA = {
+    "anchors",
+    "technical_strings",
+    "technical_weights",
+    "settings.user_email",
+    "settings.impact_percentile",
+    "settings.published_version",
+}
+
+
+def _differing_paths(example, default, prefix=""):
+    """Every dotted path at which two config documents disagree.
+
+    Descends into a section only when both sides have one. An empty ``anchors``
+    against a populated one is a difference of kind, not of content, and it
+    belongs in the delta at the section's own path — the alternative reports one
+    path per placeholder term, which would tie this list to the example's wording
+    and make it fail the next time somebody edits it.
+    """
+    paths = set()
+    for key in set(example) | set(default):
+        path = f"{prefix}{key}"
+        if key not in example or key not in default:
+            paths.add(path)
+        elif (
+            isinstance(example[key], dict)
+            and isinstance(default[key], dict)
+            and example[key]
+            and default[key]
+        ):
+            paths |= _differing_paths(example[key], default[key], f"{path}.")
+        elif example[key] != default[key]:
+            paths.add(path)
+    return paths
+
+
+def test_the_templates_differ_only_where_this_file_says_they_may():
+    """The delta between the two files is a decision, so it is written down once.
+
+    Two templates that have to agree, guarded by tests that each know one key,
+    is a relationship nobody can see: a key added to one of them and not the
+    other is invisible until something reads it, and the failure surfaces as a
+    configuration that behaves differently from the file it was copied from.
+    This is the one place that says which differences are intended.
+    """
+    example = json.loads(TEMPLATES[0].read_text(encoding="utf-8"))
+    default = json.loads(TEMPLATES[1].read_text(encoding="utf-8"))
+
+    assert _differing_paths(example, default) == DECLARED_TEMPLATE_DELTA
+
+
 def _band(settings):
     """The impact block the rank step writes, for a settings dict."""
     papers = {

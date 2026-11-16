@@ -57,13 +57,12 @@ class TestDedupBug(unittest.TestCase):
         }
 
         
-        self.hunter.fetch_arxiv = lambda a, t, limit: [paper1] if "anchor" in a else []
-        self.hunter.fetch_crossref = lambda a, t, limit: [paper2] if "anchor" in a else []
-        self.hunter.fetch_semantic_scholar = lambda a, t, limit: []
-        self.hunter.fetch_openalex = lambda a, t, limit: []
-        self.hunter.fetch_core_ac = lambda a, t, limit: []
-        self.hunter.fetch_dblp = lambda a, t, limit: []
-        self.hunter.fetch_doaj = lambda a, t, limit: []
+        self.hunter.connectors["ArXiv"].fetch = lambda a, t, limit: [paper1] if "anchor" in a else []
+        self.hunter.connectors["Crossref"].fetch = lambda a, t, limit: [paper2] if "anchor" in a else []
+        self.hunter.connectors["Semantic Scholar"].fetch = lambda a, t, limit: []
+        self.hunter.connectors["OpenAlex"].fetch = lambda a, t, limit: []
+        self.hunter.connectors["CORE"].fetch = lambda a, t, limit: []
+        self.hunter.connectors["DOAJ"].fetch = lambda a, t, limit: []
         
 
         self.hunter.run(limit_per_source=10)
@@ -104,13 +103,12 @@ class TestDedupBug(unittest.TestCase):
             "Venue": "Venue2"
         }
 
-        self.hunter.fetch_arxiv = lambda a, t, limit: [paper1] if "anchor" in a else []
-        self.hunter.fetch_crossref = lambda a, t, limit: [paper2] if "anchor" in a else []
-        self.hunter.fetch_semantic_scholar = lambda a, t, limit: []
-        self.hunter.fetch_openalex = lambda a, t, limit: []
-        self.hunter.fetch_core_ac = lambda a, t, limit: []
-        self.hunter.fetch_dblp = lambda a, t, limit: []
-        self.hunter.fetch_doaj = lambda a, t, limit: []
+        self.hunter.connectors["ArXiv"].fetch = lambda a, t, limit: [paper1] if "anchor" in a else []
+        self.hunter.connectors["Crossref"].fetch = lambda a, t, limit: [paper2] if "anchor" in a else []
+        self.hunter.connectors["Semantic Scholar"].fetch = lambda a, t, limit: []
+        self.hunter.connectors["OpenAlex"].fetch = lambda a, t, limit: []
+        self.hunter.connectors["CORE"].fetch = lambda a, t, limit: []
+        self.hunter.connectors["DOAJ"].fetch = lambda a, t, limit: []
         
         self.hunter.run(limit_per_source=10)
 

@@ -263,6 +263,26 @@ def test_the_reset_still_undoes_the_escalation_on_a_keyed_source(monkeypatch):
     assert _delay_the_next_request_waits(connector) == 1.0
 
 
+def test_reset_restores_pacing_for_all_connectors_sharing_one_mapping():
+    from academic_hunter.core.infra.state import SearchState
+    from academic_hunter.core.pipeline.manager import SearchPipeline
+
+    delays = {"api.one.test": 40.0, "api.two.test": 50.0}
+    first, second = MagicMock(), MagicMock()
+    first.pacing_delays = delays
+    second.pacing_delays = delays
+    first.setup_pacing.side_effect = lambda: delays.__setitem__("api.one.test", 1.0)
+    second.setup_pacing.side_effect = lambda: delays.__setitem__("api.two.test", 2.0)
+    hunter = MagicMock()
+    hunter.connectors = {"one": first, "two": second}
+    hunter.state = SearchState()
+    hunter.blocked_sources = set()
+
+    SearchPipeline(hunter)._reset_run_state()
+
+    assert delays == {"api.one.test": 1.0, "api.two.test": 2.0}
+
+
 def test_an_unkeyed_source_resets_to_its_own_default(monkeypatch):
     """The key is what buys the 1 s, so without one the shipped default stands."""
     monkeypatch.delenv("SEMANTIC_SCHOLAR_API_KEY", raising=False)
@@ -421,8 +441,6 @@ def _hunter_for_a_full_run(connectors, settings=None):
     hunter.tech_strings = {"Topic": ["cbdc"]}
     hunter.consolidated_results = {}
     hunter.semantic_screener = None
-    for suffix in ("needs_credential", "keyless"):
-        getattr(hunter, f"fetch_{suffix}").return_value = []
     return hunter
 
 
@@ -439,7 +457,6 @@ def _run_to_completion(hunter, limit_per_source=1):
 
 
 class _NeedsACredential:
-    fetch_suffix = "needs_credential"
     domain = "api.needs.example.org"
     REASON = "no API key. Set NEEDS_KEY in the environment."
 
@@ -449,12 +466,17 @@ class _NeedsACredential:
 
 
 class _KeylessIsFine:
-    fetch_suffix = "keyless"
     domain = "api.keyless.example.org"
 
     @classmethod
     def unavailable_reason(cls, settings):
         return ""
+
+
+def _with_a_spy(cls):
+    connector = cls()
+    connector.fetch = MagicMock(return_value=[])
+    return connector
 
 
 def test_a_source_that_cannot_run_never_gets_a_thread():
@@ -465,14 +487,14 @@ def test_a_source_that_cannot_run_never_gets_a_thread():
     exactly like a source that was asked and found nothing. Not calling it is
     the fix; the reason is what makes the absence legible.
     """
-    hunter = _hunter_for_a_full_run(
-        {"Needs Credential": _NeedsACredential(), "Keyless": _KeylessIsFine()}
-    )
+    needs = _with_a_spy(_NeedsACredential)
+    keyless = _with_a_spy(_KeylessIsFine)
+    hunter = _hunter_for_a_full_run({"Needs Credential": needs, "Keyless": keyless})
 
     _run_to_completion(hunter)
 
-    hunter.fetch_needs_credential.assert_not_called()
-    hunter.fetch_keyless.assert_called_once()
+    needs.fetch.assert_not_called()
+    keyless.fetch.assert_called_once()
     assert hunter.state.stats["unavailable_sources"] == {
         "Needs Credential": _NeedsACredential.REASON
     }
@@ -485,15 +507,64 @@ def test_the_gate_is_re_answered_by_every_run():
     server, and `update_config` writing a credential would change nothing until
     a restart -- which is the shape of defect this whole change is about.
     """
+    needs = _with_a_spy(_NeedsACredential)
     hunter = _hunter_for_a_full_run(
-        {"Needs Credential": _NeedsACredential()},
+        {"Needs Credential": needs},
         settings={"ablation": {"mode": "keyword"}, "needs_key": True},
     )
 
     _run_to_completion(hunter)
 
-    hunter.fetch_needs_credential.assert_called_once()
+    needs.fetch.assert_called_once()
     assert hunter.state.stats["unavailable_sources"] == {}
+
+
+def test_a_connector_injected_under_its_own_key_is_still_asked(tmp_path):
+    """The worker asks the connector it resolved, not one named after it.
+
+    The fetch method used to be looked up on the hunter by a name derived from
+    the connector, with the connector itself only as a fallback when the lookup
+    missed. A connector injected under a key of its own made the lookup succeed
+    against a *different* connector, which then raised inside the worker and was
+    swallowed by its ``except``: the source reported zero papers while the
+    connector holding the answer sat unused.
+    """
+    import json
+
+    from academic_hunter import AcademicHunter
+    from academic_hunter.core.pipeline.manager import SearchPipeline
+
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "settings": {"min_relevance_score": 0.0, "start_year": 2024},
+                "anchors": {"cat": ["ledger"]},
+                "technical_strings": {"cat": ["throughput"]},
+                "technical_weights": {"ledger": 5.0, "throughput": 1.0},
+            }
+        ),
+        encoding="utf-8",
+    )
+    hunter = AcademicHunter(config_path=str(config_path), output_dir=str(tmp_path))
+
+    arxiv = hunter.connectors["ArXiv"]
+    arxiv.fetch = lambda anchors, tech_strings, limit=50: [
+        {
+            "Title": "A ledger throughput study",
+            "Abstract": "ledger throughput ledger throughput",
+            "Year": "2024",
+            "Source": "ArXiv",
+            "Citations": 0,
+            "DOI": "",
+            "URL": "https://example.org/a",
+        }
+    ]
+    hunter.connectors = {"Renamed": arxiv}
+
+    SearchPipeline(hunter)._api_worker("Renamed", None, limit_per_source=5)
+
+    assert len(hunter.consolidated_results) == 1
 
 
 def test_a_run_writes_the_prisma_flow_once(tmp_path):

@@ -19,25 +19,25 @@ def hunter():
 
 @pytest.mark.integration
 def test_arxiv_connectivity(hunter):
-    results = hunter.fetch_arxiv(["AI"], ["machine learning"], limit=2)
+    results = hunter.connectors["ArXiv"].fetch(["AI"], ["machine learning"], limit=2)
     assert isinstance(results, list)
 
 @pytest.mark.integration
 def test_crossref_connectivity(hunter):
-    results = hunter.fetch_crossref(["AI"], ["machine learning"], limit=2)
+    results = hunter.connectors["Crossref"].fetch(["AI"], ["machine learning"], limit=2)
     assert isinstance(results, list)
 
 @pytest.mark.integration
 def test_semantic_scholar_connectivity(hunter):
-    results = hunter.fetch_semantic_scholar(["AI"], ["machine learning"], limit=2)
+    results = hunter.connectors["Semantic Scholar"].fetch(["AI"], ["machine learning"], limit=2)
     assert isinstance(results, list)
 
 @pytest.mark.integration
 def test_openalex_connectivity(hunter):
-    results = hunter.fetch_openalex(["AI"], ["machine learning"], limit=2)
+    results = hunter.connectors["OpenAlex"].fetch(["AI"], ["machine learning"], limit=2)
     assert isinstance(results, list)
 
 @pytest.mark.integration
 def test_core_ac_connectivity(hunter):
-    results = hunter.fetch_core_ac(["AI"], ["machine learning"], limit=2)
+    results = hunter.connectors["CORE"].fetch(["AI"], ["machine learning"], limit=2)
     assert isinstance(results, list)

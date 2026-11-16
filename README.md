@@ -9,175 +9,188 @@
 [![MCP Ready](https://img.shields.io/badge/Protocol-MCP_Ready-orange.svg)](https://modelcontextprotocol.io/)
 </div>
 
-Academic Hunter is an open-source Systematic Literature Review (SLR) tool that combines **multi-source search** (6 databases searched in parallel, 14 accessible in total), **semantic relevance scoring** (Weight-Bleeding), **topic clustering** (BERTopic), **novelty detection**, **extractive summarization**, and a **Model Context Protocol (MCP) server** — all running locally on CPU, with zero API costs.
+Academic Hunter is an open-source Systematic Literature Review (SLR) tool that combines **multi-source search** (six databases queried in parallel, twelve reachable in total), **semantic relevance scoring** (Weight-Bleeding), **topic clustering** (BERTopic), **novelty detection**, **extractive summarization**, and a **Model Context Protocol (MCP) server** — all running locally on CPU, with zero API costs.
 
 ---
 
-## 🚀 Quickstart: Primeira SLR em 1 minuto
+## 🚀 Quickstart: your first SLR in a minute
 
-O Academic Hunter é um **servidor MCP**: conecte-o a um agente de IA e peça a revisão em linguagem natural.
+Academic Hunter is an **MCP server**: connect it to an AI agent and ask for the review in plain language.
 
 ```bash
-# 1. uv, uma vez por máquina
+# 1. uv, once per machine
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 2. Aqueça o cache AQUI, fora do cliente — é neste passo que os 439 MB
-#    (medidos) são baixados. Se o cliente fizer isso sozinho, ele espera
-#    sem barra de progresso e desiste com um "failed to connect" genérico.
+# 2. Warm the cache HERE, outside the client — this is the step that downloads
+#    the 439 MB (measured). If the client does it instead, it waits with no
+#    progress bar and gives up with a generic "failed to connect".
 uvx --from 'academic-hunter[fulltext]' academic-mcp --help
 
-# 3. Registre no Claude Code (escopo user: conecta sem prompt de aprovação)
+# 3. Register it with Claude Code (user scope: connects without an approval prompt)
 claude mcp add --scope user academic-hunter -- \
   uvx --from 'academic-hunter[fulltext]' academic-mcp
 ```
 
-Sem clone, sem venv, sem caminho absoluto. O `--from` não é enfeite: a
-distribuição chama `academic-hunter` e o script chama `academic-mcp`, então o
-nome pelado não resolve nada.
+No clone, no virtualenv, no absolute path. The `--from` is not decoration: the distribution is called `academic-hunter` and the console script is called `academic-mcp`, so the bare name resolves to nothing.
 
-Para outros clientes — Claude Desktop, Codex, Cursor — use `uvx` como `command` e
-`["--from", "academic-hunter[fulltext]", "academic-mcp"]` como `args` no lugar
-do bloco de §2 do [guia de conexão MCP](docs/mcp_setup.md).
+For other clients — Claude Desktop, Codex, Cursor — use `uvx` as the `command` and `["--from", "academic-hunter[fulltext]", "academic-mcp"]` as the `args` in place of the §2 block of the [MCP connection guide](https://github.com/devfelipenunes/academic-hunter/blob/main/docs/mcp_setup.md).
 
-O servidor sobe sem config, com um default neutro, e avisa no log que fez isso.
-O primeiro pedido ao agente deve ser o tópico:
+The server starts with no configuration at all, on a neutral default, and says so in its log. The first thing to ask the agent is the topic:
 
-> _"Faça uma revisão sobre X."_
+> _"Do a review on X."_
 
-O agente começa por `quick_topic_discovery`, que devolve os títulos mais
-relevantes **e um rascunho de config** montado com o jargão que esses títulos
-usam. Ele revisa o rascunho, aplica com `update_config` e roda `run_search`.
+The agent starts with `quick_topic_discovery`, which returns the most relevant titles and the terms those titles use, counted. **No configuration comes with it:** the anchors and technical terms are written by the agent from that vocabulary. It applies them with `update_config` and runs `run_search`.
 
-Sem âncoras, `run_search` se recusa a rodar — em vez de consultar todas as fontes
-para nada e dizer que deu certo. Sem `technical_strings`, ele roda, mas avisa
-quais fontes ficaram de fora: as quatro que consultam por âncora × termo técnico
-não chegam a ser chamadas, e o `0` delas no relatório não é um resultado.
+Without anchors, `run_search` refuses to run — instead of querying every source for nothing and reporting success. Without `technical_strings` it runs, but warns which sources it left out: the four that query by anchor × technical term are never called, and their `0` in the report is not a result.
 
-Para conferir antes de rodar, o retorno de `update_config` diz o que a config vai
-consultar e o de `run_search` diz o que foi consultado de fato.
+To check before a run, `update_config`'s reply says what the configuration will query, and `run_search`'s says what was actually queried.
+
+### Before your first search: two API keys
+
+Four of the six parallel sources work with no credentials: **arXiv, Crossref, OpenAlex and DOAJ**. The other two need a key, and report themselves as *not queried* without one rather than returning a `0` that reads like an empty result:
+
+| Source | Key | Where to get it |
+| --- | --- | --- |
+| **Semantic Scholar** | `SEMANTIC_SCHOLAR_API_KEY` or `settings.api_keys.semantic_scholar` | Free, from the [Semantic Scholar API page](https://www.semanticscholar.org/product/api). Without it the shared pool rate-limits the run a few requests in. |
+| **CORE** | `CORE_API_KEY` or `settings.api_keys.core` | Free for research, from [core.ac.uk/services/api](https://core.ac.uk/services/api). The endpoint answers 401 without one. |
+
+Both are optional — a run on the other four is a complete run, and the report says which ones it never asked. `settings.api_keys.lens` is a third: `search_source(source="lens")` cannot run without a Lens.org token either.
 
 <details>
-<summary>Instalar a partir do clone (desenvolvimento)</summary>
+<summary>Install from a clone (development)</summary>
 
 ```bash
-# O `ml` é opcional: a busca funciona sem ele, e as tools de análise avisam
-# nomeando o extra. O `fulltext` é o extra padrão documentado.
+# `ml` is optional: search works without it, and the analysis tools say so by
+# name. `fulltext` is the documented default extra.
 pip install -e ".[fulltext]"
 
-# Inicie o servidor MCP (stdio)
+# Start the MCP server (stdio)
 academic-mcp
 
-# Ou em modo HTTP (SSE) para acesso remoto
+# Or in HTTP (SSE) mode for remote access
 academic-mcp -t sse --host 0.0.0.0 --port 8080
 ```
 
-`python install.py` faz tudo isso, escreve o config do cliente com o caminho
-deste checkout e confirma que o servidor responde.
+`python install.py` does all of the above, writes the client config with this checkout's path, and confirms the server answers.
 
 </details>
 
-Conectado ao agente, basta pedir — _"rode uma revisão sistemática sobre X"_ — e ele orquestra as tools (`run_search`, `semantic_search`, `cluster_papers`).
+Once connected, just ask — _"run a systematic review on X"_ — and the agent orchestrates the tools (`run_search`, `semantic_search`, `cluster_papers`).
 
-## 📖 Tutorial Completo
+## 📖 Tutorial
 
-Veja o [tutorial passo a passo](docs/tutorial.md) — 10 minutos para fazer sua primeira SLR completa.
-
----
-
-## ✨ Principais Funcionalidades
-
-### 🔍 Busca Multi-Fonte
-
-O pipeline consulta **6 fontes acadêmicas em paralelo**: arXiv, Crossref, Semantic Scholar, OpenAlex, CORE e DOAJ — com deduplicação entre todas. Outras 9 ficam disponíveis sob demanda pelas tools MCP: Europe PMC, OpenCitations, Unpaywall, Lens.org, OpenAIRE, ORCID, bioRxiv, medRxiv e DataCite.
-
-### 🧠 Weight-Bleeding Scoring
-
-Método original de ponderação semântica configurável via centroide ponderado em espaço de embeddings — permite que o pesquisador defina quais termos são mais importantes sem modificar o modelo, sem GPU, sem dados rotulados.
-
-### 📊 12 Análises com o Mesmo Modelo (MiniLM 22MB)
-
-| Análise         | Tool MCP              | O que faz                                           |
-| --------------- | --------------------- | --------------------------------------------------- |
-| Busca semântica | `semantic_search`     | Encontra papers por CONCEITO, não por palavra exata |
-| Re-ranking      | `rerank_search`       | Bi-encoder + cross-encoder para maior precisão      |
-| Clustering      | `cluster_papers`      | Agrupa automaticamente por tema (BERTopic)          |
-| Outliers        | `find_novel_papers`   | Detecta papers inovadores/disruptivos               |
-| Snowballing     | `find_related_papers` | "Mais like this" para cada paper                    |
-| Tópicos         | `trending_topics`     | Identifica os assuntos mais frequentes              |
-| Evolução        | `topic_evolution`     | Mostra como os temas mudam ao longo dos anos        |
-| Duplicatas      | `semantic_dedup`      | Detecta duplicatas por similaridade de embedding    |
-| Resumo          | `summarize_paper`     | Resumo extrativo via MMR                            |
-| Citações        | `get_citation_count`  | Contagem de citações via OpenCitations              |
-| Acesso Aberto   | `find_open_access`    | Versão OA de papers pagos via Unpaywall             |
-| Dentro do paper | `chunk_search`        | Busca por trecho no full text, com seção e offsets  |
-
-### 🤖 MCP Server — Integração com Agentes de IA
-
-O Academic Hunter expõe **43 ferramentas, 3 recursos (e um template de URI) e 2 prompts** via Model Context Protocol. Qualquer agente de IA (Claude, ChatGPT, LangChain) pode orquestrar revisões sistemáticas completas autonomamente.
-
-Os comandos de lançamento estão na tabela de comandos, mais abaixo, e a conexão
-de cada cliente no [guia de conexão MCP](docs/mcp_setup.md) — o README não
-repetiu nenhum dos dois.
-
-### 📦 Exportação Multi-Formato
-
-CSV, BibTeX, RIS, JSON, Markdown, PRISMA — e exportação direta para **Obsidian**.
+See the [step-by-step tutorial](https://github.com/devfelipenunes/academic-hunter/blob/main/docs/tutorial.md) — ten minutes to your first complete SLR.
 
 ---
 
-## 🔧 Comandos
+## ✨ What it does
 
-| Comando               | Descrição                          |
-| --------------------- | ---------------------------------- |
-| `academic-mcp`        | Inicia o servidor MCP (stdio)      |
-| `academic-mcp -t sse` | Inicia o servidor MCP em modo HTTP |
+### 🔍 Multi-source search
+
+The pipeline queries **six academic sources in parallel**: arXiv, Crossref, OpenAlex and DOAJ with no credentials, plus Semantic Scholar and CORE once you supply their keys (see [above](#before-your-first-search-two-api-keys)). Everything found is deduplicated across sources.
+
+A further six sources are reachable one at a time through MCP tools: OpenCitations, Unpaywall, Lens.org, OpenAIRE, ORCID and DataCite. Three of them are one tool with a `source` argument — `search_source` — because searching one source is one operation, and peers of `run_search` in the tool list are how an agent comes to pick one of them instead of the review.
+
+Europe PMC, bioRxiv and medRxiv are deliberately not among them: they index medicine and the life sciences, and no review this tool is used for is in those fields. Europe PMC is still read from, by the full-text step — that is a way of getting the text of a paper rather than a collection to search, and it is the only one that needs neither the `fulltext` extra nor an open-access PDF.
+
+### 🧠 Weight-Bleeding scoring
+
+An original method for configurable semantic weighting: a weighted centroid in embedding space lets you say which terms matter more, without touching the model, without a GPU and without labelled data.
+
+### 📊 What you can ask of the corpus
+
+Titles and abstracts are embedded by one model — `all-MiniLM-L6-v2`, 22M parameters, about 79 MB to download (measured) and loaded once.
+
+| Analysis | MCP tool | What it does |
+| --- | --- | --- |
+| Semantic search | `semantic_search` | Finds papers by CONCEPT, not by exact word |
+| Re-ranking | `rerank_search` | Bi-encoder plus cross-encoder, for precision |
+| Clustering | `cluster_papers` | Groups by topic automatically (BERTopic) |
+| Outliers | `find_novel_papers` | Finds novel or disruptive papers |
+| Snowballing | `find_related_papers` | "More like this" for a given paper |
+| Topics | `trending_topics` | Identifies the most frequent subjects |
+| Evolution | `topic_evolution` | Shows how subjects change across years |
+| Duplicates | `semantic_dedup` | Finds duplicates by embedding similarity |
+| Summaries | `summarize_paper` | Extractive summary via MMR |
+| Inside a paper | `chunk_search` | Searches the full text, with section and offsets |
+
+Two more analyses the table used to mix in with these do **not** use the model — they are single HTTP lookups: `get_citation_count` (OpenCitations) and `find_open_access` (Unpaywall).
+
+### 🤖 MCP server — agent integration
+
+Academic Hunter exposes **39 tools, 3 resources plus one URI template, and 2 prompts** over the Model Context Protocol. Any AI agent (Claude, ChatGPT, LangChain) can orchestrate a complete systematic review on its own.
+
+The tools are not one flat list, and the server tells a connecting agent which is which:
+
+| Group | Count | What it is |
+| --- | --- | --- |
+| **Pipeline** | 4 | `quick_topic_discovery` → `update_config` → `run_search` → `read_latest_report`. This is the review. |
+| **On-demand lookups** | 8 | Bypassing the pipeline: no run, no report. `search_source` queries one of six external sources per call, and seven more tools answer about one record — an open-access copy, an ORCID profile, a citation count, a DOI, a citation graph. For the specific thing the user asked about. |
+| **Support** | 27 | Everything over the corpus a run produced: the analyses above, export, full text, configuration and health. |
+
+Launch commands are in the table below, and each client's connection is in the [MCP connection guide](https://github.com/devfelipenunes/academic-hunter/blob/main/docs/mcp_setup.md) — the README repeats neither.
+
+### 📦 Multi-format export
+
+Every run writes **CSV, BibTeX, RIS, Markdown and PRISMA** artifacts into its own directory, and **Obsidian** notes on request. `export_report` additionally offers **JSON**, for pulling the rows out of the latest run.
 
 ---
 
-## 📊 Comparação com Ferramentas Existentes
+## 🔧 Commands
 
-| Recurso              | Academic Hunter    | ASReview       | Rayyan | Covidence |
-| -------------------- | ------------------ | -------------- | ------ | --------- |
-| Código aberto        | ✅                 | ✅             | ❌     | ❌        |
-| Fontes de dados      | **15**             | 1 (importação) | 1      | 1         |
-| Scoring semântico    | ✅ Weight-Bleeding | ❌             | ❌     | ❌        |
-| Cluster automático   | ✅                 | ❌             | ❌     | ❌        |
-| Detecção de novidade | ✅                 | ❌             | ❌     | ❌        |
-| MCP / API para IA    | ✅                 | ❌             | ❌     | ❌        |
-| Offline-first        | ✅                 | ✅             | ❌     | ❌        |
-| Custo                | **Zero**           | Zero           | $$$    | $$$$      |
+| Command | Description |
+| --- | --- |
+| `academic-mcp` | Start the MCP server (stdio) |
+| `academic-mcp -t sse` | Start the MCP server in HTTP mode |
 
 ---
 
-## 🏗️ Arquitetura
+## 📊 Compared with existing tools
+
+| Feature | Academic Hunter | ASReview | Rayyan | Covidence |
+| --- | --- | --- | --- | --- |
+| Open source | ✅ | ✅ | ❌ | ❌ |
+| Data sources | **15** | 1 (import) | 1 | 1 |
+| Semantic scoring | ✅ Weight-Bleeding | ❌ | ❌ | ❌ |
+| Automatic clustering | ✅ | ❌ | ❌ | ❌ |
+| Novelty detection | ✅ | ❌ | ❌ | ❌ |
+| MCP / API for AI | ✅ | ❌ | ❌ | ❌ |
+| Offline-first | ✅ | ✅ | ❌ | ❌ |
+| Cost | **Zero** | Zero | $$$ | $$$$ |
+
+---
+
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    MCP Server (43 tools)                     │
-│  4 Resources · 2 Prompts · Health Check · SSE Transport     │
+│               MCP Server (39 tools, stdio)                  │
+│      3 Resources · 1 URI Template · 2 Prompts · /health     │
 ├─────────────────────────────────────────────────────────────┤
-│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐│
-│ │  Search  │ │  NLP     │ │  MCP     │ │  Exporters       ││
-│ │  7 APIs  │ │  Scorer  │ │  Tools   │ │  CSV/Bib/RIS/MD  ││
-│ └──────────┘ └──────────┘ └──────────┘ └──────────────────┘│
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │
+│ │  Search  │ │  NLP     │ │  MCP     │ │  Exporters       │ │
+│ │  6 APIs  │ │  Scorer  │ │  Tools   │ │  CSV/Bib/RIS/MD  │ │
+│ └──────────┘ └──────────┘ └──────────┘ └──────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
 
+`academic-mcp` speaks stdio by default; `-t sse` switches it to HTTP for remote access. The layout is hexagonal — ports in `core/`, adapters in `plugins/`, entry points in `interfaces/` — and [docs/architecture.md](https://github.com/devfelipenunes/academic-hunter/blob/main/docs/architecture.md) has the diagram.
+
 ---
 
-## 📚 Publicações
+## 📚 Publications
 
 - **JOSS**: "Academic Hunter: An Open-Source Systematic Literature Review Tool with Agentic RAG and Embedding-Space Relevance Scoring"
-- **Conferência**: "Weight-Bleeding: Configurable Semantic Relevance Scoring via Input-Level Term Repetition in Bi-Encoders"
+- **Conference**: "Weight-Bleeding: Configurable Semantic Relevance Scoring via Input-Level Term Repetition in Bi-Encoders"
 
-Os manuscritos não acompanham este repositório, que publica só o software.
+The manuscripts do not ship with this repository, which publishes the software only.
 
 ---
 
-## 📄 Licença
+## 📄 License
 
-MIT License — use, modifique, distribua livremente.
+MIT License — use it, change it, distribute it freely.
 
-## 🤝 Contribua
+## 🤝 Contributing
 
-Issues, pull requests e feedback são bem-vindos!
+Issues, pull requests and feedback are welcome — see [CONTRIBUTING.md](https://github.com/devfelipenunes/academic-hunter/blob/main/CONTRIBUTING.md).

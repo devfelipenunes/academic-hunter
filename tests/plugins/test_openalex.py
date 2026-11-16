@@ -55,7 +55,7 @@ class TestOpenAlex(unittest.TestCase):
         }
         mock_get.return_value = mock_response
 
-        results = self.hunter.fetch_openalex(["anchor1"], ["tech1"])
+        results = self.hunter.connectors["OpenAlex"].fetch(["anchor1"], ["tech1"])
         
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["Title"], "Test Article")
@@ -79,7 +79,7 @@ class TestOpenAlex(unittest.TestCase):
         }
         mock_get.return_value = mock_response
 
-        results = self.hunter.fetch_openalex(["anchor1"], ["tech1"])
+        results = self.hunter.connectors["OpenAlex"].fetch(["anchor1"], ["tech1"])
         
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["DOI"], "")
@@ -91,7 +91,7 @@ class TestOpenAlex(unittest.TestCase):
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Client Error")
         mock_get.return_value = mock_response
         
-        results = self.hunter.fetch_openalex(["anchor1"], ["tech1"])
+        results = self.hunter.connectors["OpenAlex"].fetch(["anchor1"], ["tech1"])
         self.assertEqual(results, [])
 
     @patch('requests.get')
@@ -100,7 +100,7 @@ class TestOpenAlex(unittest.TestCase):
         mock_response.json.side_effect = ValueError("Invalid JSON")
         mock_get.return_value = mock_response
         
-        results = self.hunter.fetch_openalex(["anchor1"], ["tech1"])
+        results = self.hunter.connectors["OpenAlex"].fetch(["anchor1"], ["tech1"])
         self.assertEqual(results, [])
 
 if __name__ == "__main__":

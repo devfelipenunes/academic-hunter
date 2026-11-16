@@ -4,15 +4,18 @@ All MCP test files import from here to ensure consistent mock patterns.
 Uses pytest fixtures and unittest.mock throughout.
 """
 
+import threading
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from academic_hunter.core.infra.transport import HttpTransport
 from academic_hunter.interfaces.mcp.cache import (
     citation_cache,
     discovery_cache,
     discovery_titles,
 )
+from academic_hunter.interfaces.mcp.tools import _utils
 
 
 @pytest.fixture
@@ -49,19 +52,31 @@ def _clear_mcp_caches():
 
 
 @pytest.fixture
-def mock_openalex():
-    """Neutralise the OpenAlex plumbing: no config read, no pacing sleep.
+def mock_openalex(monkeypatch):
+    """Neutralise the OpenAlex transport: no config read, no waiting, no blocking.
 
-    ``_openalex_credentials`` reads the project's ``config.json``, so without
-    this a test would depend on the file that happens to sit on the machine and
-    on whether a real key is in it. ``_pace_openalex`` would otherwise hold each
-    call for the minimum interval, which is wall clock the suite does not need.
+    Three things. Reading the project's ``config.json`` for the credential would
+    make a test depend on whichever file sits on the machine, so the headers and
+    params come back empty. Waiting would hold every call for the source's delay
+    — and now also for the retry backoff, which the MCP path did not have before
+    it shared the pipeline's policy — so sleeps are dropped. And a *fresh*
+    transport per test keeps a pacing escalation from one test out of the next:
+    in production the instance is deliberately module-level, because pacing is
+    about the session rather than the request.
     """
-    with patch(
-        "academic_hunter.interfaces.mcp.tools._utils._openalex_credentials",
-        return_value=({}, {}),
-    ), patch("academic_hunter.interfaces.mcp.tools._utils._pace_openalex"):
-        yield
+    transport = HttpTransport(
+        lock=threading.Lock(),
+        semaphore=threading.Semaphore(2),
+        pacing_delays={},
+        last_request_by_domain={},
+        blocked_sources=set(),
+        default_delay=0.0,
+        block_sources=False,
+        sleep=lambda seconds: None,
+    )
+    monkeypatch.setattr(_utils, "_openalex_transport", lambda: transport)
+    monkeypatch.setattr(_utils, "_openalex_headers_and_params", lambda: ({}, {}))
+    yield
 
 
 @pytest.fixture

@@ -25,6 +25,10 @@ ORCID_API = "https://pub.orcid.org/v3.0"
 async def lookup_orcid(ctx: Context, orcid_id: str) -> str:
     """Looks up a researcher's profile and publications via ORCID.
 
+    Bypasses the pipeline: one source directly, so no run and no report. For a
+    literature review run `quick_topic_discovery`, then `update_config`, then
+    `run_search`; use this for the specific lookup the user asked for.
+
     Args:
         ctx: FastMCP Context (auto-injected).
         orcid_id: ORCID identifier (e.g., "0000-0002-1825-0097").

@@ -119,6 +119,29 @@ def test_no_doc_advertises_a_command_that_does_not_exist():
         assert not found, f"{name} still advertises {found}"
 
 
+def test_no_doc_promises_a_config_the_discovery_does_not_return():
+    """`quick_topic_discovery` returns counts, and no anchors, categories or weights.
+
+    Its docstring says the configuration is written by the caller, and
+    ``test_discovery_tools.py`` pins that the reply carries none. Four documents
+    went on telling an agent the opposite, so the agent ran step 1, waited for a
+    configuration that never arrived and improvised — measured, it left the
+    pipeline there and queried a single source directly. Matched as text, like
+    the rest of this file: it stops *this* wording from coming back, and would
+    not catch the same promise in fresh words.
+    """
+    banned = ("rascunho de config", "draft config")
+
+    found = [
+        f"{name}: {phrase}"
+        for name in ALL_DOCS
+        for phrase in banned
+        if phrase in (ROOT / name).read_text(encoding="utf-8").lower()
+    ]
+
+    assert not found, f"a document promises a configuration the tool never returns: {found}"
+
+
 def test_the_versioned_mcp_configs_link_back_to_the_guide():
     """The guide was an orphan: nothing in the repository linked to it.
 

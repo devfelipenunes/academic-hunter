@@ -1,17 +1,19 @@
 import logging
+import sys
 import threading
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from ..core.infra import HunterConfig, SearchState, SQLiteCache, paths
 from ..core.nlp import AcademicScorer
+from .accessors import HunterAccessorsMixin
 from .exporters import HunterExporterMixin
-from .facades import HunterFacadeMixin
+from .routing import HunterRoutingMixin
 
 logger = logging.getLogger("academic_hunter.app")
 
 
-class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
+class AcademicHunter(HunterAccessorsMixin, HunterExporterMixin, HunterRoutingMixin):
     """
     AcademicHunter is an automated research tool that aggregates scholarly articles
     from multiple APIs. It filters results based on exact anchor matches and ranks them
@@ -21,6 +23,9 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
     and wires them into the domain. Every collaborator can be injected — tests use
     that to substitute fakes, and it is what keeps ``core`` free of any dependency
     on ``plugins`` or ``interfaces``.
+
+    The class body is split across the sibling modules of this package. Listing
+    several bases is how Python expresses one class in several files.
     """
 
     def __init__(self, config_path: Optional[str] = None, output_dir: Optional[str] = None,
@@ -35,7 +40,6 @@ class AcademicHunter(HunterFacadeMixin, HunterExporterMixin):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        import sys
         is_testing = 'pytest' in sys.modules or 'unittest' in sys.modules
         self.use_cache = use_cache and not is_testing
 

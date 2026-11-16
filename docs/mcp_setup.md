@@ -199,7 +199,7 @@ lists them.
 
 ## 3. Confirm it works
 
-Connected, the agent sees 43 tools.
+Connected, the agent sees 39 tools.
 
 The first tool call is also where a config problem shows up, so it is worth
 asking the server what it resolved before running anything else:
@@ -216,7 +216,7 @@ The refusal names the file, so the fix is `quick_topic_discovery` and then
 ### Which code is running
 
 Two servers can answer to the same name and report identical values in every
-field — the same version string, the same config path, the same 43 tools. What
+field — the same version string, the same config path, the same 39 tools. What
 differs is *where the package was read from*, and that is the one thing nothing
 else tells you.
 
