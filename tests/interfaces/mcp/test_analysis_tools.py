@@ -53,6 +53,7 @@ async def test_trending_topics_no_results(mock_ctx):
     ) as m_get:
         store = MagicMock()
         store.query.return_value = []
+        store.all_papers.return_value = []
         m_get.return_value = store
 
         result = await trending_topics(mock_ctx)

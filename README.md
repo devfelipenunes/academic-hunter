@@ -135,7 +135,7 @@ Launch commands are in the table below, and each client's connection is in the [
 
 ### 📦 Multi-format export
 
-Every run writes **CSV, BibTeX, RIS, Markdown and PRISMA** artifacts into its own directory, and **Obsidian** notes on request. `export_report` additionally offers **JSON**, for pulling the rows out of the latest run.
+Every run writes **CSV, BibTeX, RIS, Markdown and PRISMA** artifacts into its own directory, plus `screening_candidates_*.csv` with every paper that passed year and anchor checks, and `screening_exclusions_*.csv` with unique papers rejected at the year/anchor stage. Both screening files include the automatic reason and blank columns for human adjudication, preserving candidates for recall audits. **Obsidian** notes are written on request. `export_report` additionally offers **JSON**, for pulling the included rows out of the latest run.
 
 ---
 

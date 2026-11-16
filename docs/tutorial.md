@@ -170,7 +170,7 @@ export_report(format="ris")
 export_report(format="json")
 ```
 
-Every run also writes its own `academic_dataset_*.csv`, `.bib` and `.ris`, a Markdown report and the PRISMA flow into its `results/run_*/` directory, whether or not you ask. `export_report` produces the same four formats for a path of your choosing — and the CSV, BibTeX and RIS it writes are the same bytes the run's own files carry, from the same renderer.
+Every run also writes its own `academic_dataset_*.csv`, `.bib` and `.ris`, a Markdown report, the PRISMA flow, and `screening_candidates_*.csv` into its `results/run_*/` directory. The screening file keeps scored candidates below the automatic cut and includes blank columns for human decision and notes; use it to audit potential false negatives. `export_report` produces the same four formats for a path of your choosing — and the CSV, BibTeX and RIS it writes are the same bytes the run's own files carry, from the same renderer.
 
 `json` is the one format only `export_report` offers: the run does not write one, because the CSV already carries every column.
 

@@ -39,6 +39,7 @@ async def test_find_novel_papers_import_error(mock_ctx):
 
     mock_store = MagicMock()
     mock_store.query.return_value = [{"title": f"Paper {i}"} for i in range(20)]
+    mock_store.all_papers.return_value = mock_store.query.return_value
 
     with patch("academic_hunter.interfaces.mcp.tools.novelty._get_vector_store") as m:
         m.return_value = mock_store
@@ -54,6 +55,7 @@ async def test_find_novel_papers_no_outliers(mock_ctx):
 
     mock_store = MagicMock()
     mock_store.query.return_value = [{"title": f"Paper {i}"} for i in range(20)]
+    mock_store.all_papers.return_value = mock_store.query.return_value
 
     with patch("academic_hunter.interfaces.mcp.tools.novelty._get_vector_store") as m:
         m.return_value = mock_store
@@ -79,6 +81,7 @@ async def test_find_novel_papers_with_outliers(mock_ctx):
     ]
     mock_store = MagicMock()
     mock_store.query.return_value = papers
+    mock_store.all_papers.return_value = papers
 
     with patch("academic_hunter.interfaces.mcp.tools.novelty._get_vector_store") as m:
         m.return_value = mock_store
@@ -107,6 +110,7 @@ async def test_find_novel_papers_general_exception(mock_ctx):
 
     mock_store = MagicMock()
     mock_store.query.side_effect = Exception("Unexpected error")
+    mock_store.all_papers.side_effect = Exception("Unexpected error")
 
     with patch("academic_hunter.interfaces.mcp.tools.novelty._get_vector_store") as m:
         m.return_value = mock_store

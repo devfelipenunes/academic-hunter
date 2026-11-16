@@ -183,6 +183,48 @@ def render_csv(papers: Sequence[Mapping[str, Any]]) -> str:
     return buffer.getvalue()
 
 
+def render_screening_candidates_csv(
+    papers: Sequence[Mapping[str, Any]], inclusion_key: str, threshold: float
+) -> str:
+    """Render every scored candidate with machine and human screening fields.
+
+    This is deliberately separate from the final dataset: papers below the
+    automatic cut remain visible for recall audits and manual adjudication.
+    """
+    audited = []
+    for paper in papers:
+        row = dict(paper)
+        try:
+            score = float(row.get(inclusion_key) or 0.0)
+        except (TypeError, ValueError):
+            score = 0.0
+        accepted = score >= threshold
+        row["Automated_Screening"] = "include" if accepted else "below_threshold"
+        row["Automated_Screening_Reason"] = (
+            f"{inclusion_key}={score:g}; threshold={threshold:g}"
+        )
+        row["Human_Decision"] = ""
+        row["Human_Reviewer"] = ""
+        row["Human_Notes"] = ""
+        audited.append(row)
+    return render_csv(audited)
+
+
+def render_screening_exclusions_csv(
+    papers: Sequence[Mapping[str, Any]],
+) -> str:
+    """Render unique papers rejected before scoring for anchor-recall audits."""
+    audited = []
+    for paper in papers:
+        row = dict(paper)
+        row["Automated_Screening"] = "excluded_before_score"
+        row["Human_Decision"] = ""
+        row["Human_Reviewer"] = ""
+        row["Human_Notes"] = ""
+        audited.append(row)
+    return render_csv(audited)
+
+
 def render_json(papers: Sequence[Mapping[str, Any]]) -> str:
     """The run as JSON, for the caller that wants the rows rather than a table.
 

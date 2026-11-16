@@ -279,3 +279,28 @@ def test_title_exclusions_match_whole_terms_and_plural_variants(tmp_path):
 
     paper["Title"] = "Microplastic debris in freshwater river estuaries"
     assert validator.match_anchor(paper) == ("", "")
+
+
+def test_anchor_rejection_reports_auditable_reason(tmp_path):
+    from academic_hunter.core.nlp import AcademicScorer
+    from academic_hunter.core.screening.validators import PaperValidator
+
+    path = _write(tmp_path / "rejection-reasons.json", {
+        "settings": {
+            "context_rules": {"microplastic": ["freshwater", "river"]},
+            "context_rules_title_only": True,
+            "context_exclude_title_terms": ["marine"],
+        },
+        "anchors": {"Pollutant": ["microplastic"]},
+        "technical_strings": {},
+        "technical_weights": {"microplastic": 5},
+    })
+    config = HunterConfig(config_path=str(path))
+    scorer = AcademicScorer(
+        config.anchors, config.tech_strings, config.tech_weights, config.context_rules, config.settings
+    )
+    validator = PaperValidator(config, scorer)
+
+    assert validator.anchor_rejection_detail({"Title": "Drivers of plastic debris"}) == "anchor_missing"
+    assert validator.anchor_rejection_detail({"Title": "Microplastic in an aquatic system"}) == "context_missing"
+    assert validator.anchor_rejection_detail({"Title": "Microplastic in a marine river"}) == "title_exclusion"

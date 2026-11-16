@@ -48,6 +48,31 @@ class PaperValidator:
                 return cat, found_terms
         return "", ""
 
+    def anchor_rejection_detail(self, paper: Dict[str, Any], title: str = None) -> str:
+        """Explain why a record failed the anchor gate without changing its outcome."""
+        title_text = str(title or paper.get("Title", "")).lower()
+        excluded_title_terms = self.config.settings.get("context_exclude_title_terms", [])
+        if isinstance(excluded_title_terms, str):
+            excluded_title_terms = [excluded_title_terms]
+        if isinstance(excluded_title_terms, (list, tuple)) and any(
+            term_matches(title_text, str(term).strip())
+            for term in excluded_title_terms
+            if str(term).strip()
+        ):
+            return "title_exclusion"
+
+        text = self._text(paper, title)
+        context_text = (
+            title_text
+            if self.config.settings.get("context_rules_title_only") is True
+            else text
+        )
+        for keywords in self.config.anchors.values():
+            found = self.scorer.find_matching_terms(text, keywords)
+            if found and not self.scorer.validate_anchor_context(context_text, found):
+                return "context_missing"
+        return "anchor_missing"
+
     def match_tech_terms(self, paper: Dict[str, Any], tech_list: List[str], title: str = None) -> str:
         """The technical terms this text matches, by the same tally the validator uses."""
         return self.scorer.find_matching_terms(self._text(paper, title), tech_list)

@@ -81,6 +81,7 @@ async def test_a_rejected_seed_does_not_swallow_the_group_behind_it(mock_ctx):
     with patch("academic_hunter.interfaces.mcp.tools.dedup._get_vector_store") as m_get:
         store = MagicMock()
         store.query.return_value = papers
+        store.all_papers.return_value = papers
         m_get.return_value = store
         with patch(
             "academic_hunter.interfaces.mcp.tools.dedup.get_sentence_transformer"

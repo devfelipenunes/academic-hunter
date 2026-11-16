@@ -24,6 +24,7 @@ async def test_topic_evolution(mock_ctx):
     ) as m_store:
         store = MagicMock()
         store.query.return_value = mock_papers
+        store.all_papers.return_value = mock_papers
         m_store.return_value = store
 
         model = MagicMock()
@@ -91,6 +92,7 @@ async def test_topic_evolution_bertopic_not_installed(mock_ctx):
             {"title": f"P{i}", "abstract_preview": f"A{i}", "year": 2022}
             for i in range(10)
         ]
+        store.all_papers.return_value = store.query.return_value
         m_store.return_value = store
 
         with patch(
@@ -121,6 +123,7 @@ async def test_topic_evolution_no_year(mock_ctx):
     ) as m_store:
         store = MagicMock()
         store.query.return_value = mock_papers
+        store.all_papers.return_value = mock_papers
         m_store.return_value = store
 
         model = MagicMock()

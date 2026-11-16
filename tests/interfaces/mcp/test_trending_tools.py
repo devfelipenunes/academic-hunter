@@ -18,6 +18,7 @@ async def test_trending_topics_no_papers(mock_ctx):
 
     mock_store = MagicMock()
     mock_store.query.return_value = []
+    mock_store.all_papers.return_value = []
 
     with patch("academic_hunter.interfaces.mcp.tools.trending._get_vector_store") as m:
         m.return_value = mock_store
@@ -34,6 +35,7 @@ async def test_trending_topics_no_bigrams_meet_threshold(mock_ctx):
         {"title": "Deep Learning Methods"},
         {"title": "Deep Learning Advances"},
     ]
+    mock_store.all_papers.return_value = mock_store.query.return_value
 
     with patch("academic_hunter.interfaces.mcp.tools.trending._get_vector_store") as m:
         m.return_value = mock_store
@@ -56,6 +58,7 @@ async def test_an_indexed_corpus_is_never_told_to_index_papers(mock_ctx):
 
     store = MagicMock()
     store.query.return_value = papers
+    store.all_papers.return_value = papers
     with patch("academic_hunter.interfaces.mcp.tools.trending._get_vector_store") as m:
         m.return_value = store
         below = await trending_topics(mock_ctx, min_papers=3)
@@ -66,6 +69,7 @@ async def test_an_indexed_corpus_is_never_told_to_index_papers(mock_ctx):
 
     empty = MagicMock()
     empty.query.return_value = []
+    empty.all_papers.return_value = []
     with patch("academic_hunter.interfaces.mcp.tools.trending._get_vector_store") as m:
         m.return_value = empty
         nothing = await trending_topics(mock_ctx, min_papers=3)
@@ -114,6 +118,7 @@ async def test_trending_topics_empty_title_skipped(mock_ctx):
         {"title": ""},
         {"title": "Blockchain Scalability Solutions"},
     ]
+    mock_store.all_papers.return_value = mock_store.query.return_value
 
     with patch("academic_hunter.interfaces.mcp.tools.trending._get_vector_store") as m:
         m.return_value = mock_store

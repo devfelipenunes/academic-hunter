@@ -27,6 +27,7 @@ class SearchState:
         self.last_request_by_domain = {}
         self.pending_promotions = set()
         self.exclusion_reasons = {}
+        self.screening_exclusions = {}
         self.pending_registrations = set()
 
     def reset(self, connectors_keys: List[str]):
@@ -54,6 +55,7 @@ class SearchState:
         self.last_request_by_domain.clear()
         self.pending_promotions.clear()
         self.exclusion_reasons.clear()
+        self.screening_exclusions.clear()
         self.pending_registrations.clear()
 
     def track_exclusion(self, source: str, reason: str):

@@ -141,6 +141,43 @@ def test_the_artifacts_agree_on_how_many_papers_came_out(artifacts):
     )
 
 
+def test_screening_export_keeps_candidates_below_the_automatic_cut(tmp_path, monkeypatch):
+    """Manual recall review needs the papers the final dataset filters out."""
+    config = {
+        **CONFIG,
+        "settings": {**CONFIG["settings"], "min_inclusion_score": 100.0},
+    }
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    hunter = AcademicHunter(config_path=str(config_path), output_dir=str(tmp_path))
+    rejected = {
+        "Title": "Freshwater microplastics in rivers without the configured anchor",
+        "Abstract": "A study of microplastics in freshwater rivers.",
+        "Year": "2024",
+        "URL": "https://example.org/rejected",
+        "Source": "Mock",
+        "DOI": "10.1234/rejected",
+    }
+    _silence_connectors(hunter, monkeypatch, _papers() + [rejected])
+    hunter.run(limit_per_source=1)
+
+    audit_path = next(tmp_path.rglob("screening_candidates_*.csv"))
+    with audit_path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+
+    assert len(rows) == len(WITH_DOI)
+    assert {row["Automated_Screening"] for row in rows} == {"below_threshold"}
+    assert all(row["Human_Decision"] == "" for row in rows)
+    assert all(row["Automated_Screening_Reason"].startswith("_kw_score=") for row in rows)
+
+    exclusions_path = next(tmp_path.rglob("screening_exclusions_*.csv"))
+    with exclusions_path.open(encoding="utf-8", newline="") as handle:
+        exclusions = list(csv.DictReader(handle))
+    assert len(exclusions) == 1
+    assert exclusions[0]["Title"] == rejected["Title"]
+    assert exclusions[0]["Screening_Stage_Reason"] == "anchor_missing"
+
+
 PREPRINT = {
     "Title": "Blockchain latency at the edge",
     "Authors": "Ada Lovelace",

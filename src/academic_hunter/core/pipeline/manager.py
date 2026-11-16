@@ -4,6 +4,10 @@ import time
 
 from ..ports.exporter import run_dir_for
 from ..screening.ablation import semantic_scoring_enabled
+from ..writing.renderers import (
+    render_screening_candidates_csv,
+    render_screening_exclusions_csv,
+)
 from .steps import (
     AutoExportObsidianStep,
     IndexResultsStep,
@@ -286,6 +290,27 @@ class SearchPipeline:
         self._resolve_published_versions()
 
         self._recompute_ranks(timestamp)
+
+        inclusion_key, inclusion_threshold = inclusion_predicate(self.hunter)
+        candidate_rows = list(self.hunter.consolidated_results.values())
+        screening_path = run_dir_for(timestamp, self.hunter.output_dir) / (
+            f"screening_candidates_{timestamp}.csv"
+        )
+        screening_path.write_text(
+            render_screening_candidates_csv(
+                candidate_rows, inclusion_key, inclusion_threshold
+            ),
+            encoding="utf-8",
+        )
+        exclusion_path = run_dir_for(timestamp, self.hunter.output_dir) / (
+            f"screening_exclusions_{timestamp}.csv"
+        )
+        exclusion_path.write_text(
+            render_screening_exclusions_csv(
+                list(self.hunter.state.screening_exclusions.values())
+            ),
+            encoding="utf-8",
+        )
 
         final_qualifiers = self._included_only()
 

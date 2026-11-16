@@ -173,6 +173,7 @@ class PaperResolver:
 
         with self.lock:
             self.state.consolidated_results[dedup_id] = paper_metadata
+            self.state.screening_exclusions.pop(dedup_id, None)
             self.state.pending_promotions.discard(dedup_id)
             if paper_metadata["_kw_score"] >= min_score:
                 self.state.stats["included_final"] += 1
@@ -187,9 +188,15 @@ class PaperResolver:
         """Registers a new unique paper, filtering and scoring it, and updating stats (thread-safe)."""
         passed, reason, anchor_cat, anchor_terms, relevance_score, tech_terms = self.validator.validate_and_score(paper, title, tech_list)
         if not passed:
+            if reason == "anchor":
+                paper["Screening_Stage_Reason"] = self.validator.anchor_rejection_detail(paper, title)
             with self.lock:
                 self.state.track_exclusion(source, reason)
                 self.state.exclusion_reasons[dedup_id] = reason
+                audit_row = dict(paper)
+                audit_row["Screening_Stage_Reason"] = paper.get("Screening_Stage_Reason", reason)
+                audit_row["Screening_Source"] = source
+                self.state.screening_exclusions.setdefault(dedup_id, audit_row)
                 counter = EXCLUSION_COUNTERS.get(reason)
                 if counter:
                     self.state.stats[counter] += 1
